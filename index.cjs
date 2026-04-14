@@ -65,7 +65,7 @@ const handleJoinGame = (connection, clientId, data) => {
     return;
   }
 
-  const { success, error } = joinGame(requestedCode, clientId);
+  const { success, error, state } = joinGame(requestedCode, clientId);
   if (!success) {
     sendEvent(connection, 'joinError', error);
     return;
@@ -73,7 +73,14 @@ const handleJoinGame = (connection, clientId, data) => {
 
   addClientToRoom(requestedCode, clientId, connection);
   sendEvent(connection, 'gameJoined', { roomCode: requestedCode });
-  broadcastToRoom(requestedCode, { type: 'startGame', data: null });
+  broadcastToRoom(requestedCode, {
+    type: 'startGame',
+    data: {
+      words: state.words,
+      history: state.history,
+      tiles: state.tiles
+    }
+  });
   console.log(`Client ${clientId} joined room ${requestedCode}`);
 };
 
@@ -95,7 +102,8 @@ const handleSubmitWord = (connection, clientId, data) => {
     type: 'wordSubmitted',
     data: {
       words: state.words,
-      history: state.history
+      history: state.history,
+      tiles: state.tiles
     }
   });
 };

@@ -17,6 +17,11 @@
         <p class="panel-label">Host</p>
         <h2>{{ submittedWords.host || 'Waiting for a word...' }}</h2>
         <p class="panel-subtitle">Left side</p>
+        <div class="tile-row">
+          <span v-for="(tile, index) in playerTiles.host" :key="`host-tile-${index}-${tile}`" class="tile">
+            {{ tile }}
+          </span>
+        </div>
         <ul v-if="wordHistory.host.length" class="history-list">
           <li v-for="(word, index) in wordHistory.host" :key="`host-${index}-${word}`">
             {{ word }}
@@ -30,6 +35,11 @@
         <p class="panel-label">Opponent</p>
         <h2>{{ submittedWords.opponent || 'Waiting for a word...' }}</h2>
         <p class="panel-subtitle">Right side</p>
+        <div class="tile-row">
+          <span v-for="(tile, index) in playerTiles.opponent" :key="`opponent-tile-${index}-${tile}`" class="tile">
+            {{ tile }}
+          </span>
+        </div>
         <ul v-if="wordHistory.opponent.length" class="history-list">
           <li v-for="(word, index) in wordHistory.opponent" :key="`opponent-${index}-${word}`">
             {{ word }}
@@ -43,7 +53,7 @@
         v-model="wordInput"
         type="text"
         maxlength="24"
-        placeholder="Type a word"
+        placeholder="Type a word from your tiles"
         autocomplete="off"
       />
       <button type="submit">Submit Word</button>
@@ -68,6 +78,7 @@ import {
   isHost,
   submittedWords,
   wordHistory,
+  playerTiles,
   gameStarted,
   submitWord as submitMultiplayerWord,
   resetGame as resetMultiplayer
@@ -81,16 +92,79 @@ const props = defineProps({
 const emit = defineEmits(['home']);
 const wordInput = ref('');
 const localMessage = ref('');
+const LETTER_POOL = 'AAAAAAAAABBCCDDDDEEEEEEEEEEEEFFGGGHHIIIIIIIJKLLLLMMNNNNNNOOOOOOPPQRRRRRRSSSSTTTTTTUUUUVVWWXYYZ';
+const RACK_SIZE = 37;
+
+const drawLetter = () => LETTER_POOL[Math.floor(Math.random() * LETTER_POOL.length)];
+
+const createRack = () => Array.from({ length: RACK_SIZE }, drawLetter);
+
+const canBuildWordFromTiles = (word, tiles) => {
+  const availableTiles = [...tiles];
+
+  for (const letter of word) {
+    const tileIndex = availableTiles.indexOf(letter);
+    if (tileIndex === -1) {
+      return false;
+    }
+
+    availableTiles.splice(tileIndex, 1);
+  }
+
+  return true;
+};
+
+const refillTiles = (tiles, usedLetters) => {
+  const remainingTiles = [...tiles];
+
+  for (const letter of usedLetters) {
+    const tileIndex = remainingTiles.indexOf(letter);
+    if (tileIndex !== -1) {
+      remainingTiles.splice(tileIndex, 1);
+    }
+  }
+
+  while (remainingTiles.length < RACK_SIZE) {
+    remainingTiles.push(drawLetter());
+  }
+
+  return remainingTiles;
+};
+
+const ensureSinglePlayerState = () => {
+  if (!playerTiles.value.host.length && !playerTiles.value.opponent.length) {
+    playerTiles.value = {
+      host: createRack(),
+      opponent: createRack()
+    };
+  }
+};
+
+ensureSinglePlayerState();
+
+const mySide = computed(() => {
+  if (props.isMultiplayer) {
+    return isHost.value ? 'host' : 'opponent';
+  }
+
+  return 'host';
+});
+
+const myTiles = computed(() => playerTiles.value[mySide.value] || []);
 
 const playerRoleText = computed(() => {
   if (props.isMultiplayer) {
-    return isHost.value ? 'You submit to the Host panel on the left.' : 'You submit to the Opponent panel on the right.';
+    return isHost.value
+      ? 'Real time play: build words from the Host tiles on the left.'
+      : 'Real time play: build words from the Opponent tiles on the right.';
   }
 
-  return 'You submit on the Host side. The bot replies on the Opponent side.';
+  return 'Build words from your Host tiles. The bot plays from its own tiles too.';
 });
 
 const submitSinglePlayerWord = (word) => {
+  ensureSinglePlayerState();
+
   submittedWords.value = {
     host: word,
     opponent: submittedWords.value.opponent
@@ -101,32 +175,59 @@ const submitSinglePlayerWord = (word) => {
     opponent: wordHistory.value.opponent
   };
 
+  playerTiles.value = {
+    host: refillTiles(playerTiles.value.host, word.split('')),
+    opponent: playerTiles.value.opponent
+  };
+
   localMessage.value = 'Your word was submitted.';
 
   window.setTimeout(() => {
-    const botWord = getBotWord([
+    const botWord = getBotWord(playerTiles.value.opponent, [
       ...wordHistory.value.host,
       ...wordHistory.value.opponent
     ]);
 
+    if (!botWord) {
+      localMessage.value = 'Your word was submitted. Bot could not form a word from its tiles.';
+      return;
+    }
+
+    const normalizedBotWord = botWord.toUpperCase();
+
     submittedWords.value = {
       host: submittedWords.value.host,
-      opponent: botWord
+      opponent: normalizedBotWord
     };
 
     wordHistory.value = {
       host: wordHistory.value.host,
-      opponent: [botWord, ...wordHistory.value.opponent].slice(0, 5)
+      opponent: [normalizedBotWord, ...wordHistory.value.opponent].slice(0, 5)
     };
 
-    localMessage.value = `Bot replied with "${botWord}".`;
+    playerTiles.value = {
+      host: playerTiles.value.host,
+      opponent: refillTiles(playerTiles.value.opponent, normalizedBotWord.split(''))
+    };
+
+    localMessage.value = `Bot replied with "${normalizedBotWord}".`;
   }, 500);
 };
 
 const handleSubmit = () => {
-  const normalizedWord = wordInput.value.trim();
+  const normalizedWord = wordInput.value.trim().toUpperCase();
   if (!normalizedWord) {
     localMessage.value = 'Enter a word first.';
+    return;
+  }
+
+  if (!/^[A-Z]+$/.test(normalizedWord)) {
+    localMessage.value = 'Use letters only.';
+    return;
+  }
+
+  if (!canBuildWordFromTiles(normalizedWord, myTiles.value)) {
+    localMessage.value = 'That word cannot be made from your current tiles.';
     return;
   }
 
@@ -187,7 +288,7 @@ const resetAndGoHome = () => {
   }
 
   .player-panel {
-    min-height: 240px;
+    min-height: 280px;
     padding: 24px;
     border: 2px solid rgba(255, 255, 255, 0.5);
     background: rgba(10, 10, 10, 0.45);
@@ -225,6 +326,24 @@ const resetAndGoHome = () => {
     font-size: 1.6rem;
     font-weight: 700;
     letter-spacing: 0.2em;
+  }
+
+  .tile-row {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 4px;
+  }
+
+  .tile {
+    min-width: 42px;
+    padding: 10px 0;
+    border-radius: 10px;
+    background: linear-gradient(180deg, #f1deb0 0%, #d8b772 100%);
+    color: #29190a;
+    font-weight: 800;
+    box-shadow: inset 0 -3px 0 rgba(0, 0, 0, 0.18);
   }
 
   .history-list {

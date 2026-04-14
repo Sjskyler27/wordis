@@ -1,4 +1,42 @@
 const games = new Map();
+const LETTER_POOL = 'AAAAAAAAABBCCDDDDEEEEEEEEEEEEFFGGGHHIIIIIIIJKLLLLMMNNNNNNOOOOOOPPQRRRRRRSSSSTTTTTTUUUUVVWWXYYZ';
+const RACK_SIZE = 7;
+
+const drawLetter = () => LETTER_POOL[Math.floor(Math.random() * LETTER_POOL.length)];
+
+const createRack = () => Array.from({ length: RACK_SIZE }, drawLetter);
+
+const canBuildWordFromTiles = (word, tiles) => {
+  const availableTiles = [...tiles];
+
+  for (const letter of word) {
+    const tileIndex = availableTiles.indexOf(letter);
+    if (tileIndex === -1) {
+      return false;
+    }
+
+    availableTiles.splice(tileIndex, 1);
+  }
+
+  return true;
+};
+
+const refillRack = (tiles, usedLetters) => {
+  const remainingTiles = [...tiles];
+
+  for (const letter of usedLetters) {
+    const tileIndex = remainingTiles.indexOf(letter);
+    if (tileIndex !== -1) {
+      remainingTiles.splice(tileIndex, 1);
+    }
+  }
+
+  while (remainingTiles.length < RACK_SIZE) {
+    remainingTiles.push(drawLetter());
+  }
+
+  return remainingTiles;
+};
 
 const generateRoomCode = () => {
   let roomCode;
@@ -23,6 +61,10 @@ const createGame = (roomCode, hostId) => {
     history: {
       host: [],
       opponent: []
+    },
+    tiles: {
+      host: createRack(),
+      opponent: createRack()
     }
   };
 
@@ -49,7 +91,7 @@ const submitWord = (roomCode, clientId, word) => {
     return { success: false, error: 'Room not found' };
   }
 
-  const normalizedWord = (word || '').trim();
+  const normalizedWord = (word || '').trim().toUpperCase();
   if (!normalizedWord) {
     return { success: false, error: 'Word required' };
   }
@@ -59,9 +101,18 @@ const submitWord = (roomCode, clientId, word) => {
     return { success: false, error: 'Player not in room' };
   }
 
+  if (!/^[A-Z]+$/.test(normalizedWord)) {
+    return { success: false, error: 'Words must use letters only' };
+  }
+
+  if (!canBuildWordFromTiles(normalizedWord, state.tiles[side])) {
+    return { success: false, error: 'Word must be built from your current tiles' };
+  }
+
   state.words[side] = normalizedWord;
   state.history[side].unshift(normalizedWord);
   state.history[side] = state.history[side].slice(0, 5);
+  state.tiles[side] = refillRack(state.tiles[side], normalizedWord.split(''));
 
   return { success: true, state };
 };

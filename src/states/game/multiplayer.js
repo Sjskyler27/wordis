@@ -11,6 +11,10 @@ export const wordHistory = ref({
   host: [],
   opponent: []
 });
+export const playerTiles = ref({
+  host: [],
+  opponent: []
+});
 export const gameStarted = ref(false);
 export const message = ref('');
 export const isConnecting = ref(false);
@@ -68,14 +72,18 @@ export const submitWord = (word) => {
   socket.emit('submitWord', { roomCode: roomCode.value, word: normalizedWord });
 };
 
-socket.on('startGame', () => {
+socket.on('startGame', (data) => {
   gameStarted.value = true;
   message.value = '';
+  submittedWords.value = data.words;
+  wordHistory.value = data.history;
+  playerTiles.value = data.tiles;
 });
 
 socket.on('wordSubmitted', (data) => {
   submittedWords.value = data.words;
   wordHistory.value = data.history;
+  playerTiles.value = data.tiles;
 });
 
 socket.onStatusChange((status) => {
@@ -93,6 +101,10 @@ export const resetGame = () => {
     opponent: ''
   };
   wordHistory.value = {
+    host: [],
+    opponent: []
+  };
+  playerTiles.value = {
     host: [],
     opponent: []
   };
