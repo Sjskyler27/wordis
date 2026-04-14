@@ -1,10 +1,17 @@
 const games = new Map();
-const LETTER_POOL = 'AAAAAAAAABBCCDDDDEEEEEEEEEEEEFFGGGHHIIIIIIIJKLLLLMMNNNNNNOOOOOOPPQRRRRRRSSSSTTTTTTUUUUVVWWXYYZ';
+const LETTER_CONFIG = require('../src/states/game/letters.json');
 const RACK_SIZE = 22;
+const LETTER_POOL = Object.entries(LETTER_CONFIG).flatMap(([letter, config]) =>
+  Array.from({ length: config.count }, () => letter)
+);
 
 const drawLetter = () => LETTER_POOL[Math.floor(Math.random() * LETTER_POOL.length)];
 
 const createRack = () => Array.from({ length: RACK_SIZE }, drawLetter);
+
+const getWordScore = (word) => word
+  .split('')
+  .reduce((total, letter) => total + (LETTER_CONFIG[letter]?.score || 0), 0);
 
 const canBuildWordFromTiles = (word, tiles) => {
   const availableTiles = [...tiles];
@@ -62,6 +69,10 @@ const createGame = (roomCode, hostId) => {
       host: [],
       opponent: []
     },
+    scores: {
+      host: 0,
+      opponent: 0
+    },
     tiles: {
       host: createRack(),
       opponent: createRack()
@@ -112,6 +123,7 @@ const submitWord = (roomCode, clientId, word) => {
   state.words[side] = normalizedWord;
   state.history[side].unshift(normalizedWord);
   state.history[side] = state.history[side].slice(0, 5);
+  state.scores[side] += getWordScore(normalizedWord);
   state.tiles[side] = refillRack(state.tiles[side], normalizedWord.split(''));
 
   return { success: true, state };

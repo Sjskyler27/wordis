@@ -78,6 +78,7 @@ const handleJoinGame = (connection, clientId, data) => {
     data: {
       words: state.words,
       history: state.history,
+      scores: state.scores,
       tiles: state.tiles
     }
   });
@@ -103,6 +104,7 @@ const handleSubmitWord = (connection, clientId, data) => {
     data: {
       words: state.words,
       history: state.history,
+      scores: state.scores,
       tiles: state.tiles
     }
   });

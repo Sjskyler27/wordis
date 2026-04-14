@@ -15,6 +15,7 @@
     <div v-if="isMultiplayer ? gameStarted : true" class="arena">
       <section class="player-panel">
         <p class="panel-label">Host</p>
+        <p class="panel-score">{{ playerScores.host }} pts</p>
         <h2>{{ submittedWords.host || 'Waiting for a word...' }}</h2>
         <p class="panel-subtitle">Left side</p>
         <div class="tile-row">
@@ -33,6 +34,7 @@
 
       <section class="player-panel">
         <p class="panel-label">Opponent</p>
+        <p class="panel-score">{{ playerScores.opponent }} pts</p>
         <h2>{{ submittedWords.opponent || 'Waiting for a word...' }}</h2>
         <p class="panel-subtitle">Right side</p>
         <div class="tile-row">
@@ -78,12 +80,14 @@ import {
   isHost,
   submittedWords,
   wordHistory,
+  playerScores,
   playerTiles,
   gameStarted,
   submitWord as submitMultiplayerWord,
   resetGame as resetMultiplayer
 } from './multiplayer.js';
 import { getBotWord } from './bot.js';
+import letterConfig from './letters.json';
 
 const props = defineProps({
   isMultiplayer: Boolean,
@@ -92,13 +96,19 @@ const props = defineProps({
 const emit = defineEmits(['home']);
 const wordInput = ref('');
 const localMessage = ref('');
-const LETTER_POOL = 'AAAAAAAAABBCCDDDDEEEEEEEEEEEEFFGGGHHIIIIIIIJKLLLLMMNNNNNNOOOOOOPPQRRRRRRSSSSTTTTTTUUUUVVWWXYYZ';
+const LETTER_POOL = Object.entries(letterConfig).flatMap(([letter, config]) =>
+  Array.from({ length: config.count }, () => letter)
+);
 const RACK_SIZE = 22;
 let botLoopId = null;
 
 const drawLetter = () => LETTER_POOL[Math.floor(Math.random() * LETTER_POOL.length)];
 
 const createRack = () => Array.from({ length: RACK_SIZE }, drawLetter);
+
+const getWordScore = (word) => word
+  .split('')
+  .reduce((total, letter) => total + (letterConfig[letter]?.score || 0), 0);
 
 const canBuildWordFromTiles = (word, tiles) => {
   const availableTiles = [...tiles];
@@ -187,6 +197,11 @@ const submitBotWord = () => {
     opponent: [normalizedBotWord, ...wordHistory.value.opponent].slice(0, 5)
   };
 
+  playerScores.value = {
+    host: playerScores.value.host,
+    opponent: playerScores.value.opponent + getWordScore(normalizedBotWord)
+  };
+
   playerTiles.value = {
     host: playerTiles.value.host,
     opponent: refillTiles(playerTiles.value.opponent, normalizedBotWord.split(''))
@@ -200,7 +215,7 @@ const scheduleBotLoop = () => {
   botLoopId = window.setTimeout(() => {
     submitBotWord();
     scheduleBotLoop();
-  }, 10400);
+  }, 4400);
 };
 scheduleBotLoop();
 
@@ -221,6 +236,11 @@ const submitSinglePlayerWord = (word) => {
   wordHistory.value = {
     host: [word, ...wordHistory.value.host].slice(0, 5),
     opponent: wordHistory.value.opponent
+  };
+
+  playerScores.value = {
+    host: playerScores.value.host + getWordScore(word),
+    opponent: playerScores.value.opponent
   };
 
   playerTiles.value = {
@@ -337,10 +357,16 @@ onBeforeUnmount(() => {
   }
 
   .panel-label,
+  .panel-score,
   .panel-subtitle,
   .local-message,
   .player-role {
     margin: 0;
+  }
+
+  .panel-score {
+    font-weight: 700;
+    color: #f1deb0;
   }
 
   .panel-label {

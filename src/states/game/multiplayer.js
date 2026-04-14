@@ -11,6 +11,10 @@ export const wordHistory = ref({
   host: [],
   opponent: []
 });
+export const playerScores = ref({
+  host: 0,
+  opponent: 0
+});
 export const playerTiles = ref({
   host: [],
   opponent: []
@@ -77,12 +81,14 @@ socket.on('startGame', (data) => {
   message.value = '';
   submittedWords.value = data.words;
   wordHistory.value = data.history;
+  playerScores.value = data.scores;
   playerTiles.value = data.tiles;
 });
 
 socket.on('wordSubmitted', (data) => {
   submittedWords.value = data.words;
   wordHistory.value = data.history;
+  playerScores.value = data.scores;
   playerTiles.value = data.tiles;
 });
 
@@ -103,6 +109,10 @@ export const resetGame = () => {
   wordHistory.value = {
     host: [],
     opponent: []
+  };
+  playerScores.value = {
+    host: 0,
+    opponent: 0
   };
   playerTiles.value = {
     host: [],
