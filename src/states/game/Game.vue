@@ -78,7 +78,10 @@
                 :key="`host-tile-${index}-${tile}`"
                 type="button"
                 class="tile"
-                :class="{ active: mySide === 'host' }"
+                :class="{
+                  active: mySide === 'host',
+                  'tile-in-use': mySide === 'host' && selectedTileIndexes.host.has(index)
+                }"
                 @click="handleTileClick(tile)"
               >
                 <span class="tile-score">{{ getLetterScore(tile) }}</span>
@@ -112,7 +115,10 @@
                 :key="`opponent-tile-${index}-${tile}`"
                 type="button"
                 class="tile opponent"
-                :class="{ active: mySide === 'opponent' }"
+                :class="{
+                  active: mySide === 'opponent',
+                  'tile-in-use': mySide === 'opponent' && selectedTileIndexes.opponent.has(index)
+                }"
                 @click="handleTileClick(tile)"
               >
                 <span class="tile-score">{{ getLetterScore(tile) }}</span>
@@ -297,6 +303,25 @@ const currentWordScore = computed(() => getWordScore(wordInput.value.trim().toUp
 const currentWordLength = computed(() => wordInput.value.trim().length);
 const currentLetterTotal = computed(() => getLetterTotal(wordInput.value.trim().toUpperCase()));
 const currentLengthBonus = computed(() => getLengthBonus(currentWordLength.value));
+const selectedTileIndexes = computed(() => {
+  const selected = {
+    host: new Set(),
+    opponent: new Set()
+  };
+  const normalizedWord = wordInput.value.trim().toUpperCase();
+  const side = mySide.value;
+  const tiles = [...(playerTiles.value[side] || [])];
+
+  for (const letter of normalizedWord) {
+    const tileIndex = tiles.findIndex((tile, index) => tile === letter && !selected[side].has(index));
+    if (tileIndex === -1) {
+      continue;
+    }
+    selected[side].add(tileIndex);
+  }
+
+  return selected;
+});
 const lengthBonusSteps = computed(() => ([
   { length: 5, bonus: getLengthBonus(5) },
   { length: 6, bonus: getLengthBonus(6) },
@@ -783,12 +808,41 @@ onBeforeUnmount(() => {
       0 14px 20px rgba(45, 10, 24, 0.24);
   }
 
+  .tile:focus-visible {
+    outline: 3px solid rgba(255, 202, 103, 0.85);
+    outline-offset: 2px;
+    transform: translateY(-2px);
+    box-shadow:
+      inset 0 -4px 0 rgba(0, 0, 0, 0.12),
+      0 0 0 4px rgba(92, 25, 41, 0.45),
+      0 14px 20px rgba(45, 10, 24, 0.24);
+  }
+
   .tile.active {
     outline: 3px solid rgba(255, 202, 103, 0.55);
   }
 
   .tile.opponent.active {
     outline-color: rgba(75, 199, 176, 0.5);
+  }
+
+  .tile.opponent:focus-visible {
+    outline-color: rgba(75, 199, 176, 0.85);
+  }
+
+  .tile-in-use {
+    background:
+      linear-gradient(180deg, #c8bdb0 0%, #a79887 70%, #857565 100%);
+    color: rgba(28, 25, 48, 0.78);
+    box-shadow:
+      inset 0 4px 10px rgba(38, 20, 12, 0.22),
+      inset 0 -2px 0 rgba(255, 255, 255, 0.18);
+    transform: translateY(2px) scale(0.98);
+  }
+
+  .tile-in-use:hover,
+  .tile-in-use:focus-visible {
+    transform: translateY(1px) scale(0.98);
   }
 
   .tile-letter {
