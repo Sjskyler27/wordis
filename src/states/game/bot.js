@@ -1,8 +1,6 @@
 import { DICTIONARY_WORDS } from './dictionary.js';
 
-console.log('bot in play');
 const canBuildWordFromTiles = (word, tiles) => {
-  console.log('can build: '+ DICTIONARY_WORDS)
   const availableTiles = [...tiles];
 
   for (const letter of word.toUpperCase()) {
@@ -18,8 +16,6 @@ const canBuildWordFromTiles = (word, tiles) => {
 };
 
 const buildFallbackWord = (tiles) => {
-  console.log('can build: '+ DICTIONARY_WORDS)
-
   const vowels = ['A', 'E', 'I', 'O', 'U'];
   const uniqueTiles = [...new Set(tiles)];
   const vowel = uniqueTiles.find((tile) => vowels.includes(tile));
@@ -41,8 +37,6 @@ const buildFallbackWord = (tiles) => {
 };
 
 export const getBotWord = (tiles = [], recentWords = []) => {
-  console.log('can build: '+ DICTIONARY_WORDS)
-
   const normalizedRecentWords = recentWords.map((word) => (word || '').toLowerCase());
   const unusedWords = DICTIONARY_WORDS.filter((word) => {
     return !normalizedRecentWords.includes(word) && canBuildWordFromTiles(word, tiles);

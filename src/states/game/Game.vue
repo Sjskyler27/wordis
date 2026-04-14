@@ -72,7 +72,7 @@
 </template>
 
 <script setup>
-import { computed, defineProps, onBeforeUnmount, onMounted, ref, watch } from 'vue';
+import { computed, defineProps, onBeforeUnmount, ref, watch } from 'vue';
 import {
   roomCode,
   isHost,
@@ -84,8 +84,6 @@ import {
   resetGame as resetMultiplayer
 } from './multiplayer.js';
 import { getBotWord } from './bot.js';
-console.log('tset')
-
 
 const props = defineProps({
   isMultiplayer: Boolean,
@@ -166,7 +164,6 @@ const playerRoleText = computed(() => {
 });
 
 const submitBotWord = () => {
-  console.log('sub bot ')
   ensureSinglePlayerState();
 
   const botWord = getBotWord(playerTiles.value.opponent, [
@@ -197,15 +194,15 @@ const submitBotWord = () => {
 };
 
 const scheduleBotLoop = () => {
-  console.log('lop')
   if (props.isMultiplayer) return;
+  window.clearTimeout(botLoopId);
 
   botLoopId = window.setTimeout(() => {
     submitBotWord();
     scheduleBotLoop();
   }, 10400);
 };
-  scheduleBotLoop();
+scheduleBotLoop();
 
 
 const stopBotLoop = () => {
@@ -268,11 +265,6 @@ const resetAndGoHome = () => {
   wordInput.value = '';
   emit('home');
 };
-
-onMounted(() => {
-  console.log('mounted')
-  scheduleBotLoop();
-});
 
 watch(() => props.isMultiplayer, (isMultiplayer) => {
   if (isMultiplayer) {
