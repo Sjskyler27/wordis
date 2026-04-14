@@ -339,8 +339,29 @@ const playerRoleText = computed(() => {
   return 'You and the bot are both constantly feeding the board with fresh tiles.';
 });
 
+const normalizeWordToAvailableTiles = (rawWord) => {
+  const availableTiles = [...myTiles.value];
+  let normalized = '';
+
+  for (const character of (rawWord || '').toUpperCase()) {
+    if (!/^[A-Z]$/.test(character)) {
+      continue;
+    }
+
+    const tileIndex = availableTiles.indexOf(character);
+    if (tileIndex === -1) {
+      continue;
+    }
+
+    normalized += character;
+    availableTiles.splice(tileIndex, 1);
+  }
+
+  return normalized;
+};
+
 const handleTileClick = (tile) => {
-  wordInput.value = `${wordInput.value}${tile}`;
+  wordInput.value = normalizeWordToAvailableTiles(`${wordInput.value}${tile}`);
 };
 
 const removeLastLetter = () => {
@@ -350,6 +371,13 @@ const removeLastLetter = () => {
 const clearWord = () => {
   wordInput.value = '';
 };
+
+watch([wordInput, myTiles], ([value]) => {
+  const normalized = normalizeWordToAvailableTiles(value);
+  if (normalized !== value) {
+    wordInput.value = normalized;
+  }
+});
 
 const submitBotWord = () => {
   ensureSinglePlayerState();
