@@ -70,12 +70,6 @@
               </button>
             </div>
 
-            <ul v-if="wordHistory.host.length" class="history-list">
-              <li v-for="(word, index) in wordHistory.host" :key="`host-${index}-${word}`">
-                <span>{{ word }}</span>
-                <strong>{{ getWordScore(word) }}</strong>
-              </li>
-            </ul>
           </section>
 
           <section class="lane opponent-lane">
@@ -109,12 +103,7 @@
               </button>
             </div>
 
-            <ul v-if="wordHistory.opponent.length" class="history-list">
-              <li v-for="(word, index) in wordHistory.opponent" :key="`opponent-${index}-${word}`">
-                <span>{{ word }}</span>
-                <strong>{{ getWordScore(word) }}</strong>
-              </li>
-            </ul>
+
           </section>
         </div>
 
@@ -898,28 +887,8 @@ onBeforeUnmount(() => {
     font-weight: 800;
   }
 
-  .history-list {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-  }
 
-  .history-list li {
-    padding: 12px 14px;
-    border-radius: 14px;
-    background: rgba(255, 255, 255, 0.06);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 12px;
-  }
 
-  .history-list strong {
-    color: var(--gold);
-  }
 
   .waiting-card {
     border-radius: 26px;
