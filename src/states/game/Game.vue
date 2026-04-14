@@ -72,7 +72,7 @@
 </template>
 
 <script setup>
-import { computed, defineProps, ref } from 'vue';
+import { computed, defineProps, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import {
   roomCode,
   isHost,
@@ -84,6 +84,8 @@ import {
   resetGame as resetMultiplayer
 } from './multiplayer.js';
 import { getBotWord } from './bot.js';
+console.log('tset')
+
 
 const props = defineProps({
   isMultiplayer: Boolean,
@@ -93,7 +95,8 @@ const emit = defineEmits(['home']);
 const wordInput = ref('');
 const localMessage = ref('');
 const LETTER_POOL = 'AAAAAAAAABBCCDDDDEEEEEEEEEEEEFFGGGHHIIIIIIIJKLLLLMMNNNNNNOOOOOOPPQRRRRRRSSSSTTTTTTUUUUVVWWXYYZ';
-const RACK_SIZE = 37;
+const RACK_SIZE = 22;
+let botLoopId = null;
 
 const drawLetter = () => LETTER_POOL[Math.floor(Math.random() * LETTER_POOL.length)];
 
@@ -159,8 +162,56 @@ const playerRoleText = computed(() => {
       : 'Real time play: build words from the Opponent tiles on the right.';
   }
 
-  return 'Build words from your Host tiles. The bot plays from its own tiles too.';
+  return 'Real time play: you and the bot both keep submitting from your own tile racks.';
 });
+
+const submitBotWord = () => {
+  console.log('sub bot ')
+  ensureSinglePlayerState();
+
+  const botWord = getBotWord(playerTiles.value.opponent, [
+    ...wordHistory.value.host,
+    ...wordHistory.value.opponent
+  ]);
+
+  if (!botWord) {
+    return;
+  }
+
+  const normalizedBotWord = botWord.toUpperCase();
+
+  submittedWords.value = {
+    host: submittedWords.value.host,
+    opponent: normalizedBotWord
+  };
+
+  wordHistory.value = {
+    host: wordHistory.value.host,
+    opponent: [normalizedBotWord, ...wordHistory.value.opponent].slice(0, 5)
+  };
+
+  playerTiles.value = {
+    host: playerTiles.value.host,
+    opponent: refillTiles(playerTiles.value.opponent, normalizedBotWord.split(''))
+  };
+};
+
+const scheduleBotLoop = () => {
+  console.log('lop')
+  if (props.isMultiplayer) return;
+
+  botLoopId = window.setTimeout(() => {
+    submitBotWord();
+    scheduleBotLoop();
+  }, 10400);
+};
+  scheduleBotLoop();
+
+
+const stopBotLoop = () => {
+  window.clearTimeout(botLoopId);
+  botLoopId = null;
+};
 
 const submitSinglePlayerWord = (word) => {
   ensureSinglePlayerState();
@@ -181,37 +232,6 @@ const submitSinglePlayerWord = (word) => {
   };
 
   localMessage.value = 'Your word was submitted.';
-
-  window.setTimeout(() => {
-    const botWord = getBotWord(playerTiles.value.opponent, [
-      ...wordHistory.value.host,
-      ...wordHistory.value.opponent
-    ]);
-
-    if (!botWord) {
-      localMessage.value = 'Your word was submitted. Bot could not form a word from its tiles.';
-      return;
-    }
-
-    const normalizedBotWord = botWord.toUpperCase();
-
-    submittedWords.value = {
-      host: submittedWords.value.host,
-      opponent: normalizedBotWord
-    };
-
-    wordHistory.value = {
-      host: wordHistory.value.host,
-      opponent: [normalizedBotWord, ...wordHistory.value.opponent].slice(0, 5)
-    };
-
-    playerTiles.value = {
-      host: playerTiles.value.host,
-      opponent: refillTiles(playerTiles.value.opponent, normalizedBotWord.split(''))
-    };
-
-    localMessage.value = `Bot replied with "${normalizedBotWord}".`;
-  }, 500);
 };
 
 const handleSubmit = () => {
@@ -242,11 +262,31 @@ const handleSubmit = () => {
 };
 
 const resetAndGoHome = () => {
+  stopBotLoop();
   resetMultiplayer();
   localMessage.value = '';
   wordInput.value = '';
   emit('home');
 };
+
+onMounted(() => {
+  console.log('mounted')
+  scheduleBotLoop();
+});
+
+watch(() => props.isMultiplayer, (isMultiplayer) => {
+  if (isMultiplayer) {
+    stopBotLoop();
+    return;
+  }
+
+  ensureSinglePlayerState();
+  scheduleBotLoop();
+});
+
+onBeforeUnmount(() => {
+  stopBotLoop();
+});
 </script>
 
 <style scoped>
