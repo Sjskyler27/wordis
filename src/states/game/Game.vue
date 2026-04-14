@@ -309,8 +309,10 @@ const selectedTileIds = computed(() => {
   };
 });
 const selectedTilesForCurrentSide = computed(() => {
-  const selectedIds = new Set(selectedTileSlots.value[mySide.value]);
-  return myTiles.value.filter((tile) => selectedIds.has(tile.id));
+  const tilesById = new Map(myTiles.value.map((tile) => [tile.id, tile]));
+  return selectedTileSlots.value[mySide.value]
+    .map((tileId) => tilesById.get(tileId))
+    .filter(Boolean);
 });
 const currentWordDisplay = computed(() => selectedTilesForCurrentSide.value.map((tile) => tile.letter).join(''));
 const currentWordLength = computed(() => selectedTilesForCurrentSide.value.length);
