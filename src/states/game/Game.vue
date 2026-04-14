@@ -1,106 +1,149 @@
 <template>
   <div id="background-layer"></div>
   <div class="game-container">
-    <h1>Tic-Tac-Toe</h1>
+    <h1>Word Game</h1>
     <div v-if="isMultiplayer">
-      <p>Room: {{ roomCode }} | {{ isHost ? 'Host (X)' : 'Player (O)' }}</p>
+      <p>Room: {{ roomCode }} | {{ isHost ? 'You are Host' : 'You are Opponent' }}</p>
       <div v-if="!gameStarted" class="waiting">
         Waiting for opponent...
       </div>
     </div>
     <div v-else>
-      <p>Playing vs Bot (You are X, Bot is O)</p>
+      <p>Playing vs Bot</p>
     </div>
 
-    <div v-if="isMultiplayer ? gameStarted : true" class="board">
-      <div v-for="(cell, index) in board" :key="index" class="cell" @click="handleMove(index)">
-        {{ cell }}
-      </div>
+    <div v-if="isMultiplayer ? gameStarted : true" class="arena">
+      <section class="player-panel">
+        <p class="panel-label">Host</p>
+        <h2>{{ submittedWords.host || 'Waiting for a word...' }}</h2>
+        <p class="panel-subtitle">Left side</p>
+        <ul v-if="wordHistory.host.length" class="history-list">
+          <li v-for="(word, index) in wordHistory.host" :key="`host-${index}-${word}`">
+            {{ word }}
+          </li>
+        </ul>
+      </section>
+
+      <div class="arena-divider">VS</div>
+
+      <section class="player-panel">
+        <p class="panel-label">Opponent</p>
+        <h2>{{ submittedWords.opponent || 'Waiting for a word...' }}</h2>
+        <p class="panel-subtitle">Right side</p>
+        <ul v-if="wordHistory.opponent.length" class="history-list">
+          <li v-for="(word, index) in wordHistory.opponent" :key="`opponent-${index}-${word}`">
+            {{ word }}
+          </li>
+        </ul>
+      </section>
     </div>
 
-    <p v-if="winner">Winner: {{ winner }}</p>
-    <p v-else-if="isBoardFull">Draw!</p>
-    <p v-else>Turn: {{ currentPlayer }}</p>
+    <form v-if="isMultiplayer ? gameStarted : true" class="word-form" @submit.prevent="handleSubmit">
+      <input
+        v-model="wordInput"
+        type="text"
+        maxlength="24"
+        placeholder="Type a word"
+        autocomplete="off"
+      />
+      <button type="submit">Submit Word</button>
+    </form>
+
+    <p v-if="localMessage" class="local-message">
+      {{ localMessage }}
+    </p>
+
+    <p v-if="isMultiplayer ? gameStarted : true" class="player-role">
+      {{ playerRoleText }}
+    </p>
 
     <button @click="resetAndGoHome">Back to Home</button>
   </div>
 </template>
 
 <script setup>
-import { defineProps, ref, computed, onMounted } from 'vue';
-import { 
-  roomCode, 
-  isHost, 
-  board, 
-  currentPlayer, 
-  winner, 
-  gameStarted, 
-  makeMove as multiplayerMakeMove,
+import { computed, defineProps, ref } from 'vue';
+import {
+  roomCode,
+  isHost,
+  submittedWords,
+  wordHistory,
+  gameStarted,
+  submitWord as submitMultiplayerWord,
   resetGame as resetMultiplayer
 } from './multiplayer.js';
-import { getBotMove } from './bot.js';
+import { getBotWord } from './bot.js';
 
-  const props = defineProps({
-   isMultiplayer:Boolean,
-  });
+const props = defineProps({
+  isMultiplayer: Boolean,
+});
 
 const emit = defineEmits(['home']);
-const isSingleplayer = computed(() => !props.isMultiplayer);
-const isBoardFull = computed(() => board.value.every(cell => cell !== ''));
+const wordInput = ref('');
+const localMessage = ref('');
 
-
-const handleMove = (index) => {
-  if (board.value[index] || winner.value) return;
-
+const playerRoleText = computed(() => {
   if (props.isMultiplayer) {
-    multiplayerMakeMove(index);
-  } else {
-    // Singleplayer mode
-    if (currentPlayer.value !== 'X') return;
-    
-    board.value[index] = 'X';
-    if (checkWinner(board.value) || isBoardFull.value) {
-      // Game over
-      return;
-    }
-    currentPlayer.value = 'O';
-
-    // Bot move
-    setTimeout(() => {
-      const botIndex = getBotMove(board.value);
-      if (botIndex !== -1) {
-        board.value[botIndex] = 'O';
-        winner.value = checkWinner(board.value);
-        if (!winner.value && !isBoardFull.value) {
-          currentPlayer.value = 'X';
-        }
-      }
-    }, 500);
+    return isHost.value ? 'You submit to the Host panel on the left.' : 'You submit to the Opponent panel on the right.';
   }
+
+  return 'You submit on the Host side. The bot replies on the Opponent side.';
+});
+
+const submitSinglePlayerWord = (word) => {
+  submittedWords.value = {
+    host: word,
+    opponent: submittedWords.value.opponent
+  };
+
+  wordHistory.value = {
+    host: [word, ...wordHistory.value.host].slice(0, 5),
+    opponent: wordHistory.value.opponent
+  };
+
+  localMessage.value = 'Your word was submitted.';
+
+  window.setTimeout(() => {
+    const botWord = getBotWord([
+      ...wordHistory.value.host,
+      ...wordHistory.value.opponent
+    ]);
+
+    submittedWords.value = {
+      host: submittedWords.value.host,
+      opponent: botWord
+    };
+
+    wordHistory.value = {
+      host: wordHistory.value.host,
+      opponent: [botWord, ...wordHistory.value.opponent].slice(0, 5)
+    };
+
+    localMessage.value = `Bot replied with "${botWord}".`;
+  }, 500);
 };
 
-const checkWinner = (boardState) => {
-  const lines = [
-    [0, 1, 2], [3, 4, 5], [6, 7, 8],
-    [0, 3, 6], [1, 4, 7], [2, 5, 8],
-    [0, 4, 8], [2, 4, 6]
-  ];
-  for (let line of lines) {
-    if (boardState[line[0]] && boardState[line[0]] === boardState[line[1]] && boardState[line[0]] === boardState[line[2]]) {
-      return boardState[line[0]];
-    }
+const handleSubmit = () => {
+  const normalizedWord = wordInput.value.trim();
+  if (!normalizedWord) {
+    localMessage.value = 'Enter a word first.';
+    return;
   }
-  return null;
+
+  if (props.isMultiplayer) {
+    submitMultiplayerWord(normalizedWord);
+    localMessage.value = 'Word sent to the room.';
+  } else {
+    submitSinglePlayerWord(normalizedWord);
+  }
+
+  wordInput.value = '';
 };
 
 const resetAndGoHome = () => {
-  if (props.isMultiplayer) {
-    resetMultiplayer();
-  } else {
-    board.value = Array(9).fill('');
-    currentPlayer.value = 'X';
-    winner.value = null;
-  }
+  resetMultiplayer();
+  localMessage.value = '';
+  wordInput.value = '';
   emit('home');
 };
 </script>
@@ -123,8 +166,10 @@ const resetAndGoHome = () => {
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    height: 100vh;
+    min-height: 100vh;
+    padding: 32px 20px;
     color: white;
+    text-align: center;
   }
 
   .waiting {
@@ -132,26 +177,84 @@ const resetAndGoHome = () => {
     margin: 20px 0;
   }
 
-  .board {
+  .arena {
     display: grid;
-    grid-template-columns: repeat(3, 100px);
-    grid-template-rows: repeat(3, 100px);
-    gap: 5px;
-    margin: 20px 0;
-  }
-
-  .cell {
-    display: flex;
+    grid-template-columns: minmax(0, 280px) auto minmax(0, 280px);
+    gap: 20px;
     align-items: center;
-    justify-content: center;
-    background: rgba(255, 255, 255, 0.1);
-    border: 2px solid white;
-    font-size: 2rem;
-    cursor: pointer;
+    margin: 24px 0;
+    width: min(100%, 900px);
   }
 
-  .cell:hover {
-    background: rgba(255, 255, 255, 0.2);
+  .player-panel {
+    min-height: 240px;
+    padding: 24px;
+    border: 2px solid rgba(255, 255, 255, 0.5);
+    background: rgba(10, 10, 10, 0.45);
+    border-radius: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .player-panel h2 {
+    margin: 0;
+    font-size: clamp(1.8rem, 4vw, 2.6rem);
+    word-break: break-word;
+  }
+
+  .panel-label,
+  .panel-subtitle,
+  .local-message,
+  .player-role {
+    margin: 0;
+  }
+
+  .panel-label {
+    font-size: 0.9rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    opacity: 0.8;
+  }
+
+  .panel-subtitle {
+    opacity: 0.7;
+  }
+
+  .arena-divider {
+    font-size: 1.6rem;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+  }
+
+  .history-list {
+    list-style: none;
+    padding: 0;
+    margin: 12px 0 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .history-list li {
+    padding: 10px 12px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.08);
+  }
+
+  .word-form {
+    display: flex;
+    gap: 12px;
+    width: min(100%, 520px);
+    margin-bottom: 14px;
+  }
+
+  .word-form input {
+    flex: 1;
+    padding: 12px 14px;
+    font-size: 1rem;
+    border-radius: 12px;
+    border: none;
   }
 
   button {
@@ -159,5 +262,23 @@ const resetAndGoHome = () => {
     font-size: 16px;
     cursor: pointer;
     margin-top: 20px;
+  }
+
+  .word-form button {
+    margin-top: 0;
+  }
+
+  @media (max-width: 800px) {
+    .arena {
+      grid-template-columns: 1fr;
+    }
+
+    .arena-divider {
+      display: none;
+    }
+
+    .word-form {
+      flex-direction: column;
+    }
   }
 </style>

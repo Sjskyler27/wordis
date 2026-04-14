@@ -16,9 +16,14 @@ const createGame = (roomCode, hostId) => {
   const state = {
     host: hostId,
     players: [hostId],
-    board: Array(9).fill(''),
-    currentPlayer: 'X',
-    winner: null
+    words: {
+      host: '',
+      opponent: ''
+    },
+    history: {
+      host: [],
+      opponent: []
+    }
   };
 
   games.set(roomCode, state);
@@ -38,31 +43,25 @@ const joinGame = (roomCode, clientId) => {
   return { success: true, state };
 };
 
-const makeMove = (roomCode, index, player) => {
+const submitWord = (roomCode, clientId, word) => {
   const state = games.get(roomCode);
   if (!state) {
     return { success: false, error: 'Room not found' };
   }
 
-  if (typeof index !== 'number' || index < 0 || index > 8) {
-    return { success: false, error: 'Invalid move index' };
+  const normalizedWord = (word || '').trim();
+  if (!normalizedWord) {
+    return { success: false, error: 'Word required' };
   }
 
-  if (state.winner) {
-    return { success: false, error: 'Game already finished' };
+  const side = clientId === state.host ? 'host' : 'opponent';
+  if (!state.players.includes(clientId)) {
+    return { success: false, error: 'Player not in room' };
   }
 
-  if (state.board[index]) {
-    return { success: false, error: 'Cell already taken' };
-  }
-
-  if (state.currentPlayer !== player) {
-    return { success: false, error: 'Not your turn' };
-  }
-
-  state.board[index] = player;
-  state.winner = checkWinner(state.board);
-  state.currentPlayer = player === 'X' ? 'O' : 'X';
+  state.words[side] = normalizedWord;
+  state.history[side].unshift(normalizedWord);
+  state.history[side] = state.history[side].slice(0, 5);
 
   return { success: true, state };
 };
@@ -77,32 +76,11 @@ const removePlayerFromGame = (roomCode, clientId) => {
   }
 };
 
-const checkWinner = (board) => {
-  const lines = [
-    [0, 1, 2],
-    [3, 4, 5],
-    [6, 7, 8],
-    [0, 3, 6],
-    [1, 4, 7],
-    [2, 5, 8],
-    [0, 4, 8],
-    [2, 4, 6]
-  ];
-
-  for (const [a, b, c] of lines) {
-    if (board[a] && board[a] === board[b] && board[a] === board[c]) {
-      return board[a];
-    }
-  }
-
-  return null;
-};
-
 module.exports = {
   games,
   generateRoomCode,
   createGame,
   joinGame,
-  makeMove,
+  submitWord,
   removePlayerFromGame
 };

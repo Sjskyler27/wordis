@@ -12,7 +12,7 @@ const {
   generateRoomCode,
   createGame,
   joinGame,
-  makeMove,
+  submitWord,
   removePlayerFromGame
 } = require('./hooks/game-hooks.cjs');
 
@@ -77,26 +77,25 @@ const handleJoinGame = (connection, clientId, data) => {
   console.log(`Client ${clientId} joined room ${requestedCode}`);
 };
 
-const handleMakeMove = (connection, clientId, data) => {
+const handleSubmitWord = (connection, clientId, data) => {
   const requestedCode = (data?.roomCode || '').toUpperCase();
-  const { index, player } = data || {};
+  const { word } = data || {};
   if (!requestedCode) {
     sendEvent(connection, 'joinError', 'Room code required');
     return;
   }
 
-  const { success, error, state } = makeMove(requestedCode, index, player);
+  const { success, error, state } = submitWord(requestedCode, clientId, word);
   if (!success) {
     sendEvent(connection, 'joinError', error);
     return;
   }
 
   broadcastToRoom(requestedCode, {
-    type: 'move',
+    type: 'wordSubmitted',
     data: {
-      board: state.board,
-      currentPlayer: state.currentPlayer,
-      winner: state.winner
+      words: state.words,
+      history: state.history
     }
   });
 };
@@ -114,8 +113,8 @@ const handleClientAction = (connection, clientId, action) => {
     case 'joinGame':
       handleJoinGame(connection, clientId, action.data);
       break;
-    case 'makeMove':
-      handleMakeMove(connection, clientId, action.data);
+    case 'submitWord':
+      handleSubmitWord(connection, clientId, action.data);
       break;
     default:
       sendEvent(connection, 'joinError', `Unknown action ${action.type}`);

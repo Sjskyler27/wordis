@@ -3,9 +3,14 @@ import socket from '../../websocket.js';
 
 export const roomCode = ref(null);
 export const isHost = ref(false);
-export const board = ref(Array(9).fill(''));
-export const currentPlayer = ref('X');
-export const winner = ref(null);
+export const submittedWords = ref({
+  host: '',
+  opponent: ''
+});
+export const wordHistory = ref({
+  host: [],
+  opponent: []
+});
 export const gameStarted = ref(false);
 export const message = ref('');
 export const isConnecting = ref(false);
@@ -57,9 +62,10 @@ socket.on('joinError', (error) => {
   isConnecting.value = false;
 });
 
-export const makeMove = (index) => {
-  if (!gameStarted.value || board.value[index] || winner.value || currentPlayer.value !== (isHost.value ? 'X' : 'O')) return;
-  socket.emit('makeMove', { roomCode: roomCode.value, index, player: isHost.value ? 'X' : 'O' });
+export const submitWord = (word) => {
+  const normalizedWord = (word || '').trim();
+  if (!gameStarted.value || !normalizedWord) return;
+  socket.emit('submitWord', { roomCode: roomCode.value, word: normalizedWord });
 };
 
 socket.on('startGame', () => {
@@ -67,10 +73,9 @@ socket.on('startGame', () => {
   message.value = '';
 });
 
-socket.on('move', (data) => {
-  board.value = data.board;
-  currentPlayer.value = data.currentPlayer;
-  winner.value = data.winner;
+socket.on('wordSubmitted', (data) => {
+  submittedWords.value = data.words;
+  wordHistory.value = data.history;
 });
 
 socket.onStatusChange((status) => {
@@ -83,9 +88,14 @@ socket.onStatusChange((status) => {
 export const resetGame = () => {
   roomCode.value = null;
   isHost.value = false;
-  board.value = Array(9).fill('');
-  currentPlayer.value = 'X';
-  winner.value = null;
+  submittedWords.value = {
+    host: '',
+    opponent: ''
+  };
+  wordHistory.value = {
+    host: [],
+    opponent: []
+  };
   gameStarted.value = false;
   message.value = '';
 };
