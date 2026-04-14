@@ -1,0 +1,28 @@
+# .gitignore
+node_modules
+.DS_Store
+.env
+.env.*
+userData.json
+.env
+
+# Build output
+dist/
+out/
+chatMonsters
+# Electron builder caches
+build/*.icns
+build/*.ico
+
+# Installer files
+*.dmg
+*.exe
+*.AppImage
+*.blockmap
+
+# Logs and temp files
+*.log
+# a folder for protected things
+protected
+agent-rules.md
+dist.zip

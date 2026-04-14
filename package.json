@@ -1,0 +1,117 @@
+{
+  "name": "TITLEHERE",
+  "productName": "TITLEHERE",
+  "private": true,
+  "version": "0.0.1",
+  "type": "module",
+  "main": "electron/main.cjs",
+  "build": {
+    "productName": "TITLEHERE",
+    "appId": "com.skykingstudios.TITLEHERE",
+    "extraFiles": [
+      {
+        "from": "electron/libsteam_api.dylib",
+        "to": "libsteam_api.dylib",
+        "filter": [
+          "**/*"
+        ]
+      },
+      {
+        "from": "steam_appid.txt",
+        "to": "steam_appid.txt",
+        "filter": [
+          "**/*"
+        ]
+      }
+    ],
+    "mac": {
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        }
+      ],
+      "icon": "build/icon.icns"
+    },
+    "dmg": {
+      "background": "build/app_background.png",
+      "icon": "build/icon.icns",
+      "iconSize": 100,
+      "contents": [
+        {
+          "x": 130,
+          "y": 220,
+          "type": "file"
+        },
+        {
+          "x": 500,
+          "y": 220,
+          "type": "link",
+          "path": "/Applications"
+        }
+      ],
+      "window": {
+        "width": 640,
+        "height": 400
+      }
+    },
+    "win": {
+      "icon": "build/icon.ico",
+      "extraFiles": [
+        {
+          "from": "electron/steam_api.dll",
+          "to": "steam_api.dll"
+        },
+        {
+          "from": "steam_appid.txt",
+          "to": "steam_appid.txt"
+        }
+      ]
+    },
+    "files": [
+      "dist",
+      "electron",
+      "build/icon.*",
+      "!protected/",
+      "!**/*.map",
+      "!**/*.log",
+      "!.git",
+      "!**/__tests__",
+      "!**/README.md",
+      "!**/*.psd"
+    ],
+    "directories": {
+      "buildResources": "build"
+    }
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "build:app": "vite build && electron-builder",
+    "preview": "vite preview",
+    "electron": "electron .",
+    "start": "concurrently \"vite\" \"npm:electron\"",
+    "server": "node index.cjs",
+    "size": "find . -type f -exec du -h {} + | sort -hr | head -n 30"
+  },
+  "dependencies": {
+    "firebase": "^11.4.0",
+    "sass": "^1.85.1",
+    "steamworks.js": "^0.4.0",
+    "vue": "^3.5.13",
+    "websocket": "^1.0.35"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^5.2.1",
+    "@vue/compiler-sfc": "^3.5.13",
+    "concurrently": "^9.1.2",
+    "electron": "^35.1.4",
+    "electron-builder": "^26.0.12",
+    "typescript": "^5.7.3",
+    "vite": "^6.1.0",
+    "vite-plugin-pwa": "^0.21.1"
+  }
+}
