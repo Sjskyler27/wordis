@@ -92,7 +92,7 @@ const createWindow = () => {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
       nodeIntegration: false,
-      partition: 'persist:TITLEHERE', // ✅ This ensures persistent storage
+      partition: 'persist:WORDIS', // ✅ This ensures persistent storage
       webSecurity: false,
     },
   });

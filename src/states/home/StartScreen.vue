@@ -19,13 +19,9 @@
       <div v-else class="header">
         <div class="title">
           <div>
-            <h1 class="shadow">TITLE</h1>
-            <h1 class="shimmer">TITLE</h1>
-            <h1 class="base">TITLE</h1>
-          </div>
-          <div><h1 class="shadow">HERE</h1>
-            <h1 class="shimmer">HERE</h1>
-            <h1 class="base">HERE</h1>
+            <h1 class="shadow">WORDIS</h1>
+            <h1 class="shimmer">WORDIS</h1>
+            <h1 class="base">WORDIS</h1>
           </div>
         </div>
         <h2>SUBTITLE</h2>
