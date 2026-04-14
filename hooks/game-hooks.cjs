@@ -5,10 +5,20 @@ const RACK_SIZE = 22;
 const LETTER_POOL = Object.entries(LETTER_CONFIG).flatMap(([letter, config]) =>
   Array.from({ length: config.count }, () => letter)
 );
+let nextTileId = 1;
 
 const drawLetter = () => LETTER_POOL[Math.floor(Math.random() * LETTER_POOL.length)];
 
-const createRack = () => Array.from({ length: RACK_SIZE }, drawLetter);
+const createTile = (letter = drawLetter()) => ({
+  id: `tile-${nextTileId++}`,
+  letter,
+  score: LETTER_CONFIG[letter]?.score || 0,
+  multiplier: 1,
+  locked: false,
+  status: 'normal'
+});
+
+const createRack = () => Array.from({ length: RACK_SIZE }, () => createTile());
 
 const getLengthBonus = (length) => {
   if (WORD_BONUSES[length]) {
@@ -30,33 +40,37 @@ const getWordScore = (word) => {
   return letterScore + getLengthBonus(word.length);
 };
 
-const canBuildWordFromTiles = (word, tiles) => {
-  const availableTiles = [...tiles];
+const getWordScoreFromTiles = (selectedTiles) => {
+  const letterScore = selectedTiles.reduce((total, tile) => {
+    return total + ((tile.score || 0) * (tile.multiplier || 1));
+  }, 0);
 
-  for (const letter of word) {
-    const tileIndex = availableTiles.indexOf(letter);
-    if (tileIndex === -1) {
-      return false;
-    }
-
-    availableTiles.splice(tileIndex, 1);
-  }
-
-  return true;
+  return letterScore + getLengthBonus(selectedTiles.length);
 };
 
-const refillRack = (tiles, usedLetters) => {
-  const remainingTiles = [...tiles];
-
-  for (const letter of usedLetters) {
-    const tileIndex = remainingTiles.indexOf(letter);
-    if (tileIndex !== -1) {
-      remainingTiles.splice(tileIndex, 1);
-    }
+const getSelectedTiles = (tiles, tileIds) => {
+  if (!Array.isArray(tileIds) || !tileIds.length) {
+    return [];
   }
 
+  const selectedTiles = [];
+  for (const tileId of tileIds) {
+    const tile = tiles.find((entry) => entry.id === tileId);
+    if (!tile) {
+      return null;
+    }
+    selectedTiles.push(tile);
+  }
+
+  return selectedTiles;
+};
+
+const refillRack = (tiles, usedTileIds) => {
+  const usedIds = new Set(usedTileIds);
+  const remainingTiles = tiles.filter((tile) => !usedIds.has(tile.id));
+
   while (remainingTiles.length < RACK_SIZE) {
-    remainingTiles.push(drawLetter());
+    remainingTiles.push(createTile());
   }
 
   return remainingTiles;
@@ -113,7 +127,7 @@ const joinGame = (roomCode, clientId) => {
   return { success: true, state };
 };
 
-const submitWord = (roomCode, clientId, word) => {
+const submitWord = (roomCode, clientId, word, tileIds) => {
   const state = games.get(roomCode);
   if (!state) {
     return { success: false, error: 'Room not found' };
@@ -133,15 +147,25 @@ const submitWord = (roomCode, clientId, word) => {
     return { success: false, error: 'Words must use letters only' };
   }
 
-  if (!canBuildWordFromTiles(normalizedWord, state.tiles[side])) {
-    return { success: false, error: 'Word must be built from your current tiles' };
+  const selectedTiles = getSelectedTiles(state.tiles[side], tileIds);
+  if (!selectedTiles || selectedTiles.length !== normalizedWord.length) {
+    return { success: false, error: 'Word must be built from your selected tiles' };
+  }
+
+  if (selectedTiles.some((tile) => tile.locked)) {
+    return { success: false, error: 'Locked tiles cannot be used' };
+  }
+
+  const selectedWord = selectedTiles.map((tile) => tile.letter).join('');
+  if (selectedWord !== normalizedWord) {
+    return { success: false, error: 'Selected tiles do not match the submitted word' };
   }
 
   state.words[side] = normalizedWord;
   state.history[side].unshift(normalizedWord);
   state.history[side] = state.history[side].slice(0, 5);
-  state.scores[side] += getWordScore(normalizedWord);
-  state.tiles[side] = refillRack(state.tiles[side], normalizedWord.split(''));
+  state.scores[side] += getWordScoreFromTiles(selectedTiles);
+  state.tiles[side] = refillRack(state.tiles[side], tileIds);
 
   return { success: true, state };
 };

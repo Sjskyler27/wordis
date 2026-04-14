@@ -2,27 +2,6 @@
   <div class="game-shell">
     <div id="background-layer"></div>
 
-    <header class="hud">
-      <div class="hud-chip">
-        <span class="hud-label">Mode</span>
-        <strong>{{ props.isMultiplayer ? 'Multiplayer Clash' : 'Solo Speed Run' }}</strong>
-      </div>
-
-      <div class="hud-center">
-        <h1>Wordis</h1>
-        <p v-if="props.isMultiplayer">
-          Room {{ roomCode }} · {{ isHost ? 'Host lane' : 'Opponent lane' }}
-        </p>
-        <p v-else>
-          Build fast words from your live rack
-        </p>
-      </div>
-
-      <div class="hud-chip score-chip">
-        <span class="hud-label">Rack</span>
-        <strong>{{ RACK_SIZE }} tiles</strong>
-      </div>
-    </header>
 
     <main class="board-frame">
       <aside class="side-stack">
@@ -75,17 +54,19 @@
             <div class="rack-grid">
               <button
                 v-for="(tile, index) in playerTiles.host"
-                :key="`host-tile-${index}-${tile}`"
+                :key="tile.id"
                 type="button"
                 class="tile"
                 :class="{
                   active: mySide === 'host',
-                  'tile-in-use': mySide === 'host' && selectedTileIndexes.host.has(index)
+                  'tile-in-use': mySide === 'host' && selectedTileIds.host.has(tile.id),
+                  'tile-locked': tile.locked,
+                  [`tile-status-${tile.status}`]: tile.status
                 }"
                 @click="handleTileClick(tile)"
               >
-                <span class="tile-score">{{ getLetterScore(tile) }}</span>
-                <span class="tile-letter">{{ tile }}</span>
+                <span class="tile-score">{{ tileScore(tile) }}</span>
+                <span class="tile-letter">{{ tile.letter }}</span>
               </button>
             </div>
 
@@ -112,17 +93,19 @@
             <div class="rack-grid">
               <button
                 v-for="(tile, index) in playerTiles.opponent"
-                :key="`opponent-tile-${index}-${tile}`"
+                :key="tile.id"
                 type="button"
                 class="tile opponent"
                 :class="{
                   active: mySide === 'opponent',
-                  'tile-in-use': mySide === 'opponent' && selectedTileIndexes.opponent.has(index)
+                  'tile-in-use': mySide === 'opponent' && selectedTileIds.opponent.has(tile.id),
+                  'tile-locked': tile.locked,
+                  [`tile-status-${tile.status}`]: tile.status
                 }"
                 @click="handleTileClick(tile)"
               >
-                <span class="tile-score">{{ getLetterScore(tile) }}</span>
-                <span class="tile-letter">{{ tile }}</span>
+                <span class="tile-score">{{ tileScore(tile) }}</span>
+                <span class="tile-letter">{{ tile.letter }}</span>
               </button>
             </div>
 
@@ -187,7 +170,6 @@
     </main>
 
     <footer class="bottom-bar">
-      <p>{{ props.isMultiplayer ? 'Shared server scoring is live' : 'Singleplayer scoring mirrors multiplayer rules' }}</p>
       <button class="back-button" @click="resetAndGoHome">Back to Home</button>
     </footer>
   </div>
@@ -217,17 +199,33 @@ const props = defineProps({
 const emit = defineEmits(['home']);
 const wordInput = ref('');
 const localMessage = ref('');
+const selectedTileSlots = ref({
+  host: [],
+  opponent: []
+});
+let syncingFromSelection = false;
 const LETTER_POOL = Object.entries(letterConfig).flatMap(([letter, config]) =>
   Array.from({ length: config.count }, () => letter)
 );
 const RACK_SIZE = 22;
 let botLoopId = null;
+let nextLocalTileId = 1;
 
 const drawLetter = () => LETTER_POOL[Math.floor(Math.random() * LETTER_POOL.length)];
 
-const createRack = () => Array.from({ length: RACK_SIZE }, drawLetter);
+const createTile = (letter = drawLetter()) => ({
+  id: `local-tile-${nextLocalTileId++}`,
+  letter,
+  score: letterConfig[letter]?.score || 0,
+  multiplier: 1,
+  locked: false,
+  status: 'normal'
+});
+
+const createRack = () => Array.from({ length: RACK_SIZE }, () => createTile());
 
 const getLetterScore = (letter) => letterConfig[letter]?.score || 0;
+const tileScore = (tile) => (tile?.score || 0) * (tile?.multiplier || 1);
 
 const getLengthBonus = (length) => {
   if (wordBonuses[length]) {
@@ -245,35 +243,34 @@ const getLetterTotal = (word) => word
   .split('')
   .reduce((total, letter) => total + getLetterScore(letter), 0);
 
+const getTilesScore = (tiles) => tiles.reduce((total, tile) => total + tileScore(tile), 0);
+
 const getWordScore = (word) => getLetterTotal(word) + getLengthBonus(word.length);
 
-const canBuildWordFromTiles = (word, tiles) => {
-  const availableTiles = [...tiles];
+const getTilesForWord = (tiles, word) => {
+  const selectedTiles = [];
 
-  for (const letter of word) {
-    const tileIndex = availableTiles.indexOf(letter);
-    if (tileIndex === -1) {
-      return false;
+  for (const character of (word || '').toUpperCase()) {
+    const tile = tiles.find((entry) => {
+      return entry.letter === character && !entry.locked && !selectedTiles.some((selected) => selected.id === entry.id);
+    });
+
+    if (!tile) {
+      return [];
     }
 
-    availableTiles.splice(tileIndex, 1);
+    selectedTiles.push(tile);
   }
 
-  return true;
+  return selectedTiles;
 };
 
-const refillTiles = (tiles, usedLetters) => {
-  const remainingTiles = [...tiles];
-
-  for (const letter of usedLetters) {
-    const tileIndex = remainingTiles.indexOf(letter);
-    if (tileIndex !== -1) {
-      remainingTiles.splice(tileIndex, 1);
-    }
-  }
+const refillTiles = (tiles, usedTileIds) => {
+  const usedIds = new Set(usedTileIds);
+  const remainingTiles = tiles.filter((tile) => !usedIds.has(tile.id));
 
   while (remainingTiles.length < RACK_SIZE) {
-    remainingTiles.push(drawLetter());
+    remainingTiles.push(createTile());
   }
 
   return remainingTiles;
@@ -299,29 +296,20 @@ const mySide = computed(() => {
 });
 
 const myTiles = computed(() => playerTiles.value[mySide.value] || []);
-const currentWordScore = computed(() => getWordScore(wordInput.value.trim().toUpperCase()));
 const currentWordLength = computed(() => wordInput.value.trim().length);
-const currentLetterTotal = computed(() => getLetterTotal(wordInput.value.trim().toUpperCase()));
 const currentLengthBonus = computed(() => getLengthBonus(currentWordLength.value));
-const selectedTileIndexes = computed(() => {
-  const selected = {
-    host: new Set(),
-    opponent: new Set()
+const selectedTileIds = computed(() => {
+  return {
+    host: new Set(selectedTileSlots.value.host),
+    opponent: new Set(selectedTileSlots.value.opponent)
   };
-  const normalizedWord = wordInput.value.trim().toUpperCase();
-  const side = mySide.value;
-  const tiles = [...(playerTiles.value[side] || [])];
-
-  for (const letter of normalizedWord) {
-    const tileIndex = tiles.findIndex((tile, index) => tile === letter && !selected[side].has(index));
-    if (tileIndex === -1) {
-      continue;
-    }
-    selected[side].add(tileIndex);
-  }
-
-  return selected;
 });
+const selectedTilesForCurrentSide = computed(() => {
+  const selectedIds = new Set(selectedTileSlots.value[mySide.value]);
+  return myTiles.value.filter((tile) => selectedIds.has(tile.id));
+});
+const currentLetterTotal = computed(() => getTilesScore(selectedTilesForCurrentSide.value));
+const currentWordScore = computed(() => currentLetterTotal.value + currentLengthBonus.value);
 const lengthBonusSteps = computed(() => ([
   { length: 5, bonus: getLengthBonus(5) },
   { length: 6, bonus: getLengthBonus(6) },
@@ -339,8 +327,9 @@ const playerRoleText = computed(() => {
   return 'You and the bot are both constantly feeding the board with fresh tiles.';
 });
 
-const normalizeWordToAvailableTiles = (rawWord) => {
-  const availableTiles = [...myTiles.value];
+const deriveSlotsFromWord = (rawWord, side) => {
+  const availableTiles = playerTiles.value[side] || [];
+  const selectedSlots = [];
   let normalized = '';
 
   for (const character of (rawWord || '').toUpperCase()) {
@@ -348,41 +337,84 @@ const normalizeWordToAvailableTiles = (rawWord) => {
       continue;
     }
 
-    const tileIndex = availableTiles.indexOf(character);
+    const tileIndex = availableTiles.findIndex((tile) => {
+      return tile.letter === character && !selectedSlots.includes(tile.id) && !tile.locked;
+    });
     if (tileIndex === -1) {
       continue;
     }
 
     normalized += character;
-    availableTiles.splice(tileIndex, 1);
+    selectedSlots.push(availableTiles[tileIndex].id);
   }
 
-  return normalized;
+  return { normalized, selectedSlots };
+};
+
+const syncWordFromSlots = () => {
+  const side = mySide.value;
+  const tiles = playerTiles.value[side] || [];
+  syncingFromSelection = true;
+  wordInput.value = selectedTileSlots.value[side]
+    .map((tileId) => tiles.find((tile) => tile.id === tileId)?.letter || '')
+    .join('');
+  syncingFromSelection = false;
 };
 
 const handleTileClick = (tile) => {
-  wordInput.value = normalizeWordToAvailableTiles(`${wordInput.value}${tile}`);
+  const side = mySide.value;
+  if (tile.locked || selectedTileSlots.value[side].includes(tile.id)) {
+    return;
+  }
+
+  selectedTileSlots.value = {
+    ...selectedTileSlots.value,
+    [side]: [...selectedTileSlots.value[side], tile.id]
+  };
+  syncWordFromSlots();
 };
 
 const removeLastLetter = () => {
-  wordInput.value = wordInput.value.slice(0, -1);
+  const side = mySide.value;
+  selectedTileSlots.value = {
+    ...selectedTileSlots.value,
+    [side]: selectedTileSlots.value[side].slice(0, -1)
+  };
+  syncWordFromSlots();
 };
 
 const clearWord = () => {
-  wordInput.value = '';
+  const side = mySide.value;
+  selectedTileSlots.value = {
+    ...selectedTileSlots.value,
+    [side]: []
+  };
+  syncWordFromSlots();
 };
 
-watch([wordInput, myTiles], ([value]) => {
-  const normalized = normalizeWordToAvailableTiles(value);
+watch([wordInput, myTiles, mySide], ([value, _tiles, side]) => {
+  if (syncingFromSelection) {
+    return;
+  }
+
+  const { normalized, selectedSlots } = deriveSlotsFromWord(value, side);
+  selectedTileSlots.value = {
+    ...selectedTileSlots.value,
+    [side]: selectedSlots
+  };
+
   if (normalized !== value) {
+    syncingFromSelection = true;
     wordInput.value = normalized;
+    syncingFromSelection = false;
   }
 });
 
 const submitBotWord = () => {
   ensureSinglePlayerState();
 
-  const botWord = getBotWord(playerTiles.value.opponent, [
+  const botTiles = playerTiles.value.opponent || [];
+  const botWord = getBotWord(botTiles, [
     ...wordHistory.value.host,
     ...wordHistory.value.opponent
   ]);
@@ -392,6 +424,10 @@ const submitBotWord = () => {
   }
 
   const normalizedBotWord = botWord.toUpperCase();
+  const selectedBotTiles = getTilesForWord(botTiles, normalizedBotWord);
+  if (!selectedBotTiles.length) {
+    return;
+  }
 
   submittedWords.value = {
     host: submittedWords.value.host,
@@ -405,12 +441,12 @@ const submitBotWord = () => {
 
   playerScores.value = {
     host: playerScores.value.host,
-    opponent: playerScores.value.opponent + getWordScore(normalizedBotWord)
+    opponent: playerScores.value.opponent + getTilesScore(selectedBotTiles) + getLengthBonus(normalizedBotWord.length)
   };
 
   playerTiles.value = {
     host: playerTiles.value.host,
-    opponent: refillTiles(playerTiles.value.opponent, normalizedBotWord.split(''))
+    opponent: refillTiles(botTiles, selectedBotTiles.map((tile) => tile.id))
   };
 };
 
@@ -432,6 +468,7 @@ const stopBotLoop = () => {
 
 const submitSinglePlayerWord = (word) => {
   ensureSinglePlayerState();
+  const selectedTiles = selectedTilesForCurrentSide.value;
 
   submittedWords.value = {
     host: word,
@@ -444,16 +481,21 @@ const submitSinglePlayerWord = (word) => {
   };
 
   playerScores.value = {
-    host: playerScores.value.host + getWordScore(word),
+    host: playerScores.value.host + getTilesScore(selectedTiles) + getLengthBonus(word.length),
     opponent: playerScores.value.opponent
   };
 
   playerTiles.value = {
-    host: refillTiles(playerTiles.value.host, word.split('')),
+    host: refillTiles(playerTiles.value.host, selectedTiles.map((tile) => tile.id)),
     opponent: playerTiles.value.opponent
   };
 
-  localMessage.value = `Submitted ${word} for ${getWordScore(word)} pts.`;
+  selectedTileSlots.value = {
+    ...selectedTileSlots.value,
+    host: []
+  };
+
+  localMessage.value = `Submitted ${word} for ${getTilesScore(selectedTiles) + getLengthBonus(word.length)} pts.`;
 };
 
 const handleSubmit = () => {
@@ -468,14 +510,22 @@ const handleSubmit = () => {
     return;
   }
 
-  if (!canBuildWordFromTiles(normalizedWord, myTiles.value)) {
+  const selectedTiles = selectedTilesForCurrentSide.value;
+  if (!selectedTiles.length || selectedTiles.map((tile) => tile.letter).join('') !== normalizedWord) {
     localMessage.value = 'That word cannot be made from your current tiles.';
     return;
   }
 
   if (props.isMultiplayer) {
-    submitMultiplayerWord(normalizedWord);
-    localMessage.value = `Sent ${normalizedWord} for ${getWordScore(normalizedWord)} pts.`;
+    submitMultiplayerWord({
+      word: normalizedWord,
+      tileIds: selectedTiles.map((tile) => tile.id)
+    });
+    localMessage.value = `Sent ${normalizedWord} for ${getTilesScore(selectedTiles) + getLengthBonus(normalizedWord.length)} pts.`;
+    selectedTileSlots.value = {
+      ...selectedTileSlots.value,
+      [mySide.value]: []
+    };
   } else {
     submitSinglePlayerWord(normalizedWord);
   }

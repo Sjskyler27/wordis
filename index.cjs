@@ -87,13 +87,13 @@ const handleJoinGame = (connection, clientId, data) => {
 
 const handleSubmitWord = (connection, clientId, data) => {
   const requestedCode = (data?.roomCode || '').toUpperCase();
-  const { word } = data || {};
+  const { word, tileIds } = data || {};
   if (!requestedCode) {
     sendEvent(connection, 'joinError', 'Room code required');
     return;
   }
 
-  const { success, error, state } = submitWord(requestedCode, clientId, word);
+  const { success, error, state } = submitWord(requestedCode, clientId, word, tileIds);
   if (!success) {
     sendEvent(connection, 'joinError', error);
     return;

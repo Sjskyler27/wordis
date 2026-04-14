@@ -70,10 +70,10 @@ socket.on('joinError', (error) => {
   isConnecting.value = false;
 });
 
-export const submitWord = (word) => {
+export const submitWord = ({ word, tileIds }) => {
   const normalizedWord = (word || '').trim();
-  if (!gameStarted.value || !normalizedWord) return;
-  socket.emit('submitWord', { roomCode: roomCode.value, word: normalizedWord });
+  if (!gameStarted.value || !normalizedWord || !Array.isArray(tileIds) || !tileIds.length) return;
+  socket.emit('submitWord', { roomCode: roomCode.value, word: normalizedWord, tileIds });
 };
 
 socket.on('startGame', (data) => {
