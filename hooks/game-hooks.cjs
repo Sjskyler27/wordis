@@ -1,5 +1,6 @@
 const games = new Map();
 const LETTER_CONFIG = require('../src/states/game/letters.json');
+const WORD_BONUSES = require('../src/states/game/word-bonuses.json');
 const RACK_SIZE = 22;
 const LETTER_POOL = Object.entries(LETTER_CONFIG).flatMap(([letter, config]) =>
   Array.from({ length: config.count }, () => letter)
@@ -9,9 +10,25 @@ const drawLetter = () => LETTER_POOL[Math.floor(Math.random() * LETTER_POOL.leng
 
 const createRack = () => Array.from({ length: RACK_SIZE }, drawLetter);
 
-const getWordScore = (word) => word
-  .split('')
-  .reduce((total, letter) => total + (LETTER_CONFIG[letter]?.score || 0), 0);
+const getLengthBonus = (length) => {
+  if (WORD_BONUSES[length]) {
+    return WORD_BONUSES[length];
+  }
+
+  if (length > 8) {
+    return WORD_BONUSES[8] + ((length - 8) * 5);
+  }
+
+  return 0;
+};
+
+const getWordScore = (word) => {
+  const letterScore = word
+    .split('')
+    .reduce((total, letter) => total + (LETTER_CONFIG[letter]?.score || 0), 0);
+
+  return letterScore + getLengthBonus(word.length);
+};
 
 const canBuildWordFromTiles = (word, tiles) => {
   const availableTiles = [...tiles];

@@ -135,6 +135,18 @@
         </div>
 
         <form v-if="isMultiplayer ? gameStarted : true" class="word-console" @submit.prevent="handleSubmit">
+          <div class="bonus-ladder">
+            <div
+              v-for="step in lengthBonusSteps"
+              :key="`bonus-${step.length}`"
+              class="bonus-step"
+              :class="{ active: currentWordLength >= step.length }"
+            >
+              <strong>+{{ step.bonus }}</strong>
+              <span>{{ step.length }} letters</span>
+            </div>
+          </div>
+
           <div class="word-input-shell">
             <span class="console-label">Build</span>
             <input
@@ -147,6 +159,12 @@
             <span class="console-score">{{ currentWordScore }} pts</span>
           </div>
 
+          <div class="builder-breakdown">
+            <span>Letters {{ currentLetterTotal }}</span>
+            <span>Length Bonus +{{ currentLengthBonus }}</span>
+            <span>Total {{ currentWordScore }}</span>
+          </div>
+
           <div class="console-actions">
             <button type="button" class="ghost-button" @click="removeLastLetter">
               Undo
@@ -155,7 +173,7 @@
               Clear
             </button>
             <button type="submit" class="submit-button">
-              Drop Word
+              Submit Word
             </button>
           </div>
         </form>
@@ -184,6 +202,7 @@ import {
 } from './multiplayer.js';
 import { getBotWord } from './bot.js';
 import letterConfig from './letters.json';
+import wordBonuses from './word-bonuses.json';
 
 const props = defineProps({
   isMultiplayer: Boolean,
@@ -204,9 +223,23 @@ const createRack = () => Array.from({ length: RACK_SIZE }, drawLetter);
 
 const getLetterScore = (letter) => letterConfig[letter]?.score || 0;
 
-const getWordScore = (word) => word
+const getLengthBonus = (length) => {
+  if (wordBonuses[length]) {
+    return wordBonuses[length];
+  }
+
+  if (length > 8) {
+    return wordBonuses[8] + ((length - 8) * 5);
+  }
+
+  return 0;
+};
+
+const getLetterTotal = (word) => word
   .split('')
   .reduce((total, letter) => total + getLetterScore(letter), 0);
+
+const getWordScore = (word) => getLetterTotal(word) + getLengthBonus(word.length);
 
 const canBuildWordFromTiles = (word, tiles) => {
   const availableTiles = [...tiles];
@@ -261,6 +294,15 @@ const mySide = computed(() => {
 
 const myTiles = computed(() => playerTiles.value[mySide.value] || []);
 const currentWordScore = computed(() => getWordScore(wordInput.value.trim().toUpperCase()));
+const currentWordLength = computed(() => wordInput.value.trim().length);
+const currentLetterTotal = computed(() => getLetterTotal(wordInput.value.trim().toUpperCase()));
+const currentLengthBonus = computed(() => getLengthBonus(currentWordLength.value));
+const lengthBonusSteps = computed(() => ([
+  { length: 5, bonus: getLengthBonus(5) },
+  { length: 6, bonus: getLengthBonus(6) },
+  { length: 7, bonus: getLengthBonus(7) },
+  { length: 8, bonus: getLengthBonus(8) }
+]));
 
 const playerRoleText = computed(() => {
   if (props.isMultiplayer) {
@@ -708,7 +750,7 @@ onBeforeUnmount(() => {
 
   .rack-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(62px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(94px, 1fr));
     gap: 10px;
   }
 
@@ -716,7 +758,8 @@ onBeforeUnmount(() => {
     appearance: none;
     border: none;
     cursor: pointer;
-    min-height: 74px;
+    min-height: 94px;
+    min-width: 94px;
     width: 100%;
     border-radius: 16px;
     background:
@@ -730,7 +773,7 @@ onBeforeUnmount(() => {
       inset 0 -4px 0 rgba(0, 0, 0, 0.12),
       0 10px 18px rgba(45, 10, 24, 0.16);
     transition: transform 140ms ease, box-shadow 140ms ease;
-    padding: 0;
+    padding: 15px;
   }
 
   .tile:hover {
@@ -813,6 +856,46 @@ onBeforeUnmount(() => {
     background: rgba(48, 12, 28, 0.8);
   }
 
+  .bonus-ladder {
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .bonus-step {
+    border-radius: 16px;
+    padding: 14px 10px;
+    text-align: center;
+    background: rgba(255, 255, 255, 0.07);
+    border: 2px solid rgba(255, 255, 255, 0.08);
+    color: rgba(247, 239, 225, 0.7);
+    transition: transform 140ms ease, background 140ms ease, color 140ms ease;
+  }
+
+  .bonus-step strong,
+  .bonus-step span {
+    display: block;
+  }
+
+  .bonus-step strong {
+    font-size: 1.15rem;
+  }
+
+  .bonus-step span {
+    margin-top: 6px;
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+  }
+
+  .bonus-step.active {
+    background: linear-gradient(180deg, rgba(255, 149, 91, 0.38), rgba(181, 79, 33, 0.72));
+    color: var(--cream);
+    transform: translateY(-2px);
+    border-color: rgba(255, 202, 103, 0.34);
+  }
+
   .word-input-shell {
     min-width: 0;
     flex: 1;
@@ -823,6 +906,22 @@ onBeforeUnmount(() => {
     padding: 10px 14px;
     border-radius: 18px;
     background: rgba(255, 255, 255, 0.08);
+  }
+
+  .builder-breakdown {
+    width: 100%;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .builder-breakdown span {
+    padding: 10px 12px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.08);
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
   }
 
   .console-label,
@@ -944,6 +1043,10 @@ onBeforeUnmount(() => {
     .word-console {
       flex-direction: column;
       align-items: stretch;
+    }
+
+    .bonus-ladder {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
     .word-input-shell {
