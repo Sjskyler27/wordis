@@ -411,7 +411,7 @@ onBeforeUnmount(() => {
 });
 </script>
 
-<style>
+<style scoped>
   body {
     background: #2a0719;
   }
