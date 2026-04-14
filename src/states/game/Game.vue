@@ -52,22 +52,25 @@
             </div>
 
             <div class="rack-grid">
-              <button
-                v-for="(tile, index) in playerTiles.host"
-                :key="tile.id"
-                type="button"
-                class="tile"
-                :class="{
-                  active: mySide === 'host',
-                  'tile-in-use': mySide === 'host' && selectedTileIds.host.has(tile.id),
-                  'tile-locked': tile.locked,
-                  [`tile-status-${tile.status}`]: tile.status
-                }"
-                @click="handleTileClick(tile)"
-              >
-                <span class="tile-score">{{ tileScore(tile) }}</span>
-                <span class="tile-letter">{{ tile.letter }}</span>
-              </button>
+              <div v-for="(tile, index) in playerTiles.host" :key="`host-slot-${index}`" class="rack-slot">
+                <Transition name="rack-tile" mode="out-in">
+                  <button
+                    :key="tile.id"
+                    type="button"
+                    class="tile"
+                    :class="{
+                      active: mySide === 'host',
+                      'tile-in-use': mySide === 'host' && selectedTileIds.host.has(tile.id),
+                      'tile-locked': tile.locked,
+                      [`tile-status-${tile.status}`]: tile.status
+                    }"
+                    @click="handleTileClick(tile)"
+                  >
+                    <span class="tile-score">{{ tileScore(tile) }}</span>
+                    <span class="tile-letter">{{ tile.letter }}</span>
+                  </button>
+                </Transition>
+              </div>
             </div>
 
           </section>
@@ -85,22 +88,25 @@
             </div>
 
             <div class="rack-grid">
-              <button
-                v-for="(tile, index) in playerTiles.opponent"
-                :key="tile.id"
-                type="button"
-                class="tile opponent"
-                :class="{
-                  active: mySide === 'opponent',
-                  'tile-in-use': mySide === 'opponent' && selectedTileIds.opponent.has(tile.id),
-                  'tile-locked': tile.locked,
-                  [`tile-status-${tile.status}`]: tile.status
-                }"
-                @click="handleTileClick(tile)"
-              >
-                <span class="tile-score">{{ tileScore(tile) }}</span>
-                <span class="tile-letter">{{ tile.letter }}</span>
-              </button>
+              <div v-for="(tile, index) in playerTiles.opponent" :key="`opponent-slot-${index}`" class="rack-slot">
+                <Transition name="rack-tile" mode="out-in">
+                  <button
+                    :key="tile.id"
+                    type="button"
+                    class="tile opponent"
+                    :class="{
+                      active: mySide === 'opponent',
+                      'tile-in-use': mySide === 'opponent' && selectedTileIds.opponent.has(tile.id),
+                      'tile-locked': tile.locked,
+                      [`tile-status-${tile.status}`]: tile.status
+                    }"
+                    @click="handleTileClick(tile)"
+                  >
+                    <span class="tile-score">{{ tileScore(tile) }}</span>
+                    <span class="tile-letter">{{ tile.letter }}</span>
+                  </button>
+                </Transition>
+              </div>
             </div>
 
 
@@ -126,22 +132,20 @@
           </div>
 
           <div class="word-input-shell">
-            <span class="console-label">Build</span>
-            <div class="built-word-strip" :class="{ empty: !selectedTilesForCurrentSide.length }">
+            <span class="console-label">Your Word</span>
+            <TransitionGroup name="built-tile" tag="div" class="built-word-strip" :class="{ empty: !selectedTilesForCurrentSide.length }">
               <button
-                v-for="tile in selectedTilesForCurrentSide"
+                v-for="(tile, index) in selectedTilesForCurrentSide"
                 :key="`built-${tile.id}`"
                 type="button"
                 class="built-tile"
+                :style="{ '--tile-stagger': `${index * 36}ms` }"
                 @click="removeSpecificTile(tile.id)"
               >
                 <span class="tile-score">{{ tileScore(tile) }}</span>
                 <span class="tile-letter">{{ tile.letter }}</span>
               </button>
-              <span v-if="!selectedTilesForCurrentSide.length" class="built-placeholder">
-                Pick tiles from your rack
-              </span>
-            </div>
+            </TransitionGroup>
             <span class="console-score">{{ currentWordScore }} pts</span>
           </div>
 
@@ -262,13 +266,7 @@ const getTilesForWord = (tiles, word) => {
 
 const refillTiles = (tiles, usedTileIds) => {
   const usedIds = new Set(usedTileIds);
-  const remainingTiles = tiles.filter((tile) => !usedIds.has(tile.id));
-
-  while (remainingTiles.length < RACK_SIZE) {
-    remainingTiles.push(createTile());
-  }
-
-  return remainingTiles;
+  return tiles.map((tile) => (usedIds.has(tile.id) ? createTile() : tile));
 };
 
 const ensureSinglePlayerState = () => {
@@ -807,6 +805,10 @@ onBeforeUnmount(() => {
     gap: 10px;
   }
 
+  .rack-slot {
+    min-height: 94px;
+  }
+
   .tile {
     appearance: none;
     border: none;
@@ -827,6 +829,7 @@ onBeforeUnmount(() => {
       0 10px 18px rgba(45, 10, 24, 0.16);
     transition: transform 140ms ease, box-shadow 140ms ease;
     padding: 15px;
+    will-change: transform, opacity;
   }
 
   .tile:hover {
@@ -885,6 +888,49 @@ onBeforeUnmount(() => {
     right: 10px;
     font-size: 0.95rem;
     font-weight: 800;
+  }
+
+  .built-tile-move {
+    transition: transform 260ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .rack-tile-enter-active {
+    animation: rackTileIn 180ms cubic-bezier(0.2, 0.9, 0.3, 1.05);
+    animation-fill-mode: both;
+  }
+
+  .rack-tile-leave-active {
+    animation: rackTileOut 140ms ease-in forwards;
+    pointer-events: none;
+  }
+
+  @keyframes rackTileIn {
+    0% {
+      opacity: 0;
+      transform: scale(0.88);
+      filter: brightness(1.08);
+    }
+    65% {
+      opacity: 1;
+      transform: scale(1.03);
+    }
+    100% {
+      opacity: 1;
+      transform: scale(1);
+      filter: none;
+    }
+  }
+
+  @keyframes rackTileOut {
+    0% {
+      opacity: 1;
+      transform: scale(1);
+    }
+    100% {
+      opacity: 0;
+      transform: scale(0.82);
+      filter: brightness(0.8);
+    }
   }
 
 
@@ -960,6 +1006,7 @@ onBeforeUnmount(() => {
 
   .word-input-shell {
     min-width: 0;
+    min-height: 110px;
     flex: 1;
     display: grid;
     grid-template-columns: auto 1fr auto;
@@ -1003,11 +1050,48 @@ onBeforeUnmount(() => {
     align-items: center;
     justify-content: center;
     padding: 0;
+    will-change: transform, opacity;
   }
 
   .built-tile:focus-visible {
     outline: 3px solid rgba(255, 202, 103, 0.85);
     outline-offset: 2px;
+  }
+
+  .built-tile-enter-active {
+    animation: builtTileIn 220ms cubic-bezier(0.2, 0.9, 0.3, 1.15);
+    animation-fill-mode: both;
+  }
+
+  .built-tile-leave-active {
+    animation: builtTileOut 180ms ease-in forwards;
+    pointer-events: none;
+  }
+
+  @keyframes builtTileIn {
+    0% {
+      opacity: 0;
+      transform: translateY(12px) scale(0.86);
+    }
+    70% {
+      opacity: 1;
+      transform: translateY(-2px) scale(1.04);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+
+  @keyframes builtTileOut {
+    0% {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+    100% {
+      opacity: 0;
+      transform: translateY(-10px) scale(0.84);
+    }
   }
 
   .builder-breakdown {

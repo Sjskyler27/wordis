@@ -67,13 +67,7 @@ const getSelectedTiles = (tiles, tileIds) => {
 
 const refillRack = (tiles, usedTileIds) => {
   const usedIds = new Set(usedTileIds);
-  const remainingTiles = tiles.filter((tile) => !usedIds.has(tile.id));
-
-  while (remainingTiles.length < RACK_SIZE) {
-    remainingTiles.push(createTile());
-  }
-
-  return remainingTiles;
+  return tiles.map((tile) => (usedIds.has(tile.id) ? createTile() : tile));
 };
 
 const generateRoomCode = () => {
