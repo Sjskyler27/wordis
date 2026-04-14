@@ -13,7 +13,7 @@
 
         <div class="bonus-card accent-gold">
           <span class="bonus-kicker">Current Build</span>
-          <strong>{{ wordInput || 'Type a word' }}</strong>
+          <strong>{{ currentWordDisplay || 'Pick tiles below' }}</strong>
           <p>{{ currentWordScore }} pts potential</p>
         </div>
 
@@ -138,13 +138,21 @@
 
           <div class="word-input-shell">
             <span class="console-label">Build</span>
-            <input
-              v-model="wordInput"
-              type="text"
-              maxlength="24"
-              placeholder="Type a word from your tiles"
-              autocomplete="off"
-            />
+            <div class="built-word-strip" :class="{ empty: !selectedTilesForCurrentSide.length }">
+              <button
+                v-for="tile in selectedTilesForCurrentSide"
+                :key="`built-${tile.id}`"
+                type="button"
+                class="built-tile"
+                @click="removeSpecificTile(tile.id)"
+              >
+                <span class="tile-score">{{ tileScore(tile) }}</span>
+                <span class="tile-letter">{{ tile.letter }}</span>
+              </button>
+              <span v-if="!selectedTilesForCurrentSide.length" class="built-placeholder">
+                Pick tiles from your rack
+              </span>
+            </div>
             <span class="console-score">{{ currentWordScore }} pts</span>
           </div>
 
@@ -197,13 +205,11 @@ const props = defineProps({
 });
 
 const emit = defineEmits(['home']);
-const wordInput = ref('');
 const localMessage = ref('');
 const selectedTileSlots = ref({
   host: [],
   opponent: []
 });
-let syncingFromSelection = false;
 const LETTER_POOL = Object.entries(letterConfig).flatMap(([letter, config]) =>
   Array.from({ length: config.count }, () => letter)
 );
@@ -296,8 +302,6 @@ const mySide = computed(() => {
 });
 
 const myTiles = computed(() => playerTiles.value[mySide.value] || []);
-const currentWordLength = computed(() => wordInput.value.trim().length);
-const currentLengthBonus = computed(() => getLengthBonus(currentWordLength.value));
 const selectedTileIds = computed(() => {
   return {
     host: new Set(selectedTileSlots.value.host),
@@ -308,6 +312,9 @@ const selectedTilesForCurrentSide = computed(() => {
   const selectedIds = new Set(selectedTileSlots.value[mySide.value]);
   return myTiles.value.filter((tile) => selectedIds.has(tile.id));
 });
+const currentWordDisplay = computed(() => selectedTilesForCurrentSide.value.map((tile) => tile.letter).join(''));
+const currentWordLength = computed(() => selectedTilesForCurrentSide.value.length);
+const currentLengthBonus = computed(() => getLengthBonus(currentWordLength.value));
 const currentLetterTotal = computed(() => getTilesScore(selectedTilesForCurrentSide.value));
 const currentWordScore = computed(() => currentLetterTotal.value + currentLengthBonus.value);
 const lengthBonusSteps = computed(() => ([
@@ -327,40 +334,6 @@ const playerRoleText = computed(() => {
   return 'You and the bot are both constantly feeding the board with fresh tiles.';
 });
 
-const deriveSlotsFromWord = (rawWord, side) => {
-  const availableTiles = playerTiles.value[side] || [];
-  const selectedSlots = [];
-  let normalized = '';
-
-  for (const character of (rawWord || '').toUpperCase()) {
-    if (!/^[A-Z]$/.test(character)) {
-      continue;
-    }
-
-    const tileIndex = availableTiles.findIndex((tile) => {
-      return tile.letter === character && !selectedSlots.includes(tile.id) && !tile.locked;
-    });
-    if (tileIndex === -1) {
-      continue;
-    }
-
-    normalized += character;
-    selectedSlots.push(availableTiles[tileIndex].id);
-  }
-
-  return { normalized, selectedSlots };
-};
-
-const syncWordFromSlots = () => {
-  const side = mySide.value;
-  const tiles = playerTiles.value[side] || [];
-  syncingFromSelection = true;
-  wordInput.value = selectedTileSlots.value[side]
-    .map((tileId) => tiles.find((tile) => tile.id === tileId)?.letter || '')
-    .join('');
-  syncingFromSelection = false;
-};
-
 const handleTileClick = (tile) => {
   const side = mySide.value;
   if (tile.locked || selectedTileSlots.value[side].includes(tile.id)) {
@@ -371,7 +344,6 @@ const handleTileClick = (tile) => {
     ...selectedTileSlots.value,
     [side]: [...selectedTileSlots.value[side], tile.id]
   };
-  syncWordFromSlots();
 };
 
 const removeLastLetter = () => {
@@ -380,7 +352,21 @@ const removeLastLetter = () => {
     ...selectedTileSlots.value,
     [side]: selectedTileSlots.value[side].slice(0, -1)
   };
-  syncWordFromSlots();
+};
+
+const removeSpecificTile = (tileId) => {
+  const side = mySide.value;
+  const nextSlots = [...selectedTileSlots.value[side]];
+  const index = nextSlots.indexOf(tileId);
+  if (index === -1) {
+    return;
+  }
+
+  nextSlots.splice(index, 1);
+  selectedTileSlots.value = {
+    ...selectedTileSlots.value,
+    [side]: nextSlots
+  };
 };
 
 const clearWord = () => {
@@ -389,26 +375,7 @@ const clearWord = () => {
     ...selectedTileSlots.value,
     [side]: []
   };
-  syncWordFromSlots();
 };
-
-watch([wordInput, myTiles, mySide], ([value, _tiles, side]) => {
-  if (syncingFromSelection) {
-    return;
-  }
-
-  const { normalized, selectedSlots } = deriveSlotsFromWord(value, side);
-  selectedTileSlots.value = {
-    ...selectedTileSlots.value,
-    [side]: selectedSlots
-  };
-
-  if (normalized !== value) {
-    syncingFromSelection = true;
-    wordInput.value = normalized;
-    syncingFromSelection = false;
-  }
-});
 
 const submitBotWord = () => {
   ensureSinglePlayerState();
@@ -499,14 +466,9 @@ const submitSinglePlayerWord = (word) => {
 };
 
 const handleSubmit = () => {
-  const normalizedWord = wordInput.value.trim().toUpperCase();
+  const normalizedWord = currentWordDisplay.value;
   if (!normalizedWord) {
-    localMessage.value = 'Enter a word first.';
-    return;
-  }
-
-  if (!/^[A-Z]+$/.test(normalizedWord)) {
-    localMessage.value = 'Use letters only.';
+    localMessage.value = 'Pick at least one tile first.';
     return;
   }
 
@@ -529,15 +491,12 @@ const handleSubmit = () => {
   } else {
     submitSinglePlayerWord(normalizedWord);
   }
-
-  wordInput.value = '';
 };
 
 const resetAndGoHome = () => {
   stopBotLoop();
   resetMultiplayer();
   localMessage.value = '';
-  wordInput.value = '';
   emit('home');
 };
 
@@ -1038,6 +997,46 @@ onBeforeUnmount(() => {
     padding: 10px 14px;
     border-radius: 18px;
     background: rgba(255, 255, 255, 0.08);
+  }
+
+  .built-word-strip {
+    min-height: 74px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+  }
+
+  .built-word-strip.empty {
+    color: rgba(254, 183, 59, 0.62);
+  }
+
+  .built-placeholder {
+    font-size: 0.95rem;
+    font-weight: 700;
+  }
+
+  .built-tile {
+    appearance: none;
+    border: none;
+    cursor: pointer;
+    min-height: 90px;
+    min-width: 90px;
+    border-radius: 14px;
+    position: relative;
+    background:
+      linear-gradient(180deg, #fffef8 0%, #f2ebe0 70%, #d9cec0 100%);
+    color: var(--ink);
+    box-shadow: inset 0 -3px 0 rgba(0, 0, 0, 0.16);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+  }
+
+  .built-tile:focus-visible {
+    outline: 3px solid rgba(255, 202, 103, 0.85);
+    outline-offset: 2px;
   }
 
   .builder-breakdown {
