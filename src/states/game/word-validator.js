@@ -19,18 +19,67 @@ const parseDictionary = (text) => {
   );
 };
 
-const LENGTH_DICTIONARIES = {
-  4: parseDictionary(dictionary4Text),
-  5: parseDictionary(dictionary5Text),
-  6: parseDictionary(dictionary6Text),
-  7: parseDictionary(dictionary7Text)
+const FALLBACK_DICTIONARIES = {
+  en: {
+    byLength: {
+      4: parseDictionary(dictionary4Text),
+      5: parseDictionary(dictionary5Text),
+      6: parseDictionary(dictionary6Text),
+      7: parseDictionary(dictionary7Text)
+    },
+    bot: parseDictionary(botDictionaryText)
+  }
 };
 
-const BOT_DICTIONARY = parseDictionary(botDictionaryText);
-
-const getFallbackDictionary = (word) => {
+const getFallbackDictionarySet = (word, languageCode) => {
   const normalizedWord = (word || '').trim().toLowerCase();
-  return LENGTH_DICTIONARIES[normalizedWord.length] || BOT_DICTIONARY;
+  const normalizedLanguageCode = normalizeLanguageCode(languageCode);
+  const fallbackDictionaries = FALLBACK_DICTIONARIES[normalizedLanguageCode];
+
+  if (!fallbackDictionaries) {
+    return null;
+  }
+
+  return fallbackDictionaries.byLength[normalizedWord.length] || fallbackDictionaries.bot;
+};
+
+const matchesWildcardWord = (candidateWord, wildcardWord) => {
+  if (candidateWord.length !== wildcardWord.length) {
+    return false;
+  }
+
+  for (let index = 0; index < wildcardWord.length; index += 1) {
+    const wildcardLetter = wildcardWord[index];
+    if (wildcardLetter !== '*' && wildcardLetter !== candidateWord[index]) {
+      return false;
+    }
+  }
+
+  return true;
+};
+
+const checkFallbackDictionary = (word, languageCode) => {
+  const normalizedWord = (word || '').trim().toLowerCase();
+  const fallbackDictionary = getFallbackDictionarySet(normalizedWord, languageCode);
+
+  if (!fallbackDictionary) {
+    return { valid: true, source: 'assumed' };
+  }
+
+  if (normalizedWord.includes('*')) {
+    for (const candidateWord of fallbackDictionary) {
+      if (matchesWildcardWord(candidateWord, normalizedWord)) {
+        return { valid: true, source: 'fallback-wildcard' };
+      }
+    }
+
+    return { valid: false, source: 'fallback-wildcard' };
+  }
+
+  return {
+    valid: fallbackDictionary.has(normalizedWord),
+    source: 'fallback'
+  };
 };
 
 const checkDictionaryApi = async (word, languageCode) => {
@@ -66,14 +115,14 @@ export const validateWord = async (word, languageCode = 'en') => {
     return { valid: false, source: 'empty' };
   }
 
+  if (normalizedWord.includes('*')) {
+    return checkFallbackDictionary(normalizedWord, languageCode);
+  }
+
   const apiResult = await checkDictionaryApi(normalizedWord, normalizeLanguageCode(languageCode));
   if (apiResult.valid !== null) {
     return apiResult;
   }
 
-  const fallbackDictionary = getFallbackDictionary(normalizedWord);
-  return {
-    valid: fallbackDictionary.has(normalizedWord),
-    source: 'fallback'
-  };
+  return checkFallbackDictionary(normalizedWord, languageCode);
 };

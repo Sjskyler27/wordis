@@ -190,7 +190,7 @@ const submitWord = async (roomCode, clientId, word, tileIds, languageCode = 'en'
     return { success: false, error: 'Player not in room' };
   }
 
-  if (!/^[A-Z]+$/.test(normalizedWord)) {
+  if (!/^[A-Z*]+$/.test(normalizedWord)) {
     return { success: false, error: 'Words must use letters only' };
   }
 
