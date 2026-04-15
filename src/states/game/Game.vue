@@ -490,7 +490,7 @@ body {
 .arena-shell {
   min-width: 0;
   max-width: 1250px;
-  max-height: 1000px%;
+  max-height: 1000px;
   border-radius: 34px;
   background: rgba(90, 23, 35, 0.72);
   border: 2px solid rgba(255, 255, 255, 0.12);
