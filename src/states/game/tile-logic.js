@@ -8,6 +8,9 @@ const {
   getTilesForWord,
   getRequiredTiles,
   isMissingRequiredTile,
+  getModifierBadge,
+  getModifierDefinition,
+  MODIFIER_DEFINITIONS,
   createTileLogic
 } = sharedTileLogic;
 
@@ -26,5 +29,8 @@ export {
   getWordScoreDetails,
   getTilesForWord,
   getRequiredTiles,
-  isMissingRequiredTile
+  isMissingRequiredTile,
+  getModifierBadge,
+  getModifierDefinition,
+  MODIFIER_DEFINITIONS
 };

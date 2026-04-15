@@ -24,7 +24,7 @@
           @click="$emit('remove-specific', tile.id)"
         >
           <span v-if="tile.status !== 'normal'" class="tile-modifier" :class="`tile-modifier-${tile.status}`">
-            {{ getModifierLabel(tile.status) }}
+            {{ getModifierBadge(tile.status) }}
           </span>
           <span class="tile-score">{{ tileScore(tile) }}</span>
           <span class="tile-letter">{{ tile.letter }}</span>
@@ -56,7 +56,7 @@
 </template>
 
 <script setup>
-import { tileScore } from '../tile-logic.js';
+import { getModifierBadge, tileScore } from '../tile-logic.js';
 
 defineProps({
   selectedTiles: {
@@ -94,22 +94,6 @@ defineProps({
 });
 
 defineEmits(['undo', 'clear', 'submit', 'remove-specific']);
-
-const getModifierLabel = (status) => {
-  if (status === 'gold') {
-    return 'x2';
-  }
-
-  if (status === 'firsttile') {
-    return '1st';
-  }
-
-  if (status === 'mustuse') {
-    return 'MUST';
-  }
-
-  return '0';
-};
 </script>
 
 <style scoped>

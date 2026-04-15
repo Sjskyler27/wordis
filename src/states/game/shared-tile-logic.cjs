@@ -12,6 +12,38 @@ const BASE_GOOD_MODIFIER_CHANCE = 0.05;
 const BASE_BAD_MODIFIER_CHANCE = 0.04;
 const MODIFIER_SWING_DIVISOR = 90;
 const MAX_MODIFIER_BONUS = 0.18;
+const GOOD_MODIFIERS = ['gold', 'firsttile'];
+const BAD_MODIFIERS = ['black', 'mustuse'];
+const MODIFIER_DEFINITIONS = {
+  normal: {
+    badge: '',
+    effects: {}
+  },
+  gold: {
+    badge: 'x2',
+    effects: {
+      wordMultiplier: 2
+    }
+  },
+  firsttile: {
+    badge: '1st',
+    effects: {
+      firstTileMultiplier: 2
+    }
+  },
+  black: {
+    badge: '0',
+    effects: {
+      zeroLetterScore: true
+    }
+  },
+  mustuse: {
+    badge: 'MUST',
+    effects: {
+      required: true
+    }
+  }
+};
 
 const getRackLetterCounts = (tiles = []) => tiles.reduce((counts, tile) => {
   if (!tile?.letter) {
@@ -79,11 +111,11 @@ const rollTileModifier = (side, scores = {}) => {
   const roll = Math.random();
 
   if (roll < goodChance) {
-    return Math.random() < 0.5 ? 'gold' : 'firsttile';
+    return GOOD_MODIFIERS[Math.floor(Math.random() * GOOD_MODIFIERS.length)];
   }
 
   if (roll < goodChance + badChance) {
-    return Math.random() < 0.5 ? 'black' : 'mustuse';
+    return BAD_MODIFIERS[Math.floor(Math.random() * BAD_MODIFIERS.length)];
   }
 
   return 'normal';
@@ -175,17 +207,25 @@ const isMissingRequiredTile = (rackTiles = [], selectedTiles = []) => {
   });
 };
 
+const getModifierDefinition = (status = 'normal') => {
+  return MODIFIER_DEFINITIONS[status] || MODIFIER_DEFINITIONS.normal;
+};
+
+const getModifierBadge = (status = 'normal') => getModifierDefinition(status).badge;
+
 const createTileLogic = ({ createTileId }) => {
   const createTile = (letter = drawLetter(), side = null, scores = {}) => {
     const status = rollTileModifier(side, scores);
+    const modifierDefinition = getModifierDefinition(status);
+    const baseScore = LETTER_CONFIG[letter]?.score || 0;
 
     return {
       id: createTileId(),
       letter,
-      score: status === 'black' ? 0 : LETTER_CONFIG[letter]?.score || 0,
-      multiplier: status === 'black' ? 0 : 1,
-      wordMultiplier: status === 'gold' ? 2 : 1,
-      firstTileMultiplier: status === 'firsttile' ? 2 : 1,
+      score: modifierDefinition.effects.zeroLetterScore ? 0 : baseScore,
+      multiplier: modifierDefinition.effects.zeroLetterScore ? 0 : 1,
+      wordMultiplier: modifierDefinition.effects.wordMultiplier || 1,
+      firstTileMultiplier: modifierDefinition.effects.firstTileMultiplier || 1,
       locked: false,
       status
     };
@@ -236,5 +276,8 @@ module.exports = {
   getSelectedTiles,
   getRequiredTiles,
   isMissingRequiredTile,
+  getModifierBadge,
+  getModifierDefinition,
+  MODIFIER_DEFINITIONS,
   createTileLogic
 };
