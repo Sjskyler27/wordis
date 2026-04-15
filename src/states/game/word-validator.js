@@ -2,6 +2,8 @@ import dictionary4Text from './english_dictionaries/4.txt?raw';
 import dictionary5Text from './english_dictionaries/5.txt?raw';
 import dictionary6Text from './english_dictionaries/6.txt?raw';
 import dictionary7Text from './english_dictionaries/7.txt?raw';
+import dictionary8Text from './english_dictionaries/8.txt?raw';
+import dictionary9Text from './english_dictionaries/9.txt?raw';
 import botDictionaryText from './english_dictionaries/bot_dictionary.txt?raw';
 
 const API_TIMEOUT_MS = 2500;
@@ -25,7 +27,9 @@ const FALLBACK_DICTIONARIES = {
       4: parseDictionary(dictionary4Text),
       5: parseDictionary(dictionary5Text),
       6: parseDictionary(dictionary6Text),
-      7: parseDictionary(dictionary7Text)
+      7: parseDictionary(dictionary7Text),
+      8: parseDictionary(dictionary8Text),
+      9: parseDictionary(dictionary9Text),
     },
     bot: parseDictionary(botDictionaryText)
   }

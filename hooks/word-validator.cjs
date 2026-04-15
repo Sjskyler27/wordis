@@ -26,7 +26,9 @@ const FALLBACK_DICTIONARIES = {
       4: parseDictionary('4.txt'),
       5: parseDictionary('5.txt'),
       6: parseDictionary('6.txt'),
-      7: parseDictionary('7.txt')
+      7: parseDictionary('7.txt'),
+      8: parseDictionary('8.txt'),
+      9: parseDictionary('9.txt'),
     },
     bot: parseDictionary('bot_dictionary.txt')
   }
