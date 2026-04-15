@@ -35,7 +35,7 @@
               @click="$emit('remove-specific', slot.tile.id)"
             >
               <span v-if="!getModifierUi(slot.tile.status).hideBadge && slot.tile.status !== 'normal'" class="tile-modifier" :style="getBadgeStyle(slot.tile)">
-                {{ getModifierBadge(slot.tile.status) }}
+                {{ getModifierBadge(slot.tile) }}
               </span>
               <span class="tile-score">{{ tileScore(slot.tile) }}</span>
               <span class="tile-letter">{{ slot.tile.letter }}</span>

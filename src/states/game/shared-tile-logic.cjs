@@ -63,7 +63,6 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses }) => {
       }
     },
     black: {
-      badge: '0',
       effects: { setScore: 0 },
       ui: {
         tileBackground: 'linear-gradient(180deg, #3b3343 0%, #211926 72%, #100b14 100%)',
@@ -87,7 +86,7 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses }) => {
       }
     },
     locked3: {
-      badge: 'LOCK',
+      badge: '',
       effects: { lockTurns: 3 },
       ui: {
         tileBackground: 'linear-gradient(180deg, #d9edff 0%, #8cb1d8 72%, #4f6999 100%)',
@@ -193,7 +192,17 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses }) => {
     return 'normal';
   };
 
-  const getModifierBadge = (status = 'normal') => getModifierDefinition(status).badge;
+  const getModifierBadge = (tileOrStatus = 'normal') => {
+    if (tileOrStatus && typeof tileOrStatus === 'object') {
+      if (tileOrStatus.locked) {
+        return `LCK ${tileOrStatus.lockTurns || 0}`;
+      }
+
+      return getModifierDefinition(tileOrStatus.status).badge;
+    }
+
+    return getModifierDefinition(tileOrStatus).badge;
+  };
   const getModifierUi = (status = 'normal') => getModifierDefinition(status).ui || MODIFIER_DEFINITIONS.normal.ui;
   const tileScore = (tile) => (tile?.score || 0) * (tile?.multiplier || 1);
 
@@ -279,10 +288,15 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses }) => {
     }
 
     const nextLockTurns = Math.max(0, (tile.lockTurns || 0) - 1);
+    console.log(tile.ui)
+    if(nextLockTurns === 0){
+      tile.ui = { ...MODIFIER_DEFINITIONS.normal.ui }
+    }
     return {
       ...tile,
       lockTurns: nextLockTurns,
-      locked: nextLockTurns > 0
+      locked: nextLockTurns > 0,
+
     };
   };
 

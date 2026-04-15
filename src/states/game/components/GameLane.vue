@@ -24,7 +24,7 @@
             @click="$emit('tile-click', tile)"
           >
             <span v-if="!getModifierUi(tile.status).hideBadge && tile.status !== 'normal'" class="tile-modifier" :style="getBadgeStyle(tile)">
-              {{ getModifierBadge(tile.status) }}
+              {{ getModifierBadge(tile) }}
             </span>
             <span class="tile-score">{{ tileScore(tile) }}</span>
             <span class="tile-letter">{{ tile.letter }}</span>
