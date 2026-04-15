@@ -2,39 +2,21 @@
   <div class="game-shell">
     <div id="background-layer"></div>
 
-    <header class="hud">
-      <div class="hud-chip">
-        <span class="hud-label">Mode</span>
-        <strong>{{ props.isMultiplayer ? 'Multiplayer Clash' : 'Solo Speed Run' }}</strong>
-      </div>
-
-      <div class="hud-center">
-        <h1>Wordis</h1>
-        <p v-if="props.isMultiplayer">
-          Room {{ roomCode }} · {{ isHost ? 'Host lane' : 'Opponent lane' }}
-        </p>
-        <p v-else>
-          Build fast words from your live rack
-        </p>
-      </div>
-
-      <div class="hud-chip score-chip">
-        <span class="hud-label">Rack</span>
-        <strong>{{ RACK_SIZE }} tiles</strong>
-      </div>
-    </header>
 
     <main class="board-frame">
       <aside class="side-stack">
         <div class="bonus-card accent-blue">
           <span class="bonus-kicker">Tempo</span>
           <strong>{{ props.isMultiplayer ? 'Real Time Duel' : 'Bot Pressure' }}</strong>
+           <p v-if="props.isMultiplayer">
+          Room {{ roomCode }} · {{ isHost ? 'Host lane' : 'Opponent lane' }}
+        </p>
           <p>{{ playerRoleText }}</p>
         </div>
 
         <div class="bonus-card accent-gold">
           <span class="bonus-kicker">Current Build</span>
-          <strong>{{ wordInput || 'Type a word' }}</strong>
+          <strong>{{ currentWordDisplay || 'Pick tiles below' }}</strong>
           <p>{{ currentWordScore }} pts potential</p>
         </div>
 
@@ -73,25 +55,30 @@
             </div>
 
             <div class="rack-grid">
-              <button
-                v-for="(tile, index) in playerTiles.host"
-                :key="`host-tile-${index}-${tile}`"
-                type="button"
-                class="tile"
-                :class="{ active: mySide === 'host' }"
-                @click="handleTileClick(tile)"
-              >
-                <span class="tile-score">{{ getLetterScore(tile) }}</span>
-                <span class="tile-letter">{{ tile }}</span>
-              </button>
+              <div v-for="(tile, index) in playerTiles.host" :key="`host-slot-${index}`" class="rack-slot">
+                <Transition name="rack-tile" mode="out-in">
+                  <button
+                    :key="tile.id"
+                    type="button"
+                    class="tile"
+                    :class="{
+                      active: mySide === 'host',
+                      'tile-in-use': mySide === 'host' && selectedTileIds.host.has(tile.id),
+                      'tile-locked': tile.locked,
+                      [`tile-status-${tile.status}`]: tile.status
+                    }"
+                    @click="handleTileClick(tile)"
+                  >
+                    <span v-if="tile.status !== 'normal'" class="tile-modifier" :class="`tile-modifier-${tile.status}`">
+                      {{ tile.status === 'gold' ? 'x2' : '0' }}
+                    </span>
+                    <span class="tile-score">{{ tileScore(tile) }}</span>
+                    <span class="tile-letter">{{ tile.letter }}</span>
+                  </button>
+                </Transition>
+              </div>
             </div>
 
-            <ul v-if="wordHistory.host.length" class="history-list">
-              <li v-for="(word, index) in wordHistory.host" :key="`host-${index}-${word}`">
-                <span>{{ word }}</span>
-                <strong>{{ getWordScore(word) }}</strong>
-              </li>
-            </ul>
           </section>
 
           <section class="lane opponent-lane">
@@ -107,25 +94,31 @@
             </div>
 
             <div class="rack-grid">
-              <button
-                v-for="(tile, index) in playerTiles.opponent"
-                :key="`opponent-tile-${index}-${tile}`"
-                type="button"
-                class="tile opponent"
-                :class="{ active: mySide === 'opponent' }"
-                @click="handleTileClick(tile)"
-              >
-                <span class="tile-score">{{ getLetterScore(tile) }}</span>
-                <span class="tile-letter">{{ tile }}</span>
-              </button>
+              <div v-for="(tile, index) in playerTiles.opponent" :key="`opponent-slot-${index}`" class="rack-slot">
+                <Transition name="rack-tile" mode="out-in">
+                  <button
+                    :key="tile.id"
+                    type="button"
+                    class="tile opponent"
+                    :class="{
+                      active: mySide === 'opponent',
+                      'tile-in-use': mySide === 'opponent' && selectedTileIds.opponent.has(tile.id),
+                      'tile-locked': tile.locked,
+                      [`tile-status-${tile.status}`]: tile.status
+                    }"
+                    @click="handleTileClick(tile)"
+                  >
+                    <span v-if="tile.status !== 'normal'" class="tile-modifier" :class="`tile-modifier-${tile.status}`">
+                      {{ tile.status === 'gold' ? 'x2' : '0' }}
+                    </span>
+                    <span class="tile-score">{{ tileScore(tile) }}</span>
+                    <span class="tile-letter">{{ tile.letter }}</span>
+                  </button>
+                </Transition>
+              </div>
             </div>
 
-            <ul v-if="wordHistory.opponent.length" class="history-list">
-              <li v-for="(word, index) in wordHistory.opponent" :key="`opponent-${index}-${word}`">
-                <span>{{ word }}</span>
-                <strong>{{ getWordScore(word) }}</strong>
-              </li>
-            </ul>
+
           </section>
         </div>
 
@@ -148,20 +141,31 @@
           </div>
 
           <div class="word-input-shell">
-            <span class="console-label">Build</span>
-            <input
-              v-model="wordInput"
-              type="text"
-              maxlength="24"
-              placeholder="Type a word from your tiles"
-              autocomplete="off"
-            />
+            <span class="console-label">Your Word</span>
+            <TransitionGroup name="built-tile" tag="div" class="built-word-strip" :class="{ empty: !selectedTilesForCurrentSide.length }">
+              <button
+                v-for="(tile, index) in selectedTilesForCurrentSide"
+                :key="`built-${tile.id}`"
+                type="button"
+                class="built-tile"
+                :class="[`tile-status-${tile.status}`]"
+                :style="{ '--tile-stagger': `${index * 36}ms` }"
+                @click="removeSpecificTile(tile.id)"
+              >
+                <span v-if="tile.status !== 'normal'" class="tile-modifier" :class="`tile-modifier-${tile.status}`">
+                  {{ tile.status === 'gold' ? 'x2' : '0' }}
+                </span>
+                <span class="tile-score">{{ tileScore(tile) }}</span>
+                <span class="tile-letter">{{ tile.letter }}</span>
+              </button>
+            </TransitionGroup>
             <span class="console-score">{{ currentWordScore }} pts</span>
           </div>
 
           <div class="builder-breakdown">
             <span>Letters {{ currentLetterTotal }}</span>
             <span>Length Bonus +{{ currentLengthBonus }}</span>
+            <span v-if="currentWordMultiplier > 1">Gold x{{ currentWordMultiplier }}</span>
             <span>Total {{ currentWordScore }}</span>
           </div>
 
@@ -181,7 +185,6 @@
     </main>
 
     <footer class="bottom-bar">
-      <p>{{ props.isMultiplayer ? 'Shared server scoring is live' : 'Singleplayer scoring mirrors multiplayer rules' }}</p>
       <button class="back-button" @click="resetAndGoHome">Back to Home</button>
     </footer>
   </div>
@@ -209,19 +212,124 @@ const props = defineProps({
 });
 
 const emit = defineEmits(['home']);
-const wordInput = ref('');
 const localMessage = ref('');
+const selectedTileSlots = ref({
+  host: [],
+  opponent: []
+});
 const LETTER_POOL = Object.entries(letterConfig).flatMap(([letter, config]) =>
   Array.from({ length: config.count }, () => letter)
 );
 const RACK_SIZE = 22;
+const DUPLICATE_PENALTY = 0.38;
+const MIN_DUPLICATE_WEIGHT = 0.18;
+const BASE_GOOD_MODIFIER_CHANCE = 0.05;
+const BASE_BAD_MODIFIER_CHANCE = 0.04;
+const MODIFIER_SWING_DIVISOR = 90;
+const MAX_MODIFIER_BONUS = 0.18;
 let botLoopId = null;
+let nextLocalTileId = 1;
 
-const drawLetter = () => LETTER_POOL[Math.floor(Math.random() * LETTER_POOL.length)];
+const getRackLetterCounts = (tiles = []) => tiles.reduce((counts, tile) => {
+  if (!tile?.letter) {
+    return counts;
+  }
 
-const createRack = () => Array.from({ length: RACK_SIZE }, drawLetter);
+  counts[tile.letter] = (counts[tile.letter] || 0) + 1;
+  return counts;
+}, {});
+
+const getWeightedLetterPool = (tiles = []) => {
+  const rackCounts = getRackLetterCounts(tiles);
+
+  return LETTER_POOL.map((letter) => {
+    const duplicateCount = rackCounts[letter] || 0;
+    const weight = Math.max(MIN_DUPLICATE_WEIGHT, 1 - (duplicateCount * DUPLICATE_PENALTY));
+
+    return {
+      letter,
+      weight
+    };
+  });
+};
+
+const drawLetter = (tiles = []) => {
+  const weightedPool = getWeightedLetterPool(tiles);
+  const totalWeight = weightedPool.reduce((sum, entry) => sum + entry.weight, 0);
+
+  if (!totalWeight) {
+    return LETTER_POOL[Math.floor(Math.random() * LETTER_POOL.length)];
+  }
+
+  let roll = Math.random() * totalWeight;
+  for (const entry of weightedPool) {
+    roll -= entry.weight;
+    if (roll <= 0) {
+      return entry.letter;
+    }
+  }
+
+  return weightedPool[weightedPool.length - 1]?.letter || 'E';
+};
+
+const getModifierChances = (side, scores = {}) => {
+  if (!side) {
+    return {
+      goodChance: BASE_GOOD_MODIFIER_CHANCE,
+      badChance: BASE_BAD_MODIFIER_CHANCE
+    };
+  }
+
+  const opponentSide = side === 'host' ? 'opponent' : 'host';
+  const scoreDelta = (scores[side] || 0) - (scores[opponentSide] || 0);
+  const catchupBonus = Math.min(MAX_MODIFIER_BONUS, Math.max(0, -scoreDelta) / MODIFIER_SWING_DIVISOR);
+  const pressureBonus = Math.min(MAX_MODIFIER_BONUS, Math.max(0, scoreDelta) / MODIFIER_SWING_DIVISOR);
+
+  return {
+    goodChance: Math.min(0.45, BASE_GOOD_MODIFIER_CHANCE + catchupBonus),
+    badChance: Math.min(0.4, BASE_BAD_MODIFIER_CHANCE + pressureBonus)
+  };
+};
+
+const rollTileModifier = (side, scores = {}) => {
+  const { goodChance, badChance } = getModifierChances(side, scores);
+  const roll = Math.random();
+
+  if (roll < goodChance) {
+    return 'gold';
+  }
+
+  if (roll < goodChance + badChance) {
+    return 'black';
+  }
+
+  return 'normal';
+};
+
+const createTile = (letter = drawLetter(), side = null, scores = {}) => {
+  const status = rollTileModifier(side, scores);
+
+  return {
+    id: `local-tile-${nextLocalTileId++}`,
+    letter,
+    score: status === 'black' ? 0 : letterConfig[letter]?.score || 0,
+    multiplier: status === 'black' ? 0 : 1,
+    wordMultiplier: status === 'gold' ? 2 : 1,
+    locked: false,
+    status
+  };
+};
+
+const createRack = (side = null, scores = {}) => {
+  const rack = [];
+  while (rack.length < RACK_SIZE) {
+    rack.push(createTile(drawLetter(rack), side, scores));
+  }
+  return rack;
+};
 
 const getLetterScore = (letter) => letterConfig[letter]?.score || 0;
+const tileScore = (tile) => (tile?.score || 0) * (tile?.multiplier || 1);
 
 const getLengthBonus = (length) => {
   if (wordBonuses[length]) {
@@ -239,45 +347,65 @@ const getLetterTotal = (word) => word
   .split('')
   .reduce((total, letter) => total + getLetterScore(letter), 0);
 
-const getWordScore = (word) => getLetterTotal(word) + getLengthBonus(word.length);
+const getTilesScore = (tiles) => tiles.reduce((total, tile) => total + tileScore(tile), 0);
+const getWordMultiplier = (tiles) => tiles.reduce((total, tile) => total * (tile?.wordMultiplier || 1), 1);
+const getWordScoreDetails = (tiles) => {
+  const letterTotal = getTilesScore(tiles);
+  const lengthBonus = getLengthBonus(tiles.length);
+  const wordMultiplier = getWordMultiplier(tiles);
 
-const canBuildWordFromTiles = (word, tiles) => {
-  const availableTiles = [...tiles];
-
-  for (const letter of word) {
-    const tileIndex = availableTiles.indexOf(letter);
-    if (tileIndex === -1) {
-      return false;
-    }
-
-    availableTiles.splice(tileIndex, 1);
-  }
-
-  return true;
+  return {
+    letterTotal,
+    lengthBonus,
+    wordMultiplier,
+    total: (letterTotal + lengthBonus) * wordMultiplier
+  };
 };
 
-const refillTiles = (tiles, usedLetters) => {
-  const remainingTiles = [...tiles];
+const getWordScore = (word) => getLetterTotal(word) + getLengthBonus(word.length);
 
-  for (const letter of usedLetters) {
-    const tileIndex = remainingTiles.indexOf(letter);
-    if (tileIndex !== -1) {
-      remainingTiles.splice(tileIndex, 1);
+const getTilesForWord = (tiles, word) => {
+  const selectedTiles = [];
+
+  for (const character of (word || '').toUpperCase()) {
+    const tile = tiles.find((entry) => {
+      return entry.letter === character && !entry.locked && !selectedTiles.some((selected) => selected.id === entry.id);
+    });
+
+    if (!tile) {
+      return [];
     }
+
+    selectedTiles.push(tile);
   }
 
-  while (remainingTiles.length < RACK_SIZE) {
-    remainingTiles.push(drawLetter());
-  }
+  return selectedTiles;
+};
 
-  return remainingTiles;
+const refillTiles = (tiles, usedTileIds, side = null, scores = {}) => {
+  const usedIds = new Set(usedTileIds);
+  const nextTiles = [...tiles];
+
+  nextTiles.forEach((tile, index) => {
+    if (!usedIds.has(tile.id)) {
+      return;
+    }
+
+    const remainingTiles = nextTiles.filter((entry, entryIndex) => {
+      return entryIndex !== index && !usedIds.has(entry.id);
+    });
+
+    nextTiles[index] = createTile(drawLetter(remainingTiles), side, scores);
+  });
+
+  return nextTiles;
 };
 
 const ensureSinglePlayerState = () => {
   if (!playerTiles.value.host.length && !playerTiles.value.opponent.length) {
     playerTiles.value = {
-      host: createRack(),
-      opponent: createRack()
+      host: createRack('host', playerScores.value),
+      opponent: createRack('opponent', playerScores.value)
     };
   }
 };
@@ -293,10 +421,25 @@ const mySide = computed(() => {
 });
 
 const myTiles = computed(() => playerTiles.value[mySide.value] || []);
-const currentWordScore = computed(() => getWordScore(wordInput.value.trim().toUpperCase()));
-const currentWordLength = computed(() => wordInput.value.trim().length);
-const currentLetterTotal = computed(() => getLetterTotal(wordInput.value.trim().toUpperCase()));
-const currentLengthBonus = computed(() => getLengthBonus(currentWordLength.value));
+const selectedTileIds = computed(() => {
+  return {
+    host: new Set(selectedTileSlots.value.host),
+    opponent: new Set(selectedTileSlots.value.opponent)
+  };
+});
+const selectedTilesForCurrentSide = computed(() => {
+  const tilesById = new Map(myTiles.value.map((tile) => [tile.id, tile]));
+  return selectedTileSlots.value[mySide.value]
+    .map((tileId) => tilesById.get(tileId))
+    .filter(Boolean);
+});
+const currentWordDisplay = computed(() => selectedTilesForCurrentSide.value.map((tile) => tile.letter).join(''));
+const currentWordLength = computed(() => selectedTilesForCurrentSide.value.length);
+const currentScoreDetails = computed(() => getWordScoreDetails(selectedTilesForCurrentSide.value));
+const currentLengthBonus = computed(() => currentScoreDetails.value.lengthBonus);
+const currentLetterTotal = computed(() => currentScoreDetails.value.letterTotal);
+const currentWordMultiplier = computed(() => currentScoreDetails.value.wordMultiplier);
+const currentWordScore = computed(() => currentScoreDetails.value.total);
 const lengthBonusSteps = computed(() => ([
   { length: 5, bonus: getLengthBonus(5) },
   { length: 6, bonus: getLengthBonus(6) },
@@ -315,21 +458,53 @@ const playerRoleText = computed(() => {
 });
 
 const handleTileClick = (tile) => {
-  wordInput.value = `${wordInput.value}${tile}`;
+  const side = mySide.value;
+  if (tile.locked || selectedTileSlots.value[side].includes(tile.id)) {
+    return;
+  }
+
+  selectedTileSlots.value = {
+    ...selectedTileSlots.value,
+    [side]: [...selectedTileSlots.value[side], tile.id]
+  };
 };
 
 const removeLastLetter = () => {
-  wordInput.value = wordInput.value.slice(0, -1);
+  const side = mySide.value;
+  selectedTileSlots.value = {
+    ...selectedTileSlots.value,
+    [side]: selectedTileSlots.value[side].slice(0, -1)
+  };
+};
+
+const removeSpecificTile = (tileId) => {
+  const side = mySide.value;
+  const nextSlots = [...selectedTileSlots.value[side]];
+  const index = nextSlots.indexOf(tileId);
+  if (index === -1) {
+    return;
+  }
+
+  nextSlots.splice(index, 1);
+  selectedTileSlots.value = {
+    ...selectedTileSlots.value,
+    [side]: nextSlots
+  };
 };
 
 const clearWord = () => {
-  wordInput.value = '';
+  const side = mySide.value;
+  selectedTileSlots.value = {
+    ...selectedTileSlots.value,
+    [side]: []
+  };
 };
 
 const submitBotWord = () => {
   ensureSinglePlayerState();
 
-  const botWord = getBotWord(playerTiles.value.opponent, [
+  const botTiles = playerTiles.value.opponent || [];
+  const botWord = getBotWord(botTiles, [
     ...wordHistory.value.host,
     ...wordHistory.value.opponent
   ]);
@@ -339,6 +514,10 @@ const submitBotWord = () => {
   }
 
   const normalizedBotWord = botWord.toUpperCase();
+  const selectedBotTiles = getTilesForWord(botTiles, normalizedBotWord);
+  if (!selectedBotTiles.length) {
+    return;
+  }
 
   submittedWords.value = {
     host: submittedWords.value.host,
@@ -350,14 +529,16 @@ const submitBotWord = () => {
     opponent: [normalizedBotWord, ...wordHistory.value.opponent].slice(0, 5)
   };
 
+  const botScoreDetails = getWordScoreDetails(selectedBotTiles);
+
   playerScores.value = {
     host: playerScores.value.host,
-    opponent: playerScores.value.opponent + getWordScore(normalizedBotWord)
+    opponent: playerScores.value.opponent + botScoreDetails.total
   };
 
   playerTiles.value = {
     host: playerTiles.value.host,
-    opponent: refillTiles(playerTiles.value.opponent, normalizedBotWord.split(''))
+    opponent: refillTiles(botTiles, selectedBotTiles.map((tile) => tile.id), 'opponent', playerScores.value)
   };
 };
 
@@ -379,6 +560,8 @@ const stopBotLoop = () => {
 
 const submitSinglePlayerWord = (word) => {
   ensureSinglePlayerState();
+  const selectedTiles = selectedTilesForCurrentSide.value;
+  const scoreDetails = getWordScoreDetails(selectedTiles);
 
   submittedWords.value = {
     host: word,
@@ -391,50 +574,56 @@ const submitSinglePlayerWord = (word) => {
   };
 
   playerScores.value = {
-    host: playerScores.value.host + getWordScore(word),
+    host: playerScores.value.host + scoreDetails.total,
     opponent: playerScores.value.opponent
   };
 
   playerTiles.value = {
-    host: refillTiles(playerTiles.value.host, word.split('')),
+    host: refillTiles(playerTiles.value.host, selectedTiles.map((tile) => tile.id), 'host', playerScores.value),
     opponent: playerTiles.value.opponent
   };
 
-  localMessage.value = `Submitted ${word} for ${getWordScore(word)} pts.`;
+  selectedTileSlots.value = {
+    ...selectedTileSlots.value,
+    host: []
+  };
+
+  localMessage.value = `Submitted ${word} for ${scoreDetails.total} pts.`;
 };
 
 const handleSubmit = () => {
-  const normalizedWord = wordInput.value.trim().toUpperCase();
+  const normalizedWord = currentWordDisplay.value;
   if (!normalizedWord) {
-    localMessage.value = 'Enter a word first.';
+    localMessage.value = 'Pick at least one tile first.';
     return;
   }
 
-  if (!/^[A-Z]+$/.test(normalizedWord)) {
-    localMessage.value = 'Use letters only.';
-    return;
-  }
-
-  if (!canBuildWordFromTiles(normalizedWord, myTiles.value)) {
+  const selectedTiles = selectedTilesForCurrentSide.value;
+  if (!selectedTiles.length || selectedTiles.map((tile) => tile.letter).join('') !== normalizedWord) {
     localMessage.value = 'That word cannot be made from your current tiles.';
     return;
   }
 
   if (props.isMultiplayer) {
-    submitMultiplayerWord(normalizedWord);
-    localMessage.value = `Sent ${normalizedWord} for ${getWordScore(normalizedWord)} pts.`;
+    const scoreDetails = getWordScoreDetails(selectedTiles);
+    submitMultiplayerWord({
+      word: normalizedWord,
+      tileIds: selectedTiles.map((tile) => tile.id)
+    });
+    localMessage.value = `Sent ${normalizedWord} for ${scoreDetails.total} pts.`;
+    selectedTileSlots.value = {
+      ...selectedTileSlots.value,
+      [mySide.value]: []
+    };
   } else {
     submitSinglePlayerWord(normalizedWord);
   }
-
-  wordInput.value = '';
 };
 
 const resetAndGoHome = () => {
   stopBotLoop();
   resetMultiplayer();
   localMessage.value = '';
-  wordInput.value = '';
   emit('home');
 };
 
@@ -754,6 +943,10 @@ onBeforeUnmount(() => {
     gap: 10px;
   }
 
+  .rack-slot {
+    min-height: 94px;
+  }
+
   .tile {
     appearance: none;
     border: none;
@@ -774,6 +967,27 @@ onBeforeUnmount(() => {
       0 10px 18px rgba(45, 10, 24, 0.16);
     transition: transform 140ms ease, box-shadow 140ms ease;
     padding: 15px;
+    will-change: transform, opacity;
+  }
+
+  .tile-status-gold,
+  .built-tile.tile-status-gold {
+    background:
+      linear-gradient(180deg, #fff7d2 0%, #f4cf67 72%, #c68b1d 100%);
+    box-shadow:
+      inset 0 -4px 0 rgba(122, 72, 8, 0.2),
+      0 12px 20px rgba(45, 10, 24, 0.2),
+      0 0 0 1px rgba(255, 223, 128, 0.5);
+  }
+
+  .tile-status-black,
+  .built-tile.tile-status-black {
+    background:
+      linear-gradient(180deg, #3b3343 0%, #211926 72%, #100b14 100%);
+    color: #f6efe1;
+    box-shadow:
+      inset 0 -4px 0 rgba(0, 0, 0, 0.4),
+      0 12px 20px rgba(10, 5, 12, 0.34);
   }
 
   .tile:hover {
@@ -783,12 +997,41 @@ onBeforeUnmount(() => {
       0 14px 20px rgba(45, 10, 24, 0.24);
   }
 
+  .tile:focus-visible {
+    outline: 3px solid rgba(255, 202, 103, 0.85);
+    outline-offset: 2px;
+    transform: translateY(-2px);
+    box-shadow:
+      inset 0 -4px 0 rgba(0, 0, 0, 0.12),
+      0 0 0 4px rgba(92, 25, 41, 0.45),
+      0 14px 20px rgba(45, 10, 24, 0.24);
+  }
+
   .tile.active {
     outline: 3px solid rgba(255, 202, 103, 0.55);
   }
 
   .tile.opponent.active {
     outline-color: rgba(75, 199, 176, 0.5);
+  }
+
+  .tile.opponent:focus-visible {
+    outline-color: rgba(75, 199, 176, 0.85);
+  }
+
+  .tile-in-use {
+    background:
+      linear-gradient(180deg, #c8bdb0 0%, #a79887 70%, #857565 100%);
+    color: rgba(28, 25, 48, 0.78);
+    box-shadow:
+      inset 0 4px 10px rgba(38, 20, 12, 0.22),
+      inset 0 -2px 0 rgba(255, 255, 255, 0.18);
+    transform: translateY(2px) scale(0.98);
+  }
+
+  .tile-in-use:hover,
+  .tile-in-use:focus-visible {
+    transform: translateY(1px) scale(0.98);
   }
 
   .tile-letter {
@@ -805,28 +1048,75 @@ onBeforeUnmount(() => {
     font-weight: 800;
   }
 
-  .history-list {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
+  .tile-modifier {
+    position: absolute;
+    top: 8px;
+    left: 10px;
+    min-width: 30px;
+    padding: 3px 7px;
+    border-radius: 999px;
+    font-size: 0.68rem;
+    font-weight: 900;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    text-align: center;
+    box-shadow: 0 4px 10px rgba(27, 11, 20, 0.18);
   }
 
-  .history-list li {
-    padding: 12px 14px;
-    border-radius: 14px;
-    background: rgba(255, 255, 255, 0.06);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 12px;
+  .tile-modifier-gold {
+    background: rgba(255, 245, 196, 0.95);
+    color: #8e4b00;
   }
 
-  .history-list strong {
-    color: var(--gold);
+  .tile-modifier-black {
+    visibility: hidden;
   }
+
+  .built-tile-move {
+    transition: transform 260ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .rack-tile-enter-active {
+    animation: rackTileIn 180ms cubic-bezier(0.2, 0.9, 0.3, 1.05);
+    animation-fill-mode: both;
+  }
+
+  .rack-tile-leave-active {
+    animation: rackTileOut 140ms ease-in forwards;
+    pointer-events: none;
+  }
+
+  @keyframes rackTileIn {
+    0% {
+      opacity: 0;
+      transform: scale(0.88);
+      filter: brightness(1.08);
+    }
+    65% {
+      opacity: 1;
+      transform: scale(1.03);
+    }
+    100% {
+      opacity: 1;
+      transform: scale(1);
+      filter: none;
+    }
+  }
+
+  @keyframes rackTileOut {
+    0% {
+      opacity: 1;
+      transform: scale(1);
+    }
+    100% {
+      opacity: 0;
+      transform: scale(0.82);
+      filter: brightness(0.8);
+    }
+  }
+
+
+
 
   .waiting-card {
     border-radius: 26px;
@@ -898,6 +1188,7 @@ onBeforeUnmount(() => {
 
   .word-input-shell {
     min-width: 0;
+    min-height: 110px;
     flex: 1;
     display: grid;
     grid-template-columns: auto 1fr auto;
@@ -906,6 +1197,83 @@ onBeforeUnmount(() => {
     padding: 10px 14px;
     border-radius: 18px;
     background: rgba(255, 255, 255, 0.08);
+  }
+
+  .built-word-strip {
+    min-height: 74px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+  }
+
+  .built-word-strip.empty {
+    color: rgba(254, 183, 59, 0.62);
+  }
+
+  .built-placeholder {
+    font-size: 0.95rem;
+    font-weight: 700;
+  }
+
+  .built-tile {
+    appearance: none;
+    border: none;
+    cursor: pointer;
+    min-height: 90px;
+    min-width: 90px;
+    border-radius: 14px;
+    position: relative;
+    background:
+      linear-gradient(180deg, #fffef8 0%, #f2ebe0 70%, #d9cec0 100%);
+    color: var(--ink);
+    box-shadow: inset 0 -3px 0 rgba(0, 0, 0, 0.16);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    will-change: transform, opacity;
+  }
+
+  .built-tile:focus-visible {
+    outline: 3px solid rgba(255, 202, 103, 0.85);
+    outline-offset: 2px;
+  }
+
+  .built-tile-enter-active {
+    animation: builtTileIn 220ms cubic-bezier(0.2, 0.9, 0.3, 1.15);
+    animation-fill-mode: both;
+  }
+
+  .built-tile-leave-active {
+    animation: builtTileOut 180ms ease-in forwards;
+    pointer-events: none;
+  }
+
+  @keyframes builtTileIn {
+    0% {
+      opacity: 0;
+      transform: translateY(12px) scale(0.86);
+    }
+    70% {
+      opacity: 1;
+      transform: translateY(-2px) scale(1.04);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+
+  @keyframes builtTileOut {
+    0% {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+    100% {
+      opacity: 0;
+      transform: translateY(-10px) scale(0.84);
+    }
   }
 
   .builder-breakdown {
