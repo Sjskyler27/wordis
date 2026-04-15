@@ -136,7 +136,7 @@ const getBadgeStyle = (tile) => {
 
 .rack-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(94px, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 10px;
 }
 
@@ -268,6 +268,12 @@ const getBadgeStyle = (tile) => {
     opacity: 0;
     transform: scale(0.82);
     filter: brightness(0.8);
+  }
+}
+
+@media (max-width: 560px) {
+  .rack-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 }
 </style>
