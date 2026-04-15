@@ -153,8 +153,10 @@ import {
   resetGame as resetMultiplayer
 } from './multiplayer.js';
 import { MIN_WORD_LENGTH, getWordScoreDetails, isMissingRequiredTile, selectedTilesMatchWord } from './tile-logic.js';
+import { getPreferredLanguage } from './language.js';
 import { useWordBuilder } from './useWordBuilder.js';
 import { useSinglePlayerGame } from './useSinglePlayerGame.js';
+import { validateWord } from './word-validator.js';
 import GameLane from './components/GameLane.vue';
 import WordBuilder from './components/WordBuilder.vue';
 
@@ -167,6 +169,7 @@ const localMessage = ref('');
 const isPaused = ref(false);
 const activeBoonCardId = ref(null);
 const isMultiplayerRef = computed(() => props.isMultiplayer);
+const preferredLanguage = getPreferredLanguage();
 
 const mySide = computed(() => {
   if (props.isMultiplayer) {
@@ -253,7 +256,7 @@ const playerRoleText = computed(() => {
   return 'You and the bot are both constantly feeding the board with fresh tiles.';
 });
 
-const handleSubmit = () => {
+const handleSubmit = async () => {
   const normalizedWord = currentWordDisplay.value;
   if (!normalizedWord) {
     localMessage.value = 'Pick at least one tile first.';
@@ -273,6 +276,13 @@ const handleSubmit = () => {
 
   if (isMissingRequiredTile(myTiles.value, selectedTiles)) {
     localMessage.value = 'You have to use every MUST tile in your rack.';
+    return;
+  }
+
+  localMessage.value = 'Checking word...';
+  const validationResult = await validateWord(normalizedWord, preferredLanguage.code);
+  if (!validationResult.valid) {
+    localMessage.value = `${normalizedWord} is not a valid ${preferredLanguage.label.toLowerCase()} word.`;
     return;
   }
 

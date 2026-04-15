@@ -99,15 +99,15 @@ const handleJoinGame = (connection, clientId, data) => {
   console.log(`Client ${clientId} joined room ${requestedCode}`);
 };
 
-const handleSubmitWord = (connection, clientId, data) => {
+const handleSubmitWord = async (connection, clientId, data) => {
   const requestedCode = (data?.roomCode || '').toUpperCase();
-  const { word, tileIds } = data || {};
+  const { word, tileIds, languageCode } = data || {};
   if (!requestedCode) {
     sendEvent(connection, 'joinError', 'Room code required');
     return;
   }
 
-  const { success, error, state } = submitWord(requestedCode, clientId, word, tileIds);
+  const { success, error, state } = await submitWord(requestedCode, clientId, word, tileIds, languageCode);
   if (!success) {
     sendEvent(connection, 'joinError', error);
     return;
@@ -168,7 +168,7 @@ const handleUseAttack = (connection, clientId, data) => {
   });
 };
 
-const handleClientAction = (connection, clientId, action) => {
+const handleClientAction = async (connection, clientId, action) => {
   if (!action || typeof action.type !== 'string') {
     sendEvent(connection, 'joinError', 'Invalid payload');
     return;
@@ -182,7 +182,7 @@ const handleClientAction = (connection, clientId, action) => {
       handleJoinGame(connection, clientId, action.data);
       break;
     case 'submitWord':
-      handleSubmitWord(connection, clientId, action.data);
+      await handleSubmitWord(connection, clientId, action.data);
       break;
     case 'clearRack':
       handleClearRack(connection, clientId, action.data);
@@ -210,7 +210,7 @@ wsServer.on('request', (request) => {
   const clientId = generateClientId();
   console.log(`Client connected: ${clientId}`);
 
-  connection.on('message', (message) => {
+  connection.on('message', async (message) => {
     if (message.type !== 'utf8') return;
     let payload;
     try {
@@ -220,7 +220,7 @@ wsServer.on('request', (request) => {
       return;
     }
 
-    handleClientAction(connection, clientId, payload);
+    await handleClientAction(connection, clientId, payload);
   });
 
   const onClose = () => cleanupClient(clientId);
