@@ -14,7 +14,7 @@ const parseDictionary = (filename) => {
 
   return new Set(
     fileText
-      .split('\n')
+      .split(/\s+/)
       .map((word) => word.trim().toLowerCase())
       .filter(Boolean)
   );

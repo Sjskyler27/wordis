@@ -15,7 +15,7 @@ const normalizeLanguageCode = (languageCode = 'en') => {
 const parseDictionary = (text) => {
   return new Set(
     text
-      .split('\n')
+      .split(/\s+/)
       .map((word) => word.trim().toLowerCase())
       .filter(Boolean)
   );
