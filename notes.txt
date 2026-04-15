@@ -1,3 +1,5 @@
 to do
 
 bug if you go to single player after multyplayer it says waiting for opponnetn 
+
+dont start with any modifiers 
