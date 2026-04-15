@@ -95,24 +95,25 @@
       </section>
     </main>
 
-    <div v-if="isPaused" class="pause-overlay" @click.self="togglePause">
-      <div class="pause-card">
-        <span class="pause-kicker">Paused</span>
-        <strong>{{ props.isMultiplayer ? 'Take a breather' : 'The bot is waiting' }}</strong>
-        <p>{{ props.isMultiplayer ? 'Your local board view is paused. Resume when you are ready to jump back in.' : 'Gameplay is frozen until you resume, so you can step away without losing the pace.' }}</p>
-        <div class="pause-actions">
-          <button class="pause-action primary" @click="togglePause">Resume</button>
-          <button class="pause-action secondary" @click="resetAndGoHome">Back to Home</button>
-        </div>
-        <small>Press Esc to {{ isPaused ? 'resume' : 'pause' }}</small>
-      </div>
-    </div>
+    <Settings
+      v-if="isPaused"
+      :volume="10"
+      :music-volume="10"
+      :effects-volume="10"
+      :zoom="1"
+      :dungeon-zoom="1"
+      :shop-zoom="1"
+      :native-controller-support="false"
+      @close="togglePause"
+      @home="resetAndGoHome"
+    />
 
   </div>
 </template>
 
 <script setup>
 import { computed, defineProps, onBeforeUnmount, onMounted, ref } from 'vue';
+import Settings from '../../assets/Settings.vue';
 import {
   roomCode,
   isHost,
@@ -574,82 +575,6 @@ body {
   color: white;
 }
 
-.pause-overlay {
-  position: absolute;
-  inset: 0;
-  z-index: 4;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 24px;
-  background: rgba(22, 6, 20, 0.52);
-  backdrop-filter: blur(10px);
-}
-
-.pause-card {
-  width: min(100%, 480px);
-  border-radius: 30px;
-  padding: 28px 24px;
-  background:
-    linear-gradient(180deg, rgba(76, 25, 58, 0.95), rgba(45, 13, 43, 0.96));
-  border: 2px solid rgba(255, 255, 255, 0.14);
-  box-shadow:
-    0 24px 50px rgba(18, 4, 18, 0.4),
-    inset 0 1px 0 rgba(255, 255, 255, 0.12);
-  text-align: center;
-}
-
-.pause-kicker {
-  display: inline-block;
-  margin-bottom: 12px;
-  font-size: 0.72rem;
-  text-transform: uppercase;
-  letter-spacing: 0.18em;
-  opacity: 0.72;
-}
-
-.pause-card strong {
-  display: block;
-  font-size: clamp(1.5rem, 4vw, 2.2rem);
-}
-
-.pause-card p {
-  margin: 14px 0 0;
-  line-height: 1.6;
-  opacity: 0.88;
-}
-
-.pause-actions {
-  display: flex;
-  justify-content: center;
-  gap: 12px;
-  margin-top: 22px;
-}
-
-.pause-action {
-  border: none;
-  cursor: pointer;
-  border-radius: 999px;
-  padding: 12px 18px;
-  font-family: "Press Start 2P", cursive;
-  font-size: 0.82rem;
-  color: white;
-}
-
-.pause-action.primary {
-  background: linear-gradient(180deg, #53d4bc 0%, #2b948a 100%);
-}
-
-.pause-action.secondary {
-  background: linear-gradient(180deg, #ff965b 0%, #e05e2a 100%);
-}
-
-.pause-card small {
-  display: block;
-  margin-top: 16px;
-  opacity: 0.62;
-}
-
 @media (max-width: 1180px) {
   .board-frame {
     grid-template-columns: 1fr;
@@ -687,10 +612,6 @@ body {
 
   .side-stack {
     grid-template-columns: 1fr;
-  }
-
-  .pause-actions {
-    flex-direction: column;
   }
 }
 </style>
