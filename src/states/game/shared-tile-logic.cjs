@@ -283,21 +283,41 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses }) => {
   };
 
   const getTilesForWord = (tiles, word) => {
-    const selectedTiles = [];
+    const normalizedWord = (word || '').toUpperCase();
+    const availableTiles = tiles.filter((tile) => !tile.locked);
 
-    for (const character of (word || '').toUpperCase()) {
-      const tile = tiles.find((entry) => {
-        return entry.letter === character && !entry.locked && !selectedTiles.some((selected) => selected.id === entry.id);
-      });
-
-      if (!tile) {
-        return [];
+    const walk = (remainingWord, remainingTiles, selectedTiles) => {
+      if (!remainingWord.length) {
+        return selectedTiles;
       }
 
-      selectedTiles.push(tile);
-    }
+      for (let index = 0; index < remainingTiles.length; index += 1) {
+        const tile = remainingTiles[index];
+        const token = tile.letter;
+        const nextTiles = remainingTiles.filter((_, tileIndex) => tileIndex !== index);
 
-    return selectedTiles;
+        if (tile.status === 'wild') {
+          const wildcardMatch = walk(remainingWord.slice(1), nextTiles, [...selectedTiles, tile]);
+          if (wildcardMatch.length) {
+            return wildcardMatch;
+          }
+          continue;
+        }
+
+        if (!remainingWord.startsWith(token)) {
+          continue;
+        }
+
+        const exactMatch = walk(remainingWord.slice(token.length), nextTiles, [...selectedTiles, tile]);
+        if (exactMatch.length) {
+          return exactMatch;
+        }
+      }
+
+      return [];
+    };
+
+    return walk(normalizedWord, availableTiles, []);
   };
 
   const getSelectedTiles = (tiles, tileIds) => {

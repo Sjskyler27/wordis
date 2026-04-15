@@ -1,41 +1,22 @@
 import { DICTIONARY_WORDS } from './dictionary.js';
+import { getTilesForWord } from './tile-logic.js';
 
 const MIN_WORD_LENGTH = 4;
 
 const canBuildWordFromTiles = (word, tiles) => {
-  const availableTiles = tiles
-    .filter((tile) => !tile.locked)
-    .map((tile) => tile.letter);
-
-  for (const letter of word.toUpperCase()) {
-    const tileIndex = availableTiles.indexOf(letter);
-    if (tileIndex === -1) {
-      return false;
-    }
-
-    availableTiles.splice(tileIndex, 1);
-  }
-
-  return true;
+  return getTilesForWord(tiles, word).length > 0;
 };
 
 const includesRequiredTiles = (word, tiles) => {
-  const requiredLetters = tiles
+  const requiredTiles = tiles
     .filter((tile) => tile.status === 'mustuse' && !tile.locked)
-    .map((tile) => tile.letter);
+    .map((tile) => tile.id);
 
-  const wordLetters = word.toUpperCase().split('');
+  const matchedTiles = getTilesForWord(tiles, word);
 
-  for (const letter of requiredLetters) {
-    const index = wordLetters.indexOf(letter);
-    if (index === -1) {
-      return false;
-    }
-
-    wordLetters.splice(index, 1);
-  }
-
-  return true;
+  return requiredTiles.every((requiredTileId) => {
+    return matchedTiles.some((tile) => tile.id === requiredTileId);
+  });
 };
 
 export const getBotWord = (tiles = [], recentWords = []) => {

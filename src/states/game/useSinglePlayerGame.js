@@ -89,7 +89,7 @@ export const useSinglePlayerGame = ({
     botLoopId = window.setTimeout(() => {
       submitBotWord();
       scheduleBotLoop();
-    }, 8400);
+    }, 9000);
   };
 
   const stopBotLoop = () => {
