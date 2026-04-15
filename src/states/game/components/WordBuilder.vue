@@ -65,6 +65,9 @@
       <button type="button" class="ghost-button" @click="$emit('clear')">
         Clear
       </button>
+      <button type="button" class="ghost-button" :disabled="clearCount <= 0" @click="$emit('clear-rack')">
+        New Rack {{ clearCount }}
+      </button>
       <button type="submit" class="submit-button">
         Submit Word
       </button>
@@ -105,13 +108,17 @@ const props = defineProps({
     type: Number,
     required: true
   },
+  clearCount: {
+    type: Number,
+    required: true
+  },
   lengthBonusSteps: {
     type: Array,
     required: true
   }
 });
 
-defineEmits(['undo', 'clear', 'submit', 'remove-specific']);
+defineEmits(['undo', 'clear', 'submit', 'remove-specific', 'clear-rack']);
 
 const wordSlots = computed(() => {
   return Array.from({ length: 8 }, (_, index) => {

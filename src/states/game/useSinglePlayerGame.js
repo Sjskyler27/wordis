@@ -15,6 +15,7 @@ export const useSinglePlayerGame = ({
   playerTiles,
   playerScores,
   lastWordScores,
+  rackClears,
   submittedWords,
   wordHistory
 }) => {
@@ -25,6 +26,10 @@ export const useSinglePlayerGame = ({
       playerTiles.value = {
         host: createRack('host', playerScores.value),
         opponent: createRack('opponent', playerScores.value)
+      };
+      rackClears.value = {
+        host: 2,
+        opponent: 2
       };
     }
   };
@@ -130,6 +135,29 @@ export const useSinglePlayerGame = ({
     localMessage.value = `Submitted ${word} for ${scoreDetails.total} pts.`;
   };
 
+  const clearSinglePlayerRack = (side = 'host') => {
+    ensureSinglePlayerState();
+
+    if ((rackClears.value[side] || 0) <= 0) {
+      localMessage.value = 'No rack clears remaining.';
+      return false;
+    }
+
+    rackClears.value = {
+      ...rackClears.value,
+      [side]: rackClears.value[side] - 1
+    };
+
+    playerTiles.value = {
+      ...playerTiles.value,
+      [side]: createRack(side, playerScores.value)
+    };
+
+    clearSelectionForSide(side);
+    localMessage.value = `Cleared your rack. ${rackClears.value[side]} clears left.`;
+    return true;
+  };
+
   ensureSinglePlayerState();
   scheduleBotLoop();
 
@@ -150,6 +178,7 @@ export const useSinglePlayerGame = ({
     ensureSinglePlayerState,
     startBotLoop,
     stopBotLoop,
+    clearSinglePlayerRack,
     submitSinglePlayerWord
   };
 };

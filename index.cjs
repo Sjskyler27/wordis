@@ -13,6 +13,7 @@ const {
   createGame,
   joinGame,
   submitWord,
+  clearRack,
   removePlayerFromGame
 } = require('./hooks/game-hooks.cjs');
 
@@ -50,6 +51,7 @@ const createGameStatePayload = (state) => ({
   history: state.history,
   scores: state.scores,
   lastWordScores: state.lastWordScores,
+  rackClears: state.rackClears,
   tiles: state.tiles
 });
 
@@ -114,6 +116,25 @@ const handleSubmitWord = (connection, clientId, data) => {
   });
 };
 
+const handleClearRack = (connection, clientId, data) => {
+  const requestedCode = (data?.roomCode || '').toUpperCase();
+  if (!requestedCode) {
+    sendEvent(connection, 'joinError', 'Room code required');
+    return;
+  }
+
+  const { success, error, state } = clearRack(requestedCode, clientId);
+  if (!success) {
+    sendEvent(connection, 'joinError', error);
+    return;
+  }
+
+  broadcastToRoom(requestedCode, {
+    type: 'rackCleared',
+    data: createGameStatePayload(state)
+  });
+};
+
 const handleClientAction = (connection, clientId, action) => {
   if (!action || typeof action.type !== 'string') {
     sendEvent(connection, 'joinError', 'Invalid payload');
@@ -129,6 +150,9 @@ const handleClientAction = (connection, clientId, action) => {
       break;
     case 'submitWord':
       handleSubmitWord(connection, clientId, action.data);
+      break;
+    case 'clearRack':
+      handleClearRack(connection, clientId, action.data);
       break;
     default:
       sendEvent(connection, 'joinError', `Unknown action ${action.type}`);

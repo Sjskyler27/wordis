@@ -54,6 +54,10 @@ const createGame = (roomCode, hostId) => {
       host: 0,
       opponent: 0
     },
+    rackClears: {
+      host: 2,
+      opponent: 2
+    },
     tiles: {
       host: createRack('host', { host: 0, opponent: 0 }),
       opponent: createRack('opponent', { host: 0, opponent: 0 })
@@ -61,6 +65,27 @@ const createGame = (roomCode, hostId) => {
   };
 
   games.set(roomCode, state);
+  return { success: true, state };
+};
+
+const clearRack = (roomCode, clientId) => {
+  const state = games.get(roomCode);
+  if (!state) {
+    return { success: false, error: 'Room not found' };
+  }
+
+  const side = clientId === state.host ? 'host' : 'opponent';
+  if (!state.players.includes(clientId)) {
+    return { success: false, error: 'Player not in room' };
+  }
+
+  if ((state.rackClears[side] || 0) <= 0) {
+    return { success: false, error: 'No rack clears remaining' };
+  }
+
+  state.rackClears[side] -= 1;
+  state.tiles[side] = createRack(side, state.scores);
+
   return { success: true, state };
 };
 
@@ -147,5 +172,6 @@ module.exports = {
   createGame,
   joinGame,
   submitWord,
+  clearRack,
   removePlayerFromGame
 };
