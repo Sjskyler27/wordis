@@ -1,5 +1,3 @@
 to do
 
-bot is not using wilds 
-
-bring back history but make it look lik calculator deal faded behing last played word 
+bug if you go to single player after multyplayer it says waiting for opponnetn 
