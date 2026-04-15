@@ -24,5 +24,10 @@
   "W": { "score": 4, "count": 2 },
   "X": { "score": 8, "count": 1 },
   "Y": { "score": 4, "count": 2 },
-  "Z": { "score": 10, "count": 1 }
+  "Z": { "score": 10, "count": 1 },
+  "SH": { "score": 3, "count": 1 },
+  "QU": { "score": 4, "count": 1 },
+  "TH": { "score": 3, "count": 1 },
+  "CH": { "score": 3, "count": 1 },
+  "ED": { "score": 1, "count": 1 }
 }

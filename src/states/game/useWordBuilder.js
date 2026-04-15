@@ -1,5 +1,5 @@
 import { computed, ref } from 'vue';
-import { getLengthBonus, getWordScoreDetails } from './tile-logic.js';
+import { getLengthBonus, getWordScoreDetails, getDifference } from './tile-logic.js';
 
 export const useWordBuilder = ({ mySide, myTiles }) => {
   const selectedTileSlots = ref({
@@ -32,15 +32,21 @@ export const useWordBuilder = ({ mySide, myTiles }) => {
   const currentWordMultiplier = computed(() => currentScoreDetails.value.wordMultiplier);
   const currentWordScore = computed(() => currentScoreDetails.value.total);
   const lengthBonusSteps = computed(() => ([
-    { length: 5, bonus: getLengthBonus(5) },
-    { length: 6, bonus: getLengthBonus(6) },
-    { length: 7, bonus: getLengthBonus(7) },
-    { length: 8, bonus: getLengthBonus(8) }
+    { length: 5, bonus: getLengthBonus(5), difference: getDifference(5) },
+    { length: 6, bonus: getLengthBonus(6), difference: getDifference(6)  },
+    { length: 7, bonus: getLengthBonus(7), difference: getDifference(7)  },
+    { length: 8, bonus: getLengthBonus(8), difference: getDifference(8)  },
+    { length: 9, bonus: getLengthBonus(9), difference: getDifference(9)  }
   ]));
 
   const handleTileClick = (tile) => {
     const side = mySide.value;
-    if (tile.locked || selectedTileSlots.value[side].includes(tile.id)) {
+    if (tile.locked) {
+      return;
+    }
+
+    if (selectedTileSlots.value[side].includes(tile.id)) {
+      removeSpecificTile(tile.id);
       return;
     }
 

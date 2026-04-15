@@ -17,6 +17,7 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses }) => {
     normal: {
       badge: '',
       effects: {},
+      rarityWeight: 0,
       ui: {
         tileBackground: 'linear-gradient(180deg, #fffef8 0%, #f2ebe0 70%, #d9cec0 100%)',
         tileShadow: 'inset 0 -4px 0 rgba(0, 0, 0, 0.12), 0 10px 18px rgba(45, 10, 24, 0.16)',
@@ -29,6 +30,8 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses }) => {
     gold: {
       badge: 'x2',
       effects: { wordMultiplier: 2 },
+      rarityWeight: 0.9,
+      canApply: ({ baseScore }) => baseScore >= 3,
       ui: {
         tileBackground: 'linear-gradient(180deg, #fff7d2 0%, #f4cf67 72%, #c68b1d 100%)',
         tileShadow: 'inset 0 -4px 0 rgba(122, 72, 8, 0.2), 0 12px 20px rgba(45, 10, 24, 0.2), 0 0 0 1px rgba(255, 223, 128, 0.5)',
@@ -42,6 +45,7 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses }) => {
          wild: true,
          setScore: -1
         },
+      rarityWeight: 0.45,
       ui: {
         tileBackground: 'linear-gradient(180deg, #fff6ff 0%, #d8c0ff 52%, #7f5cd4 100%)',
         tileShadow: 'inset 0 -4px 0 rgba(63, 36, 120, 0.24), 0 12px 20px rgba(38, 17, 62, 0.22), 0 0 0 1px rgba(226, 204, 255, 0.4)',
@@ -53,7 +57,8 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses }) => {
     },
     firsttile: {
       badge: '1st',
-      effects: { firstTileMultiplier: 2 },
+      effects: { firstTileBonus: 10 },
+      rarityWeight: 0.3,
       ui: {
         tileBackground: 'linear-gradient(180deg, #fff4de 0%, #ffb56b 72%, #d86e27 100%)',
         tileShadow: 'inset 0 -4px 0 rgba(130, 52, 12, 0.24), 0 12px 20px rgba(45, 10, 24, 0.2), 0 0 0 1px rgba(255, 190, 120, 0.45)',
@@ -64,6 +69,8 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses }) => {
     },
     black: {
       effects: { setScore: 0 },
+      rarityWeight: 0.95,
+      canApply: ({ baseScore }) => baseScore <= 4,
       ui: {
         tileBackground: 'linear-gradient(180deg, #3b3343 0%, #211926 72%, #100b14 100%)',
         tileShadow: 'inset 0 -4px 0 rgba(0, 0, 0, 0.4), 0 12px 20px rgba(10, 5, 12, 0.34)',
@@ -76,6 +83,7 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses }) => {
     mustuse: {
       badge: 'MUST',
       effects: { required: true },
+      rarityWeight: 0.6,
       canApply: ({ baseScore }) => baseScore <= 3,
       ui: {
         tileBackground: 'linear-gradient(180deg, #ffdfe2 0%, #ff8b97 72%, #b72848 100%)',
@@ -88,6 +96,7 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses }) => {
     locked3: {
       badge: '',
       effects: { lockTurns: 3 },
+      rarityWeight: 0.5,
       ui: {
         tileBackground: 'linear-gradient(180deg, #d9edff 0%, #8cb1d8 72%, #4f6999 100%)',
         tileShadow: 'inset 0 -4px 0 rgba(34, 58, 101, 0.25), 0 12px 20px rgba(24, 20, 46, 0.18), 0 0 0 1px rgba(173, 210, 255, 0.4)',
@@ -167,6 +176,31 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses }) => {
     return definition.canApply(context);
   };
 
+  const chooseWeightedModifier = (modifiers = []) => {
+    const weightedModifiers = modifiers
+      .map((modifier) => ({
+        modifier,
+        weight: Math.max(0, getModifierDefinition(modifier).rarityWeight ?? 1)
+      }))
+      .filter((entry) => entry.weight > 0);
+
+    if (!weightedModifiers.length) {
+      return 'normal';
+    }
+
+    const totalWeight = weightedModifiers.reduce((sum, entry) => sum + entry.weight, 0);
+    let roll = Math.random() * totalWeight;
+
+    for (const entry of weightedModifiers) {
+      roll -= entry.weight;
+      if (roll <= 0) {
+        return entry.modifier;
+      }
+    }
+
+    return weightedModifiers[weightedModifiers.length - 1].modifier;
+  };
+
   const rollTileModifier = (side, scores = {}, context = {}) => {
     const { goodChance, badChance } = getModifierChances(side, scores);
     const roll = Math.random();
@@ -177,7 +211,7 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses }) => {
         return 'normal';
       }
 
-      return eligibleGoodModifiers[Math.floor(Math.random() * eligibleGoodModifiers.length)];
+      return chooseWeightedModifier(eligibleGoodModifiers);
     }
 
     if (roll < goodChance + badChance) {
@@ -186,7 +220,7 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses }) => {
         return 'normal';
       }
 
-      return eligibleBadModifiers[Math.floor(Math.random() * eligibleBadModifiers.length)];
+      return chooseWeightedModifier(eligibleBadModifiers);
     }
 
     return 'normal';
@@ -211,12 +245,17 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses }) => {
       return wordBonuses[length];
     }
 
-    if (length > 8) {
-      return wordBonuses[8] + ((length - 8) * 5);
+    if (length > 9) {
+      return wordBonuses[9] + ((length - 9) * 5);
     }
 
     return 0;
   };
+  const getDifference = (length) =>{
+      if (wordBonuses[length]) {
+      return wordBonuses[length] - (wordBonuses[length - 1] || 0);
+    }
+  }
 
   const getTilesScore = (tiles) => tiles.reduce((total, tile) => total + tileScore(tile), 0);
 
@@ -227,7 +266,7 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses }) => {
         return total;
       }
 
-      return total + ((tileScore(tile) * (tile?.firstTileMultiplier || 1)) - tileScore(tile));
+      return total + tile?.firstTileBonus;
     }, 0);
     const letterTotal = baseLetterTotal + firstTileBonus;
     const lengthBonus = getLengthBonus(tiles.length);
@@ -244,21 +283,41 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses }) => {
   };
 
   const getTilesForWord = (tiles, word) => {
-    const selectedTiles = [];
+    const normalizedWord = (word || '').toUpperCase();
+    const availableTiles = tiles.filter((tile) => !tile.locked);
 
-    for (const character of (word || '').toUpperCase()) {
-      const tile = tiles.find((entry) => {
-        return entry.letter === character && !entry.locked && !selectedTiles.some((selected) => selected.id === entry.id);
-      });
-
-      if (!tile) {
-        return [];
+    const walk = (remainingWord, remainingTiles, selectedTiles) => {
+      if (!remainingWord.length) {
+        return selectedTiles;
       }
 
-      selectedTiles.push(tile);
-    }
+      for (let index = 0; index < remainingTiles.length; index += 1) {
+        const tile = remainingTiles[index];
+        const token = tile.letter;
+        const nextTiles = remainingTiles.filter((_, tileIndex) => tileIndex !== index);
 
-    return selectedTiles;
+        if (tile.status === 'wild') {
+          const wildcardMatch = walk(remainingWord.slice(1), nextTiles, [...selectedTiles, tile]);
+          if (wildcardMatch.length) {
+            return wildcardMatch;
+          }
+          continue;
+        }
+
+        if (!remainingWord.startsWith(token)) {
+          continue;
+        }
+
+        const exactMatch = walk(remainingWord.slice(token.length), nextTiles, [...selectedTiles, tile]);
+        if (exactMatch.length) {
+          return exactMatch;
+        }
+      }
+
+      return [];
+    };
+
+    return walk(normalizedWord, availableTiles, []);
   };
 
   const getSelectedTiles = (tiles, tileIds) => {
@@ -288,15 +347,12 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses }) => {
     }
 
     const nextLockTurns = Math.max(0, (tile.lockTurns || 0) - 1);
-    console.log(tile.ui)
-    if(nextLockTurns === 0){
-      tile.ui = { ...MODIFIER_DEFINITIONS.normal.ui }
-    }
+
     return {
       ...tile,
       lockTurns: nextLockTurns,
       locked: nextLockTurns > 0,
-
+      status: nextLockTurns > 0 ? tile.status : 'normal'
     };
   };
 
@@ -322,7 +378,7 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses }) => {
         score: modifierDefinition.effects.setScore != null ? modifierDefinition.effects.setScore : baseScore,
         multiplier: modifierDefinition.effects.zeroLetterScore ? 0 : 1,
         wordMultiplier: modifierDefinition.effects.wordMultiplier || 1,
-        firstTileMultiplier: modifierDefinition.effects.firstTileMultiplier || 1,
+        firstTileBonus: modifierDefinition.effects.firstTileBonus || 0,
         locked: lockTurns > 0,
         lockTurns,
         status
@@ -375,6 +431,7 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses }) => {
     RACK_SIZE,
     tileScore,
     getLengthBonus,
+    getDifference,
     getTilesScore,
     getWordScoreDetails,
     getTilesForWord,

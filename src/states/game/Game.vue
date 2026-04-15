@@ -89,9 +89,11 @@
           :current-length-bonus="currentLengthBonus"
           :current-first-tile-bonus="currentFirstTileBonus"
           :current-word-multiplier="currentWordMultiplier"
+          :clear-count="rackClears[mySide]"
           :length-bonus-steps="lengthBonusSteps"
           @undo="removeLastLetter"
           @clear="clearWord"
+          @clear-rack="handleClearRack"
           @submit="handleSubmit"
           @remove-specific="removeSpecificTile"
         />
@@ -125,8 +127,10 @@ import {
   playerScores,
   lastWordScores,
   playerTiles,
+  rackClears,
   gameStarted,
   submitWord as submitMultiplayerWord,
+  clearRack as clearMultiplayerRack,
   resetGame as resetMultiplayer
 } from './multiplayer.js';
 import { MIN_WORD_LENGTH, getWordScoreDetails, isMissingRequiredTile } from './tile-logic.js';
@@ -192,6 +196,7 @@ const rightLane = computed(() => buildLane(opponentSide.value, 'Their Board'));
 const {
   startBotLoop,
   stopBotLoop,
+  clearSinglePlayerRack,
   submitSinglePlayerWord
 } = useSinglePlayerGame({
   isMultiplayer: isMultiplayerRef,
@@ -201,6 +206,7 @@ const {
   playerTiles,
   playerScores,
   lastWordScores,
+  rackClears,
   submittedWords,
   wordHistory
 });
@@ -248,6 +254,22 @@ const handleSubmit = () => {
   }
 
   submitSinglePlayerWord(normalizedWord);
+};
+
+const handleClearRack = () => {
+  if (props.isMultiplayer) {
+    if ((rackClears.value[mySide.value] || 0) <= 0) {
+      localMessage.value = 'No rack clears remaining.';
+      return;
+    }
+
+    clearMultiplayerRack();
+    clearSelectionForSide(mySide.value);
+    localMessage.value = `Clearing rack... ${rackClears.value[mySide.value] - 1} clears left after this one.`;
+    return;
+  }
+
+  clearSinglePlayerRack(mySide.value);
 };
 
 const copyRoomCode = async () => {

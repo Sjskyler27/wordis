@@ -23,6 +23,10 @@ export const playerTiles = ref({
   host: [],
   opponent: []
 });
+export const rackClears = ref({
+  host: 2,
+  opponent: 2
+});
 export const gameStarted = ref(false);
 export const message = ref('');
 export const isConnecting = ref(false);
@@ -45,6 +49,7 @@ const applyGameState = (data = {}) => {
   playerScores.value = data.scores || playerScores.value;
   lastWordScores.value = data.lastWordScores || lastWordScores.value;
   playerTiles.value = data.tiles || playerTiles.value;
+  rackClears.value = data.rackClears || rackClears.value;
 };
 
 export const joinGame = (code) => {
@@ -90,6 +95,11 @@ export const submitWord = ({ word, tileIds }) => {
   socket.emit('submitWord', { roomCode: roomCode.value, word: normalizedWord, tileIds });
 };
 
+export const clearRack = () => {
+  if (!gameStarted.value) return;
+  socket.emit('clearRack', { roomCode: roomCode.value });
+};
+
 socket.on('startGame', (data) => {
   gameStarted.value = true;
   message.value = '';
@@ -97,6 +107,10 @@ socket.on('startGame', (data) => {
 });
 
 socket.on('wordSubmitted', (data) => {
+  applyGameState(data);
+});
+
+socket.on('rackCleared', (data) => {
   applyGameState(data);
 });
 
@@ -129,6 +143,10 @@ export const resetGame = () => {
   playerTiles.value = {
     host: [],
     opponent: []
+  };
+  rackClears.value = {
+    host: 2,
+    opponent: 2
   };
   gameStarted.value = false;
   message.value = '';
