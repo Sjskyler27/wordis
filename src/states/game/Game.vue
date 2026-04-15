@@ -30,36 +30,36 @@
       <section class="arena-shell">
         <div class="score-ribbon">
           <div class="score-box host">
-            <span>Host</span>
-            <strong>{{ playerScores.host }}</strong>
+            <span>Your Board</span>
+            <strong>{{ leftLane.score }}</strong>
           </div>
           <div class="score-divider">VS</div>
           <div class="score-box opponent">
-            <span>Opponent</span>
-            <strong>{{ playerScores.opponent }}</strong>
+            <span>Their Board</span>
+            <strong>{{ rightLane.score }}</strong>
           </div>
         </div>
 
         <div v-if="props.isMultiplayer ? gameStarted : true" class="arena">
           <GameLane
-            side="host"
-            label="Host"
-            :submitted-word="submittedWords.host"
-            :score="playerScores.host"
-            :tiles="playerTiles.host"
-            :is-active="mySide === 'host'"
-            :selected-tile-ids="selectedTileIds.host"
+            :side="leftLane.side"
+            :label="leftLane.label"
+            :submitted-word="leftLane.submittedWord"
+            :score="leftLane.score"
+            :tiles="leftLane.tiles"
+            :is-active="leftLane.isActive"
+            :selected-tile-ids="leftLane.selectedTileIds"
             @tile-click="handleTileClick"
           />
 
           <GameLane
-            side="opponent"
-            label="Opponent"
-            :submitted-word="submittedWords.opponent"
-            :score="playerScores.opponent"
-            :tiles="playerTiles.opponent"
-            :is-active="mySide === 'opponent'"
-            :selected-tile-ids="selectedTileIds.opponent"
+            :side="rightLane.side"
+            :label="rightLane.label"
+            :submitted-word="rightLane.submittedWord"
+            :score="rightLane.score"
+            :tiles="rightLane.tiles"
+            :is-active="rightLane.isActive"
+            :selected-tile-ids="rightLane.selectedTileIds"
             @tile-click="handleTileClick"
           />
         </div>
@@ -129,6 +129,16 @@ const mySide = computed(() => {
 });
 
 const myTiles = computed(() => playerTiles.value[mySide.value] || []);
+const opponentSide = computed(() => (mySide.value === 'host' ? 'opponent' : 'host'));
+const buildLane = (side, label) => ({
+  side,
+  label,
+  submittedWord: submittedWords.value[side],
+  score: playerScores.value[side],
+  tiles: playerTiles.value[side],
+  isActive: mySide.value === side,
+  selectedTileIds: selectedTileIds.value[side]
+});
 
 const {
   selectedTileIds,
@@ -151,6 +161,9 @@ const {
   myTiles
 });
 
+const leftLane = computed(() => buildLane(mySide.value, 'Your Board'));
+const rightLane = computed(() => buildLane(opponentSide.value, 'Their Board'));
+
 const {
   stopBotLoop,
   submitSinglePlayerWord
@@ -167,9 +180,7 @@ const {
 
 const playerRoleText = computed(() => {
   if (props.isMultiplayer) {
-    return isHost.value
-      ? 'Build from the host rack and score before the other lane catches up.'
-      : 'Build from the opponent rack and race the board in real time.';
+    return 'Build on your board and race the other board in real time.';
   }
 
   return 'You and the bot are both constantly feeding the board with fresh tiles.';
