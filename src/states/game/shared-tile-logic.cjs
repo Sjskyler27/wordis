@@ -53,7 +53,7 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses }) => {
     },
     firsttile: {
       badge: '1st',
-      effects: { firstTileMultiplier: 2 },
+      effects: { firstTileBonus: 10 },
       ui: {
         tileBackground: 'linear-gradient(180deg, #fff4de 0%, #ffb56b 72%, #d86e27 100%)',
         tileShadow: 'inset 0 -4px 0 rgba(130, 52, 12, 0.24), 0 12px 20px rgba(45, 10, 24, 0.2), 0 0 0 1px rgba(255, 190, 120, 0.45)',
@@ -64,6 +64,7 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses }) => {
     },
     black: {
       effects: { setScore: 0 },
+      canApply: ({ baseScore }) => baseScore <= 4,
       ui: {
         tileBackground: 'linear-gradient(180deg, #3b3343 0%, #211926 72%, #100b14 100%)',
         tileShadow: 'inset 0 -4px 0 rgba(0, 0, 0, 0.4), 0 12px 20px rgba(10, 5, 12, 0.34)',
@@ -232,7 +233,7 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses }) => {
         return total;
       }
 
-      return total + ((tileScore(tile) * (tile?.firstTileMultiplier || 1)) - tileScore(tile));
+      return total + tile?.firstTileBonus;
     }, 0);
     const letterTotal = baseLetterTotal + firstTileBonus;
     const lengthBonus = getLengthBonus(tiles.length);
@@ -327,7 +328,7 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses }) => {
         score: modifierDefinition.effects.setScore != null ? modifierDefinition.effects.setScore : baseScore,
         multiplier: modifierDefinition.effects.zeroLetterScore ? 0 : 1,
         wordMultiplier: modifierDefinition.effects.wordMultiplier || 1,
-        firstTileMultiplier: modifierDefinition.effects.firstTileMultiplier || 1,
+        firstTileBonus: modifierDefinition.effects.firstTileBonus || 0,
         locked: lockTurns > 0,
         lockTurns,
         status
