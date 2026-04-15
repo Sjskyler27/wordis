@@ -1,2 +1,5 @@
-wild should litterally value be  a * this will help with recognising wowrds
+to do
 
+bot is not using wilds 
+
+bring back history but make it look lik calculator deal faded behing last played word 
