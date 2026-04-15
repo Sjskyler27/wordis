@@ -3,7 +3,9 @@ import { DICTIONARY_WORDS } from './dictionary.js';
 const MIN_WORD_LENGTH = 4;
 
 const canBuildWordFromTiles = (word, tiles) => {
-  const availableTiles = tiles.map((tile) => tile.letter);
+  const availableTiles = tiles
+    .filter((tile) => !tile.locked)
+    .map((tile) => tile.letter);
 
   for (const letter of word.toUpperCase()) {
     const tileIndex = availableTiles.indexOf(letter);

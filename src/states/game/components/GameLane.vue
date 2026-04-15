@@ -203,6 +203,11 @@ const getBadgeStyle = (tile) => {
   transform: translateY(1px) scale(0.98);
 }
 
+.tile-locked {
+  cursor: not-allowed;
+  filter: saturate(0.76);
+}
+
 .tile-letter {
   font-size: 2.4rem;
   font-weight: 900;

@@ -12,7 +12,7 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses }) => {
   const MODIFIER_SWING_DIVISOR = 90;
   const MAX_MODIFIER_BONUS = 0.18;
   const GOOD_MODIFIERS = ['gold', 'firsttile'];
-  const BAD_MODIFIERS = ['black', 'mustuse'];
+  const BAD_MODIFIERS = ['black', 'mustuse', 'locked3'];
   const MODIFIER_DEFINITIONS = {
     normal: {
       badge: '',
@@ -70,6 +70,17 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses }) => {
         textColor: '#1c1930',
         badgeBackground: 'rgba(255, 233, 236, 0.96)',
         badgeColor: '#a61c39'
+      }
+    },
+    locked3: {
+      badge: 'LOCK',
+      effects: { lockTurns: 3 },
+      ui: {
+        tileBackground: 'linear-gradient(180deg, #d9edff 0%, #8cb1d8 72%, #4f6999 100%)',
+        tileShadow: 'inset 0 -4px 0 rgba(34, 58, 101, 0.25), 0 12px 20px rgba(24, 20, 46, 0.18), 0 0 0 1px rgba(173, 210, 255, 0.4)',
+        textColor: '#11213f',
+        badgeBackground: 'rgba(233, 244, 255, 0.96)',
+        badgeColor: '#274577'
       }
     }
   };
@@ -248,6 +259,19 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses }) => {
     return tiles.filter((tile) => tile.status === 'mustuse' && !tile.locked);
   };
 
+  const tickLockedTile = (tile) => {
+    if (!tile?.locked) {
+      return tile;
+    }
+
+    const nextLockTurns = Math.max(0, (tile.lockTurns || 0) - 1);
+    return {
+      ...tile,
+      lockTurns: nextLockTurns,
+      locked: nextLockTurns > 0
+    };
+  };
+
   const isMissingRequiredTile = (rackTiles = [], selectedTiles = []) => {
     const requiredTiles = getRequiredTiles(rackTiles);
 
@@ -261,6 +285,7 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses }) => {
       const baseScore = letterConfig[letter]?.score || 0;
       const status = rollTileModifier(side, scores, { letter, baseScore });
       const modifierDefinition = getModifierDefinition(status);
+      const lockTurns = modifierDefinition.effects.lockTurns || 0;
 
       return {
         id: createTileId(),
@@ -269,7 +294,8 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses }) => {
         multiplier: modifierDefinition.effects.zeroLetterScore ? 0 : 1,
         wordMultiplier: modifierDefinition.effects.wordMultiplier || 1,
         firstTileMultiplier: modifierDefinition.effects.firstTileMultiplier || 1,
-        locked: false,
+        locked: lockTurns > 0,
+        lockTurns,
         status
       };
     };
@@ -284,7 +310,13 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses }) => {
 
     const refillTiles = (tiles, usedTileIds, side = null, scores = {}) => {
       const usedIds = new Set(usedTileIds);
-      const nextTiles = [...tiles];
+      const nextTiles = tiles.map((tile) => {
+        if (usedIds.has(tile.id)) {
+          return tile;
+        }
+
+        return tickLockedTile(tile);
+      });
 
       nextTiles.forEach((tile, index) => {
         if (!usedIds.has(tile.id)) {
