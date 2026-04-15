@@ -5,7 +5,7 @@ const LETTER_POOL = Object.entries(LETTER_CONFIG).flatMap(([letter, config]) =>
   Array.from({ length: config.count }, () => letter)
 );
 
-const RACK_SIZE = 22;
+const RACK_SIZE = 20;
 const DUPLICATE_PENALTY = 0.38;
 const MIN_DUPLICATE_WEIGHT = 0.18;
 const BASE_GOOD_MODIFIER_CHANCE = 0.05;
