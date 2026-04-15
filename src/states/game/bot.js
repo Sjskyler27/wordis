@@ -15,6 +15,25 @@ const canBuildWordFromTiles = (word, tiles) => {
   return true;
 };
 
+const includesRequiredTiles = (word, tiles) => {
+  const requiredLetters = tiles
+    .filter((tile) => tile.status === 'mustuse' && !tile.locked)
+    .map((tile) => tile.letter);
+
+  const wordLetters = word.toUpperCase().split('');
+
+  for (const letter of requiredLetters) {
+    const index = wordLetters.indexOf(letter);
+    if (index === -1) {
+      return false;
+    }
+
+    wordLetters.splice(index, 1);
+  }
+
+  return true;
+};
+
 const buildFallbackWord = (tiles) => {
   const letters = tiles.map((tile) => tile.letter);
   const vowels = ['A', 'E', 'I', 'O', 'U'];
@@ -40,10 +59,14 @@ const buildFallbackWord = (tiles) => {
 export const getBotWord = (tiles = [], recentWords = []) => {
   const normalizedRecentWords = recentWords.map((word) => (word || '').toLowerCase());
   const unusedWords = DICTIONARY_WORDS.filter((word) => {
-    return !normalizedRecentWords.includes(word) && canBuildWordFromTiles(word, tiles);
+    return !normalizedRecentWords.includes(word) &&
+      canBuildWordFromTiles(word, tiles) &&
+      includesRequiredTiles(word, tiles);
   });
 
-  const fallbackWords = DICTIONARY_WORDS.filter((word) => canBuildWordFromTiles(word, tiles));
+  const fallbackWords = DICTIONARY_WORDS.filter((word) => {
+    return canBuildWordFromTiles(word, tiles) && includesRequiredTiles(word, tiles);
+  });
   const pool = unusedWords.length ? unusedWords : fallbackWords;
 
   if (!pool.length) {

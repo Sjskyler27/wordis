@@ -106,7 +106,7 @@ import {
   submitWord as submitMultiplayerWord,
   resetGame as resetMultiplayer
 } from './multiplayer.js';
-import { getWordScoreDetails } from './tile-logic.js';
+import { getWordScoreDetails, isMissingRequiredTile } from './tile-logic.js';
 import { useWordBuilder } from './useWordBuilder.js';
 import { useSinglePlayerGame } from './useSinglePlayerGame.js';
 import GameLane from './components/GameLane.vue';
@@ -185,6 +185,11 @@ const handleSubmit = () => {
   const selectedTiles = selectedTilesForCurrentSide.value;
   if (!selectedTiles.length || selectedTiles.map((tile) => tile.letter).join('') !== normalizedWord) {
     localMessage.value = 'That word cannot be made from your current tiles.';
+    return;
+  }
+
+  if (isMissingRequiredTile(myTiles.value, selectedTiles)) {
+    localMessage.value = 'You have to use every MUST tile in your rack.';
     return;
   }
 

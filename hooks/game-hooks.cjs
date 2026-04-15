@@ -83,7 +83,7 @@ const rollTileModifier = (side, scores = {}) => {
   }
 
   if (roll < goodChance + badChance) {
-    return 'black';
+    return Math.random() < 0.5 ? 'black' : 'mustuse';
   }
 
   return 'normal';
@@ -159,6 +159,10 @@ const getSelectedTiles = (tiles, tileIds) => {
   }
 
   return selectedTiles;
+};
+
+const getRequiredTiles = (tiles = []) => {
+  return tiles.filter((tile) => tile.status === 'mustuse' && !tile.locked);
 };
 
 const refillRack = (tiles, usedTileIds, side = null, scores = {}) => {
@@ -258,6 +262,15 @@ const submitWord = (roomCode, clientId, word, tileIds) => {
 
   if (selectedTiles.some((tile) => tile.locked)) {
     return { success: false, error: 'Locked tiles cannot be used' };
+  }
+
+  const requiredTiles = getRequiredTiles(state.tiles[side]);
+  const missingRequiredTile = requiredTiles.find((requiredTile) => {
+    return !selectedTiles.some((selectedTile) => selectedTile.id === requiredTile.id);
+  });
+
+  if (missingRequiredTile) {
+    return { success: false, error: 'You must use every MUST tile in your rack' };
   }
 
   const selectedWord = selectedTiles.map((tile) => tile.letter).join('');

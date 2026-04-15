@@ -85,7 +85,7 @@ const rollTileModifier = (side, scores = {}) => {
   }
 
   if (roll < goodChance + badChance) {
-    return 'black';
+    return Math.random() < 0.5 ? 'black' : 'mustuse';
   }
 
   return 'normal';
@@ -169,6 +169,18 @@ export const getTilesForWord = (tiles, word) => {
   }
 
   return selectedTiles;
+};
+
+export const getRequiredTiles = (tiles = []) => {
+  return tiles.filter((tile) => tile.status === 'mustuse' && !tile.locked);
+};
+
+export const isMissingRequiredTile = (rackTiles = [], selectedTiles = []) => {
+  const requiredTiles = getRequiredTiles(rackTiles);
+
+  return requiredTiles.some((requiredTile) => {
+    return !selectedTiles.some((selectedTile) => selectedTile.id === requiredTile.id);
+  });
 };
 
 export const refillTiles = (tiles, usedTileIds, side = null, scores = {}) => {

@@ -104,6 +104,10 @@ const getModifierLabel = (status) => {
     return '1st';
   }
 
+  if (status === 'mustuse') {
+    return 'MUST';
+  }
+
   return '0';
 };
 </script>
@@ -222,6 +226,15 @@ const getModifierLabel = (status) => {
     0 0 0 1px rgba(255, 190, 120, 0.45);
 }
 
+.built-tile.tile-status-mustuse {
+  background:
+    linear-gradient(180deg, #ffdfe2 0%, #ff8b97 72%, #b72848 100%);
+  box-shadow:
+    inset 0 -4px 0 rgba(104, 18, 37, 0.24),
+    0 12px 20px rgba(45, 10, 24, 0.2),
+    0 0 0 1px rgba(255, 166, 179, 0.42);
+}
+
 .built-tile.tile-status-black {
   background:
     linear-gradient(180deg, #3b3343 0%, #211926 72%, #100b14 100%);
@@ -273,6 +286,11 @@ const getModifierLabel = (status) => {
 .tile-modifier-firsttile {
   background: rgba(255, 232, 210, 0.96);
   color: #9b4708;
+}
+
+.tile-modifier-mustuse {
+  background: rgba(255, 233, 236, 0.96);
+  color: #a61c39;
 }
 
 .tile-modifier-black {
