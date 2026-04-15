@@ -28,7 +28,7 @@ export const useSinglePlayerGame = ({
         opponent: createRack('opponent', playerScores.value)
       };
       rackClears.value = {
-        host: 2,
+        host: 50,
         opponent: 2
       };
     }
