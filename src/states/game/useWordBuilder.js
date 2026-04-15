@@ -35,7 +35,8 @@ export const useWordBuilder = ({ mySide, myTiles }) => {
     { length: 5, bonus: getLengthBonus(5) },
     { length: 6, bonus: getLengthBonus(6) },
     { length: 7, bonus: getLengthBonus(7) },
-    { length: 8, bonus: getLengthBonus(8) }
+    { length: 8, bonus: getLengthBonus(8) },
+    { length: 9, bonus: getLengthBonus(9) }
   ]));
 
   const handleTileClick = (tile) => {

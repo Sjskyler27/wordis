@@ -211,8 +211,8 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses }) => {
       return wordBonuses[length];
     }
 
-    if (length > 8) {
-      return wordBonuses[8] + ((length - 8) * 5);
+    if (length > 9) {
+      return wordBonuses[9] + ((length - 9) * 5);
     }
 
     return 0;

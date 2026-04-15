@@ -1,19 +1,10 @@
 <template>
   <form class="word-console" @submit.prevent="$emit('submit')">
     <div class="bonus-ladder">
-      <div
-        v-for="step in lengthBonusSteps"
-        :key="`bonus-${step.length}`"
-        class="bonus-step"
-        :class="{ active: currentWordLength >= step.length }"
-      >
-        <strong>+{{ step.bonus }}</strong>
-        <span>{{ step.length }} letters</span>
-      </div>
     </div>
 
     <div class="word-input-shell">
-      <span class="console-label">Your Word</span>
+      <span class="console-label"></span>
       <div class="built-word-strip" :class="{ empty: !selectedTiles.length }">
         <div
           v-for="slot in wordSlots"
@@ -51,11 +42,6 @@
     </div>
 
     <div class="builder-breakdown">
-      <span>Letters {{ currentLetterTotal }}</span>
-      <span v-if="currentFirstTileBonus > 0">Lead Tile +{{ currentFirstTileBonus }}</span>
-      <span>Length Bonus +{{ currentLengthBonus }}</span>
-      <span v-if="currentWordMultiplier > 1">Gold x{{ currentWordMultiplier }}</span>
-      <span>Total {{ currentWordScore }}</span>
     </div>
 
     <div class="console-actions">
@@ -121,7 +107,8 @@ const props = defineProps({
 defineEmits(['undo', 'clear', 'submit', 'remove-specific', 'clear-rack']);
 
 const wordSlots = computed(() => {
-  return Array.from({ length: 8 }, (_, index) => {
+  console.log(props.lengthBonusSteps)
+  return Array.from({ length: 9 }, (_, index) => {
     const position = index + 1;
     const bonusStep = props.lengthBonusSteps.find((step) => step.length === position);
 
@@ -222,7 +209,7 @@ const getBadgeStyle = (tile) => {
 .built-word-strip {
   min-height: 74px;
   display: grid;
-  grid-template-columns: repeat(8, minmax(0, 1fr));
+  grid-template-columns: repeat(9, minmax(0, 1fr));
 }
 
 .built-word-strip.empty {
