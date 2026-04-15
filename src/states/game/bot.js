@@ -1,52 +1,53 @@
-// Simple bot AI for Tic-Tac-Toe
+import { DICTIONARY_WORDS } from './dictionary.js';
 
-export const getBotMove = (board) => {
-  // Check if bot can win
-  for (let i = 0; i < 9; i++) {
-    if (board[i] === '') {
-      const testBoard = [...board];
-      testBoard[i] = 'O';
-      if (checkWinner(testBoard) === 'O') return i;
+const canBuildWordFromTiles = (word, tiles) => {
+  const availableTiles = [...tiles];
+
+  for (const letter of word.toUpperCase()) {
+    const tileIndex = availableTiles.indexOf(letter);
+    if (tileIndex === -1) {
+      return false;
     }
+
+    availableTiles.splice(tileIndex, 1);
   }
 
-  // Check if need to block player
-  for (let i = 0; i < 9; i++) {
-    if (board[i] === '') {
-      const testBoard = [...board];
-      testBoard[i] = 'X';
-      if (checkWinner(testBoard) === 'X') return i;
-    }
-  }
-
-  // Try center
-  if (board[4] === '') return 4;
-
-  // Try corners
-  const corners = [0, 2, 6, 8];
-  const availableCorners = corners.filter(i => board[i] === '');
-  if (availableCorners.length > 0) {
-    return availableCorners[Math.floor(Math.random() * availableCorners.length)];
-  }
-
-  // Take any remaining space
-  for (let i = 0; i < 9; i++) {
-    if (board[i] === '') return i;
-  }
-
-  return -1;
+  return true;
 };
 
-const checkWinner = (board) => {
-  const lines = [
-    [0, 1, 2], [3, 4, 5], [6, 7, 8],
-    [0, 3, 6], [1, 4, 7], [2, 5, 8],
-    [0, 4, 8], [2, 4, 6]
-  ];
-  for (let line of lines) {
-    if (board[line[0]] && board[line[0]] === board[line[1]] && board[line[0]] === board[line[2]]) {
-      return board[line[0]];
-    }
+const buildFallbackWord = (tiles) => {
+  const vowels = ['A', 'E', 'I', 'O', 'U'];
+  const uniqueTiles = [...new Set(tiles)];
+  const vowel = uniqueTiles.find((tile) => vowels.includes(tile));
+  const consonant = uniqueTiles.find((tile) => !vowels.includes(tile));
+
+  if (consonant && vowel) {
+    return `${consonant}${vowel}`.toLowerCase();
   }
-  return null;
+
+  if (tiles.length >= 2) {
+    return `${tiles[0]}${tiles[1]}`.toLowerCase();
+  }
+
+  if (tiles.length === 1) {
+    return tiles[0].toLowerCase();
+  }
+
+  return '';
+};
+
+export const getBotWord = (tiles = [], recentWords = []) => {
+  const normalizedRecentWords = recentWords.map((word) => (word || '').toLowerCase());
+  const unusedWords = DICTIONARY_WORDS.filter((word) => {
+    return !normalizedRecentWords.includes(word) && canBuildWordFromTiles(word, tiles);
+  });
+
+  const fallbackWords = DICTIONARY_WORDS.filter((word) => canBuildWordFromTiles(word, tiles));
+  const pool = unusedWords.length ? unusedWords : fallbackWords;
+
+  if (!pool.length) {
+    return buildFallbackWord(tiles);
+  }
+
+  return pool[Math.floor(Math.random() * pool.length)];
 };

@@ -25,15 +25,18 @@ get started locally
 npm install
 
 add git ignore 
+publish to github
 
 add .env
 
-next install other packages such as firebase functions 
-cd functions 
-npm install
 
 to run locally 
 npm run dev
+
+
+npm run dev for one instance 
+or yarn run dev -- --host 0.0.0.0 --port 5173   to test websockets with 2 instances 
+
 
 to run local and a executable test 
 npm run start 

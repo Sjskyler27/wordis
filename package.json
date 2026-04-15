@@ -1,13 +1,13 @@
 {
-  "name": "TITLEHERE",
-  "productName": "TITLEHERE",
+  "name": "WORDIS",
+  "productName": "WORDIS",
   "private": true,
   "version": "0.0.1",
   "type": "module",
   "main": "electron/main.cjs",
   "build": {
-    "productName": "TITLEHERE",
-    "appId": "com.skykingstudios.TITLEHERE",
+    "productName": "WORDIS",
+    "appId": "com.skykingstudios.WORDIS",
     "extraFiles": [
       {
         "from": "electron/libsteam_api.dylib",

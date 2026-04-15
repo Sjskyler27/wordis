@@ -12,7 +12,7 @@ const {
   generateRoomCode,
   createGame,
   joinGame,
-  makeMove,
+  submitWord,
   removePlayerFromGame
 } = require('./hooks/game-hooks.cjs');
 
@@ -65,7 +65,7 @@ const handleJoinGame = (connection, clientId, data) => {
     return;
   }
 
-  const { success, error } = joinGame(requestedCode, clientId);
+  const { success, error, state } = joinGame(requestedCode, clientId);
   if (!success) {
     sendEvent(connection, 'joinError', error);
     return;
@@ -73,30 +73,39 @@ const handleJoinGame = (connection, clientId, data) => {
 
   addClientToRoom(requestedCode, clientId, connection);
   sendEvent(connection, 'gameJoined', { roomCode: requestedCode });
-  broadcastToRoom(requestedCode, { type: 'startGame', data: null });
+  broadcastToRoom(requestedCode, {
+    type: 'startGame',
+    data: {
+      words: state.words,
+      history: state.history,
+      scores: state.scores,
+      tiles: state.tiles
+    }
+  });
   console.log(`Client ${clientId} joined room ${requestedCode}`);
 };
 
-const handleMakeMove = (connection, clientId, data) => {
+const handleSubmitWord = (connection, clientId, data) => {
   const requestedCode = (data?.roomCode || '').toUpperCase();
-  const { index, player } = data || {};
+  const { word } = data || {};
   if (!requestedCode) {
     sendEvent(connection, 'joinError', 'Room code required');
     return;
   }
 
-  const { success, error, state } = makeMove(requestedCode, index, player);
+  const { success, error, state } = submitWord(requestedCode, clientId, word);
   if (!success) {
     sendEvent(connection, 'joinError', error);
     return;
   }
 
   broadcastToRoom(requestedCode, {
-    type: 'move',
+    type: 'wordSubmitted',
     data: {
-      board: state.board,
-      currentPlayer: state.currentPlayer,
-      winner: state.winner
+      words: state.words,
+      history: state.history,
+      scores: state.scores,
+      tiles: state.tiles
     }
   });
 };
@@ -114,8 +123,8 @@ const handleClientAction = (connection, clientId, action) => {
     case 'joinGame':
       handleJoinGame(connection, clientId, action.data);
       break;
-    case 'makeMove':
-      handleMakeMove(connection, clientId, action.data);
+    case 'submitWord':
+      handleSubmitWord(connection, clientId, action.data);
       break;
     default:
       sendEvent(connection, 'joinError', `Unknown action ${action.type}`);

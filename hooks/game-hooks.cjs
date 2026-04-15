@@ -1,4 +1,66 @@
 const games = new Map();
+const LETTER_CONFIG = require('../src/states/game/letters.json');
+const WORD_BONUSES = require('../src/states/game/word-bonuses.json');
+const RACK_SIZE = 22;
+const LETTER_POOL = Object.entries(LETTER_CONFIG).flatMap(([letter, config]) =>
+  Array.from({ length: config.count }, () => letter)
+);
+
+const drawLetter = () => LETTER_POOL[Math.floor(Math.random() * LETTER_POOL.length)];
+
+const createRack = () => Array.from({ length: RACK_SIZE }, drawLetter);
+
+const getLengthBonus = (length) => {
+  if (WORD_BONUSES[length]) {
+    return WORD_BONUSES[length];
+  }
+
+  if (length > 8) {
+    return WORD_BONUSES[8] + ((length - 8) * 5);
+  }
+
+  return 0;
+};
+
+const getWordScore = (word) => {
+  const letterScore = word
+    .split('')
+    .reduce((total, letter) => total + (LETTER_CONFIG[letter]?.score || 0), 0);
+
+  return letterScore + getLengthBonus(word.length);
+};
+
+const canBuildWordFromTiles = (word, tiles) => {
+  const availableTiles = [...tiles];
+
+  for (const letter of word) {
+    const tileIndex = availableTiles.indexOf(letter);
+    if (tileIndex === -1) {
+      return false;
+    }
+
+    availableTiles.splice(tileIndex, 1);
+  }
+
+  return true;
+};
+
+const refillRack = (tiles, usedLetters) => {
+  const remainingTiles = [...tiles];
+
+  for (const letter of usedLetters) {
+    const tileIndex = remainingTiles.indexOf(letter);
+    if (tileIndex !== -1) {
+      remainingTiles.splice(tileIndex, 1);
+    }
+  }
+
+  while (remainingTiles.length < RACK_SIZE) {
+    remainingTiles.push(drawLetter());
+  }
+
+  return remainingTiles;
+};
 
 const generateRoomCode = () => {
   let roomCode;
@@ -16,9 +78,22 @@ const createGame = (roomCode, hostId) => {
   const state = {
     host: hostId,
     players: [hostId],
-    board: Array(9).fill(''),
-    currentPlayer: 'X',
-    winner: null
+    words: {
+      host: '',
+      opponent: ''
+    },
+    history: {
+      host: [],
+      opponent: []
+    },
+    scores: {
+      host: 0,
+      opponent: 0
+    },
+    tiles: {
+      host: createRack(),
+      opponent: createRack()
+    }
   };
 
   games.set(roomCode, state);
@@ -38,31 +113,35 @@ const joinGame = (roomCode, clientId) => {
   return { success: true, state };
 };
 
-const makeMove = (roomCode, index, player) => {
+const submitWord = (roomCode, clientId, word) => {
   const state = games.get(roomCode);
   if (!state) {
     return { success: false, error: 'Room not found' };
   }
 
-  if (typeof index !== 'number' || index < 0 || index > 8) {
-    return { success: false, error: 'Invalid move index' };
+  const normalizedWord = (word || '').trim().toUpperCase();
+  if (!normalizedWord) {
+    return { success: false, error: 'Word required' };
   }
 
-  if (state.winner) {
-    return { success: false, error: 'Game already finished' };
+  const side = clientId === state.host ? 'host' : 'opponent';
+  if (!state.players.includes(clientId)) {
+    return { success: false, error: 'Player not in room' };
   }
 
-  if (state.board[index]) {
-    return { success: false, error: 'Cell already taken' };
+  if (!/^[A-Z]+$/.test(normalizedWord)) {
+    return { success: false, error: 'Words must use letters only' };
   }
 
-  if (state.currentPlayer !== player) {
-    return { success: false, error: 'Not your turn' };
+  if (!canBuildWordFromTiles(normalizedWord, state.tiles[side])) {
+    return { success: false, error: 'Word must be built from your current tiles' };
   }
 
-  state.board[index] = player;
-  state.winner = checkWinner(state.board);
-  state.currentPlayer = player === 'X' ? 'O' : 'X';
+  state.words[side] = normalizedWord;
+  state.history[side].unshift(normalizedWord);
+  state.history[side] = state.history[side].slice(0, 5);
+  state.scores[side] += getWordScore(normalizedWord);
+  state.tiles[side] = refillRack(state.tiles[side], normalizedWord.split(''));
 
   return { success: true, state };
 };
@@ -77,32 +156,11 @@ const removePlayerFromGame = (roomCode, clientId) => {
   }
 };
 
-const checkWinner = (board) => {
-  const lines = [
-    [0, 1, 2],
-    [3, 4, 5],
-    [6, 7, 8],
-    [0, 3, 6],
-    [1, 4, 7],
-    [2, 5, 8],
-    [0, 4, 8],
-    [2, 4, 6]
-  ];
-
-  for (const [a, b, c] of lines) {
-    if (board[a] && board[a] === board[b] && board[a] === board[c]) {
-      return board[a];
-    }
-  }
-
-  return null;
-};
-
 module.exports = {
   games,
   generateRoomCode,
   createGame,
   joinGame,
-  makeMove,
+  submitWord,
   removePlayerFromGame
 };

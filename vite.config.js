@@ -10,8 +10,8 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.svg', 'robots.txt', 'pwa-192x192.png', 'pwa-512x512.png'],
       manifest: {
-        name: 'TITLEHERE',
-        short_name: 'TITLEHERE',
+        name: 'WORDIS',
+        short_name: 'WORDIS',
         start_url: '/',
         display: 'fullscreen',
         background_color: '#000000',
