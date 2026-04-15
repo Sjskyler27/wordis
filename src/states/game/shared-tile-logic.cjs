@@ -483,6 +483,30 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses }) => {
     return selectedTiles;
   };
 
+  const selectedTilesMatchWord = (selectedTiles = [], word = '') => {
+    let remainingWord = (word || '').toUpperCase();
+
+    for (const tile of selectedTiles) {
+      if (!remainingWord.length) {
+        return false;
+      }
+
+      if (tile.status === 'wild') {
+        remainingWord = remainingWord.slice(1);
+        continue;
+      }
+
+      const token = (tile.letter || '').toUpperCase();
+      if (!token || !remainingWord.startsWith(token)) {
+        return false;
+      }
+
+      remainingWord = remainingWord.slice(token.length);
+    }
+
+    return remainingWord.length === 0;
+  };
+
   const applyModifierToTile = (tile, status = 'normal') => {
     const definition = getModifierDefinition(status);
     const baseScore = letterConfig[tile.letter]?.score || tile.baseScore || tile.score || 0;
@@ -618,6 +642,7 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses }) => {
     getResourceGrants,
     getTilesForWord,
     getSelectedTiles,
+    selectedTilesMatchWord,
     getRequiredTiles,
     isMissingRequiredTile,
     getCardDefinition,

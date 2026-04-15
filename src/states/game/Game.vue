@@ -152,7 +152,7 @@ import {
   useAttack as useMultiplayerAttack,
   resetGame as resetMultiplayer
 } from './multiplayer.js';
-import { MIN_WORD_LENGTH, getWordScoreDetails, isMissingRequiredTile } from './tile-logic.js';
+import { MIN_WORD_LENGTH, getWordScoreDetails, isMissingRequiredTile, selectedTilesMatchWord } from './tile-logic.js';
 import { useWordBuilder } from './useWordBuilder.js';
 import { useSinglePlayerGame } from './useSinglePlayerGame.js';
 import GameLane from './components/GameLane.vue';
@@ -266,7 +266,7 @@ const handleSubmit = () => {
   }
 
   const selectedTiles = selectedTilesForCurrentSide.value;
-  if (!selectedTiles.length || selectedTiles.map((tile) => tile.letter).join('') !== normalizedWord) {
+  if (!selectedTiles.length || !selectedTilesMatchWord(selectedTiles, normalizedWord)) {
     localMessage.value = 'That word cannot be made from your current tiles.';
     return;
   }

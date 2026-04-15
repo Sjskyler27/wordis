@@ -11,6 +11,7 @@ const {
   getWordScoreDetails,
   getResourceGrants,
   getSelectedTiles,
+  selectedTilesMatchWord,
   isMissingRequiredTile,
   replaceTileWithModifier,
   createCardLogic,
@@ -197,7 +198,7 @@ const submitWord = (roomCode, clientId, word, tileIds) => {
   }
 
   const selectedTiles = getSelectedTiles(state.tiles[side], tileIds);
-  if (!selectedTiles || selectedTiles.length !== normalizedWord.length) {
+  if (!selectedTiles || !selectedTiles.length) {
     return { success: false, error: 'Word must be built from your selected tiles' };
   }
 
@@ -209,8 +210,7 @@ const submitWord = (roomCode, clientId, word, tileIds) => {
     return { success: false, error: 'You must use every MUST tile in your rack' };
   }
 
-  const selectedWord = selectedTiles.map((tile) => tile.letter).join('');
-  if (selectedWord !== normalizedWord) {
+  if (!selectedTilesMatchWord(selectedTiles, normalizedWord)) {
     return { success: false, error: 'Selected tiles do not match the submitted word' };
   }
 
