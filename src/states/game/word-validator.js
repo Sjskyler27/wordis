@@ -40,11 +40,24 @@ const getFallbackDictionarySet = (word, languageCode) => {
   const normalizedLanguageCode = normalizeLanguageCode(languageCode);
   const fallbackDictionaries = FALLBACK_DICTIONARIES[normalizedLanguageCode];
 
+
+  console.log(normalizedWord)
   if (!fallbackDictionaries) {
     return null;
   }
 
-  return fallbackDictionaries.byLength[normalizedWord.length] || fallbackDictionaries.bot;
+  const lengthDictionary = fallbackDictionaries.byLength[normalizedWord.length];
+
+  console.log(lengthDictionary)
+  if (lengthDictionary?.size) {
+    return lengthDictionary;
+  }
+
+  if (fallbackDictionaries.bot?.size) {
+    return fallbackDictionaries.bot;
+  }
+
+  return null;
 };
 
 const matchesWildcardWord = (candidateWord, wildcardWord) => {
@@ -80,8 +93,17 @@ const checkFallbackDictionary = (word, languageCode) => {
     return { valid: false, source: 'fallback-wildcard', resolvedWord: normalizedWord };
   }
 
+  if (fallbackDictionary.has(normalizedWord)) {
+    console.log(normalizedWord + ' in '+ fallbackDictionary)
+    return {
+      valid: true,
+      source: 'fallback',
+      resolvedWord: normalizedWord
+    };
+  }
+
   return {
-    valid: fallbackDictionary.has(normalizedWord),
+    valid: false,
     source: 'fallback',
     resolvedWord: normalizedWord
   };

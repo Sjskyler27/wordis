@@ -110,7 +110,6 @@ const props = defineProps({
 defineEmits(['undo', 'clear', 'submit', 'remove-specific', 'clear-rack', 'save-letters']);
 
 const wordSlots = computed(() => {
-  console.log(props.lengthBonusSteps)
   return Array.from({ length: 9 }, (_, index) => {
     const position = index + 1;
     const bonusStep = props.lengthBonusSteps.find((step) => step.length === position);
