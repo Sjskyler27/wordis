@@ -3,6 +3,7 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses }) => {
     Array.from({ length: config.count }, () => letter)
   );
 
+  const MIN_WORD_LENGTH = 4;
   const RACK_SIZE = 20;
   const DUPLICATE_PENALTY = 0.38;
   const MIN_DUPLICATE_WEIGHT = 0.18;
@@ -288,6 +289,7 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses }) => {
 
   return {
     LETTER_CONFIG: letterConfig,
+    MIN_WORD_LENGTH,
     RACK_SIZE,
     tileScore,
     getLengthBonus,

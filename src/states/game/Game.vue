@@ -129,7 +129,7 @@ import {
   submitWord as submitMultiplayerWord,
   resetGame as resetMultiplayer
 } from './multiplayer.js';
-import { getWordScoreDetails, isMissingRequiredTile } from './tile-logic.js';
+import { MIN_WORD_LENGTH, getWordScoreDetails, isMissingRequiredTile } from './tile-logic.js';
 import { useWordBuilder } from './useWordBuilder.js';
 import { useSinglePlayerGame } from './useSinglePlayerGame.js';
 import GameLane from './components/GameLane.vue';
@@ -217,6 +217,11 @@ const handleSubmit = () => {
   const normalizedWord = currentWordDisplay.value;
   if (!normalizedWord) {
     localMessage.value = 'Pick at least one tile first.';
+    return;
+  }
+
+  if (normalizedWord.length < MIN_WORD_LENGTH) {
+    localMessage.value = `Words must be at least ${MIN_WORD_LENGTH} letters.`;
     return;
   }
 
