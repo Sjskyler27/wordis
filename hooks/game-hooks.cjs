@@ -6,6 +6,7 @@ const {
 } = require('../src/states/game/shared-tile-logic.cjs');
 
 const {
+  MIN_WORD_LENGTH,
   getWordScoreDetails,
   getSelectedTiles,
   isMissingRequiredTile,
@@ -94,6 +95,10 @@ const submitWord = (roomCode, clientId, word, tileIds) => {
 
   if (!/^[A-Z]+$/.test(normalizedWord)) {
     return { success: false, error: 'Words must use letters only' };
+  }
+
+  if (normalizedWord.length < MIN_WORD_LENGTH) {
+    return { success: false, error: `Words must be at least ${MIN_WORD_LENGTH} letters` };
   }
 
   const selectedTiles = getSelectedTiles(state.tiles[side], tileIds);

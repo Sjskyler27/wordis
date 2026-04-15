@@ -13,6 +13,7 @@ const sharedTileLogic = createSharedTileLogic({
 });
 
 const {
+  MIN_WORD_LENGTH,
   tileScore,
   getLengthBonus,
   getTilesScore,
@@ -36,6 +37,7 @@ const { createRack, refillTiles } = createTileLogic({
 export {
   createRack,
   refillTiles,
+  MIN_WORD_LENGTH,
   tileScore,
   getLengthBonus,
   getTilesScore,

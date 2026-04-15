@@ -14,22 +14,39 @@
 
     <div class="word-input-shell">
       <span class="console-label">Your Word</span>
-      <TransitionGroup name="built-tile" tag="div" class="built-word-strip" :class="{ empty: !selectedTiles.length }">
-        <button
-          v-for="tile in selectedTiles"
-          :key="`built-${tile.id}`"
-          type="button"
-          class="built-tile"
-          :style="getTileStyle(tile)"
-          @click="$emit('remove-specific', tile.id)"
+      <div class="built-word-strip" :class="{ empty: !selectedTiles.length }">
+        <div
+          v-for="slot in wordSlots"
+          :key="`word-slot-${slot.index}`"
+          class="word-slot"
+          :class="{
+            filled: !!slot.tile,
+            milestone: !!slot.bonus,
+            active: currentWordLength >= slot.position
+          }"
         >
-          <span v-if="!getModifierUi(tile.status).hideBadge && tile.status !== 'normal'" class="tile-modifier" :style="getBadgeStyle(tile)">
-            {{ getModifierBadge(tile.status) }}
-          </span>
-          <span class="tile-score">{{ tileScore(tile) }}</span>
-          <span class="tile-letter">{{ tile.letter }}</span>
-        </button>
-      </TransitionGroup>
+          <Transition name="built-tile" mode="out-in">
+            <button
+              v-if="slot.tile"
+              :key="`built-${slot.tile.id}`"
+              type="button"
+              class="built-tile"
+              :style="getTileStyle(slot.tile)"
+              @click="$emit('remove-specific', slot.tile.id)"
+            >
+              <span v-if="!getModifierUi(slot.tile.status).hideBadge && slot.tile.status !== 'normal'" class="tile-modifier" :style="getBadgeStyle(slot.tile)">
+                {{ getModifierBadge(slot.tile) }}
+              </span>
+              <span class="tile-score">{{ tileScore(slot.tile) }}</span>
+              <span class="tile-letter">{{ slot.tile.letter }}</span>
+            </button>
+            <div v-else :key="`placeholder-${slot.index}`" class="word-slot-placeholder">
+              <span v-if="slot.bonus" class="word-slot-bonus">+{{ slot.bonus }}</span>
+              <span class="word-slot-index">{{ slot.position }}</span>
+            </div>
+          </Transition>
+        </div>
+      </div>
       <span class="console-score">{{ currentWordScore }} pts</span>
     </div>
 
@@ -56,9 +73,10 @@
 </template>
 
 <script setup>
+import { computed } from 'vue';
 import { getModifierBadge, getModifierUi, tileScore } from '../tile-logic.js';
 
-defineProps({
+const props = defineProps({
   selectedTiles: {
     type: Array,
     required: true
@@ -94,6 +112,20 @@ defineProps({
 });
 
 defineEmits(['undo', 'clear', 'submit', 'remove-specific']);
+
+const wordSlots = computed(() => {
+  return Array.from({ length: 8 }, (_, index) => {
+    const position = index + 1;
+    const bonusStep = props.lengthBonusSteps.find((step) => step.length === position);
+
+    return {
+      index,
+      position,
+      tile: props.selectedTiles[index] || null,
+      bonus: bonusStep?.bonus || 0
+    };
+  });
+});
 
 const getTileStyle = (tile) => {
   const ui = getModifierUi(tile.status);
@@ -182,14 +214,62 @@ const getBadgeStyle = (tile) => {
 
 .built-word-strip {
   min-height: 74px;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  align-items: center;
+  display: grid;
+  grid-template-columns: repeat(8, minmax(0, 1fr));
 }
 
 .built-word-strip.empty {
   color: rgba(254, 183, 59, 0.62);
+}
+
+.word-slot {
+  max-width: 106px;
+  border-radius: 14px;
+}
+
+.word-slot-placeholder {
+  min-height: 90px;
+  width: 106px;
+  border-radius: 14px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background:
+    linear-gradient(180deg, rgba(147, 147, 147, 0.52), rgba(57, 57, 57, 0.58));
+  border: 1px solid rgba(255, 196, 94, 0.14);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 227, 167, 0.08),
+    inset 0 -2px 0 rgba(73, 31, 8, 0.28);
+}
+
+.word-slot.milestone .word-slot-placeholder {
+  background:
+    linear-gradient(180deg, rgba(154, 83, 19, 0.58), rgba(120, 60, 16, 0.66));
+  border-color: rgba(255, 202, 103, 0.22);
+}
+
+
+.word-slot-bonus {
+  font-size: 2rem;
+  font-weight: 900;
+  line-height: 1;
+  color: rgba(181, 181, 181, 0.997);
+  text-shadow: 0 1px 0 rgba(255, 226, 163, 0.08);
+}
+
+.word-slot-index {
+  visibility: hidden;
+  position: absolute;
+  right: 10px;
+  bottom: 8px;
+  font-size: 0.82rem;
+  font-weight: 800;
+  color: rgba(184, 184, 184, 0.99);
+}
+
+.word-slot.filled .word-slot-placeholder {
+  opacity: 0.6;
 }
 
 .built-tile {
@@ -197,7 +277,7 @@ const getBadgeStyle = (tile) => {
   border: none;
   cursor: pointer;
   min-height: 90px;
-  min-width: 90px;
+  width: 106px;
   border-radius: 14px;
   position: relative;
   background: var(--built-tile-bg, linear-gradient(180deg, #fffef8 0%, #f2ebe0 70%, #d9cec0 100%));
@@ -348,6 +428,10 @@ const getBadgeStyle = (tile) => {
 
   .word-input-shell {
     grid-template-columns: 1fr;
+  }
+
+  .built-word-strip {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 
   .console-actions {

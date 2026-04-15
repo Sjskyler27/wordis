@@ -92,6 +92,11 @@ export const useSinglePlayerGame = ({
     botLoopId = null;
   };
 
+  const startBotLoop = () => {
+    ensureSinglePlayerState();
+    scheduleBotLoop();
+  };
+
   const submitSinglePlayerWord = (word) => {
     ensureSinglePlayerState();
     const selectedTiles = selectedTilesForCurrentSide.value;
@@ -134,8 +139,7 @@ export const useSinglePlayerGame = ({
       return;
     }
 
-    ensureSinglePlayerState();
-    scheduleBotLoop();
+    startBotLoop();
   });
 
   onBeforeUnmount(() => {
@@ -144,6 +148,7 @@ export const useSinglePlayerGame = ({
 
   return {
     ensureSinglePlayerState,
+    startBotLoop,
     stopBotLoop,
     submitSinglePlayerWord
   };

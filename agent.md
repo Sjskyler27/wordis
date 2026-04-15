@@ -14,6 +14,6 @@ wordis is a real time spelling game with a tug of war scoring system.
 letters have points and each word you spell gives you points accordingly
 when a player plays a word the points pull to there side accordingly. 
 players can earn attacks that they can play against their opponent to make the game harder such as locking letters forcing them to use a letter etc.
-<!-- 
-# RULES 
-always update the changelog according to your changes.  -->
+
+# Multicommit tasks 
+I may ask you to do multiple commits for a task when i ask use git commit -m command so that i only need to approve it once and you can continue working on tasks. when you finish all tasks in that multi task then push one more commit to the changelog with the changes the date and the start and stop time.

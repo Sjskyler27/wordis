@@ -5,13 +5,16 @@
       <div class="shape-layer layer-near"></div>
     </div>
 
-    <main class="board-frame">
+    <main class="board-frame" :class="{ paused: isPaused }">
       <aside class="side-stack">
         <div class="bonus-card accent-blue">
           <span class="bonus-kicker">Tempo</span>
           <strong>{{ props.isMultiplayer ? 'Real Time Duel' : 'Bot Pressure' }}</strong>
           <p v-if="props.isMultiplayer">
-            Room {{ roomCode }} · {{ isHost ? 'Host lane' : 'Opponent lane' }}
+            <button type="button" class="room-code-button" @click="copyRoomCode">
+              Room {{ roomCode }}
+            </button>
+            · {{ isHost ? 'Host lane' : 'Opponent lane' }}
           </p>
           <p>{{ playerRoleText }}</p>
         </div>
@@ -28,6 +31,7 @@
           <p v-if="props.isMultiplayer && !gameStarted">Waiting for opponent to connect</p>
           <p v-else>Only used letters are replaced</p>
         </div>
+      <button class="pause-button" @click="togglePause">{{ isPaused ? 'Resume' : 'Pause' }}</button>
       <button class="back-button" @click="resetAndGoHome">Back to Home</button>
 
       </aside>
@@ -94,11 +98,25 @@
       </section>
     </main>
 
+    <Settings
+      v-if="isPaused"
+      :volume="10"
+      :music-volume="10"
+      :effects-volume="10"
+      :zoom="1"
+      :dungeon-zoom="1"
+      :shop-zoom="1"
+      :native-controller-support="false"
+      @close="togglePause"
+      @home="resetAndGoHome"
+    />
+
   </div>
 </template>
 
 <script setup>
-import { computed, defineProps, ref } from 'vue';
+import { computed, defineProps, onBeforeUnmount, onMounted, ref } from 'vue';
+import Settings from '../../assets/Settings.vue';
 import {
   roomCode,
   isHost,
@@ -111,7 +129,7 @@ import {
   submitWord as submitMultiplayerWord,
   resetGame as resetMultiplayer
 } from './multiplayer.js';
-import { getWordScoreDetails, isMissingRequiredTile } from './tile-logic.js';
+import { MIN_WORD_LENGTH, getWordScoreDetails, isMissingRequiredTile } from './tile-logic.js';
 import { useWordBuilder } from './useWordBuilder.js';
 import { useSinglePlayerGame } from './useSinglePlayerGame.js';
 import GameLane from './components/GameLane.vue';
@@ -123,6 +141,7 @@ const props = defineProps({
 
 const emit = defineEmits(['home']);
 const localMessage = ref('');
+const isPaused = ref(false);
 const isMultiplayerRef = computed(() => props.isMultiplayer);
 
 const mySide = computed(() => {
@@ -171,6 +190,7 @@ const leftLane = computed(() => buildLane(mySide.value, 'Your Board'));
 const rightLane = computed(() => buildLane(opponentSide.value, 'Their Board'));
 
 const {
+  startBotLoop,
   stopBotLoop,
   submitSinglePlayerWord
 } = useSinglePlayerGame({
@@ -200,6 +220,11 @@ const handleSubmit = () => {
     return;
   }
 
+  if (normalizedWord.length < MIN_WORD_LENGTH) {
+    localMessage.value = `Words must be at least ${MIN_WORD_LENGTH} letters.`;
+    return;
+  }
+
   const selectedTiles = selectedTilesForCurrentSide.value;
   if (!selectedTiles.length || selectedTiles.map((tile) => tile.letter).join('') !== normalizedWord) {
     localMessage.value = 'That word cannot be made from your current tiles.';
@@ -225,7 +250,59 @@ const handleSubmit = () => {
   submitSinglePlayerWord(normalizedWord);
 };
 
+const copyRoomCode = async () => {
+  if (!props.isMultiplayer || !roomCode.value) {
+    return;
+  }
+
+  try {
+    await navigator.clipboard.writeText(roomCode.value);
+    localMessage.value = `Copied room code ${roomCode.value}.`;
+  } catch (error) {
+    localMessage.value = `Room code: ${roomCode.value}`;
+  }
+};
+
+const setPauseState = (nextPaused) => {
+  isPaused.value = nextPaused;
+
+  if (props.isMultiplayer) {
+    return;
+  }
+
+  if (nextPaused) {
+    stopBotLoop();
+    localMessage.value = 'Game paused.';
+    return;
+  }
+
+  startBotLoop();
+  localMessage.value = 'Racks are live';
+};
+
+const togglePause = () => {
+  setPauseState(!isPaused.value);
+};
+
+const handleKeydown = (event) => {
+  if (event.key !== 'Escape') {
+    return;
+  }
+
+  event.preventDefault();
+  togglePause();
+};
+
+onMounted(() => {
+  window.addEventListener('keydown', handleKeydown);
+});
+
+onBeforeUnmount(() => {
+  window.removeEventListener('keydown', handleKeydown);
+});
+
 const resetAndGoHome = () => {
+  isPaused.value = false;
   stopBotLoop();
   resetMultiplayer();
   localMessage.value = '';
@@ -326,6 +403,12 @@ body {
   min-height: 0;
 }
 
+.board-frame.paused {
+  filter: blur(4px) saturate(0.82);
+  pointer-events: none;
+  user-select: none;
+}
+
 .side-stack {
   display: flex;
   flex-direction: column;
@@ -379,6 +462,19 @@ body {
   opacity: 0.85;
 }
 
+.room-code-button {
+  appearance: none;
+  border: none;
+  background: rgba(255, 255, 255, 0.12);
+  color: inherit;
+  cursor: pointer;
+  border-radius: 999px;
+  padding: 5px 10px;
+  font: inherit;
+  font-weight: 700;
+  margin-right: 6px;
+}
+
 .accent-blue {
   background: linear-gradient(180deg, rgba(58, 111, 208, 0.9), rgba(49, 78, 170, 0.82));
 }
@@ -394,7 +490,7 @@ body {
 .arena-shell {
   min-width: 0;
   max-width: 1250px;
-  max-height: 1000px%;
+  max-height: 1000px;
   border-radius: 34px;
   background: rgba(90, 23, 35, 0.72);
   border: 2px solid rgba(255, 255, 255, 0.12);
@@ -494,6 +590,22 @@ body {
   letter-spacing: 0.04em;
   font-family: "Press Start 2P", cursive;
   background: linear-gradient(180deg, #ff965b 0%, #e05e2a 100%);
+  color: white;
+}
+
+.pause-button {
+  border: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  padding: 12px 18px;
+  font-size: 0.95rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  font-family: "Press Start 2P", cursive;
+  background: linear-gradient(180deg, #6356d9 0%, #41359c 100%);
   color: white;
 }
 

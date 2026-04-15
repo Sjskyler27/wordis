@@ -24,7 +24,7 @@
             @click="$emit('tile-click', tile)"
           >
             <span v-if="!getModifierUi(tile.status).hideBadge && tile.status !== 'normal'" class="tile-modifier" :style="getBadgeStyle(tile)">
-              {{ getModifierBadge(tile.status) }}
+              {{ getModifierBadge(tile) }}
             </span>
             <span class="tile-score">{{ tileScore(tile) }}</span>
             <span class="tile-letter">{{ tile.letter }}</span>
@@ -136,7 +136,7 @@ const getBadgeStyle = (tile) => {
 
 .rack-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(94px, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 10px;
 }
 
@@ -201,6 +201,11 @@ const getBadgeStyle = (tile) => {
 .tile-in-use:hover,
 .tile-in-use:focus-visible {
   transform: translateY(1px) scale(0.98);
+}
+
+.tile-locked {
+  cursor: not-allowed;
+  filter: saturate(0.76);
 }
 
 .tile-letter {
@@ -268,6 +273,12 @@ const getBadgeStyle = (tile) => {
     opacity: 0;
     transform: scale(0.82);
     filter: brightness(0.8);
+  }
+}
+
+@media (max-width: 560px) {
+  .rack-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 }
 </style>
