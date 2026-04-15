@@ -189,17 +189,20 @@ const getBadgeStyle = (tile) => {
 }
 
 .tile-in-use {
-  background:
-    linear-gradient(180deg, #c8bdb0 0%, #a79887 70%, #857565 100%);
-  color: rgba(28, 25, 48, 0.78);
   box-shadow:
-    inset 0 4px 10px rgba(38, 20, 12, 0.22),
+    inset 0 0 0 9999px rgba(0, 0, 0, 0.18), /* soft dark overlay */
+    inset 0 4px 10px rgba(38, 20, 12, 0.32),
     inset 0 -2px 0 rgba(255, 255, 255, 0.18);
   transform: translateY(2px) scale(0.98);
 }
 
 .tile-in-use:hover,
 .tile-in-use:focus-visible {
+  box-shadow:
+    inset 0 0 0 9999px rgba(0, 0, 0, 0.08), /* soft dark overlay */
+    inset 0 4px 10px rgba(38, 20, 12, 0.22),
+    inset 0 -2px 0 rgba(255, 255, 255, 0.18);
+  transform: translateY(2px) scale(0.98);
   transform: translateY(1px) scale(0.98);
 }
 
