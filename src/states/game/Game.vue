@@ -62,7 +62,7 @@
             </button>
           </div>
         </div>
-      <button class="pause-button" @click="togglePause">{{ isPaused ? 'Resume' : 'Pause' }}</button>
+      <button class="pause-button" @click="emit('showSettings')">{{ isPaused ? 'Resume' : 'Pause' }}</button>
       <button class="back-button" @click="resetAndGoHome">Back to Home</button>
 
       </aside>
@@ -130,26 +130,11 @@
         />
       </section>
     </main>
-
-    <Settings
-      v-if="isPaused"
-      :volume="10"
-      :music-volume="10"
-      :effects-volume="10"
-      :zoom="1"
-      :dungeon-zoom="1"
-      :shop-zoom="1"
-      :native-controller-support="false"
-      @close="togglePause"
-      @home="resetAndGoHome"
-    />
-
   </div>
 </template>
 
 <script setup>
 import { computed, defineProps, onBeforeUnmount, onMounted, ref, watch } from 'vue';
-import Settings from '../../assets/Settings.vue';
 import {
   roomCode,
   isHost,
@@ -177,7 +162,7 @@ const props = defineProps({
   isMultiplayer: Boolean
 });
 
-const emit = defineEmits(['home']);
+const emit = defineEmits(['home', 'showSettings']);
 const localMessage = ref('');
 const isPaused = ref(false);
 const activeBoonCardId = ref(null);
