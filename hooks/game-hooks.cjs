@@ -1,10 +1,19 @@
 const games = new Map();
+const LETTER_CONFIG = require('../src/states/game/letters.json');
+const WORD_BONUSES = require('../src/states/game/word-bonuses.json');
+const {
+  createSharedTileLogic
+} = require('../src/states/game/shared-tile-logic.cjs');
+
 const {
   getWordScoreDetails,
   getSelectedTiles,
   isMissingRequiredTile,
   createTileLogic
-} = require('../src/states/game/shared-tile-logic.cjs');
+} = createSharedTileLogic({
+  letterConfig: LETTER_CONFIG,
+  wordBonuses: WORD_BONUSES
+});
 
 let nextTileId = 1;
 
