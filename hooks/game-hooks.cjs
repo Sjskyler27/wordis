@@ -219,12 +219,13 @@ const submitWord = async (roomCode, clientId, word, tileIds, languageCode = 'en'
   if (!validationResult.valid) {
     return { success: false, error: 'That is not a valid word' };
   }
+  const resolvedWord = (validationResult.resolvedWord || normalizedWord).toUpperCase();
 
   const wordScore = getWordScoreDetails(selectedTiles).total;
   const grantedResources = getResourceGrants(selectedTiles);
 
-  state.words[side] = normalizedWord;
-  state.history[side].unshift(normalizedWord);
+  state.words[side] = resolvedWord;
+  state.history[side].unshift(resolvedWord);
   state.history[side] = state.history[side].slice(0, 5);
   state.lastWordScores[side] = wordScore;
   state.scores[side] += wordScore;

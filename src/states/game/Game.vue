@@ -285,6 +285,7 @@ const handleSubmit = async () => {
     localMessage.value = `${normalizedWord} is not a valid ${preferredLanguage.label.toLowerCase()} word.`;
     return;
   }
+  const resolvedWord = (validationResult.resolvedWord || normalizedWord).toUpperCase();
 
   if (props.isMultiplayer) {
     const scoreDetails = getWordScoreDetails(selectedTiles);
@@ -292,12 +293,12 @@ const handleSubmit = async () => {
       word: normalizedWord,
       tileIds: selectedTiles.map((tile) => tile.id)
     });
-    localMessage.value = `Sent ${normalizedWord} for ${scoreDetails.total} pts.`;
+    localMessage.value = `Sent ${resolvedWord} for ${scoreDetails.total} pts.`;
     clearSelectionForSide(mySide.value);
     return;
   }
 
-  submitSinglePlayerWord(normalizedWord);
+  submitSinglePlayerWord(resolvedWord);
 };
 
 const resetActionMode = () => {

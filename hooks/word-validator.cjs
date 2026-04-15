@@ -64,22 +64,23 @@ const checkFallbackDictionary = (word, languageCode) => {
   const fallbackDictionary = getFallbackDictionarySet(normalizedWord, languageCode);
 
   if (!fallbackDictionary) {
-    return { valid: true, source: 'assumed' };
+    return { valid: true, source: 'assumed', resolvedWord: normalizedWord };
   }
 
   if (normalizedWord.includes('*')) {
     for (const candidateWord of fallbackDictionary) {
       if (matchesWildcardWord(candidateWord, normalizedWord)) {
-        return { valid: true, source: 'fallback-wildcard' };
+        return { valid: true, source: 'fallback-wildcard', resolvedWord: candidateWord };
       }
     }
 
-    return { valid: false, source: 'fallback-wildcard' };
+    return { valid: false, source: 'fallback-wildcard', resolvedWord: normalizedWord };
   }
 
   return {
     valid: fallbackDictionary.has(normalizedWord),
-    source: 'fallback'
+    source: 'fallback',
+    resolvedWord: normalizedWord
   };
 };
 
@@ -95,16 +96,16 @@ const checkDictionaryApi = async (word, languageCode) => {
     });
 
     if (response.ok) {
-      return { valid: true, source: 'api' };
+      return { valid: true, source: 'api', resolvedWord: normalizedWord };
     }
 
     if (response.status === 404) {
-      return { valid: false, source: 'api' };
+      return { valid: false, source: 'api', resolvedWord: normalizedWord };
     }
 
-    return { valid: null, source: 'api' };
+    return { valid: null, source: 'api', resolvedWord: normalizedWord };
   } catch (error) {
-    return { valid: null, source: 'api' };
+    return { valid: null, source: 'api', resolvedWord: normalizedWord };
   } finally {
     clearTimeout(timeoutId);
   }
@@ -113,7 +114,7 @@ const checkDictionaryApi = async (word, languageCode) => {
 const validateWord = async (word, languageCode = 'en') => {
   const normalizedWord = (word || '').trim().toLowerCase();
   if (!normalizedWord) {
-    return { valid: false, source: 'empty' };
+    return { valid: false, source: 'empty', resolvedWord: '' };
   }
 
   if (normalizedWord.includes('*')) {
