@@ -217,6 +217,11 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses }) => {
 
     return 0;
   };
+  const getDifference = (length) =>{
+      if (wordBonuses[length]) {
+      return wordBonuses[length] - (wordBonuses[length - 1] || 0);
+    }
+  }
 
   const getTilesScore = (tiles) => tiles.reduce((total, tile) => total + tileScore(tile), 0);
 
@@ -375,6 +380,7 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses }) => {
     RACK_SIZE,
     tileScore,
     getLengthBonus,
+    getDifference,
     getTilesScore,
     getWordScoreDetails,
     getTilesForWord,

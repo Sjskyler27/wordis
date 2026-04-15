@@ -32,7 +32,7 @@
               <span class="tile-letter">{{ slot.tile.letter }}</span>
             </button>
             <div v-else :key="`placeholder-${slot.index}`" class="word-slot-placeholder">
-              <span v-if="slot.bonus" class="word-slot-bonus">+{{ slot.bonus }}</span>
+              <span v-if="slot.bonus" class="word-slot-bonus">+{{ slot.difference }}</span>
               <span class="word-slot-index">{{ slot.position }}</span>
             </div>
           </Transition>
@@ -116,7 +116,8 @@ const wordSlots = computed(() => {
       index,
       position,
       tile: props.selectedTiles[index] || null,
-      bonus: bonusStep?.bonus || 0
+      bonus: bonusStep?.bonus || 0,
+      difference: bonusStep?.difference || 0
     };
   });
 });
