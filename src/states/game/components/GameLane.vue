@@ -2,12 +2,8 @@
   <section class="lane">
     <div class="lane-header">
       <div>
-        <p class="lane-label">{{ label }}</p>
-        <h2>{{ submittedWord || 'Waiting for a word...' }}</h2>
-      </div>
-      <div class="lane-score">
-        <span>Points</span>
-        <strong>{{ score }}</strong>
+        <p class="lane-label">{{ label }} </p>
+        <h2>{{ submittedWord || 'Waiting for a word...' }} <strong v-if="submittedWord">+ {{ lastWordScore }}</strong></h2>
       </div>
     </div>
 
@@ -70,6 +66,10 @@ defineProps({
   selectedTileIds: {
     type: Object,
     required: true
+  },
+  lastWordScore: {
+    type: Number,
+    required: false
   }
 });
 
@@ -132,27 +132,7 @@ const getBadgeStyle = (tile) => {
   word-break: break-word;
 }
 
-.lane-score {
-  min-width: 92px;
-  padding: 10px 12px;
-  border-radius: 18px;
-  background: rgba(255, 255, 255, 0.06);
-  text-align: right;
-}
 
-.lane-score span {
-  display: block;
-  font-size: 0.72rem;
-  text-transform: uppercase;
-  letter-spacing: 0.14em;
-  opacity: 0.68;
-}
-
-.lane-score strong {
-  display: block;
-  font-size: 1.4rem;
-  margin-top: 4px;
-}
 
 .rack-grid {
   display: grid;

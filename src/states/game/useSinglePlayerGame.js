@@ -14,6 +14,7 @@ export const useSinglePlayerGame = ({
   clearSelectionForSide,
   playerTiles,
   playerScores,
+  lastWordScores,
   submittedWords,
   wordHistory
 }) => {
@@ -63,6 +64,10 @@ export const useSinglePlayerGame = ({
       host: playerScores.value.host,
       opponent: playerScores.value.opponent + botScoreDetails.total
     };
+    lastWordScores.value = {
+      host: lastWordScores.value.host,
+      opponent: botScoreDetails.total
+    };
 
     playerTiles.value = {
       host: playerTiles.value.host,
@@ -105,6 +110,10 @@ export const useSinglePlayerGame = ({
     playerScores.value = {
       host: playerScores.value.host + scoreDetails.total,
       opponent: playerScores.value.opponent
+    };
+    lastWordScores.value = {
+      host: scoreDetails.total,
+      opponent: lastWordScores.value.opponent
     };
 
     playerTiles.value = {

@@ -51,6 +51,7 @@
             :label="leftLane.label"
             :submitted-word="leftLane.submittedWord"
             :score="leftLane.score"
+            :last-word-score="leftLane.lastWordScore"
             :tiles="leftLane.tiles"
             :is-active="leftLane.isActive"
             :selected-tile-ids="leftLane.selectedTileIds"
@@ -62,6 +63,7 @@
             :label="rightLane.label"
             :submitted-word="rightLane.submittedWord"
             :score="rightLane.score"
+            :last-word-score="rightLane.lastWordScore"
             :tiles="rightLane.tiles"
             :is-active="rightLane.isActive"
             :selected-tile-ids="rightLane.selectedTileIds"
@@ -103,6 +105,7 @@ import {
   submittedWords,
   wordHistory,
   playerScores,
+  lastWordScores,
   playerTiles,
   gameStarted,
   submitWord as submitMultiplayerWord,
@@ -137,6 +140,7 @@ const buildLane = (side, label) => ({
   label,
   submittedWord: submittedWords.value[side],
   score: playerScores.value[side],
+  lastWordScore: lastWordScores.value[side],
   tiles: playerTiles.value[side],
   isActive: mySide.value === side,
   selectedTileIds: selectedTileIds.value[side]
@@ -176,6 +180,7 @@ const {
   clearSelectionForSide,
   playerTiles,
   playerScores,
+  lastWordScores,
   submittedWords,
   wordHistory
 });

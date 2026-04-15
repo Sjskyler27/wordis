@@ -45,16 +45,27 @@ const sendEvent = (connection, type, data = null) => {
   }
 };
 
+const createGameStatePayload = (state) => ({
+  words: state.words,
+  history: state.history,
+  scores: state.scores,
+  lastWordScores: state.lastWordScores,
+  tiles: state.tiles
+});
+
 const handleHostGame = (connection, clientId) => {
   const roomCode = generateRoomCode();
-  const { success, error } = createGame(roomCode, clientId);
+  const { success, error, state } = createGame(roomCode, clientId);
   if (!success) {
     sendEvent(connection, 'joinError', error);
     return;
   }
 
   addClientToRoom(roomCode, clientId, connection);
-  sendEvent(connection, 'gameHosted', { roomCode });
+  sendEvent(connection, 'gameHosted', {
+    roomCode,
+    ...createGameStatePayload(state)
+  });
   console.log(`Client ${clientId} created room ${roomCode}`);
 };
 
@@ -72,15 +83,13 @@ const handleJoinGame = (connection, clientId, data) => {
   }
 
   addClientToRoom(requestedCode, clientId, connection);
-  sendEvent(connection, 'gameJoined', { roomCode: requestedCode });
+  sendEvent(connection, 'gameJoined', {
+    roomCode: requestedCode,
+    ...createGameStatePayload(state)
+  });
   broadcastToRoom(requestedCode, {
     type: 'startGame',
-    data: {
-      words: state.words,
-      history: state.history,
-      scores: state.scores,
-      tiles: state.tiles
-    }
+    data: createGameStatePayload(state)
   });
   console.log(`Client ${clientId} joined room ${requestedCode}`);
 };
@@ -101,12 +110,7 @@ const handleSubmitWord = (connection, clientId, data) => {
 
   broadcastToRoom(requestedCode, {
     type: 'wordSubmitted',
-    data: {
-      words: state.words,
-      history: state.history,
-      scores: state.scores,
-      tiles: state.tiles
-    }
+    data: createGameStatePayload(state)
   });
 };
 

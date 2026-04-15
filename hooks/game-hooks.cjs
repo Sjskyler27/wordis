@@ -49,6 +49,10 @@ const createGame = (roomCode, hostId) => {
       host: 0,
       opponent: 0
     },
+    lastWordScores: {
+      host: 0,
+      opponent: 0
+    },
     tiles: {
       host: createRack('host', { host: 0, opponent: 0 }),
       opponent: createRack('opponent', { host: 0, opponent: 0 })
@@ -110,10 +114,13 @@ const submitWord = (roomCode, clientId, word, tileIds) => {
     return { success: false, error: 'Selected tiles do not match the submitted word' };
   }
 
+  const wordScore = getWordScoreDetails(selectedTiles).total;
+
   state.words[side] = normalizedWord;
   state.history[side].unshift(normalizedWord);
   state.history[side] = state.history[side].slice(0, 5);
-  state.scores[side] += getWordScoreDetails(selectedTiles).total;
+  state.lastWordScores[side] = wordScore;
+  state.scores[side] += wordScore;
   state.tiles[side] = refillRack(state.tiles[side], tileIds, side, state.scores);
 
   return { success: true, state };
