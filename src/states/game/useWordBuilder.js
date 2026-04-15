@@ -41,7 +41,12 @@ export const useWordBuilder = ({ mySide, myTiles }) => {
 
   const handleTileClick = (tile) => {
     const side = mySide.value;
-    if (tile.locked || selectedTileSlots.value[side].includes(tile.id)) {
+    if (tile.locked) {
+      return;
+    }
+
+    if (selectedTileSlots.value[side].includes(tile.id)) {
+      removeSpecificTile(tile.id);
       return;
     }
 
