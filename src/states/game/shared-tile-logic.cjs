@@ -63,6 +63,7 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses }) => {
     mustuse: {
       badge: 'MUST',
       effects: { required: true },
+      canApply: ({ baseScore }) => baseScore <= 3,
       ui: {
         tileBackground: 'linear-gradient(180deg, #ffdfe2 0%, #ff8b97 72%, #b72848 100%)',
         tileShadow: 'inset 0 -4px 0 rgba(104, 18, 37, 0.24), 0 12px 20px rgba(45, 10, 24, 0.2), 0 0 0 1px rgba(255, 166, 179, 0.42)',
@@ -131,22 +132,42 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses }) => {
     };
   };
 
-  const rollTileModifier = (side, scores = {}) => {
+  const getModifierDefinition = (status = 'normal') => MODIFIER_DEFINITIONS[status] || MODIFIER_DEFINITIONS.normal;
+  const canApplyModifier = (status = 'normal', context = {}) => {
+    const definition = getModifierDefinition(status);
+
+    if (typeof definition.canApply !== 'function') {
+      return true;
+    }
+
+    return definition.canApply(context);
+  };
+
+  const rollTileModifier = (side, scores = {}, context = {}) => {
     const { goodChance, badChance } = getModifierChances(side, scores);
     const roll = Math.random();
 
     if (roll < goodChance) {
-      return GOOD_MODIFIERS[Math.floor(Math.random() * GOOD_MODIFIERS.length)];
+      const eligibleGoodModifiers = GOOD_MODIFIERS.filter((modifier) => canApplyModifier(modifier, context));
+      if (!eligibleGoodModifiers.length) {
+        return 'normal';
+      }
+
+      return eligibleGoodModifiers[Math.floor(Math.random() * eligibleGoodModifiers.length)];
     }
 
     if (roll < goodChance + badChance) {
-      return BAD_MODIFIERS[Math.floor(Math.random() * BAD_MODIFIERS.length)];
+      const eligibleBadModifiers = BAD_MODIFIERS.filter((modifier) => canApplyModifier(modifier, context));
+      if (!eligibleBadModifiers.length) {
+        return 'normal';
+      }
+
+      return eligibleBadModifiers[Math.floor(Math.random() * eligibleBadModifiers.length)];
     }
 
     return 'normal';
   };
 
-  const getModifierDefinition = (status = 'normal') => MODIFIER_DEFINITIONS[status] || MODIFIER_DEFINITIONS.normal;
   const getModifierBadge = (status = 'normal') => getModifierDefinition(status).badge;
   const getModifierUi = (status = 'normal') => getModifierDefinition(status).ui || MODIFIER_DEFINITIONS.normal.ui;
   const tileScore = (tile) => (tile?.score || 0) * (tile?.multiplier || 1);
@@ -237,9 +258,9 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses }) => {
 
   const createTileLogic = ({ createTileId }) => {
     const createTile = (letter = drawLetter(), side = null, scores = {}) => {
-      const status = rollTileModifier(side, scores);
-      const modifierDefinition = getModifierDefinition(status);
       const baseScore = letterConfig[letter]?.score || 0;
+      const status = rollTileModifier(side, scores, { letter, baseScore });
+      const modifierDefinition = getModifierDefinition(status);
 
       return {
         id: createTileId(),
