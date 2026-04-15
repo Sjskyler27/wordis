@@ -640,24 +640,58 @@ body {
 }
 
 .action-card {
+  --card-glow: rgba(255, 255, 255, 0.16);
+  --card-edge: rgba(255, 255, 255, 0.22);
+  --card-pattern: rgba(255, 255, 255, 0.08);
+  --card-ink: #fff7ee;
   appearance: none;
-  border: none;
+  border: 1px solid var(--card-edge);
   cursor: pointer;
   width: 100%;
   text-align: left;
   display: grid;
-  gap: 6px;
-  padding: 14px 14px 13px;
-  border-radius: 18px;
-  color: #fff7ee;
+  gap: 8px;
+  padding: 14px 14px 15px;
+  border-radius: 22px;
+  color: var(--card-ink);
   font: inherit;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.16), 0 10px 18px rgba(30, 8, 34, 0.18);
-  transition: transform 140ms ease, box-shadow 140ms ease, filter 140ms ease;
+  position: relative;
+  overflow: hidden;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.16),
+    inset 0 -3px 0 rgba(39, 11, 25, 0.28),
+    0 10px 18px rgba(30, 8, 34, 0.18);
+  transition: transform 140ms ease, box-shadow 140ms ease, filter 140ms ease, border-color 140ms ease;
+}
+
+.action-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 18% 20%, var(--card-glow) 0, transparent 36%),
+    linear-gradient(135deg, var(--card-pattern) 0%, transparent 35%, var(--card-pattern) 100%);
+  opacity: 0.9;
+  pointer-events: none;
+}
+
+.action-card::after {
+  content: '';
+  position: absolute;
+  inset: 7px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.01));
+  pointer-events: none;
 }
 
 .action-card:hover {
   transform: translateY(-2px);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18), 0 14px 22px rgba(30, 8, 34, 0.24);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.18),
+    inset 0 -3px 0 rgba(39, 11, 25, 0.32),
+    0 14px 22px rgba(30, 8, 34, 0.24);
+  border-color: rgba(255, 236, 187, 0.38);
 }
 
 .action-card:focus-visible {
@@ -666,29 +700,57 @@ body {
 }
 
 .action-card strong {
-  font-size: 1rem;
-  line-height: 1;
+  position: relative;
+  z-index: 1;
+  font-size: 1.2rem;
+  line-height: 1.05;
+  text-shadow: 0 1px 0 rgba(48, 18, 8, 0.28);
 }
 
 .action-card span:last-child {
-  font-size: 0.76rem;
+  position: relative;
+  z-index: 1;
+  font-size: 0.99rem;
   line-height: 1.35;
   color: rgba(255, 248, 236, 0.84);
 }
 
 .action-card-type {
+  position: relative;
+  z-index: 1;
+  justify-self: start;
+  padding: 4px 8px 3px;
+  border-radius: 999px;
   font-size: 0.68rem;
   text-transform: uppercase;
   letter-spacing: 0.16em;
-  color: rgba(255, 248, 236, 0.74);
+  color: rgba(255, 248, 236, 0.92);
+  background: rgba(24, 8, 22, 0.26);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
 }
 
 .boon-card {
-  background: linear-gradient(180deg, rgba(108, 190, 128, 0.82), rgba(47, 111, 79, 0.9));
+  --card-glow: rgba(189, 255, 195, 0.22);
+  --card-edge: rgba(196, 255, 204, 0.3);
+  --card-pattern: rgba(224, 255, 198, 0.08);
+  background:
+    linear-gradient(180deg, rgba(119, 206, 113, 0.96), rgba(63, 129, 84, 0.96));
 }
 
 .attack-card {
-  background: linear-gradient(180deg, rgba(226, 113, 88, 0.84), rgba(137, 40, 52, 0.92));
+  --card-glow: rgba(255, 190, 154, 0.22);
+  --card-edge: rgba(255, 194, 162, 0.3);
+  --card-pattern: rgba(255, 222, 199, 0.08);
+  background:
+    linear-gradient(180deg, rgba(226, 118, 77, 0.98), rgba(145, 39, 51, 0.96));
+}
+
+.boon-card .action-card-type {
+  background: rgba(18, 63, 42, 0.34);
+}
+
+.attack-card .action-card-type {
+  background: rgba(78, 19, 28, 0.34);
 }
 
 .action-card.armed {
@@ -696,7 +758,9 @@ body {
   box-shadow:
     inset 0 0 0 2px rgba(255, 232, 160, 0.8),
     inset 0 1px 0 rgba(255, 255, 255, 0.2),
+    inset 0 -3px 0 rgba(39, 11, 25, 0.32),
     0 16px 24px rgba(30, 8, 34, 0.28);
+  border-color: rgba(255, 236, 187, 0.78);
 }
 
 .arena-shell {
