@@ -41,7 +41,7 @@ const checkDictionaryApi = async (word, languageCode) => {
   const timeoutId = setTimeout(() => controller.abort(), API_TIMEOUT_MS);
 
   try {
-    const response = await fetch(`https://api.dictioaryapi.dev/api/v2/entries/${normalizedLanguageCode}/${normalizedWord}`, {
+    const response = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/${normalizedLanguageCode}/${normalizedWord}`, {
       signal: controller.signal
     });
 
