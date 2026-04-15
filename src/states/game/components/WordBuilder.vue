@@ -20,10 +20,10 @@
           :key="`built-${tile.id}`"
           type="button"
           class="built-tile"
-          :class="[`tile-status-${tile.status}`]"
+          :style="getTileStyle(tile)"
           @click="$emit('remove-specific', tile.id)"
         >
-          <span v-if="tile.status !== 'normal'" class="tile-modifier" :class="`tile-modifier-${tile.status}`">
+          <span v-if="!getModifierUi(tile.status).hideBadge && tile.status !== 'normal'" class="tile-modifier" :style="getBadgeStyle(tile)">
             {{ getModifierBadge(tile.status) }}
           </span>
           <span class="tile-score">{{ tileScore(tile) }}</span>
@@ -56,7 +56,7 @@
 </template>
 
 <script setup>
-import { getModifierBadge, tileScore } from '../tile-logic.js';
+import { getModifierBadge, getModifierUi, tileScore } from '../tile-logic.js';
 
 defineProps({
   selectedTiles: {
@@ -94,6 +94,25 @@ defineProps({
 });
 
 defineEmits(['undo', 'clear', 'submit', 'remove-specific']);
+
+const getTileStyle = (tile) => {
+  const ui = getModifierUi(tile.status);
+
+  return {
+    '--built-tile-bg': ui.tileBackground,
+    '--built-tile-shadow': ui.tileShadow,
+    '--built-tile-text-color': ui.textColor
+  };
+};
+
+const getBadgeStyle = (tile) => {
+  const ui = getModifierUi(tile.status);
+
+  return {
+    background: ui.badgeBackground,
+    color: ui.badgeColor
+  };
+};
 </script>
 
 <style scoped>
@@ -181,51 +200,14 @@ defineEmits(['undo', 'clear', 'submit', 'remove-specific']);
   min-width: 90px;
   border-radius: 14px;
   position: relative;
-  background:
-    linear-gradient(180deg, #fffef8 0%, #f2ebe0 70%, #d9cec0 100%);
-  color: #1c1930;
-  box-shadow: inset 0 -3px 0 rgba(0, 0, 0, 0.16);
+  background: var(--built-tile-bg, linear-gradient(180deg, #fffef8 0%, #f2ebe0 70%, #d9cec0 100%));
+  color: var(--built-tile-text-color, #1c1930);
+  box-shadow: var(--built-tile-shadow, inset 0 -3px 0 rgba(0, 0, 0, 0.16));
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 0;
   will-change: transform, opacity;
-}
-
-.built-tile.tile-status-gold {
-  background:
-    linear-gradient(180deg, #fff7d2 0%, #f4cf67 72%, #c68b1d 100%);
-  box-shadow:
-    inset 0 -4px 0 rgba(122, 72, 8, 0.2),
-    0 12px 20px rgba(45, 10, 24, 0.2),
-    0 0 0 1px rgba(255, 223, 128, 0.5);
-}
-
-.built-tile.tile-status-firsttile {
-  background:
-    linear-gradient(180deg, #fff4de 0%, #ffb56b 72%, #d86e27 100%);
-  box-shadow:
-    inset 0 -4px 0 rgba(130, 52, 12, 0.24),
-    0 12px 20px rgba(45, 10, 24, 0.2),
-    0 0 0 1px rgba(255, 190, 120, 0.45);
-}
-
-.built-tile.tile-status-mustuse {
-  background:
-    linear-gradient(180deg, #ffdfe2 0%, #ff8b97 72%, #b72848 100%);
-  box-shadow:
-    inset 0 -4px 0 rgba(104, 18, 37, 0.24),
-    0 12px 20px rgba(45, 10, 24, 0.2),
-    0 0 0 1px rgba(255, 166, 179, 0.42);
-}
-
-.built-tile.tile-status-black {
-  background:
-    linear-gradient(180deg, #3b3343 0%, #211926 72%, #100b14 100%);
-  color: #f6efe1;
-  box-shadow:
-    inset 0 -4px 0 rgba(0, 0, 0, 0.4),
-    0 12px 20px rgba(10, 5, 12, 0.34);
 }
 
 .built-tile:focus-visible {
@@ -260,25 +242,6 @@ defineEmits(['undo', 'clear', 'submit', 'remove-specific']);
   text-transform: uppercase;
   text-align: center;
   box-shadow: 0 4px 10px rgba(27, 11, 20, 0.18);
-}
-
-.tile-modifier-gold {
-  background: rgba(255, 245, 196, 0.95);
-  color: #8e4b00;
-}
-
-.tile-modifier-firsttile {
-  background: rgba(255, 232, 210, 0.96);
-  color: #9b4708;
-}
-
-.tile-modifier-mustuse {
-  background: rgba(255, 233, 236, 0.96);
-  color: #a61c39;
-}
-
-.tile-modifier-black {
-  visibility: hidden;
 }
 
 .built-tile-enter-active {

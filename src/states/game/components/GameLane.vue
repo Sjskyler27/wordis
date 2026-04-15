@@ -22,12 +22,12 @@
               opponent: side === 'opponent',
               active: isActive,
               'tile-in-use': selectedTileIds.has(tile.id),
-              'tile-locked': tile.locked,
-              [`tile-status-${tile.status}`]: tile.status
+              'tile-locked': tile.locked
             }"
+            :style="getTileStyle(tile)"
             @click="$emit('tile-click', tile)"
           >
-            <span v-if="tile.status !== 'normal'" class="tile-modifier" :class="`tile-modifier-${tile.status}`">
+            <span v-if="!getModifierUi(tile.status).hideBadge && tile.status !== 'normal'" class="tile-modifier" :style="getBadgeStyle(tile)">
               {{ getModifierBadge(tile.status) }}
             </span>
             <span class="tile-score">{{ tileScore(tile) }}</span>
@@ -40,7 +40,7 @@
 </template>
 
 <script setup>
-import { getModifierBadge, tileScore } from '../tile-logic.js';
+import { getModifierBadge, getModifierUi, tileScore } from '../tile-logic.js';
 
 defineProps({
   side: {
@@ -74,6 +74,27 @@ defineProps({
 });
 
 defineEmits(['tile-click']);
+
+const getTileStyle = (tile) => {
+  const ui = getModifierUi(tile.status);
+
+  return {
+    '--tile-bg': ui.tileBackground,
+    '--tile-shadow': ui.tileShadow,
+    '--tile-hover-shadow': ui.tileHoverShadow || ui.tileShadow,
+    '--tile-focus-shadow': ui.tileFocusShadow || ui.tileShadow,
+    '--tile-text-color': ui.textColor
+  };
+};
+
+const getBadgeStyle = (tile) => {
+  const ui = getModifierUi(tile.status);
+
+  return {
+    background: ui.badgeBackground,
+    color: ui.badgeColor
+  };
+};
 </script>
 
 <style scoped>
@@ -151,72 +172,28 @@ defineEmits(['tile-click']);
   min-width: 94px;
   width: 100%;
   border-radius: 16px;
-  background:
-    linear-gradient(180deg, #fffef8 0%, #f2ebe0 70%, #d9cec0 100%);
-  color: #1c1930;
+  background: var(--tile-bg, linear-gradient(180deg, #fffef8 0%, #f2ebe0 70%, #d9cec0 100%));
+  color: var(--tile-text-color, #1c1930);
   position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow:
-    inset 0 -4px 0 rgba(0, 0, 0, 0.12),
-    0 10px 18px rgba(45, 10, 24, 0.16);
+  box-shadow: var(--tile-shadow, inset 0 -4px 0 rgba(0, 0, 0, 0.12), 0 10px 18px rgba(45, 10, 24, 0.16));
   transition: transform 140ms ease, box-shadow 140ms ease;
   padding: 15px;
   will-change: transform, opacity;
 }
 
-.tile-status-gold {
-  background:
-    linear-gradient(180deg, #fff7d2 0%, #f4cf67 72%, #c68b1d 100%);
-  box-shadow:
-    inset 0 -4px 0 rgba(122, 72, 8, 0.2),
-    0 12px 20px rgba(45, 10, 24, 0.2),
-    0 0 0 1px rgba(255, 223, 128, 0.5);
-}
-
-.tile-status-firsttile {
-  background:
-    linear-gradient(180deg, #fff4de 0%, #ffb56b 72%, #d86e27 100%);
-  box-shadow:
-    inset 0 -4px 0 rgba(130, 52, 12, 0.24),
-    0 12px 20px rgba(45, 10, 24, 0.2),
-    0 0 0 1px rgba(255, 190, 120, 0.45);
-}
-
-.tile-status-mustuse {
-  background:
-    linear-gradient(180deg, #ffdfe2 0%, #ff8b97 72%, #b72848 100%);
-  box-shadow:
-    inset 0 -4px 0 rgba(104, 18, 37, 0.24),
-    0 12px 20px rgba(45, 10, 24, 0.2),
-    0 0 0 1px rgba(255, 166, 179, 0.42);
-}
-
-.tile-status-black {
-  background:
-    linear-gradient(180deg, #3b3343 0%, #211926 72%, #100b14 100%);
-  color: #f6efe1;
-  box-shadow:
-    inset 0 -4px 0 rgba(0, 0, 0, 0.4),
-    0 12px 20px rgba(10, 5, 12, 0.34);
-}
-
 .tile:hover {
   transform: translateY(-2px);
-  box-shadow:
-    inset 0 -4px 0 rgba(0, 0, 0, 0.12),
-    0 14px 20px rgba(45, 10, 24, 0.24);
+  box-shadow: var(--tile-hover-shadow, inset 0 -4px 0 rgba(0, 0, 0, 0.12), 0 14px 20px rgba(45, 10, 24, 0.24));
 }
 
 .tile:focus-visible {
   outline: 3px solid rgba(255, 202, 103, 0.85);
   outline-offset: 2px;
   transform: translateY(-2px);
-  box-shadow:
-    inset 0 -4px 0 rgba(0, 0, 0, 0.12),
-    0 0 0 4px rgba(92, 25, 41, 0.45),
-    0 14px 20px rgba(45, 10, 24, 0.24);
+  box-shadow: var(--tile-focus-shadow, inset 0 -4px 0 rgba(0, 0, 0, 0.12), 0 0 0 4px rgba(92, 25, 41, 0.45), 0 14px 20px rgba(45, 10, 24, 0.24));
 }
 
 .tile.active {
@@ -273,25 +250,6 @@ defineEmits(['tile-click']);
   text-transform: uppercase;
   text-align: center;
   box-shadow: 0 4px 10px rgba(27, 11, 20, 0.18);
-}
-
-.tile-modifier-gold {
-  background: rgba(255, 245, 196, 0.95);
-  color: #8e4b00;
-}
-
-.tile-modifier-firsttile {
-  background: rgba(255, 232, 210, 0.96);
-  color: #9b4708;
-}
-
-.tile-modifier-mustuse {
-  background: rgba(255, 233, 236, 0.96);
-  color: #a61c39;
-}
-
-.tile-modifier-black {
-  visibility: hidden;
 }
 
 .rack-tile-enter-active {
