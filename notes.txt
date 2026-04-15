@@ -1,0 +1,22 @@
+things to do
+
+update bottom word area style to have faint grids where the letters are going to go up to 8 letters and in the grid we add the +x according to the letter number.
+
+add existing pause screen to game.vue
+
+force 5x4 grid for letters
+
+when you click on room code copy to clip board
+
+require a minimum of four letter words to be played 
+
+the must modifire should only go on tiles with a score of 3 or less
+
+add locked for 3 turns modifier 
+
+add wild letter modifier it can be used as any letter and has a score of 1
+
+update the multyplayer screen to match our new style similar to game
+
+make it so the enter room code button always uses caps
+
