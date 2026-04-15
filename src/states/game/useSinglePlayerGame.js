@@ -58,6 +58,17 @@ export const useSinglePlayerGame = ({
     ]);
 
     if (!botWord) {
+      rackClears.value = {
+        ...rackClears.value,
+        opponent: rackClears.value.opponent - 1
+      };
+
+      playerTiles.value = {
+        ...playerTiles.value,
+        opponent: createRack('opponent', playerScores.value)
+      };
+    
+
       return;
     }
 
