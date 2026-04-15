@@ -43,6 +43,8 @@
               v-model="joinCode"
               class="room-input"
               placeholder="Enter Room Code"
+              autocapitalize="characters"
+              spellcheck="false"
               :disabled="isConnecting || !isSocketConnected"
             />
             <button
@@ -116,6 +118,13 @@ watch(readyToStartMultiplayer, (ready) => {
   if (ready && !hasNavigated.value) {
     hasNavigated.value = true;
     emit('game');
+  }
+});
+
+watch(joinCode, (value) => {
+  const normalizedValue = (value || '').toUpperCase();
+  if (normalizedValue !== value) {
+    joinCode.value = normalizedValue;
   }
 });
 </script>
@@ -304,6 +313,8 @@ p {
   color: var(--cream);
   font: inherit;
   font-size: 1rem;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
 }
 
 .room-input::placeholder {
