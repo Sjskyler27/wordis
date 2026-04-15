@@ -8,6 +8,9 @@
         <div class="bonus-card accent-blue">
           <span class="bonus-kicker">Tempo</span>
           <strong>{{ props.isMultiplayer ? 'Real Time Duel' : 'Bot Pressure' }}</strong>
+           <p v-if="props.isMultiplayer">
+          Room {{ roomCode }} · {{ isHost ? 'Host lane' : 'Opponent lane' }}
+        </p>
           <p>{{ playerRoleText }}</p>
         </div>
 
@@ -207,10 +210,52 @@ const LETTER_POOL = Object.entries(letterConfig).flatMap(([letter, config]) =>
   Array.from({ length: config.count }, () => letter)
 );
 const RACK_SIZE = 22;
+const DUPLICATE_PENALTY = 0.38;
+const MIN_DUPLICATE_WEIGHT = 0.18;
 let botLoopId = null;
 let nextLocalTileId = 1;
 
-const drawLetter = () => LETTER_POOL[Math.floor(Math.random() * LETTER_POOL.length)];
+const getRackLetterCounts = (tiles = []) => tiles.reduce((counts, tile) => {
+  if (!tile?.letter) {
+    return counts;
+  }
+
+  counts[tile.letter] = (counts[tile.letter] || 0) + 1;
+  return counts;
+}, {});
+
+const getWeightedLetterPool = (tiles = []) => {
+  const rackCounts = getRackLetterCounts(tiles);
+
+  return LETTER_POOL.map((letter) => {
+    const duplicateCount = rackCounts[letter] || 0;
+    const weight = Math.max(MIN_DUPLICATE_WEIGHT, 1 - (duplicateCount * DUPLICATE_PENALTY));
+
+    return {
+      letter,
+      weight
+    };
+  });
+};
+
+const drawLetter = (tiles = []) => {
+  const weightedPool = getWeightedLetterPool(tiles);
+  const totalWeight = weightedPool.reduce((sum, entry) => sum + entry.weight, 0);
+
+  if (!totalWeight) {
+    return LETTER_POOL[Math.floor(Math.random() * LETTER_POOL.length)];
+  }
+
+  let roll = Math.random() * totalWeight;
+  for (const entry of weightedPool) {
+    roll -= entry.weight;
+    if (roll <= 0) {
+      return entry.letter;
+    }
+  }
+
+  return weightedPool[weightedPool.length - 1]?.letter || 'E';
+};
 
 const createTile = (letter = drawLetter()) => ({
   id: `local-tile-${nextLocalTileId++}`,
@@ -221,7 +266,13 @@ const createTile = (letter = drawLetter()) => ({
   status: 'normal'
 });
 
-const createRack = () => Array.from({ length: RACK_SIZE }, () => createTile());
+const createRack = () => {
+  const rack = [];
+  while (rack.length < RACK_SIZE) {
+    rack.push(createTile(drawLetter(rack)));
+  }
+  return rack;
+};
 
 const getLetterScore = (letter) => letterConfig[letter]?.score || 0;
 const tileScore = (tile) => (tile?.score || 0) * (tile?.multiplier || 1);
@@ -266,7 +317,21 @@ const getTilesForWord = (tiles, word) => {
 
 const refillTiles = (tiles, usedTileIds) => {
   const usedIds = new Set(usedTileIds);
-  return tiles.map((tile) => (usedIds.has(tile.id) ? createTile() : tile));
+  const nextTiles = [...tiles];
+
+  nextTiles.forEach((tile, index) => {
+    if (!usedIds.has(tile.id)) {
+      return;
+    }
+
+    const remainingTiles = nextTiles.filter((entry, entryIndex) => {
+      return entryIndex !== index && !usedIds.has(entry.id);
+    });
+
+    nextTiles[index] = createTile(drawLetter(remainingTiles));
+  });
+
+  return nextTiles;
 };
 
 const ensureSinglePlayerState = () => {
