@@ -1,6 +1,7 @@
 const games = new Map();
 const LETTER_CONFIG = require('../src/states/game/letters.json');
 const WORD_BONUSES = require('../src/states/game/word-bonuses.json');
+const { validateWord } = require('./word-validator.cjs');
 const {
   createSharedTileLogic
 } = require('../src/states/game/shared-tile-logic.cjs');
@@ -173,7 +174,7 @@ const joinGame = (roomCode, clientId) => {
   return { success: true, state };
 };
 
-const submitWord = (roomCode, clientId, word, tileIds) => {
+const submitWord = async (roomCode, clientId, word, tileIds, languageCode = 'en') => {
   const state = games.get(roomCode);
   if (!state) {
     return { success: false, error: 'Room not found' };
@@ -189,7 +190,7 @@ const submitWord = (roomCode, clientId, word, tileIds) => {
     return { success: false, error: 'Player not in room' };
   }
 
-  if (!/^[A-Z]+$/.test(normalizedWord)) {
+  if (!/^[A-Z*]+$/.test(normalizedWord)) {
     return { success: false, error: 'Words must use letters only' };
   }
 
@@ -214,11 +215,17 @@ const submitWord = (roomCode, clientId, word, tileIds) => {
     return { success: false, error: 'Selected tiles do not match the submitted word' };
   }
 
+  const validationResult = await validateWord(normalizedWord, languageCode);
+  if (!validationResult.valid) {
+    return { success: false, error: 'That is not a valid word' };
+  }
+  const resolvedWord = (validationResult.resolvedWord || normalizedWord).toUpperCase();
+
   const wordScore = getWordScoreDetails(selectedTiles).total;
   const grantedResources = getResourceGrants(selectedTiles);
 
-  state.words[side] = normalizedWord;
-  state.history[side].unshift(normalizedWord);
+  state.words[side] = resolvedWord;
+  state.history[side].unshift(resolvedWord);
   state.history[side] = state.history[side].slice(0, 5);
   state.lastWordScores[side] = wordScore;
   state.scores[side] += wordScore;

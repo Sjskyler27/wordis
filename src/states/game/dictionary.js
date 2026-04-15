@@ -1,4 +1,4 @@
-import dictionaryText from './dictionary.txt?raw';
+import dictionaryText from './english_dictionaries/bot_dictionary.txt?raw';
 
 export const DICTIONARY_WORDS = dictionaryText
   .split('\n')

@@ -55,7 +55,7 @@
  <PWA @close="showPWA = false" v-if="showPWA && isMobile"></PWA>
   <Credit v-if="showCredits" @close="showCredits = false"></Credit>
   <div class="streamer-text" v-if="isStreamer">Streamer Access</div>
-  <div class="version-text">Version: {{versionNumber}} {{lockContent? 'Demo': ''}}</div>
+  <div class="version-text">Version: {{versionNumber}} · {{ languageLabel }} {{lockContent? 'Demo': ''}}</div>
 
 
 </template>
@@ -68,6 +68,7 @@
   import TransitionAnimation from "../../assets/TransitionAnimation.vue";
   import pkg from '../../../package.json';
   import { hideSupportPage, enableTitleImg } from "../../../globalVariables";
+  import { getPreferredLanguage } from "../game/language.js";
   import IntroScreen from "./IntroScreen.vue";
   import Credit from './Credits.vue'
   
@@ -88,6 +89,7 @@
   const isDemo = false
   const now = new Date();
   const versionNumber = ref(pkg.version)
+  const languageLabel = ref(getPreferredLanguage().label)
   const isVisible = ref(true)
 
   const startMusic = new Audio('audio/homeSound.mp3');

@@ -1,5 +1,6 @@
 import { ref, computed } from 'vue';
 import socket from '../../websocket.js';
+import { getPreferredLanguageCode } from './language.js';
 
 export const roomCode = ref(null);
 export const isHost = ref(false);
@@ -97,7 +98,12 @@ socket.on('joinError', (error) => {
 export const submitWord = ({ word, tileIds }) => {
   const normalizedWord = (word || '').trim();
   if (!gameStarted.value || !normalizedWord || !Array.isArray(tileIds) || !tileIds.length) return;
-  socket.emit('submitWord', { roomCode: roomCode.value, word: normalizedWord, tileIds });
+  socket.emit('submitWord', {
+    roomCode: roomCode.value,
+    word: normalizedWord,
+    tileIds,
+    languageCode: getPreferredLanguageCode()
+  });
 };
 
 export const clearRack = () => {

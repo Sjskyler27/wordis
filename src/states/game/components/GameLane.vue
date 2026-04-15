@@ -18,6 +18,7 @@
               opponent: side === 'opponent',
               active: isActive,
               'tile-in-use': selectedTileIds.has(tile.id),
+              'tile-saved': savedTileIds.has(tile.id),
               'tile-locked': tile.locked
             }"
             :style="getTileStyle(tile)"
@@ -64,6 +65,10 @@ defineProps({
     default: false
   },
   selectedTileIds: {
+    type: Object,
+    required: true
+  },
+  savedTileIds: {
     type: Object,
     required: true
   },
@@ -209,6 +214,30 @@ const getBadgeStyle = (tile) => {
 .tile-locked {
   cursor: not-allowed;
   filter: saturate(0.76);
+}
+
+.tile-saved:not(.tile-in-use) {
+  box-shadow:
+    inset 0 0 0 3px rgba(95, 224, 199, 0.72),
+    inset 0 0 0 8px rgba(95, 224, 199, 0.14),
+    var(--tile-shadow, inset 0 -4px 0 rgba(0, 0, 0, 0.12), 0 10px 18px rgba(45, 10, 24, 0.16));
+  filter: saturate(0.92) brightness(0.98);
+}
+
+.tile-saved:not(.tile-in-use)::after {
+  content: 'SAVE';
+  position: absolute;
+  bottom: 8px;
+  left: 10px;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: rgba(88, 206, 186, 0.9);
+  color: #153233;
+  font-size: 0.62rem;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  box-shadow: 0 4px 10px rgba(18, 57, 53, 0.2);
 }
 
 .tile-letter {
