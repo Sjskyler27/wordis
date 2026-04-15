@@ -27,6 +27,7 @@ export const useWordBuilder = ({ mySide, myTiles }) => {
   const currentWordLength = computed(() => selectedTilesForCurrentSide.value.length);
   const currentScoreDetails = computed(() => getWordScoreDetails(selectedTilesForCurrentSide.value));
   const currentLengthBonus = computed(() => currentScoreDetails.value.lengthBonus);
+  const currentFirstTileBonus = computed(() => currentScoreDetails.value.firstTileBonus);
   const currentLetterTotal = computed(() => currentScoreDetails.value.letterTotal);
   const currentWordMultiplier = computed(() => currentScoreDetails.value.wordMultiplier);
   const currentWordScore = computed(() => currentScoreDetails.value.total);
@@ -88,6 +89,7 @@ export const useWordBuilder = ({ mySide, myTiles }) => {
     currentWordDisplay,
     currentWordLength,
     currentLengthBonus,
+    currentFirstTileBonus,
     currentLetterTotal,
     currentWordMultiplier,
     currentWordScore,

@@ -24,7 +24,7 @@
           @click="$emit('remove-specific', tile.id)"
         >
           <span v-if="tile.status !== 'normal'" class="tile-modifier" :class="`tile-modifier-${tile.status}`">
-            {{ tile.status === 'gold' ? 'x2' : '0' }}
+            {{ getModifierLabel(tile.status) }}
           </span>
           <span class="tile-score">{{ tileScore(tile) }}</span>
           <span class="tile-letter">{{ tile.letter }}</span>
@@ -35,6 +35,7 @@
 
     <div class="builder-breakdown">
       <span>Letters {{ currentLetterTotal }}</span>
+      <span v-if="currentFirstTileBonus > 0">Lead Tile +{{ currentFirstTileBonus }}</span>
       <span>Length Bonus +{{ currentLengthBonus }}</span>
       <span v-if="currentWordMultiplier > 1">Gold x{{ currentWordMultiplier }}</span>
       <span>Total {{ currentWordScore }}</span>
@@ -78,6 +79,10 @@ defineProps({
     type: Number,
     required: true
   },
+  currentFirstTileBonus: {
+    type: Number,
+    required: true
+  },
   currentWordMultiplier: {
     type: Number,
     required: true
@@ -89,6 +94,18 @@ defineProps({
 });
 
 defineEmits(['undo', 'clear', 'submit', 'remove-specific']);
+
+const getModifierLabel = (status) => {
+  if (status === 'gold') {
+    return 'x2';
+  }
+
+  if (status === 'firsttile') {
+    return '1st';
+  }
+
+  return '0';
+};
 </script>
 
 <style scoped>
@@ -196,6 +213,15 @@ defineEmits(['undo', 'clear', 'submit', 'remove-specific']);
     0 0 0 1px rgba(255, 223, 128, 0.5);
 }
 
+.built-tile.tile-status-firsttile {
+  background:
+    linear-gradient(180deg, #fff4de 0%, #ffb56b 72%, #d86e27 100%);
+  box-shadow:
+    inset 0 -4px 0 rgba(130, 52, 12, 0.24),
+    0 12px 20px rgba(45, 10, 24, 0.2),
+    0 0 0 1px rgba(255, 190, 120, 0.45);
+}
+
 .built-tile.tile-status-black {
   background:
     linear-gradient(180deg, #3b3343 0%, #211926 72%, #100b14 100%);
@@ -242,6 +268,11 @@ defineEmits(['undo', 'clear', 'submit', 'remove-specific']);
 .tile-modifier-gold {
   background: rgba(255, 245, 196, 0.95);
   color: #8e4b00;
+}
+
+.tile-modifier-firsttile {
+  background: rgba(255, 232, 210, 0.96);
+  color: #9b4708;
 }
 
 .tile-modifier-black {

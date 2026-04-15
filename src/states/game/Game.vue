@@ -76,6 +76,7 @@
           :current-word-score="currentWordScore"
           :current-letter-total="currentLetterTotal"
           :current-length-bonus="currentLengthBonus"
+          :current-first-tile-bonus="currentFirstTileBonus"
           :current-word-multiplier="currentWordMultiplier"
           :length-bonus-steps="lengthBonusSteps"
           @undo="removeLastLetter"
@@ -135,6 +136,7 @@ const {
   currentWordDisplay,
   currentWordLength,
   currentLengthBonus,
+  currentFirstTileBonus,
   currentLetterTotal,
   currentWordMultiplier,
   currentWordScore,

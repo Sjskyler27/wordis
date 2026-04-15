@@ -28,7 +28,7 @@
             @click="$emit('tile-click', tile)"
           >
             <span v-if="tile.status !== 'normal'" class="tile-modifier" :class="`tile-modifier-${tile.status}`">
-              {{ tile.status === 'gold' ? 'x2' : '0' }}
+              {{ getModifierLabel(tile.status) }}
             </span>
             <span class="tile-score">{{ tileScore(tile) }}</span>
             <span class="tile-letter">{{ tile.letter }}</span>
@@ -74,6 +74,18 @@ defineProps({
 });
 
 defineEmits(['tile-click']);
+
+const getModifierLabel = (status) => {
+  if (status === 'gold') {
+    return 'x2';
+  }
+
+  if (status === 'firsttile') {
+    return '1st';
+  }
+
+  return '0';
+};
 </script>
 
 <style scoped>
@@ -175,6 +187,15 @@ defineEmits(['tile-click']);
     0 0 0 1px rgba(255, 223, 128, 0.5);
 }
 
+.tile-status-firsttile {
+  background:
+    linear-gradient(180deg, #fff4de 0%, #ffb56b 72%, #d86e27 100%);
+  box-shadow:
+    inset 0 -4px 0 rgba(130, 52, 12, 0.24),
+    0 12px 20px rgba(45, 10, 24, 0.2),
+    0 0 0 1px rgba(255, 190, 120, 0.45);
+}
+
 .tile-status-black {
   background:
     linear-gradient(180deg, #3b3343 0%, #211926 72%, #100b14 100%);
@@ -260,6 +281,11 @@ defineEmits(['tile-click']);
 .tile-modifier-gold {
   background: rgba(255, 245, 196, 0.95);
   color: #8e4b00;
+}
+
+.tile-modifier-firsttile {
+  background: rgba(255, 232, 210, 0.96);
+  color: #9b4708;
 }
 
 .tile-modifier-black {

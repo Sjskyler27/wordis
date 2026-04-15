@@ -81,7 +81,7 @@ const rollTileModifier = (side, scores = {}) => {
   const roll = Math.random();
 
   if (roll < goodChance) {
-    return 'gold';
+    return Math.random() < 0.5 ? 'gold' : 'firsttile';
   }
 
   if (roll < goodChance + badChance) {
@@ -100,6 +100,7 @@ const createTile = (letter = drawLetter(), side = null, scores = {}) => {
     score: status === 'black' ? 0 : letterConfig[letter]?.score || 0,
     multiplier: status === 'black' ? 0 : 1,
     wordMultiplier: status === 'gold' ? 2 : 1,
+    firstTileMultiplier: status === 'firsttile' ? 2 : 1,
     locked: false,
     status
   };
@@ -130,11 +131,21 @@ export const getLengthBonus = (length) => {
 export const getTilesScore = (tiles) => tiles.reduce((total, tile) => total + tileScore(tile), 0);
 
 export const getWordScoreDetails = (tiles) => {
-  const letterTotal = getTilesScore(tiles);
+  const baseLetterTotal = getTilesScore(tiles);
+  const firstTileBonus = tiles.reduce((total, tile, index) => {
+    if (index !== 0) {
+      return total;
+    }
+
+    return total + ((tileScore(tile) * (tile?.firstTileMultiplier || 1)) - tileScore(tile));
+  }, 0);
+  const letterTotal = baseLetterTotal + firstTileBonus;
   const lengthBonus = getLengthBonus(tiles.length);
   const wordMultiplier = tiles.reduce((total, tile) => total * (tile?.wordMultiplier || 1), 1);
 
   return {
+    baseLetterTotal,
+    firstTileBonus,
     letterTotal,
     lengthBonus,
     wordMultiplier,
