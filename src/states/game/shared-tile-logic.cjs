@@ -327,15 +327,12 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses }) => {
     }
 
     const nextLockTurns = Math.max(0, (tile.lockTurns || 0) - 1);
-    console.log(tile.ui)
-    if(nextLockTurns === 0){
-      tile.ui = { ...MODIFIER_DEFINITIONS.normal.ui }
-    }
+
     return {
       ...tile,
       lockTurns: nextLockTurns,
       locked: nextLockTurns > 0,
-
+      status: nextLockTurns > 0 ? tile.status : 'normal'
     };
   };
 
