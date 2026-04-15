@@ -15,6 +15,10 @@ export const playerScores = ref({
   host: 0,
   opponent: 0
 });
+export const lastWordScores = ref({
+  host: 0,
+  opponent: 0
+});
 export const playerTiles = ref({
   host: [],
   opponent: []
@@ -33,6 +37,14 @@ export const hostGame = () => {
 
   isConnecting.value = true;
   socket.emit('hostGame');
+};
+
+const applyGameState = (data = {}) => {
+  submittedWords.value = data.words || submittedWords.value;
+  wordHistory.value = data.history || wordHistory.value;
+  playerScores.value = data.scores || playerScores.value;
+  lastWordScores.value = data.lastWordScores || lastWordScores.value;
+  playerTiles.value = data.tiles || playerTiles.value;
 };
 
 export const joinGame = (code) => {
@@ -56,6 +68,7 @@ socket.on('gameHosted', (data) => {
   isHost.value = true;
   message.value = `Game hosted. Room code: ${data.roomCode}. Waiting for opponent...`;
   isConnecting.value = false;
+  applyGameState(data);
 });
 
 socket.on('gameJoined', (data) => {
@@ -63,6 +76,7 @@ socket.on('gameJoined', (data) => {
   isHost.value = false;
   message.value = 'Joined game. Waiting for start...';
   isConnecting.value = false;
+  applyGameState(data);
 });
 
 socket.on('joinError', (error) => {
@@ -79,17 +93,11 @@ export const submitWord = ({ word, tileIds }) => {
 socket.on('startGame', (data) => {
   gameStarted.value = true;
   message.value = '';
-  submittedWords.value = data.words;
-  wordHistory.value = data.history;
-  playerScores.value = data.scores;
-  playerTiles.value = data.tiles;
+  applyGameState(data);
 });
 
 socket.on('wordSubmitted', (data) => {
-  submittedWords.value = data.words;
-  wordHistory.value = data.history;
-  playerScores.value = data.scores;
-  playerTiles.value = data.tiles;
+  applyGameState(data);
 });
 
 socket.onStatusChange((status) => {
@@ -111,6 +119,10 @@ export const resetGame = () => {
     opponent: []
   };
   playerScores.value = {
+    host: 0,
+    opponent: 0
+  };
+  lastWordScores.value = {
     host: 0,
     opponent: 0
   };

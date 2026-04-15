@@ -1,6 +1,9 @@
 <template>
   <div class="game-shell">
-    <div id="background-layer"></div>
+    <div id="background-layer">
+      <div class="shape-layer layer-far"></div>
+      <div class="shape-layer layer-near"></div>
+    </div>
 
     <main class="board-frame">
       <aside class="side-stack">
@@ -25,41 +28,45 @@
           <p v-if="props.isMultiplayer && !gameStarted">Waiting for opponent to connect</p>
           <p v-else>Only used letters are replaced</p>
         </div>
+      <button class="back-button" @click="resetAndGoHome">Back to Home</button>
+
       </aside>
 
       <section class="arena-shell">
         <div class="score-ribbon">
           <div class="score-box host">
-            <span>Host</span>
-            <strong>{{ playerScores.host }}</strong>
+            <span>Your Board</span>
+            <strong>{{ leftLane.score }}</strong>
           </div>
           <div class="score-divider">VS</div>
           <div class="score-box opponent">
-            <span>Opponent</span>
-            <strong>{{ playerScores.opponent }}</strong>
+            <span>Their Board</span>
+            <strong>{{ rightLane.score }}</strong>
           </div>
         </div>
 
         <div v-if="props.isMultiplayer ? gameStarted : true" class="arena">
           <GameLane
-            side="host"
-            label="Host"
-            :submitted-word="submittedWords.host"
-            :score="playerScores.host"
-            :tiles="playerTiles.host"
-            :is-active="mySide === 'host'"
-            :selected-tile-ids="selectedTileIds.host"
+            :side="leftLane.side"
+            :label="leftLane.label"
+            :submitted-word="leftLane.submittedWord"
+            :score="leftLane.score"
+            :last-word-score="leftLane.lastWordScore"
+            :tiles="leftLane.tiles"
+            :is-active="leftLane.isActive"
+            :selected-tile-ids="leftLane.selectedTileIds"
             @tile-click="handleTileClick"
           />
 
           <GameLane
-            side="opponent"
-            label="Opponent"
-            :submitted-word="submittedWords.opponent"
-            :score="playerScores.opponent"
-            :tiles="playerTiles.opponent"
-            :is-active="mySide === 'opponent'"
-            :selected-tile-ids="selectedTileIds.opponent"
+            :side="rightLane.side"
+            :label="rightLane.label"
+            :submitted-word="rightLane.submittedWord"
+            :score="rightLane.score"
+            :last-word-score="rightLane.lastWordScore"
+            :tiles="rightLane.tiles"
+            :is-active="rightLane.isActive"
+            :selected-tile-ids="rightLane.selectedTileIds"
             @tile-click="handleTileClick"
           />
         </div>
@@ -87,9 +94,6 @@
       </section>
     </main>
 
-    <footer class="bottom-bar">
-      <button class="back-button" @click="resetAndGoHome">Back to Home</button>
-    </footer>
   </div>
 </template>
 
@@ -101,6 +105,7 @@ import {
   submittedWords,
   wordHistory,
   playerScores,
+  lastWordScores,
   playerTiles,
   gameStarted,
   submitWord as submitMultiplayerWord,
@@ -129,6 +134,17 @@ const mySide = computed(() => {
 });
 
 const myTiles = computed(() => playerTiles.value[mySide.value] || []);
+const opponentSide = computed(() => (mySide.value === 'host' ? 'opponent' : 'host'));
+const buildLane = (side, label) => ({
+  side,
+  label,
+  submittedWord: submittedWords.value[side],
+  score: playerScores.value[side],
+  lastWordScore: lastWordScores.value[side],
+  tiles: playerTiles.value[side],
+  isActive: mySide.value === side,
+  selectedTileIds: selectedTileIds.value[side]
+});
 
 const {
   selectedTileIds,
@@ -151,6 +167,9 @@ const {
   myTiles
 });
 
+const leftLane = computed(() => buildLane(mySide.value, 'Your Board'));
+const rightLane = computed(() => buildLane(opponentSide.value, 'Their Board'));
+
 const {
   stopBotLoop,
   submitSinglePlayerWord
@@ -161,15 +180,14 @@ const {
   clearSelectionForSide,
   playerTiles,
   playerScores,
+  lastWordScores,
   submittedWords,
   wordHistory
 });
 
 const playerRoleText = computed(() => {
   if (props.isMultiplayer) {
-    return isHost.value
-      ? 'Build from the host rack and score before the other lane catches up.'
-      : 'Build from the opponent rack and race the board in real time.';
+    return 'Build on your board and race the other board in real time.';
   }
 
   return 'You and the bot are both constantly feeding the board with fresh tiles.';
@@ -221,9 +239,10 @@ body {
 }
 
 .game-shell {
-  --bg-top: #b54f21;
-  --bg-mid: #d0522e;
-  --bg-bottom: #4c0f33;
+  --bg-top: #ca6937;
+  --bg-mid: #b63e3b;
+  --bg-bottom: #341137;
+  --bg-corner: #f39a54;
   --panel-deep: rgba(73, 18, 34, 0.9);
   --cream: #f7efe1;
   --gold: #ffca67;
@@ -243,23 +262,64 @@ body {
   inset: 0;
   z-index: -2;
   background:
-    radial-gradient(circle at 20% 20%, rgba(255, 198, 109, 0.14) 0, rgba(255, 198, 109, 0.14) 14px, transparent 15px) 0 0 / 120px 120px,
-    radial-gradient(circle at 80% 12%, rgba(255, 255, 255, 0.06) 0, rgba(255, 255, 255, 0.06) 8px, transparent 9px) 0 0 / 80px 80px,
-    linear-gradient(180deg, var(--bg-top) 0%, var(--bg-mid) 42%, var(--bg-bottom) 100%);
+    radial-gradient(circle at 14% 18%, rgba(255, 228, 168, 0.2) 0, rgba(255, 228, 168, 0.2) 12%, transparent 30%),
+    radial-gradient(circle at 82% 14%, rgba(255, 255, 255, 0.09) 0, rgba(255, 255, 255, 0.09) 8%, transparent 24%),
+    linear-gradient(135deg, var(--bg-corner) 0%, var(--bg-top) 24%, var(--bg-mid) 58%, var(--bg-bottom) 100%);
+  filter: saturate(1.08);
+  overflow: hidden;
 }
 
-.game-shell::before {
+.shape-layer {
   content: '';
   position: absolute;
-  inset: 72px 24px 24px;
-  z-index: -1;
-  border-radius: 30px;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.01));
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.16);
+  inset: -10%;
+  pointer-events: none;
+  mix-blend-mode: screen;
 }
 
+.shape-layer {
+  background-repeat: repeat;
+  background-size: 280px 280px;
+}
+
+.layer-far {
+  opacity: 0.24;
+  background-position: 0 0;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='280' height='280' viewBox='0 0 280 280'%3E%3Cg fill='none' stroke='%23fff4dc' stroke-width='2.6' stroke-opacity='.34'%3E%3Cpolygon points='40,24 68,74 12,74'/%3E%3Crect x='106' y='18' width='46' height='46' rx='4'/%3E%3Cpolygon points='217,22 245,38 245,70 217,86 189,70 189,38'/%3E%3Cpolygon points='44,118 72,134 72,166 44,182 16,166 16,134'/%3E%3Crect x='108' y='110' width='54' height='54' rx='6'/%3E%3Cpolygon points='214,110 246,164 182,164'/%3E%3Crect x='28' y='204' width='50' height='50' rx='5'/%3E%3Cpolygon points='136,198 164,214 164,246 136,262 108,246 108,214'/%3E%3Cpolygon points='220,198 248,248 192,248'/%3E%3C/g%3E%3C/svg%3E");
+  animation: driftLayerFar 25s linear infinite;
+}
+
+.layer-near {
+  inset: -6%;
+  opacity: 0.18;
+  background-size: 190px 190px;
+  background-position: 28px 40px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='190' height='190' viewBox='0 0 190 190'%3E%3Cg fill='rgba(255,244,220,.14)' stroke='rgba(255,255,255,.16)' stroke-width='1.8'%3E%3Cpolygon points='26,20 52,64 0,64'/%3E%3Crect x='74' y='20' width='34' height='34' rx='3'/%3E%3Cpolygon points='150,18 170,30 170,54 150,66 130,54 130,30'/%3E%3Crect x='18' y='92' width='38' height='38' rx='4'/%3E%3Cpolygon points='96,88 118,126 74,126'/%3E%3Cpolygon points='152,86 174,98 174,124 152,136 130,124 130,98'/%3E%3Ccircle cx='42' cy='156' r='12'/%3E%3Crect x='82' y='144' width='28' height='28' rx='4'/%3E%3Cpolygon points='152,142 174,180 130,180'/%3E%3C/g%3E%3C/svg%3E");
+  animation: driftLayerNear 30s linear infinite;
+}
+
+@keyframes driftLayerFar {
+  0% {
+    background-position: 0 0;
+  }
+  100% {
+    background-position: 280px -140px;
+  }
+}
+
+@keyframes driftLayerNear {
+  0% {
+    background-position: 28px 40px;
+  }
+  100% {
+    background-position: -67px 420px;
+  }
+}
+
+
 .board-frame {
-  display: grid;
+  justify-content: center;
+  display: flex;
   grid-template-columns: 250px minmax(0, 1fr);
   gap: 22px;
   flex: 1;
@@ -333,6 +393,8 @@ body {
 
 .arena-shell {
   min-width: 0;
+  max-width: 1250px;
+  max-height: 1000px%;
   border-radius: 34px;
   background: rgba(90, 23, 35, 0.72);
   border: 2px solid rgba(255, 255, 255, 0.12);

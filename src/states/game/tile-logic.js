@@ -1,4 +1,16 @@
-import sharedTileLogic from './shared-tile-logic.cjs';
+import letterConfig from './letters.json';
+import wordBonuses from './word-bonuses.json';
+import './shared-tile-logic.cjs';
+
+const { createSharedTileLogic } = globalThis.__sharedTileLogic || {};
+if (typeof createSharedTileLogic !== 'function') {
+  throw new Error('Shared tile logic failed to initialize');
+}
+
+const sharedTileLogic = createSharedTileLogic({
+  letterConfig,
+  wordBonuses
+});
 
 const {
   tileScore,
@@ -9,6 +21,7 @@ const {
   getRequiredTiles,
   isMissingRequiredTile,
   getModifierBadge,
+  getModifierUi,
   getModifierDefinition,
   MODIFIER_DEFINITIONS,
   createTileLogic
@@ -31,6 +44,7 @@ export {
   getRequiredTiles,
   isMissingRequiredTile,
   getModifierBadge,
+  getModifierUi,
   getModifierDefinition,
   MODIFIER_DEFINITIONS
 };
