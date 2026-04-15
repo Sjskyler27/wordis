@@ -2,15 +2,14 @@
   <div class="game-shell">
     <div id="background-layer"></div>
 
-
     <main class="board-frame">
       <aside class="side-stack">
         <div class="bonus-card accent-blue">
           <span class="bonus-kicker">Tempo</span>
           <strong>{{ props.isMultiplayer ? 'Real Time Duel' : 'Bot Pressure' }}</strong>
-           <p v-if="props.isMultiplayer">
-          Room {{ roomCode }} · {{ isHost ? 'Host lane' : 'Opponent lane' }}
-        </p>
+          <p v-if="props.isMultiplayer">
+            Room {{ roomCode }} · {{ isHost ? 'Host lane' : 'Opponent lane' }}
+          </p>
           <p>{{ playerRoleText }}</p>
         </div>
 
@@ -41,85 +40,28 @@
           </div>
         </div>
 
-        <div v-if="isMultiplayer ? gameStarted : true" class="arena">
-          <section class="lane host-lane">
-            <div class="lane-header">
-              <div>
-                <p class="lane-label">Host</p>
-                <h2>{{ submittedWords.host || 'Waiting for a word...' }}</h2>
-              </div>
-              <div class="lane-score">
-                <span>Points</span>
-                <strong>{{ playerScores.host }}</strong>
-              </div>
-            </div>
+        <div v-if="props.isMultiplayer ? gameStarted : true" class="arena">
+          <GameLane
+            side="host"
+            label="Host"
+            :submitted-word="submittedWords.host"
+            :score="playerScores.host"
+            :tiles="playerTiles.host"
+            :is-active="mySide === 'host'"
+            :selected-tile-ids="selectedTileIds.host"
+            @tile-click="handleTileClick"
+          />
 
-            <div class="rack-grid">
-              <div v-for="(tile, index) in playerTiles.host" :key="`host-slot-${index}`" class="rack-slot">
-                <Transition name="rack-tile" mode="out-in">
-                  <button
-                    :key="tile.id"
-                    type="button"
-                    class="tile"
-                    :class="{
-                      active: mySide === 'host',
-                      'tile-in-use': mySide === 'host' && selectedTileIds.host.has(tile.id),
-                      'tile-locked': tile.locked,
-                      [`tile-status-${tile.status}`]: tile.status
-                    }"
-                    @click="handleTileClick(tile)"
-                  >
-                    <span v-if="tile.status !== 'normal'" class="tile-modifier" :class="`tile-modifier-${tile.status}`">
-                      {{ tile.status === 'gold' ? 'x2' : '0' }}
-                    </span>
-                    <span class="tile-score">{{ tileScore(tile) }}</span>
-                    <span class="tile-letter">{{ tile.letter }}</span>
-                  </button>
-                </Transition>
-              </div>
-            </div>
-
-          </section>
-
-          <section class="lane opponent-lane">
-            <div class="lane-header">
-              <div>
-                <p class="lane-label">Opponent</p>
-                <h2>{{ submittedWords.opponent || 'Waiting for a word...' }}</h2>
-              </div>
-              <div class="lane-score">
-                <span>Points</span>
-                <strong>{{ playerScores.opponent }}</strong>
-              </div>
-            </div>
-
-            <div class="rack-grid">
-              <div v-for="(tile, index) in playerTiles.opponent" :key="`opponent-slot-${index}`" class="rack-slot">
-                <Transition name="rack-tile" mode="out-in">
-                  <button
-                    :key="tile.id"
-                    type="button"
-                    class="tile opponent"
-                    :class="{
-                      active: mySide === 'opponent',
-                      'tile-in-use': mySide === 'opponent' && selectedTileIds.opponent.has(tile.id),
-                      'tile-locked': tile.locked,
-                      [`tile-status-${tile.status}`]: tile.status
-                    }"
-                    @click="handleTileClick(tile)"
-                  >
-                    <span v-if="tile.status !== 'normal'" class="tile-modifier" :class="`tile-modifier-${tile.status}`">
-                      {{ tile.status === 'gold' ? 'x2' : '0' }}
-                    </span>
-                    <span class="tile-score">{{ tileScore(tile) }}</span>
-                    <span class="tile-letter">{{ tile.letter }}</span>
-                  </button>
-                </Transition>
-              </div>
-            </div>
-
-
-          </section>
+          <GameLane
+            side="opponent"
+            label="Opponent"
+            :submitted-word="submittedWords.opponent"
+            :score="playerScores.opponent"
+            :tiles="playerTiles.opponent"
+            :is-active="mySide === 'opponent'"
+            :selected-tile-ids="selectedTileIds.opponent"
+            @tile-click="handleTileClick"
+          />
         </div>
 
         <div v-else class="waiting-card">
@@ -127,60 +69,20 @@
           <p>The arena will light up as soon as both players are in.</p>
         </div>
 
-        <form v-if="isMultiplayer ? gameStarted : true" class="word-console" @submit.prevent="handleSubmit">
-          <div class="bonus-ladder">
-            <div
-              v-for="step in lengthBonusSteps"
-              :key="`bonus-${step.length}`"
-              class="bonus-step"
-              :class="{ active: currentWordLength >= step.length }"
-            >
-              <strong>+{{ step.bonus }}</strong>
-              <span>{{ step.length }} letters</span>
-            </div>
-          </div>
-
-          <div class="word-input-shell">
-            <span class="console-label">Your Word</span>
-            <TransitionGroup name="built-tile" tag="div" class="built-word-strip" :class="{ empty: !selectedTilesForCurrentSide.length }">
-              <button
-                v-for="(tile, index) in selectedTilesForCurrentSide"
-                :key="`built-${tile.id}`"
-                type="button"
-                class="built-tile"
-                :class="[`tile-status-${tile.status}`]"
-                :style="{ '--tile-stagger': `${index * 36}ms` }"
-                @click="removeSpecificTile(tile.id)"
-              >
-                <span v-if="tile.status !== 'normal'" class="tile-modifier" :class="`tile-modifier-${tile.status}`">
-                  {{ tile.status === 'gold' ? 'x2' : '0' }}
-                </span>
-                <span class="tile-score">{{ tileScore(tile) }}</span>
-                <span class="tile-letter">{{ tile.letter }}</span>
-              </button>
-            </TransitionGroup>
-            <span class="console-score">{{ currentWordScore }} pts</span>
-          </div>
-
-          <div class="builder-breakdown">
-            <span>Letters {{ currentLetterTotal }}</span>
-            <span>Length Bonus +{{ currentLengthBonus }}</span>
-            <span v-if="currentWordMultiplier > 1">Gold x{{ currentWordMultiplier }}</span>
-            <span>Total {{ currentWordScore }}</span>
-          </div>
-
-          <div class="console-actions">
-            <button type="button" class="ghost-button" @click="removeLastLetter">
-              Undo
-            </button>
-            <button type="button" class="ghost-button" @click="clearWord">
-              Clear
-            </button>
-            <button type="submit" class="submit-button">
-              Submit Word
-            </button>
-          </div>
-        </form>
+        <WordBuilder
+          v-if="props.isMultiplayer ? gameStarted : true"
+          :selected-tiles="selectedTilesForCurrentSide"
+          :current-word-length="currentWordLength"
+          :current-word-score="currentWordScore"
+          :current-letter-total="currentLetterTotal"
+          :current-length-bonus="currentLengthBonus"
+          :current-word-multiplier="currentWordMultiplier"
+          :length-bonus-steps="lengthBonusSteps"
+          @undo="removeLastLetter"
+          @clear="clearWord"
+          @submit="handleSubmit"
+          @remove-specific="removeSpecificTile"
+        />
       </section>
     </main>
 
@@ -191,7 +93,7 @@
 </template>
 
 <script setup>
-import { computed, defineProps, onBeforeUnmount, ref, watch } from 'vue';
+import { computed, defineProps, ref } from 'vue';
 import {
   roomCode,
   isHost,
@@ -203,38 +105,19 @@ import {
   submitWord as submitMultiplayerWord,
   resetGame as resetMultiplayer
 } from './multiplayer.js';
-import { getBotWord } from './bot.js';
-import {
-  createRack,
-  getLengthBonus,
-  getTilesForWord,
-  getWordScoreDetails,
-  refillTiles,
-  tileScore
-} from './tile-logic.js';
+import { getWordScoreDetails } from './tile-logic.js';
+import { useWordBuilder } from './useWordBuilder.js';
+import { useSinglePlayerGame } from './useSinglePlayerGame.js';
+import GameLane from './components/GameLane.vue';
+import WordBuilder from './components/WordBuilder.vue';
 
 const props = defineProps({
-  isMultiplayer: Boolean,
+  isMultiplayer: Boolean
 });
 
 const emit = defineEmits(['home']);
 const localMessage = ref('');
-const selectedTileSlots = ref({
-  host: [],
-  opponent: []
-});
-let botLoopId = null;
-
-const ensureSinglePlayerState = () => {
-  if (!playerTiles.value.host.length && !playerTiles.value.opponent.length) {
-    playerTiles.value = {
-      host: createRack('host', playerScores.value),
-      opponent: createRack('opponent', playerScores.value)
-    };
-  }
-};
-
-ensureSinglePlayerState();
+const isMultiplayerRef = computed(() => props.isMultiplayer);
 
 const mySide = computed(() => {
   if (props.isMultiplayer) {
@@ -245,31 +128,40 @@ const mySide = computed(() => {
 });
 
 const myTiles = computed(() => playerTiles.value[mySide.value] || []);
-const selectedTileIds = computed(() => {
-  return {
-    host: new Set(selectedTileSlots.value.host),
-    opponent: new Set(selectedTileSlots.value.opponent)
-  };
+
+const {
+  selectedTileIds,
+  selectedTilesForCurrentSide,
+  currentWordDisplay,
+  currentWordLength,
+  currentLengthBonus,
+  currentLetterTotal,
+  currentWordMultiplier,
+  currentWordScore,
+  lengthBonusSteps,
+  handleTileClick,
+  removeLastLetter,
+  removeSpecificTile,
+  clearWord,
+  clearSelectionForSide
+} = useWordBuilder({
+  mySide,
+  myTiles
 });
-const selectedTilesForCurrentSide = computed(() => {
-  const tilesById = new Map(myTiles.value.map((tile) => [tile.id, tile]));
-  return selectedTileSlots.value[mySide.value]
-    .map((tileId) => tilesById.get(tileId))
-    .filter(Boolean);
+
+const {
+  stopBotLoop,
+  submitSinglePlayerWord
+} = useSinglePlayerGame({
+  isMultiplayer: isMultiplayerRef,
+  localMessage,
+  selectedTilesForCurrentSide,
+  clearSelectionForSide,
+  playerTiles,
+  playerScores,
+  submittedWords,
+  wordHistory
 });
-const currentWordDisplay = computed(() => selectedTilesForCurrentSide.value.map((tile) => tile.letter).join(''));
-const currentWordLength = computed(() => selectedTilesForCurrentSide.value.length);
-const currentScoreDetails = computed(() => getWordScoreDetails(selectedTilesForCurrentSide.value));
-const currentLengthBonus = computed(() => currentScoreDetails.value.lengthBonus);
-const currentLetterTotal = computed(() => currentScoreDetails.value.letterTotal);
-const currentWordMultiplier = computed(() => currentScoreDetails.value.wordMultiplier);
-const currentWordScore = computed(() => currentScoreDetails.value.total);
-const lengthBonusSteps = computed(() => ([
-  { length: 5, bonus: getLengthBonus(5) },
-  { length: 6, bonus: getLengthBonus(6) },
-  { length: 7, bonus: getLengthBonus(7) },
-  { length: 8, bonus: getLengthBonus(8) }
-]));
 
 const playerRoleText = computed(() => {
   if (props.isMultiplayer) {
@@ -280,140 +172,6 @@ const playerRoleText = computed(() => {
 
   return 'You and the bot are both constantly feeding the board with fresh tiles.';
 });
-
-const handleTileClick = (tile) => {
-  const side = mySide.value;
-  if (tile.locked || selectedTileSlots.value[side].includes(tile.id)) {
-    return;
-  }
-
-  selectedTileSlots.value = {
-    ...selectedTileSlots.value,
-    [side]: [...selectedTileSlots.value[side], tile.id]
-  };
-};
-
-const removeLastLetter = () => {
-  const side = mySide.value;
-  selectedTileSlots.value = {
-    ...selectedTileSlots.value,
-    [side]: selectedTileSlots.value[side].slice(0, -1)
-  };
-};
-
-const removeSpecificTile = (tileId) => {
-  const side = mySide.value;
-  const nextSlots = [...selectedTileSlots.value[side]];
-  const index = nextSlots.indexOf(tileId);
-  if (index === -1) {
-    return;
-  }
-
-  nextSlots.splice(index, 1);
-  selectedTileSlots.value = {
-    ...selectedTileSlots.value,
-    [side]: nextSlots
-  };
-};
-
-const clearWord = () => {
-  const side = mySide.value;
-  selectedTileSlots.value = {
-    ...selectedTileSlots.value,
-    [side]: []
-  };
-};
-
-const submitBotWord = () => {
-  ensureSinglePlayerState();
-
-  const botTiles = playerTiles.value.opponent || [];
-  const botWord = getBotWord(botTiles, [
-    ...wordHistory.value.host,
-    ...wordHistory.value.opponent
-  ]);
-
-  if (!botWord) {
-    return;
-  }
-
-  const normalizedBotWord = botWord.toUpperCase();
-  const selectedBotTiles = getTilesForWord(botTiles, normalizedBotWord);
-  if (!selectedBotTiles.length) {
-    return;
-  }
-
-  submittedWords.value = {
-    host: submittedWords.value.host,
-    opponent: normalizedBotWord
-  };
-
-  wordHistory.value = {
-    host: wordHistory.value.host,
-    opponent: [normalizedBotWord, ...wordHistory.value.opponent].slice(0, 5)
-  };
-
-  const botScoreDetails = getWordScoreDetails(selectedBotTiles);
-
-  playerScores.value = {
-    host: playerScores.value.host,
-    opponent: playerScores.value.opponent + botScoreDetails.total
-  };
-
-  playerTiles.value = {
-    host: playerTiles.value.host,
-    opponent: refillTiles(botTiles, selectedBotTiles.map((tile) => tile.id), 'opponent', playerScores.value)
-  };
-};
-
-const scheduleBotLoop = () => {
-  if (props.isMultiplayer) return;
-  window.clearTimeout(botLoopId);
-
-  botLoopId = window.setTimeout(() => {
-    submitBotWord();
-    scheduleBotLoop();
-  }, 4400);
-};
-scheduleBotLoop();
-
-const stopBotLoop = () => {
-  window.clearTimeout(botLoopId);
-  botLoopId = null;
-};
-
-const submitSinglePlayerWord = (word) => {
-  ensureSinglePlayerState();
-  const selectedTiles = selectedTilesForCurrentSide.value;
-  const scoreDetails = getWordScoreDetails(selectedTiles);
-
-  submittedWords.value = {
-    host: word,
-    opponent: submittedWords.value.opponent
-  };
-
-  wordHistory.value = {
-    host: [word, ...wordHistory.value.host].slice(0, 5),
-    opponent: wordHistory.value.opponent
-  };
-
-  playerScores.value = {
-    host: playerScores.value.host + scoreDetails.total,
-    opponent: playerScores.value.opponent
-  };
-
-  playerTiles.value = {
-    host: refillTiles(playerTiles.value.host, selectedTiles.map((tile) => tile.id), 'host', playerScores.value),
-    opponent: playerTiles.value.opponent
-  };
-
-  selectedTileSlots.value = {
-    ...selectedTileSlots.value,
-    host: []
-  };
-
-  localMessage.value = `Submitted ${word} for ${scoreDetails.total} pts.`;
-};
 
 const handleSubmit = () => {
   const normalizedWord = currentWordDisplay.value;
@@ -435,13 +193,11 @@ const handleSubmit = () => {
       tileIds: selectedTiles.map((tile) => tile.id)
     });
     localMessage.value = `Sent ${normalizedWord} for ${scoreDetails.total} pts.`;
-    selectedTileSlots.value = {
-      ...selectedTileSlots.value,
-      [mySide.value]: []
-    };
-  } else {
-    submitSinglePlayerWord(normalizedWord);
+    clearSelectionForSide(mySide.value);
+    return;
   }
+
+  submitSinglePlayerWord(normalizedWord);
 };
 
 const resetAndGoHome = () => {
@@ -450,808 +206,265 @@ const resetAndGoHome = () => {
   localMessage.value = '';
   emit('home');
 };
-
-watch(() => props.isMultiplayer, (isMultiplayer) => {
-  if (isMultiplayer) {
-    stopBotLoop();
-    return;
-  }
-
-  ensureSinglePlayerState();
-  scheduleBotLoop();
-});
-
-onBeforeUnmount(() => {
-  stopBotLoop();
-});
 </script>
 
 <style scoped>
-  body {
-    background: #2a0719;
-  }
+body {
+  background: #2a0719;
+}
 
-  .game-shell {
-    --bg-top: #b54f21;
-    --bg-mid: #d0522e;
-    --bg-bottom: #4c0f33;
-    --panel: rgba(94, 28, 43, 0.72);
-    --panel-deep: rgba(73, 18, 34, 0.9);
-    --cream: #f7efe1;
-    --ink: #1c1930;
-    --gold: #ffca67;
-    --orange: #ff7f3c;
-    --teal: #4bc7b0;
-    --red: #ff596f;
-    min-height: 100vh;
-    position: relative;
-    overflow: hidden;
-    color: var(--cream);
-    padding: 24px;
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-  }
+.game-shell {
+  --bg-top: #b54f21;
+  --bg-mid: #d0522e;
+  --bg-bottom: #4c0f33;
+  --panel-deep: rgba(73, 18, 34, 0.9);
+  --cream: #f7efe1;
+  --gold: #ffca67;
+  --teal: #4bc7b0;
+  min-height: 100vh;
+  position: relative;
+  overflow: hidden;
+  color: var(--cream);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
 
-  #background-layer {
-    position: absolute;
-    inset: 0;
-    z-index: -2;
-    background:
-      radial-gradient(circle at 20% 20%, rgba(255, 198, 109, 0.14) 0, rgba(255, 198, 109, 0.14) 14px, transparent 15px) 0 0 / 120px 120px,
-      radial-gradient(circle at 80% 12%, rgba(255, 255, 255, 0.06) 0, rgba(255, 255, 255, 0.06) 8px, transparent 9px) 0 0 / 80px 80px,
-      linear-gradient(180deg, var(--bg-top) 0%, var(--bg-mid) 42%, var(--bg-bottom) 100%);
-  }
+#background-layer {
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  background:
+    radial-gradient(circle at 20% 20%, rgba(255, 198, 109, 0.14) 0, rgba(255, 198, 109, 0.14) 14px, transparent 15px) 0 0 / 120px 120px,
+    radial-gradient(circle at 80% 12%, rgba(255, 255, 255, 0.06) 0, rgba(255, 255, 255, 0.06) 8px, transparent 9px) 0 0 / 80px 80px,
+    linear-gradient(180deg, var(--bg-top) 0%, var(--bg-mid) 42%, var(--bg-bottom) 100%);
+}
 
-  .game-shell::before {
-    content: '';
-    position: absolute;
-    inset: 72px 24px 24px;
-    z-index: -1;
-    border-radius: 30px;
-    background: linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.01));
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.16);
-  }
+.game-shell::before {
+  content: '';
+  position: absolute;
+  inset: 72px 24px 24px;
+  z-index: -1;
+  border-radius: 30px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.01));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.16);
+}
 
-  .hud {
-    display: grid;
-    grid-template-columns: 220px 1fr 220px;
-    gap: 16px;
-    align-items: center;
-  }
+.board-frame {
+  display: grid;
+  grid-template-columns: 250px minmax(0, 1fr);
+  gap: 22px;
+  flex: 1;
+  min-height: 0;
+}
 
-  .hud-center {
-    text-align: center;
-  }
+.side-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
 
-  .hud-center h1 {
-    margin: 0;
-    font-size: clamp(2.3rem, 5vw, 4.2rem);
-    line-height: 0.92;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    text-shadow: 0 5px 18px rgba(55, 8, 23, 0.35);
-  }
+.bonus-card {
+  border-radius: 28px;
+  padding: 22px 18px;
+  min-height: 156px;
+  background: rgba(68, 20, 46, 0.9);
+  border: 2px solid rgba(255, 255, 255, 0.12);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  position: relative;
+  overflow: hidden;
+}
 
-  .hud-center p {
-    margin: 8px 0 0;
-    opacity: 0.88;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    font-size: 0.82rem;
-  }
+.bonus-card::after {
+  content: '';
+  position: absolute;
+  inset: auto -30px -30px auto;
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+}
 
-  .hud-chip {
-    min-height: 84px;
-    padding: 18px 20px;
-    border-radius: 22px;
-    background: rgba(95, 29, 44, 0.78);
-    border: 2px solid rgba(255, 255, 255, 0.14);
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1);
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    gap: 6px;
-  }
+.bonus-kicker {
+  display: inline-block;
+  margin-bottom: 10px;
+  font-size: 0.74rem;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  opacity: 0.7;
+}
 
-  .hud-chip strong {
-    font-size: 1.2rem;
-  }
+.bonus-card strong,
+.bonus-card p {
+  display: block;
+  position: relative;
+  z-index: 1;
+}
 
-  .hud-label {
-    font-size: 0.76rem;
-    text-transform: uppercase;
-    letter-spacing: 0.16em;
-    opacity: 0.7;
-  }
+.bonus-card strong {
+  font-size: 1.35rem;
+  line-height: 1.1;
+}
 
-  .score-chip {
-    text-align: right;
-  }
+.bonus-card p {
+  margin: 10px 0 0;
+  opacity: 0.85;
+}
 
+.accent-blue {
+  background: linear-gradient(180deg, rgba(58, 111, 208, 0.9), rgba(49, 78, 170, 0.82));
+}
+
+.accent-gold {
+  background: linear-gradient(180deg, rgba(231, 124, 47, 0.92), rgba(179, 82, 28, 0.88));
+}
+
+.accent-red {
+  background: linear-gradient(180deg, rgba(164, 38, 68, 0.95), rgba(105, 22, 54, 0.88));
+}
+
+.arena-shell {
+  min-width: 0;
+  border-radius: 34px;
+  background: rgba(90, 23, 35, 0.72);
+  border: 2px solid rgba(255, 255, 255, 0.12);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    0 20px 50px rgba(38, 7, 22, 0.28);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.score-ribbon {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  gap: 16px;
+  align-items: center;
+}
+
+.score-box {
+  border-radius: 22px;
+  padding: 16px 20px;
+  background: var(--panel-deep);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.score-box span {
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  font-size: 0.76rem;
+  opacity: 0.75;
+}
+
+.score-box strong {
+  font-size: 2rem;
+  line-height: 1;
+}
+
+.score-box.host strong {
+  color: var(--gold);
+}
+
+.score-box.opponent strong {
+  color: var(--teal);
+}
+
+.score-divider {
+  font-size: 1rem;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  opacity: 0.8;
+}
+
+.arena {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+}
+
+.waiting-card {
+  border-radius: 26px;
+  background: rgba(255, 255, 255, 0.06);
+  padding: 34px 24px;
+  text-align: center;
+}
+
+.waiting-card strong {
+  display: block;
+  font-size: 1.4rem;
+}
+
+.waiting-card p {
+  margin: 10px 0 0;
+  opacity: 0.78;
+}
+
+.bottom-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  padding: 0 8px;
+}
+
+.back-button {
+  border: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  padding: 12px 18px;
+  font-size: 0.95rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  font-family: "Press Start 2P", cursive;
+  background: linear-gradient(180deg, #ff965b 0%, #e05e2a 100%);
+  color: white;
+}
+
+@media (max-width: 1180px) {
   .board-frame {
-    display: grid;
-    grid-template-columns: 250px minmax(0, 1fr);
-    gap: 22px;
-    flex: 1;
-    min-height: 0;
+    grid-template-columns: 1fr;
   }
 
   .side-stack {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
+}
 
-  .bonus-card {
-    border-radius: 28px;
-    padding: 22px 18px;
-    min-height: 156px;
-    background: rgba(68, 20, 46, 0.9);
-    border: 2px solid rgba(255, 255, 255, 0.12);
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
-    position: relative;
-    overflow: hidden;
-  }
-
-  .bonus-card::after {
-    content: '';
-    position: absolute;
-    inset: auto -30px -30px auto;
-    width: 120px;
-    height: 120px;
-    border-radius: 50%;
-    background: rgba(255, 255, 255, 0.08);
-  }
-
-  .bonus-kicker {
-    display: inline-block;
-    margin-bottom: 10px;
-    font-size: 0.74rem;
-    text-transform: uppercase;
-    letter-spacing: 0.16em;
-    opacity: 0.7;
-  }
-
-  .bonus-card strong,
-  .bonus-card p {
-    display: block;
-    position: relative;
-    z-index: 1;
-  }
-
-  .bonus-card strong {
-    font-size: 1.35rem;
-    line-height: 1.1;
-  }
-
-  .bonus-card p {
-    margin: 10px 0 0;
-    opacity: 0.85;
-  }
-
-  .accent-blue {
-    background: linear-gradient(180deg, rgba(58, 111, 208, 0.9), rgba(49, 78, 170, 0.82));
-  }
-
-  .accent-gold {
-    background: linear-gradient(180deg, rgba(231, 124, 47, 0.92), rgba(179, 82, 28, 0.88));
-  }
-
-  .accent-red {
-    background: linear-gradient(180deg, rgba(164, 38, 68, 0.95), rgba(105, 22, 54, 0.88));
-  }
-
-  .arena-shell {
-    min-width: 0;
-    border-radius: 34px;
-    background: rgba(90, 23, 35, 0.72);
-    border: 2px solid rgba(255, 255, 255, 0.12);
-    box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.12),
-      0 20px 50px rgba(38, 7, 22, 0.28);
-    padding: 20px;
-    display: flex;
-    flex-direction: column;
-    gap: 18px;
+@media (max-width: 920px) {
+  .arena {
+    grid-template-columns: 1fr;
   }
 
   .score-ribbon {
-    display: grid;
-    grid-template-columns: 1fr auto 1fr;
-    gap: 16px;
-    align-items: center;
-  }
-
-  .score-box {
-    border-radius: 22px;
-    padding: 16px 20px;
-    background: var(--panel-deep);
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-  }
-
-  .score-box span {
-    text-transform: uppercase;
-    letter-spacing: 0.14em;
-    font-size: 0.76rem;
-    opacity: 0.75;
-  }
-
-  .score-box strong {
-    font-size: 2rem;
-    line-height: 1;
-  }
-
-  .score-box.host strong {
-    color: var(--gold);
-  }
-
-  .score-box.opponent strong {
-    color: var(--teal);
+    grid-template-columns: 1fr;
   }
 
   .score-divider {
-    font-size: 1rem;
-    letter-spacing: 0.3em;
-    text-transform: uppercase;
-    opacity: 0.8;
-  }
-
-  .arena {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 18px;
-  }
-
-  .lane {
-    border-radius: 28px;
-    padding: 20px;
-    background:
-      linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.02)),
-      rgba(72, 17, 38, 0.75);
-    border: 2px solid rgba(255, 255, 255, 0.08);
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-  }
-
-  .lane-header {
-    display: flex;
-    justify-content: space-between;
-    gap: 16px;
-    align-items: flex-start;
-  }
-
-  .lane-label {
-    margin: 0 0 6px;
-    font-size: 0.76rem;
-    text-transform: uppercase;
-    letter-spacing: 0.18em;
-    opacity: 0.72;
-  }
-
-  .lane-header h2 {
-    margin: 0;
-    font-size: clamp(1.45rem, 2.8vw, 2.4rem);
-    line-height: 1;
-    word-break: break-word;
-  }
-
-  .lane-score {
-    min-width: 92px;
-    padding: 10px 12px;
-    border-radius: 18px;
-    background: rgba(255, 255, 255, 0.06);
-    text-align: right;
-  }
-
-  .lane-score span {
-    display: block;
-    font-size: 0.72rem;
-    text-transform: uppercase;
-    letter-spacing: 0.14em;
-    opacity: 0.68;
-  }
-
-  .lane-score strong {
-    display: block;
-    font-size: 1.4rem;
-    margin-top: 4px;
-  }
-
-  .rack-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(94px, 1fr));
-    gap: 10px;
-  }
-
-  .rack-slot {
-    min-height: 94px;
-  }
-
-  .tile {
-    appearance: none;
-    border: none;
-    cursor: pointer;
-    min-height: 94px;
-    min-width: 94px;
-    width: 100%;
-    border-radius: 16px;
-    background:
-      linear-gradient(180deg, #fffef8 0%, #f2ebe0 70%, #d9cec0 100%);
-    color: var(--ink);
-    position: relative;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow:
-      inset 0 -4px 0 rgba(0, 0, 0, 0.12),
-      0 10px 18px rgba(45, 10, 24, 0.16);
-    transition: transform 140ms ease, box-shadow 140ms ease;
-    padding: 15px;
-    will-change: transform, opacity;
-  }
-
-  .tile-status-gold,
-  .built-tile.tile-status-gold {
-    background:
-      linear-gradient(180deg, #fff7d2 0%, #f4cf67 72%, #c68b1d 100%);
-    box-shadow:
-      inset 0 -4px 0 rgba(122, 72, 8, 0.2),
-      0 12px 20px rgba(45, 10, 24, 0.2),
-      0 0 0 1px rgba(255, 223, 128, 0.5);
-  }
-
-  .tile-status-black,
-  .built-tile.tile-status-black {
-    background:
-      linear-gradient(180deg, #3b3343 0%, #211926 72%, #100b14 100%);
-    color: #f6efe1;
-    box-shadow:
-      inset 0 -4px 0 rgba(0, 0, 0, 0.4),
-      0 12px 20px rgba(10, 5, 12, 0.34);
-  }
-
-  .tile:hover {
-    transform: translateY(-2px);
-    box-shadow:
-      inset 0 -4px 0 rgba(0, 0, 0, 0.12),
-      0 14px 20px rgba(45, 10, 24, 0.24);
-  }
-
-  .tile:focus-visible {
-    outline: 3px solid rgba(255, 202, 103, 0.85);
-    outline-offset: 2px;
-    transform: translateY(-2px);
-    box-shadow:
-      inset 0 -4px 0 rgba(0, 0, 0, 0.12),
-      0 0 0 4px rgba(92, 25, 41, 0.45),
-      0 14px 20px rgba(45, 10, 24, 0.24);
-  }
-
-  .tile.active {
-    outline: 3px solid rgba(255, 202, 103, 0.55);
-  }
-
-  .tile.opponent.active {
-    outline-color: rgba(75, 199, 176, 0.5);
-  }
-
-  .tile.opponent:focus-visible {
-    outline-color: rgba(75, 199, 176, 0.85);
-  }
-
-  .tile-in-use {
-    background:
-      linear-gradient(180deg, #c8bdb0 0%, #a79887 70%, #857565 100%);
-    color: rgba(28, 25, 48, 0.78);
-    box-shadow:
-      inset 0 4px 10px rgba(38, 20, 12, 0.22),
-      inset 0 -2px 0 rgba(255, 255, 255, 0.18);
-    transform: translateY(2px) scale(0.98);
-  }
-
-  .tile-in-use:hover,
-  .tile-in-use:focus-visible {
-    transform: translateY(1px) scale(0.98);
-  }
-
-  .tile-letter {
-    font-size: 2.4rem;
-    font-weight: 900;
-    line-height: 1;
-  }
-
-  .tile-score {
-    position: absolute;
-    top: 8px;
-    right: 10px;
-    font-size: 0.95rem;
-    font-weight: 800;
-  }
-
-  .tile-modifier {
-    position: absolute;
-    top: 8px;
-    left: 10px;
-    min-width: 30px;
-    padding: 3px 7px;
-    border-radius: 999px;
-    font-size: 0.68rem;
-    font-weight: 900;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
     text-align: center;
-    box-shadow: 0 4px 10px rgba(27, 11, 20, 0.18);
-  }
-
-  .tile-modifier-gold {
-    background: rgba(255, 245, 196, 0.95);
-    color: #8e4b00;
-  }
-
-  .tile-modifier-black {
-    visibility: hidden;
-  }
-
-  .built-tile-move {
-    transition: transform 260ms cubic-bezier(0.22, 1, 0.36, 1);
-  }
-
-  .rack-tile-enter-active {
-    animation: rackTileIn 180ms cubic-bezier(0.2, 0.9, 0.3, 1.05);
-    animation-fill-mode: both;
-  }
-
-  .rack-tile-leave-active {
-    animation: rackTileOut 140ms ease-in forwards;
-    pointer-events: none;
-  }
-
-  @keyframes rackTileIn {
-    0% {
-      opacity: 0;
-      transform: scale(0.88);
-      filter: brightness(1.08);
-    }
-    65% {
-      opacity: 1;
-      transform: scale(1.03);
-    }
-    100% {
-      opacity: 1;
-      transform: scale(1);
-      filter: none;
-    }
-  }
-
-  @keyframes rackTileOut {
-    0% {
-      opacity: 1;
-      transform: scale(1);
-    }
-    100% {
-      opacity: 0;
-      transform: scale(0.82);
-      filter: brightness(0.8);
-    }
-  }
-
-
-
-
-  .waiting-card {
-    border-radius: 26px;
-    background: rgba(255, 255, 255, 0.06);
-    padding: 34px 24px;
-    text-align: center;
-  }
-
-  .waiting-card strong {
-    display: block;
-    font-size: 1.4rem;
-  }
-
-  .waiting-card p {
-    margin: 10px 0 0;
-    opacity: 0.78;
-  }
-
-  .word-console {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 14px;
-    align-items: center;
-    justify-content: space-between;
-    padding: 16px;
-    border-radius: 24px;
-    background: rgba(48, 12, 28, 0.8);
-  }
-
-  .bonus-ladder {
-    width: 100%;
-    display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 10px;
-  }
-
-  .bonus-step {
-    border-radius: 16px;
-    padding: 14px 10px;
-    text-align: center;
-    background: rgba(255, 255, 255, 0.07);
-    border: 2px solid rgba(255, 255, 255, 0.08);
-    color: rgba(247, 239, 225, 0.7);
-    transition: transform 140ms ease, background 140ms ease, color 140ms ease;
-  }
-
-  .bonus-step strong,
-  .bonus-step span {
-    display: block;
-  }
-
-  .bonus-step strong {
-    font-size: 1.15rem;
-  }
-
-  .bonus-step span {
-    margin-top: 6px;
-    font-size: 0.72rem;
-    text-transform: uppercase;
-    letter-spacing: 0.12em;
-  }
-
-  .bonus-step.active {
-    background: linear-gradient(180deg, rgba(255, 149, 91, 0.38), rgba(181, 79, 33, 0.72));
-    color: var(--cream);
-    transform: translateY(-2px);
-    border-color: rgba(255, 202, 103, 0.34);
-  }
-
-  .word-input-shell {
-    min-width: 0;
-    min-height: 110px;
-    flex: 1;
-    display: grid;
-    grid-template-columns: auto 1fr auto;
-    gap: 12px;
-    align-items: center;
-    padding: 10px 14px;
-    border-radius: 18px;
-    background: rgba(255, 255, 255, 0.08);
-  }
-
-  .built-word-strip {
-    min-height: 74px;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-    align-items: center;
-  }
-
-  .built-word-strip.empty {
-    color: rgba(254, 183, 59, 0.62);
-  }
-
-  .built-placeholder {
-    font-size: 0.95rem;
-    font-weight: 700;
-  }
-
-  .built-tile {
-    appearance: none;
-    border: none;
-    cursor: pointer;
-    min-height: 90px;
-    min-width: 90px;
-    border-radius: 14px;
-    position: relative;
-    background:
-      linear-gradient(180deg, #fffef8 0%, #f2ebe0 70%, #d9cec0 100%);
-    color: var(--ink);
-    box-shadow: inset 0 -3px 0 rgba(0, 0, 0, 0.16);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0;
-    will-change: transform, opacity;
-  }
-
-  .built-tile:focus-visible {
-    outline: 3px solid rgba(255, 202, 103, 0.85);
-    outline-offset: 2px;
-  }
-
-  .built-tile-enter-active {
-    animation: builtTileIn 220ms cubic-bezier(0.2, 0.9, 0.3, 1.15);
-    animation-fill-mode: both;
-  }
-
-  .built-tile-leave-active {
-    animation: builtTileOut 180ms ease-in forwards;
-    pointer-events: none;
-  }
-
-  @keyframes builtTileIn {
-    0% {
-      opacity: 0;
-      transform: translateY(12px) scale(0.86);
-    }
-    70% {
-      opacity: 1;
-      transform: translateY(-2px) scale(1.04);
-    }
-    100% {
-      opacity: 1;
-      transform: translateY(0) scale(1);
-    }
-  }
-
-  @keyframes builtTileOut {
-    0% {
-      opacity: 1;
-      transform: translateY(0) scale(1);
-    }
-    100% {
-      opacity: 0;
-      transform: translateY(-10px) scale(0.84);
-    }
-  }
-
-  .builder-breakdown {
-    width: 100%;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-  }
-
-  .builder-breakdown span {
-    padding: 10px 12px;
-    border-radius: 999px;
-    background: rgba(255, 255, 255, 0.08);
-    font-size: 0.78rem;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-  }
-
-  .console-label,
-  .console-score {
-    text-transform: uppercase;
-    letter-spacing: 0.12em;
-    font-size: 0.78rem;
-    opacity: 0.82;
-  }
-
-  .word-input-shell input {
-    min-width: 0;
-    border: none;
-    outline: none;
-    background: transparent;
-    color: var(--cream);
-    font-size: 1.15rem;
-    font-weight: 700;
-  }
-
-  .console-actions {
-    display: flex;
-    gap: 10px;
-    flex-wrap: wrap;
-  }
-
-  .ghost-button,
-  .submit-button,
-  .back-button {
-    border: none;
-    cursor: pointer;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 999px;
-    padding: 12px 18px;
-    font-size: 0.95rem;
-    font-weight: 800;
-    letter-spacing: 0.04em;
-    font-family: "Press Start 2P", cursive;
-  }
-
-  .ghost-button {
-    background: rgba(255, 255, 255, 0.08);
-    color: var(--cream);
-  }
-
-  .submit-button {
-    background: linear-gradient(180deg, #2cbf9d 0%, #1d987e 100%);
-    color: #effff9;
-    min-width: 130px;
   }
 
   .bottom-bar {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 16px;
-    padding: 0 8px;
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+
+@media (max-width: 720px) {
+  .game-shell {
+    padding: 16px;
   }
 
-  .bottom-bar p {
-    margin: 0;
-    opacity: 0.78;
+  .side-stack {
+    grid-template-columns: 1fr;
   }
-
-  .back-button {
-    background: linear-gradient(180deg, #ff965b 0%, #e05e2a 100%);
-    color: white;
-  }
-
-  @media (max-width: 1180px) {
-    .board-frame {
-      grid-template-columns: 1fr;
-    }
-
-    .side-stack {
-      display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-    }
-  }
-
-  @media (max-width: 920px) {
-    .hud {
-      grid-template-columns: 1fr;
-    }
-
-    .score-chip {
-      text-align: left;
-    }
-
-    .arena {
-      grid-template-columns: 1fr;
-    }
-
-    .score-ribbon {
-      grid-template-columns: 1fr;
-    }
-
-    .score-divider {
-      text-align: center;
-    }
-
-    .bottom-bar {
-      flex-direction: column;
-      align-items: stretch;
-    }
-  }
-
-  @media (max-width: 720px) {
-    .game-shell {
-      padding: 16px;
-    }
-
-    .side-stack {
-      grid-template-columns: 1fr;
-    }
-
-    .word-console {
-      flex-direction: column;
-      align-items: stretch;
-    }
-
-    .bonus-ladder {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-
-    .word-input-shell {
-      grid-template-columns: 1fr;
-    }
-
-    .console-actions {
-      width: 100%;
-      justify-content: stretch;
-    }
-
-    .console-actions button {
-      flex: 1;
-    }
-  }
+}
 </style>
