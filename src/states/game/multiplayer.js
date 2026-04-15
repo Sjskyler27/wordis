@@ -27,6 +27,10 @@ export const rackClears = ref({
   host: 2,
   opponent: 2
 });
+export const playerCards = ref({
+  host: { boons: [], attacks: [] },
+  opponent: { boons: [], attacks: [] }
+});
 export const gameStarted = ref(false);
 export const message = ref('');
 export const isConnecting = ref(false);
@@ -50,6 +54,7 @@ const applyGameState = (data = {}) => {
   lastWordScores.value = data.lastWordScores || lastWordScores.value;
   playerTiles.value = data.tiles || playerTiles.value;
   rackClears.value = data.rackClears || rackClears.value;
+  playerCards.value = data.cards || playerCards.value;
 };
 
 export const joinGame = (code) => {
@@ -100,6 +105,16 @@ export const clearRack = () => {
   socket.emit('clearRack', { roomCode: roomCode.value });
 };
 
+export const useBoon = ({ cardId, tileId }) => {
+  if (!gameStarted.value) return;
+  socket.emit('useBoon', { roomCode: roomCode.value, cardId, tileId });
+};
+
+export const useAttack = ({ cardId }) => {
+  if (!gameStarted.value) return;
+  socket.emit('useAttack', { roomCode: roomCode.value, cardId });
+};
+
 socket.on('startGame', (data) => {
   gameStarted.value = true;
   message.value = '';
@@ -111,6 +126,14 @@ socket.on('wordSubmitted', (data) => {
 });
 
 socket.on('rackCleared', (data) => {
+  applyGameState(data);
+});
+
+socket.on('boonUsed', (data) => {
+  applyGameState(data);
+});
+
+socket.on('attackUsed', (data) => {
   applyGameState(data);
 });
 
@@ -147,6 +170,10 @@ export const resetGame = () => {
   rackClears.value = {
     host: 2,
     opponent: 2
+  };
+  playerCards.value = {
+    host: { boons: [], attacks: [] },
+    opponent: { boons: [], attacks: [] }
   };
   gameStarted.value = false;
   message.value = '';

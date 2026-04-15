@@ -8,7 +8,7 @@
     <main class="board-frame" :class="{ paused: isPaused }">
       <aside class="side-stack">
         <div class="bonus-card accent-blue">
-          <span class="bonus-kicker">Tempo</span>
+          <span class="bonus-kicker">Game mode</span>
           <strong>{{ props.isMultiplayer ? 'Real Time Duel' : 'Bot Pressure' }}</strong>
           <p v-if="props.isMultiplayer">
             <button type="button" class="room-code-button" @click="copyRoomCode">
@@ -19,11 +19,6 @@
           <p>{{ playerRoleText }}</p>
         </div>
 
-        <div class="bonus-card accent-gold">
-          <span class="bonus-kicker">Current Build</span>
-          <strong>{{ currentWordDisplay || 'Pick tiles below' }}</strong>
-          <p>{{ currentWordScore }} pts potential</p>
-        </div>
 
         <div class="bonus-card accent-red">
           <span class="bonus-kicker">Status</span>
@@ -31,7 +26,43 @@
           <p v-if="props.isMultiplayer && !gameStarted">Waiting for opponent to connect</p>
           <p v-else>Only used letters are replaced</p>
         </div>
-      <button class="pause-button" @click="togglePause">{{ isPaused ? 'Resume' : 'Pause' }}</button>
+        <div class="bonus-card accent-purple">
+          <span class="bonus-kicker">Cards</span>
+          <strong>{{ myCards.boons.length }} Boon · {{ myCards.attacks.length }} Attack</strong>
+          <p v-if="activeBoonCard">
+            {{ activeBoonCard.label }} is ready. Click one of your tiles to use it.
+          </p>
+          <p v-else-if="myCards.boons.length || myCards.attacks.length">
+            Drawn cards sit here until you spend them.
+          </p>
+          <p v-else>No cards in hand right now.</p>
+          <div class="card-hand">
+            <button
+              v-for="card in myCards.boons"
+              :key="card.id"
+              type="button"
+              class="action-card boon-card"
+              :class="{ armed: activeBoonCardId === card.id }"
+              @click="selectBoonCard(card)"
+            >
+              <span class="action-card-type">Boon</span>
+              <strong>{{ card.label }}</strong>
+              <span>{{ card.description }}</span>
+            </button>
+            <button
+              v-for="card in myCards.attacks"
+              :key="card.id"
+              type="button"
+              class="action-card attack-card"
+              @click="useAttackCard(card)"
+            >
+              <span class="action-card-type">Attack</span>
+              <strong>{{ card.label }}</strong>
+              <span>{{ card.description }}</span>
+            </button>
+          </div>
+        </div>
+      <button class="pause-button" @click="emit('showSettings')">{{ isPaused ? 'Resume' : 'Pause' }}</button>
       <button class="back-button" @click="resetAndGoHome">Back to Home</button>
 
       </aside>
@@ -59,7 +90,7 @@
             :tiles="leftLane.tiles"
             :is-active="leftLane.isActive"
             :selected-tile-ids="leftLane.selectedTileIds"
-            @tile-click="handleTileClick"
+            @tile-click="handleTileClickWithCards($event, leftLane.side)"
           />
 
           <GameLane
@@ -71,7 +102,7 @@
             :tiles="rightLane.tiles"
             :is-active="rightLane.isActive"
             :selected-tile-ids="rightLane.selectedTileIds"
-            @tile-click="handleTileClick"
+            @tile-click="handleTileClickWithCards($event, rightLane.side)"
           />
         </div>
 
@@ -99,26 +130,11 @@
         />
       </section>
     </main>
-
-    <Settings
-      v-if="isPaused"
-      :volume="10"
-      :music-volume="10"
-      :effects-volume="10"
-      :zoom="1"
-      :dungeon-zoom="1"
-      :shop-zoom="1"
-      :native-controller-support="false"
-      @close="togglePause"
-      @home="resetAndGoHome"
-    />
-
   </div>
 </template>
 
 <script setup>
-import { computed, defineProps, onBeforeUnmount, onMounted, ref } from 'vue';
-import Settings from '../../assets/Settings.vue';
+import { computed, defineProps, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import {
   roomCode,
   isHost,
@@ -128,12 +144,15 @@ import {
   lastWordScores,
   playerTiles,
   rackClears,
+  playerCards,
   gameStarted,
   submitWord as submitMultiplayerWord,
   clearRack as clearMultiplayerRack,
+  useBoon as useMultiplayerBoon,
+  useAttack as useMultiplayerAttack,
   resetGame as resetMultiplayer
 } from './multiplayer.js';
-import { MIN_WORD_LENGTH, getWordScoreDetails, isMissingRequiredTile } from './tile-logic.js';
+import { MIN_WORD_LENGTH, getWordScoreDetails, isMissingRequiredTile, selectedTilesMatchWord } from './tile-logic.js';
 import { useWordBuilder } from './useWordBuilder.js';
 import { useSinglePlayerGame } from './useSinglePlayerGame.js';
 import GameLane from './components/GameLane.vue';
@@ -143,9 +162,10 @@ const props = defineProps({
   isMultiplayer: Boolean
 });
 
-const emit = defineEmits(['home']);
+const emit = defineEmits(['home', 'showSettings']);
 const localMessage = ref('');
 const isPaused = ref(false);
+const activeBoonCardId = ref(null);
 const isMultiplayerRef = computed(() => props.isMultiplayer);
 
 const mySide = computed(() => {
@@ -197,6 +217,8 @@ const {
   startBotLoop,
   stopBotLoop,
   clearSinglePlayerRack,
+  useSinglePlayerBoon,
+  useSinglePlayerAttack,
   submitSinglePlayerWord
 } = useSinglePlayerGame({
   isMultiplayer: isMultiplayerRef,
@@ -207,9 +229,21 @@ const {
   playerScores,
   lastWordScores,
   rackClears,
+  playerCards,
   submittedWords,
   wordHistory
 });
+
+const myCards = computed(() => playerCards.value[mySide.value] || { boons: [], attacks: [] });
+const activeBoonCard = computed(() => {
+  return myCards.value.boons.find((card) => card.id === activeBoonCardId.value) || null;
+});
+
+watch(myCards, () => {
+  if (activeBoonCardId.value && !activeBoonCard.value) {
+    resetActionMode();
+  }
+}, { deep: true });
 
 const playerRoleText = computed(() => {
   if (props.isMultiplayer) {
@@ -232,7 +266,7 @@ const handleSubmit = () => {
   }
 
   const selectedTiles = selectedTilesForCurrentSide.value;
-  if (!selectedTiles.length || selectedTiles.map((tile) => tile.letter).join('') !== normalizedWord) {
+  if (!selectedTiles.length || !selectedTilesMatchWord(selectedTiles, normalizedWord)) {
     localMessage.value = 'That word cannot be made from your current tiles.';
     return;
   }
@@ -256,6 +290,35 @@ const handleSubmit = () => {
   submitSinglePlayerWord(normalizedWord);
 };
 
+const resetActionMode = () => {
+  activeBoonCardId.value = null;
+};
+
+const selectBoonCard = (card) => {
+  if (activeBoonCardId.value === card.id) {
+    resetActionMode();
+    localMessage.value = 'Boon selection cleared.';
+    return;
+  }
+
+  activeBoonCardId.value = card.id;
+  localMessage.value = `Ready ${card.label}. Click one of your tiles to use it.`;
+};
+
+const useAttackCard = (card) => {
+  if (props.isMultiplayer) {
+    useMultiplayerAttack({ cardId: card.id });
+    localMessage.value = `Played ${card.label} on a random enemy tile.`;
+    resetActionMode();
+    return;
+  }
+
+  if (useSinglePlayerAttack(mySide.value, card.id)) {
+    localMessage.value = `Played ${card.label} on a random enemy tile.`;
+    resetActionMode();
+  }
+};
+
 const handleClearRack = () => {
   if (props.isMultiplayer) {
     if ((rackClears.value[mySide.value] || 0) <= 0) {
@@ -265,11 +328,37 @@ const handleClearRack = () => {
 
     clearMultiplayerRack();
     clearSelectionForSide(mySide.value);
+    resetActionMode();
     localMessage.value = `Clearing rack... ${rackClears.value[mySide.value] - 1} clears left after this one.`;
     return;
   }
 
+  resetActionMode();
   clearSinglePlayerRack(mySide.value);
+};
+
+const handleTileClickWithCards = (tile, side) => {
+  if (activeBoonCard.value) {
+    if (side !== mySide.value) {
+      localMessage.value = 'Boons can only target your own tiles.';
+      return;
+    }
+
+    if (props.isMultiplayer) {
+      useMultiplayerBoon({ cardId: activeBoonCard.value.id, tileId: tile.id });
+      localMessage.value = `Played ${activeBoonCard.value.label} on your tile.`;
+      resetActionMode();
+      return;
+    }
+
+    if (useSinglePlayerBoon(mySide.value, activeBoonCard.value.id, tile.id)) {
+      localMessage.value = `Played ${activeBoonCard.value.label} on your tile.`;
+      resetActionMode();
+    }
+    return;
+  }
+
+  handleTileClick(tile);
 };
 
 const copyRoomCode = async () => {
@@ -327,6 +416,7 @@ const resetAndGoHome = () => {
   isPaused.value = false;
   stopBotLoop();
   resetMultiplayer();
+  resetActionMode();
   localMessage.value = '';
   emit('home');
 };
@@ -507,6 +597,78 @@ body {
 
 .accent-red {
   background: linear-gradient(180deg, rgba(164, 38, 68, 0.95), rgba(105, 22, 54, 0.88));
+}
+
+.accent-purple {
+  background: linear-gradient(180deg, rgba(112, 70, 182, 0.95), rgba(66, 33, 118, 0.9));
+}
+
+.card-hand {
+  display: grid;
+  gap: 10px;
+  margin-top: 12px;
+  position: relative;
+  z-index: 1;
+}
+
+.action-card {
+  appearance: none;
+  border: none;
+  cursor: pointer;
+  width: 100%;
+  text-align: left;
+  display: grid;
+  gap: 6px;
+  padding: 14px 14px 13px;
+  border-radius: 18px;
+  color: #fff7ee;
+  font: inherit;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.16), 0 10px 18px rgba(30, 8, 34, 0.18);
+  transition: transform 140ms ease, box-shadow 140ms ease, filter 140ms ease;
+}
+
+.action-card:hover {
+  transform: translateY(-2px);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18), 0 14px 22px rgba(30, 8, 34, 0.24);
+}
+
+.action-card:focus-visible {
+  outline: 3px solid rgba(255, 227, 141, 0.88);
+  outline-offset: 2px;
+}
+
+.action-card strong {
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.action-card span:last-child {
+  font-size: 0.76rem;
+  line-height: 1.35;
+  color: rgba(255, 248, 236, 0.84);
+}
+
+.action-card-type {
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  color: rgba(255, 248, 236, 0.74);
+}
+
+.boon-card {
+  background: linear-gradient(180deg, rgba(108, 190, 128, 0.82), rgba(47, 111, 79, 0.9));
+}
+
+.attack-card {
+  background: linear-gradient(180deg, rgba(226, 113, 88, 0.84), rgba(137, 40, 52, 0.92));
+}
+
+.action-card.armed {
+  transform: translateY(-2px);
+  box-shadow:
+    inset 0 0 0 2px rgba(255, 232, 160, 0.8),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2),
+    0 16px 24px rgba(30, 8, 34, 0.28);
 }
 
 .arena-shell {

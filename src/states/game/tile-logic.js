@@ -19,20 +19,31 @@ const {
   getDifference,
   getTilesScore,
   getWordScoreDetails,
+  getResourceGrants,
   getTilesForWord,
   getRequiredTiles,
   isMissingRequiredTile,
+  selectedTilesMatchWord,
+  applyModifierToTile,
+  replaceTileWithModifier,
   getModifierBadge,
   getModifierUi,
   getModifierDefinition,
   MODIFIER_DEFINITIONS,
+  CARD_DEFINITIONS,
+  getCardDefinition,
+  createCardLogic,
   createTileLogic
 } = sharedTileLogic;
 
 let nextLocalTileId = 1;
+let nextLocalCardId = 1;
 
 const { createRack, refillTiles } = createTileLogic({
   createTileId: () => `local-tile-${nextLocalTileId++}`
+});
+const { drawCard, drawCards } = createCardLogic({
+  createCardId: () => `local-card-${nextLocalCardId++}`
 });
 
 export {
@@ -44,11 +55,19 @@ export {
   getDifference,
   getTilesScore,
   getWordScoreDetails,
+  getResourceGrants,
   getTilesForWord,
   getRequiredTiles,
   isMissingRequiredTile,
+  selectedTilesMatchWord,
+  applyModifierToTile,
+  replaceTileWithModifier,
   getModifierBadge,
   getModifierUi,
   getModifierDefinition,
-  MODIFIER_DEFINITIONS
+  MODIFIER_DEFINITIONS,
+  CARD_DEFINITIONS,
+  getCardDefinition,
+  drawCard,
+  drawCards
 };
