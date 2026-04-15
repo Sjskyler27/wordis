@@ -295,7 +295,7 @@ font-family: 'Times New Roman', serif;
       text-transform: uppercase;
       color: transparent;
 
-      background: linear-gradient(to bottom, #ffe06d, #eda126, #862f00);
+      background: linear-gradient(to bottom, #f6c637, #8d26ed, #862f00);
       -webkit-background-clip: text;
       background-clip: text;
     }
