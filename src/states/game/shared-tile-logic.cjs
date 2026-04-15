@@ -11,7 +11,7 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses }) => {
   const BASE_BAD_MODIFIER_CHANCE = 0.04;
   const MODIFIER_SWING_DIVISOR = 90;
   const MAX_MODIFIER_BONUS = 0.18;
-  const GOOD_MODIFIERS = ['gold', 'firsttile'];
+  const GOOD_MODIFIERS = ['gold', 'firsttile', 'wild'];
   const BAD_MODIFIERS = ['black', 'mustuse', 'locked3'];
   const MODIFIER_DEFINITIONS = {
     normal: {
@@ -35,6 +35,17 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses }) => {
         textColor: '#1c1930',
         badgeBackground: 'rgba(255, 245, 196, 0.95)',
         badgeColor: '#8e4b00'
+      }
+    },
+    wild: {
+      effects: { wild: true },
+      ui: {
+        tileBackground: 'linear-gradient(180deg, #fff6ff 0%, #d8c0ff 52%, #7f5cd4 100%)',
+        tileShadow: 'inset 0 -4px 0 rgba(63, 36, 120, 0.24), 0 12px 20px rgba(38, 17, 62, 0.22), 0 0 0 1px rgba(226, 204, 255, 0.4)',
+        textColor: '#201339',
+        badgeBackground: 'rgba(255, 244, 255, 0.96)',
+        badgeColor: '#7148b4',
+        hideBadge: true
       }
     },
     firsttile: {
@@ -286,10 +297,11 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses }) => {
       const status = rollTileModifier(side, scores, { letter, baseScore });
       const modifierDefinition = getModifierDefinition(status);
       const lockTurns = modifierDefinition.effects.lockTurns || 0;
+      const tileLetter = modifierDefinition.effects.wild ? '*' : letter;
 
       return {
         id: createTileId(),
-        letter,
+        letter: tileLetter,
         score: modifierDefinition.effects.zeroLetterScore ? 0 : baseScore,
         multiplier: modifierDefinition.effects.zeroLetterScore ? 0 : 1,
         wordMultiplier: modifierDefinition.effects.wordMultiplier || 1,
