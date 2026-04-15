@@ -38,7 +38,10 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses }) => {
       }
     },
     wild: {
-      effects: { wild: true },
+      effects: {
+         wild: true,
+         setScore: -1
+        },
       ui: {
         tileBackground: 'linear-gradient(180deg, #fff6ff 0%, #d8c0ff 52%, #7f5cd4 100%)',
         tileShadow: 'inset 0 -4px 0 rgba(63, 36, 120, 0.24), 0 12px 20px rgba(38, 17, 62, 0.22), 0 0 0 1px rgba(226, 204, 255, 0.4)',
@@ -61,7 +64,7 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses }) => {
     },
     black: {
       badge: '0',
-      effects: { zeroLetterScore: true },
+      effects: { setScore: 0 },
       ui: {
         tileBackground: 'linear-gradient(180deg, #3b3343 0%, #211926 72%, #100b14 100%)',
         tileShadow: 'inset 0 -4px 0 rgba(0, 0, 0, 0.4), 0 12px 20px rgba(10, 5, 12, 0.34)',
@@ -302,7 +305,7 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses }) => {
       return {
         id: createTileId(),
         letter: tileLetter,
-        score: modifierDefinition.effects.zeroLetterScore ? 0 : baseScore,
+        score: modifierDefinition.effects.setScore != null ? modifierDefinition.effects.setScore : baseScore,
         multiplier: modifierDefinition.effects.zeroLetterScore ? 0 : 1,
         wordMultiplier: modifierDefinition.effects.wordMultiplier || 1,
         firstTileMultiplier: modifierDefinition.effects.firstTileMultiplier || 1,
