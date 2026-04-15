@@ -11,7 +11,10 @@
           <span class="bonus-kicker">Tempo</span>
           <strong>{{ props.isMultiplayer ? 'Real Time Duel' : 'Bot Pressure' }}</strong>
           <p v-if="props.isMultiplayer">
-            Room {{ roomCode }} · {{ isHost ? 'Host lane' : 'Opponent lane' }}
+            <button type="button" class="room-code-button" @click="copyRoomCode">
+              Room {{ roomCode }}
+            </button>
+            · {{ isHost ? 'Host lane' : 'Opponent lane' }}
           </p>
           <p>{{ playerRoleText }}</p>
         </div>
@@ -242,6 +245,19 @@ const handleSubmit = () => {
   submitSinglePlayerWord(normalizedWord);
 };
 
+const copyRoomCode = async () => {
+  if (!props.isMultiplayer || !roomCode.value) {
+    return;
+  }
+
+  try {
+    await navigator.clipboard.writeText(roomCode.value);
+    localMessage.value = `Copied room code ${roomCode.value}.`;
+  } catch (error) {
+    localMessage.value = `Room code: ${roomCode.value}`;
+  }
+};
+
 const setPauseState = (nextPaused) => {
   isPaused.value = nextPaused;
 
@@ -439,6 +455,19 @@ body {
 .bonus-card p {
   margin: 10px 0 0;
   opacity: 0.85;
+}
+
+.room-code-button {
+  appearance: none;
+  border: none;
+  background: rgba(255, 255, 255, 0.12);
+  color: inherit;
+  cursor: pointer;
+  border-radius: 999px;
+  padding: 5px 10px;
+  font: inherit;
+  font-weight: 700;
+  margin-right: 6px;
 }
 
 .accent-blue {
