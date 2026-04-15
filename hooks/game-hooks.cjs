@@ -7,6 +7,10 @@ const LETTER_POOL = Object.entries(LETTER_CONFIG).flatMap(([letter, config]) =>
 );
 const DUPLICATE_PENALTY = 0.38;
 const MIN_DUPLICATE_WEIGHT = 0.18;
+const BASE_GOOD_MODIFIER_CHANCE = 0.04;
+const BASE_BAD_MODIFIER_CHANCE = 0.01;
+const MODIFIER_SWING_DIVISOR = 90;
+const MAX_MODIFIER_BONUS = 0.1;
 let nextTileId = 1;
 
 const getRackLetterCounts = (tiles = []) => tiles.reduce((counts, tile) => {
@@ -51,19 +55,58 @@ const drawLetter = (tiles = []) => {
   return weightedPool[weightedPool.length - 1]?.letter || 'E';
 };
 
-const createTile = (letter = drawLetter()) => ({
-  id: `tile-${nextTileId++}`,
-  letter,
-  score: LETTER_CONFIG[letter]?.score || 0,
-  multiplier: 1,
-  locked: false,
-  status: 'normal'
-});
+const getModifierChances = (side, scores = {}) => {
+  if (!side) {
+    return {
+      goodChance: BASE_GOOD_MODIFIER_CHANCE,
+      badChance: BASE_BAD_MODIFIER_CHANCE
+    };
+  }
 
-const createRack = () => {
+  const opponentSide = side === 'host' ? 'opponent' : 'host';
+  const scoreDelta = (scores[side] || 0) - (scores[opponentSide] || 0);
+  const catchupBonus = Math.min(MAX_MODIFIER_BONUS, Math.max(0, -scoreDelta) / MODIFIER_SWING_DIVISOR);
+  const pressureBonus = Math.min(MAX_MODIFIER_BONUS, Math.max(0, scoreDelta) / MODIFIER_SWING_DIVISOR);
+
+  return {
+    goodChance: Math.min(0.45, BASE_GOOD_MODIFIER_CHANCE + catchupBonus),
+    badChance: Math.min(0.4, BASE_BAD_MODIFIER_CHANCE + pressureBonus)
+  };
+};
+
+const rollTileModifier = (side, scores = {}) => {
+  const { goodChance, badChance } = getModifierChances(side, scores);
+  const roll = Math.random();
+
+  if (roll < goodChance) {
+    return 'gold';
+  }
+
+  if (roll < goodChance + badChance) {
+    return 'black';
+  }
+
+  return 'normal';
+};
+
+const createTile = (letter = drawLetter(), side = null, scores = {}) => {
+  const status = rollTileModifier(side, scores);
+
+  return {
+    id: `tile-${nextTileId++}`,
+    letter,
+    score: LETTER_CONFIG[letter]?.score || 0,
+    multiplier: status === 'black' ? 0 : 1,
+    wordMultiplier: status === 'gold' ? 2 : 1,
+    locked: false,
+    status
+  };
+};
+
+const createRack = (side = null, scores = {}) => {
   const rack = [];
   while (rack.length < RACK_SIZE) {
-    rack.push(createTile(drawLetter(rack)));
+    rack.push(createTile(drawLetter(rack), side, scores));
   }
   return rack;
 };
@@ -92,8 +135,11 @@ const getWordScoreFromTiles = (selectedTiles) => {
   const letterScore = selectedTiles.reduce((total, tile) => {
     return total + ((tile.score || 0) * (tile.multiplier || 1));
   }, 0);
+  const wordMultiplier = selectedTiles.reduce((total, tile) => {
+    return total * (tile.wordMultiplier || 1);
+  }, 1);
 
-  return letterScore + getLengthBonus(selectedTiles.length);
+  return (letterScore + getLengthBonus(selectedTiles.length)) * wordMultiplier;
 };
 
 const getSelectedTiles = (tiles, tileIds) => {
@@ -113,7 +159,7 @@ const getSelectedTiles = (tiles, tileIds) => {
   return selectedTiles;
 };
 
-const refillRack = (tiles, usedTileIds) => {
+const refillRack = (tiles, usedTileIds, side = null, scores = {}) => {
   const usedIds = new Set(usedTileIds);
   const nextTiles = [...tiles];
 
@@ -126,7 +172,7 @@ const refillRack = (tiles, usedTileIds) => {
       return entryIndex !== index && !usedIds.has(entry.id);
     });
 
-    nextTiles[index] = createTile(drawLetter(remainingTiles));
+    nextTiles[index] = createTile(drawLetter(remainingTiles), side, scores);
   });
 
   return nextTiles;
@@ -161,8 +207,8 @@ const createGame = (roomCode, hostId) => {
       opponent: 0
     },
     tiles: {
-      host: createRack(),
-      opponent: createRack()
+      host: createRack('host', { host: 0, opponent: 0 }),
+      opponent: createRack('opponent', { host: 0, opponent: 0 })
     }
   };
 
@@ -221,7 +267,7 @@ const submitWord = (roomCode, clientId, word, tileIds) => {
   state.history[side].unshift(normalizedWord);
   state.history[side] = state.history[side].slice(0, 5);
   state.scores[side] += getWordScoreFromTiles(selectedTiles);
-  state.tiles[side] = refillRack(state.tiles[side], tileIds);
+  state.tiles[side] = refillRack(state.tiles[side], tileIds, side, state.scores);
 
   return { success: true, state };
 };
