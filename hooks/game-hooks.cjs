@@ -7,9 +7,13 @@ const {
 
 const {
   MIN_WORD_LENGTH,
+  getCardDefinition,
   getWordScoreDetails,
+  getResourceGrants,
   getSelectedTiles,
   isMissingRequiredTile,
+  replaceTileWithModifier,
+  createCardLogic,
   createTileLogic
 } = createSharedTileLogic({
   letterConfig: LETTER_CONFIG,
@@ -17,9 +21,13 @@ const {
 });
 
 let nextTileId = 1;
+let nextCardId = 1;
 
 const { createRack, refillTiles: refillRack } = createTileLogic({
   createTileId: () => `tile-${nextTileId++}`
+});
+const { drawCard, drawCards } = createCardLogic({
+  createCardId: () => `card-${nextCardId++}`
 });
 
 const generateRoomCode = () => {
@@ -58,6 +66,16 @@ const createGame = (roomCode, hostId) => {
       host: 2,
       opponent: 2
     },
+    cards: {
+      host: {
+        boons: drawCards('boon', 1),
+        attacks: drawCards('attack', 1)
+      },
+      opponent: {
+        boons: drawCards('boon', 1),
+        attacks: drawCards('attack', 1)
+      }
+    },
     tiles: {
       host: createRack('host', { host: 0, opponent: 0 }),
       opponent: createRack('opponent', { host: 0, opponent: 0 })
@@ -86,6 +104,58 @@ const clearRack = (roomCode, clientId) => {
   state.rackClears[side] -= 1;
   state.tiles[side] = createRack(side, state.scores);
 
+  return { success: true, state };
+};
+
+const useBoon = (roomCode, clientId, cardId, tileId) => {
+  const state = games.get(roomCode);
+  if (!state) {
+    return { success: false, error: 'Room not found' };
+  }
+
+  const side = clientId === state.host ? 'host' : 'opponent';
+  const card = state.cards[side].boons.find((entry) => entry.id === cardId);
+  if (!card) {
+    return { success: false, error: 'No boons remaining' };
+  }
+
+  const tile = state.tiles[side].find((entry) => entry.id === tileId);
+  if (!tile || tile.locked) {
+    return { success: false, error: 'That tile cannot take a boon' };
+  }
+
+  state.cards[side].boons = state.cards[side].boons.filter((entry) => entry.id !== cardId);
+
+  if (card.effectType === 'delete_tile') {
+    state.tiles[side] = refillRack(state.tiles[side], [tileId], side, state.scores);
+    return { success: true, state };
+  }
+
+  state.tiles[side] = replaceTileWithModifier(state.tiles[side], tileId, card.modifier);
+  return { success: true, state };
+};
+
+const useAttack = (roomCode, clientId, cardId) => {
+  const state = games.get(roomCode);
+  if (!state) {
+    return { success: false, error: 'Room not found' };
+  }
+
+  const side = clientId === state.host ? 'host' : 'opponent';
+  const opponentSide = side === 'host' ? 'opponent' : 'host';
+  const card = state.cards[side].attacks.find((entry) => entry.id === cardId);
+  if (!card) {
+    return { success: false, error: 'No attacks remaining' };
+  }
+
+  const availableTiles = state.tiles[opponentSide].filter((tile) => !tile.locked);
+  if (!availableTiles.length) {
+    return { success: false, error: 'No opponent tiles available' };
+  }
+
+  const targetTile = availableTiles[Math.floor(Math.random() * availableTiles.length)];
+  state.cards[side].attacks = state.cards[side].attacks.filter((entry) => entry.id !== cardId);
+  state.tiles[opponentSide] = replaceTileWithModifier(state.tiles[opponentSide], targetTile.id, card.modifier);
   return { success: true, state };
 };
 
@@ -145,12 +215,15 @@ const submitWord = (roomCode, clientId, word, tileIds) => {
   }
 
   const wordScore = getWordScoreDetails(selectedTiles).total;
+  const grantedResources = getResourceGrants(selectedTiles);
 
   state.words[side] = normalizedWord;
   state.history[side].unshift(normalizedWord);
   state.history[side] = state.history[side].slice(0, 5);
   state.lastWordScores[side] = wordScore;
   state.scores[side] += wordScore;
+  state.cards[side].boons.push(...drawCards('boon', grantedResources.boons));
+  state.cards[side].attacks.push(...drawCards('attack', grantedResources.attacks));
   state.tiles[side] = refillRack(state.tiles[side], tileIds, side, state.scores);
 
   return { success: true, state };
@@ -173,5 +246,7 @@ module.exports = {
   joinGame,
   submitWord,
   clearRack,
+  useBoon,
+  useAttack,
   removePlayerFromGame
 };

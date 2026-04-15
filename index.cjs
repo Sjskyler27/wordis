@@ -14,6 +14,8 @@ const {
   joinGame,
   submitWord,
   clearRack,
+  useBoon,
+  useAttack,
   removePlayerFromGame
 } = require('./hooks/game-hooks.cjs');
 
@@ -52,6 +54,7 @@ const createGameStatePayload = (state) => ({
   scores: state.scores,
   lastWordScores: state.lastWordScores,
   rackClears: state.rackClears,
+  cards: state.cards,
   tiles: state.tiles
 });
 
@@ -135,6 +138,36 @@ const handleClearRack = (connection, clientId, data) => {
   });
 };
 
+const handleUseBoon = (connection, clientId, data) => {
+  const requestedCode = (data?.roomCode || '').toUpperCase();
+  const { cardId, tileId } = data || {};
+  const { success, error, state } = useBoon(requestedCode, clientId, cardId, tileId);
+  if (!success) {
+    sendEvent(connection, 'joinError', error);
+    return;
+  }
+
+  broadcastToRoom(requestedCode, {
+    type: 'boonUsed',
+    data: createGameStatePayload(state)
+  });
+};
+
+const handleUseAttack = (connection, clientId, data) => {
+  const requestedCode = (data?.roomCode || '').toUpperCase();
+  const { cardId } = data || {};
+  const { success, error, state } = useAttack(requestedCode, clientId, cardId);
+  if (!success) {
+    sendEvent(connection, 'joinError', error);
+    return;
+  }
+
+  broadcastToRoom(requestedCode, {
+    type: 'attackUsed',
+    data: createGameStatePayload(state)
+  });
+};
+
 const handleClientAction = (connection, clientId, action) => {
   if (!action || typeof action.type !== 'string') {
     sendEvent(connection, 'joinError', 'Invalid payload');
@@ -153,6 +186,12 @@ const handleClientAction = (connection, clientId, action) => {
       break;
     case 'clearRack':
       handleClearRack(connection, clientId, action.data);
+      break;
+    case 'useBoon':
+      handleUseBoon(connection, clientId, action.data);
+      break;
+    case 'useAttack':
+      handleUseAttack(connection, clientId, action.data);
       break;
     default:
       sendEvent(connection, 'joinError', `Unknown action ${action.type}`);

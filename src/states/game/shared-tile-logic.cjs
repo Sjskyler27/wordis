@@ -11,8 +11,10 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses }) => {
   const BASE_BAD_MODIFIER_CHANCE = 0.04;
   const MODIFIER_SWING_DIVISOR = 90;
   const MAX_MODIFIER_BONUS = 0.18;
-  const GOOD_MODIFIERS = ['gold', 'firsttile', 'wild'];
+  const GOOD_MODIFIERS = ['gold', 'firsttile', 'wild', 'gainboon', 'gainattack'];
   const BAD_MODIFIERS = ['black', 'mustuse', 'locked3'];
+  const BOON_CARD_KEYS = ['boon_delete_tile', 'boon_firsttile', 'boon_wild', 'boon_gold'];
+  const ATTACK_CARD_KEYS = ['attack_black', 'attack_mustuse', 'attack_locked3'];
   const MODIFIER_DEFINITIONS = {
     normal: {
       badge: '',
@@ -38,6 +40,30 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses }) => {
         textColor: '#1c1930',
         badgeBackground: 'rgba(255, 245, 196, 0.95)',
         badgeColor: '#8e4b00'
+      }
+    },
+    gainboon: {
+      badge: '+BOON',
+      effects: { grantBoon: 1 },
+      rarityWeight: 0.28,
+      ui: {
+        tileBackground: 'linear-gradient(180deg, #f6ffe1 0%, #b9e16b 72%, #6f9d24 100%)',
+        tileShadow: 'inset 0 -4px 0 rgba(60, 92, 14, 0.24), 0 12px 20px rgba(45, 10, 24, 0.16), 0 0 0 1px rgba(209, 244, 131, 0.42)',
+        textColor: '#193115',
+        badgeBackground: 'rgba(245, 255, 228, 0.95)',
+        badgeColor: '#537f18'
+      }
+    },
+    gainattack: {
+      badge: '+ATK',
+      effects: { grantAttack: 1 },
+      rarityWeight: 0.28,
+      ui: {
+        tileBackground: 'linear-gradient(180deg, #ffe8d9 0%, #ff9b6e 72%, #b64a1f 100%)',
+        tileShadow: 'inset 0 -4px 0 rgba(116, 43, 12, 0.24), 0 12px 20px rgba(45, 10, 24, 0.18), 0 0 0 1px rgba(255, 190, 150, 0.42)',
+        textColor: '#311610',
+        badgeBackground: 'rgba(255, 238, 228, 0.95)',
+        badgeColor: '#9c3f18'
       }
     },
     wild: {
@@ -106,6 +132,63 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses }) => {
       }
     }
   };
+  const CARD_DEFINITIONS = {
+    boon_delete_tile: {
+      kind: 'boon',
+      label: 'Delete Tile',
+      description: 'Delete one of your tiles and draw a replacement.',
+      rarityWeight: 1.25,
+      effectType: 'delete_tile'
+    },
+    boon_firsttile: {
+      kind: 'boon',
+      label: 'First Tile',
+      description: 'Give one of your tiles the first-tile bonus.',
+      rarityWeight: 1,
+      effectType: 'apply_modifier',
+      modifier: 'firsttile'
+    },
+    boon_wild: {
+      kind: 'boon',
+      label: 'Wild',
+      description: 'Turn one of your tiles into a wild.',
+      rarityWeight: 0.8,
+      effectType: 'apply_modifier',
+      modifier: 'wild'
+    },
+    boon_gold: {
+      kind: 'boon',
+      label: 'Gold',
+      description: 'Give one of your tiles the gold modifier.',
+      rarityWeight: 0.35,
+      effectType: 'apply_modifier',
+      modifier: 'gold'
+    },
+    attack_black: {
+      kind: 'attack',
+      label: 'Blackout',
+      description: 'Give a random enemy tile the black modifier.',
+      rarityWeight: 1,
+      effectType: 'random_attack',
+      modifier: 'black'
+    },
+    attack_mustuse: {
+      kind: 'attack',
+      label: 'Must Use',
+      description: 'Give a random enemy tile the MUST modifier.',
+      rarityWeight: 0.85,
+      effectType: 'random_attack',
+      modifier: 'mustuse'
+    },
+    attack_locked3: {
+      kind: 'attack',
+      label: 'Lock',
+      description: 'Lock a random enemy tile for three turns.',
+      rarityWeight: 0.65,
+      effectType: 'random_attack',
+      modifier: 'locked3'
+    }
+  };
 
   const getRackLetterCounts = (tiles = []) => tiles.reduce((counts, tile) => {
     if (!tile?.letter) {
@@ -166,6 +249,7 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses }) => {
   };
 
   const getModifierDefinition = (status = 'normal') => MODIFIER_DEFINITIONS[status] || MODIFIER_DEFINITIONS.normal;
+  const getCardDefinition = (cardKey) => CARD_DEFINITIONS[cardKey];
   const canApplyModifier = (status = 'normal', context = {}) => {
     const definition = getModifierDefinition(status);
 
@@ -199,6 +283,31 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses }) => {
     }
 
     return weightedModifiers[weightedModifiers.length - 1].modifier;
+  };
+
+  const chooseWeightedCard = (cardKeys = []) => {
+    const weightedCards = cardKeys
+      .map((cardKey) => ({
+        cardKey,
+        weight: Math.max(0, getCardDefinition(cardKey)?.rarityWeight ?? 1)
+      }))
+      .filter((entry) => entry.weight > 0);
+
+    if (!weightedCards.length) {
+      return null;
+    }
+
+    const totalWeight = weightedCards.reduce((sum, entry) => sum + entry.weight, 0);
+    let roll = Math.random() * totalWeight;
+
+    for (const entry of weightedCards) {
+      roll -= entry.weight;
+      if (roll <= 0) {
+        return entry.cardKey;
+      }
+    }
+
+    return weightedCards[weightedCards.length - 1].cardKey;
   };
 
   const rollTileModifier = (side, scores = {}, context = {}) => {
@@ -255,6 +364,7 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses }) => {
       if (wordBonuses[length]) {
       return wordBonuses[length] - (wordBonuses[length - 1] || 0);
     }
+    return 0;
   }
 
   const getTilesScore = (tiles) => tiles.reduce((total, tile) => total + tileScore(tile), 0);
@@ -279,6 +389,42 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses }) => {
       lengthBonus,
       wordMultiplier,
       total: (letterTotal + lengthBonus) * wordMultiplier
+    };
+  };
+
+  const getResourceGrants = (tiles = []) => {
+    return tiles.reduce((totals, tile) => {
+      const definition = getModifierDefinition(tile.status);
+      totals.boons += definition.effects.grantBoon || 0;
+      totals.attacks += definition.effects.grantAttack || 0;
+      return totals;
+    }, { boons: 0, attacks: 0 });
+  };
+
+  const createCardLogic = ({ createCardId }) => {
+    const createCard = (cardKey) => {
+      const definition = getCardDefinition(cardKey);
+
+      return {
+        id: createCardId(),
+        key: cardKey,
+        ...definition
+      };
+    };
+
+    const drawCard = (kind) => {
+      const cardKey = chooseWeightedCard(kind === 'boon' ? BOON_CARD_KEYS : ATTACK_CARD_KEYS);
+      return cardKey ? createCard(cardKey) : null;
+    };
+
+    const drawCards = (kind, count = 1) => {
+      return Array.from({ length: count }, () => drawCard(kind)).filter(Boolean);
+    };
+
+    return {
+      createCard,
+      drawCard,
+      drawCards
     };
   };
 
@@ -337,6 +483,38 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses }) => {
     return selectedTiles;
   };
 
+  const applyModifierToTile = (tile, status = 'normal') => {
+    const definition = getModifierDefinition(status);
+    const baseScore = letterConfig[tile.letter]?.score || tile.baseScore || tile.score || 0;
+    const tileLetter = definition.effects.wild ? '*' : (tile.baseLetter || tile.letter);
+    const nextScore = definition.effects.setScore != null ? definition.effects.setScore : baseScore;
+    const lockTurns = definition.effects.lockTurns || 0;
+
+    return {
+      ...tile,
+      letter: tileLetter,
+      baseLetter: tile.baseLetter || tile.letter,
+      score: nextScore,
+      baseScore,
+      multiplier: definition.effects.zeroLetterScore ? 0 : 1,
+      wordMultiplier: definition.effects.wordMultiplier || 1,
+      firstTileBonus: definition.effects.firstTileBonus || 0,
+      locked: lockTurns > 0,
+      lockTurns,
+      status
+    };
+  };
+
+  const replaceTileWithModifier = (tiles, tileId, status) => {
+    return tiles.map((tile) => {
+      if (tile.id !== tileId) {
+        return tile;
+      }
+
+      return applyModifierToTile(tile, status);
+    });
+  };
+
   const getRequiredTiles = (tiles = []) => {
     return tiles.filter((tile) => tile.status === 'mustuse' && !tile.locked);
   };
@@ -375,7 +553,9 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses }) => {
       return {
         id: createTileId(),
         letter: tileLetter,
+        baseLetter: letter,
         score: modifierDefinition.effects.setScore != null ? modifierDefinition.effects.setScore : baseScore,
+        baseScore,
         multiplier: modifierDefinition.effects.zeroLetterScore ? 0 : 1,
         wordMultiplier: modifierDefinition.effects.wordMultiplier || 1,
         firstTileBonus: modifierDefinition.effects.firstTileBonus || 0,
@@ -429,19 +609,25 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses }) => {
     LETTER_CONFIG: letterConfig,
     MIN_WORD_LENGTH,
     RACK_SIZE,
+    CARD_DEFINITIONS,
     tileScore,
     getLengthBonus,
     getDifference,
     getTilesScore,
     getWordScoreDetails,
+    getResourceGrants,
     getTilesForWord,
     getSelectedTiles,
     getRequiredTiles,
     isMissingRequiredTile,
+    getCardDefinition,
+    applyModifierToTile,
+    replaceTileWithModifier,
     getModifierBadge,
     getModifierUi,
     getModifierDefinition,
     MODIFIER_DEFINITIONS,
+    createCardLogic,
     createTileLogic
   };
 };
