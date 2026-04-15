@@ -51,6 +51,9 @@
       <button type="button" class="ghost-button" @click="$emit('clear')">
         Clear
       </button>
+      <button type="button" class="ghost-button" :disabled="currentWordLength <= 0" @click="$emit('save-letters')">
+        Save Letters
+      </button>
       <button type="button" class="ghost-button" :disabled="clearCount <= 0" @click="$emit('clear-rack')">
         New Rack {{ clearCount }}
       </button>
@@ -104,7 +107,7 @@ const props = defineProps({
   }
 });
 
-defineEmits(['undo', 'clear', 'submit', 'remove-specific', 'clear-rack']);
+defineEmits(['undo', 'clear', 'submit', 'remove-specific', 'clear-rack', 'save-letters']);
 
 const wordSlots = computed(() => {
   console.log(props.lengthBonusSteps)

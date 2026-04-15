@@ -6,10 +6,18 @@ export const useWordBuilder = ({ mySide, myTiles }) => {
     host: [],
     opponent: []
   });
+  const savedTileSlots = ref({
+    host: [],
+    opponent: []
+  });
 
   const selectedTileIds = computed(() => ({
     host: new Set(selectedTileSlots.value.host),
     opponent: new Set(selectedTileSlots.value.opponent)
+  }));
+  const savedTileIds = computed(() => ({
+    host: new Set(savedTileSlots.value.host),
+    opponent: new Set(savedTileSlots.value.opponent)
   }));
 
   const selectedTilesForCurrentSide = computed(() => {
@@ -50,6 +58,13 @@ export const useWordBuilder = ({ mySide, myTiles }) => {
       return;
     }
 
+    if (savedTileSlots.value[side].includes(tile.id)) {
+      savedTileSlots.value = {
+        ...savedTileSlots.value,
+        [side]: savedTileSlots.value[side].filter((savedTileId) => savedTileId !== tile.id)
+      };
+    }
+
     selectedTileSlots.value = {
       ...selectedTileSlots.value,
       [side]: [...selectedTileSlots.value[side], tile.id]
@@ -87,10 +102,31 @@ export const useWordBuilder = ({ mySide, myTiles }) => {
     };
   };
 
+  const saveSelectionForSide = (side = mySide.value) => {
+    const selectedIds = selectedTileSlots.value[side];
+    if (!selectedIds.length) {
+      return false;
+    }
+
+    const mergedSavedIds = [...new Set([
+      ...savedTileSlots.value[side],
+      ...selectedIds
+    ])];
+
+    savedTileSlots.value = {
+      ...savedTileSlots.value,
+      [side]: mergedSavedIds
+    };
+
+    clearSelectionForSide(side);
+    return true;
+  };
+
   const clearWord = () => clearSelectionForSide();
 
   return {
     selectedTileIds,
+    savedTileIds,
     selectedTilesForCurrentSide,
     currentWordDisplay,
     currentWordLength,
@@ -104,6 +140,7 @@ export const useWordBuilder = ({ mySide, myTiles }) => {
     removeLastLetter,
     removeSpecificTile,
     clearWord,
-    clearSelectionForSide
+    clearSelectionForSide,
+    saveSelectionForSide
   };
 };

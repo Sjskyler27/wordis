@@ -90,6 +90,7 @@
             :tiles="leftLane.tiles"
             :is-active="leftLane.isActive"
             :selected-tile-ids="leftLane.selectedTileIds"
+            :saved-tile-ids="leftLane.savedTileIds"
             @tile-click="handleTileClickWithCards($event, leftLane.side)"
           />
 
@@ -102,6 +103,7 @@
             :tiles="rightLane.tiles"
             :is-active="rightLane.isActive"
             :selected-tile-ids="rightLane.selectedTileIds"
+            :saved-tile-ids="rightLane.savedTileIds"
             @tile-click="handleTileClickWithCards($event, rightLane.side)"
           />
         </div>
@@ -124,6 +126,7 @@
           :length-bonus-steps="lengthBonusSteps"
           @undo="removeLastLetter"
           @clear="clearWord"
+          @save-letters="handleSaveLetters"
           @clear-rack="handleClearRack"
           @submit="handleSubmit"
           @remove-specific="removeSpecificTile"
@@ -189,11 +192,13 @@ const buildLane = (side, label) => ({
   lastWordScore: lastWordScores.value[side],
   tiles: playerTiles.value[side],
   isActive: mySide.value === side,
-  selectedTileIds: selectedTileIds.value[side]
+  selectedTileIds: selectedTileIds.value[side],
+  savedTileIds: savedTileIds.value[side]
 });
 
 const {
   selectedTileIds,
+  savedTileIds,
   selectedTilesForCurrentSide,
   currentWordDisplay,
   currentWordLength,
@@ -207,7 +212,8 @@ const {
   removeLastLetter,
   removeSpecificTile,
   clearWord,
-  clearSelectionForSide
+  clearSelectionForSide,
+  saveSelectionForSide
 } = useWordBuilder({
   mySide,
   myTiles
@@ -346,6 +352,17 @@ const handleClearRack = () => {
 
   resetActionMode();
   clearSinglePlayerRack(mySide.value);
+};
+
+const handleSaveLetters = () => {
+  if (!selectedTilesForCurrentSide.value.length) {
+    localMessage.value = 'Pick tiles first if you want to save them for later.';
+    return;
+  }
+
+  if (saveSelectionForSide(mySide.value)) {
+    localMessage.value = 'Saved those letters on your rack.';
+  }
 };
 
 const handleTileClickWithCards = (tile, side) => {
