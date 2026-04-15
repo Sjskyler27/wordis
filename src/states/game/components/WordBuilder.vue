@@ -216,7 +216,6 @@ const getBadgeStyle = (tile) => {
   min-height: 74px;
   display: grid;
   grid-template-columns: repeat(8, minmax(0, 1fr));
-  gap: 10px;
 }
 
 .built-word-strip.empty {
@@ -224,55 +223,53 @@ const getBadgeStyle = (tile) => {
 }
 
 .word-slot {
-  min-height: 90px;
-  min-width: 0;
+  max-width: 106px;
   border-radius: 14px;
 }
 
 .word-slot-placeholder {
-  width: 100%;
   min-height: 90px;
+  width: 106px;
   border-radius: 14px;
   position: relative;
   display: flex;
-  align-items: flex-end;
-  justify-content: flex-end;
-  padding: 10px 12px;
+  align-items: center;
+  justify-content: center;
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.01)),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
-    linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
-    rgba(255, 255, 255, 0.035);
-  background-size: auto, 18px 18px, 18px 18px, auto;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.02);
+    linear-gradient(180deg, rgba(147, 147, 147, 0.52), rgba(57, 57, 57, 0.58));
+  border: 1px solid rgba(255, 196, 94, 0.14);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 227, 167, 0.08),
+    inset 0 -2px 0 rgba(73, 31, 8, 0.28);
 }
 
 .word-slot.milestone .word-slot-placeholder {
-  border-color: rgba(255, 202, 103, 0.16);
+  background:
+    linear-gradient(180deg, rgba(154, 83, 19, 0.58), rgba(120, 60, 16, 0.66));
+  border-color: rgba(255, 202, 103, 0.22);
 }
 
-.word-slot.active .word-slot-placeholder {
-  background:
-    linear-gradient(180deg, rgba(255, 180, 88, 0.12), rgba(255, 255, 255, 0.02)),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
-    linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
-    rgba(255, 255, 255, 0.04);
-}
 
 .word-slot-bonus {
-  position: absolute;
-  left: 12px;
-  top: 12px;
-  font-size: 1rem;
+  font-size: 2rem;
   font-weight: 900;
-  color: rgba(255, 202, 103, 0.28);
+  line-height: 1;
+  color: rgba(181, 181, 181, 0.997);
+  text-shadow: 0 1px 0 rgba(255, 226, 163, 0.08);
 }
 
 .word-slot-index {
+  visibility: hidden;
+  position: absolute;
+  right: 10px;
+  bottom: 8px;
   font-size: 0.82rem;
   font-weight: 800;
-  color: rgba(247, 239, 225, 0.32);
+  color: rgba(184, 184, 184, 0.99);
+}
+
+.word-slot.filled .word-slot-placeholder {
+  opacity: 0.6;
 }
 
 .built-tile {
@@ -280,8 +277,7 @@ const getBadgeStyle = (tile) => {
   border: none;
   cursor: pointer;
   min-height: 90px;
-  min-width: 0;
-  width: 100%;
+  width: 106px;
   border-radius: 14px;
   position: relative;
   background: var(--built-tile-bg, linear-gradient(180deg, #fffef8 0%, #f2ebe0 70%, #d9cec0 100%));
