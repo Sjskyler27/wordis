@@ -1,5 +1,11 @@
 <template>
-  <section class="lane">
+  <section
+    class="lane"
+    :class="{
+      'lane-burst': burstTier === 'burst',
+      'lane-burst-epic': burstTier === 'epic'
+    }"
+  >
     <div class="lane-header">
       <div>
         <p class="lane-label">{{ label }} </p>
@@ -38,9 +44,10 @@
 </template>
 
 <script setup>
+import { ref, watch } from 'vue';
 import { getModifierBadge, getModifierUi, tileScore } from '../tile-logic.js';
 
-defineProps({
+const props = defineProps({
   side: {
     type: String,
     required: true
@@ -80,6 +87,10 @@ defineProps({
   lastWordScore: {
     type: Number,
     required: false
+  },
+  burstPulse: {
+    type: Number,
+    default: 0
   }
 });
 
@@ -105,6 +116,19 @@ const getBadgeStyle = (tile) => {
     color: ui.badgeColor
   };
 };
+
+const burstTier = ref('');
+
+watch(() => props.burstPulse, () => {
+  if (!props.lastWordScore || props.lastWordScore < 18) {
+    return;
+  }
+
+  burstTier.value = props.lastWordScore >= 32 ? 'epic' : 'burst';
+  window.setTimeout(() => {
+    burstTier.value = '';
+  }, props.lastWordScore >= 32 ? 1200 : 850);
+});
 </script>
 
 <style scoped>
@@ -118,6 +142,15 @@ const getBadgeStyle = (tile) => {
   display: flex;
   flex-direction: column;
   gap: 16px;
+  transition: box-shadow 180ms ease, transform 180ms ease;
+}
+
+.lane-burst {
+  animation: lane-burst 820ms ease-out;
+}
+
+.lane-burst-epic {
+  animation: lane-burst-epic 1180ms ease-out;
 }
 
 .lane-header {
@@ -264,6 +297,40 @@ const getBadgeStyle = (tile) => {
       0 0 24px rgba(255, 226, 141, 0.68),
       var(--tile-shadow, inset 0 -4px 0 rgba(0, 0, 0, 0.12), 0 10px 18px rgba(45, 10, 24, 0.16));
     filter: saturate(1.18) brightness(1.08);
+  }
+}
+
+@keyframes lane-burst {
+  0%,
+  100% {
+    transform: translateY(0);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.12),
+      0 0 0 rgba(255, 208, 120, 0);
+  }
+  35% {
+    transform: translateY(-2px);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.16),
+      0 0 30px rgba(255, 208, 120, 0.24),
+      0 0 0 2px rgba(255, 208, 120, 0.24);
+  }
+}
+
+@keyframes lane-burst-epic {
+  0%,
+  100% {
+    transform: translateY(0) scale(1);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.12),
+      0 0 0 rgba(95, 240, 214, 0);
+  }
+  35% {
+    transform: translateY(-3px) scale(1.01);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.16),
+      0 0 42px rgba(95, 240, 214, 0.24),
+      0 0 0 3px rgba(95, 240, 214, 0.22);
   }
 }
 
