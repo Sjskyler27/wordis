@@ -22,6 +22,8 @@
       :gameZoom="gameZoom"
       :shopZoom="shopZoom"
       :isMultiplayer="isMultiplayer"
+      :playMode="playMode"
+      :botDifficulty="botDifficulty"
       :uiZoom="zoom"
       :isStreamer="validSeed"
       :hasSeenIntro="hasSeenIntro"
@@ -76,6 +78,7 @@ import { ref, shallowRef, onMounted, onBeforeUnmount, computed } from "vue";
 import Game from "/src/states/game/Game.vue";
 import MultiplayerScreen from "./states/game/MultiplayerScreen.vue";
 import { resetGame as resetMultiplayerGame } from "./states/game/multiplayer.js";
+import { playMode, botDifficulty, updatePlayConfig, PLAY_MODES } from "./states/game/play-config.js";
 import TypeScreen from "./states/home/TypeScreen.vue";
 import StartScreen from "./states/home/StartScreen.vue";
 import Admin from "./admin/Admin.vue";
@@ -217,7 +220,8 @@ const showFeedback = ref(false)
   const currentStateKey = computed(() => {
     const stateName = currentState.value?.__name || currentState.value?.name || 'state';
     const modeName = isMultiplayer.value ? 'multiplayer' : 'singleplayer';
-    return `${stateName}-${modeName}-${reloader.value}`;
+    const playVariant = isMultiplayer.value ? 'live' : playMode.value;
+    return `${stateName}-${modeName}-${playVariant}-${reloader.value}`;
   });
   const message = ref("");
   const hideGoogleTranslate = ref(false)
@@ -333,6 +337,9 @@ const continueGame = () => {
     hideGoogleTranslateIframesAfterDelay();
     hideGoogleTranslate.value = true
     console.log('set hide',hideGoogleTranslate.value)
+    if (isMultiplayer.value) {
+      updatePlayConfig({ mode: PLAY_MODES.MULTIPLAYER });
+    }
     currentState.value = Game;
   };
   const goToType = () => {
@@ -346,15 +353,20 @@ const continueGame = () => {
     currentState.value = Admin;
   };
   const goTomultiplayerScreen = () => {
+    updatePlayConfig({ mode: PLAY_MODES.MULTIPLAYER });
     currentState.value = MultiplayerScreen;
     isMultiplayer.value = true;
   };
 
-  const goToSingleplayer = () => {
+  const goToSingleplayer = (options = {}) => {
     hideGoogleTranslateExtras()
     hideGoogleTranslateIframesAfterDelay();
     hideGoogleTranslate.value = true
     isMultiplayer.value = false;
+    updatePlayConfig({
+      mode: options.mode || PLAY_MODES.TIMED_SOLO,
+      difficulty: options.difficulty || botDifficulty.value
+    });
     resetMultiplayerGame();
     currentState.value = Game;
   };

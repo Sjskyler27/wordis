@@ -9,30 +9,31 @@
       <aside class="side-stack">
         <div class="bonus-card accent-blue">
           <span class="bonus-kicker">Game mode</span>
-          <strong>{{ props.isMultiplayer ? 'Real Time Duel' : 'Bot Pressure' }}</strong>
+          <strong>{{ modeTitle }}</strong>
           <p v-if="props.isMultiplayer">
             <button type="button" class="room-code-button" @click="copyRoomCode">
               Room {{ roomCode }}
             </button>
             · {{ isHost ? 'Host lane' : 'Opponent lane' }}
           </p>
-          <p>{{ playerRoleText }}</p>
+          <p>{{ modeSubtitle }}</p>
         </div>
 
 
         <div class="bonus-card accent-red">
           <span class="bonus-kicker">Status</span>
-          <strong>{{ localMessage || 'Racks are live' }}</strong>
+          <strong>{{ localMessage || statusHeadline }}</strong>
           <p v-if="props.isMultiplayer && !gameStarted">Waiting for opponent to connect</p>
+          <p v-else-if="isTimedSoloMode">Timer ends the run, so play fast and bank points.</p>
           <p v-else>Only used letters are replaced</p>
         </div>
         <div class="bonus-card accent-purple">
           <span class="bonus-kicker">Cards</span>
-          <strong>{{ myCards.boons.length }} Boon · {{ myCards.attacks.length }} Attack</strong>
+          <strong>{{ cardSummary }}</strong>
           <p v-if="activeBoonCard">
             {{ activeBoonCard.label }} is ready. Click one of your tiles to use it.
           </p>
-          <p v-else-if="myCards.boons.length || myCards.attacks.length">
+          <p v-else-if="hasCardsInHand">
             Drawn cards sit here until you spend them.
           </p>
           <p v-else>No cards in hand right now.</p>
@@ -50,6 +51,7 @@
               <span>{{ card.description }}</span>
             </button>
             <button
+              v-if="attacksEnabled"
               v-for="card in myCards.attacks"
               :key="card.id"
               type="button"
@@ -74,13 +76,13 @@
             <strong>{{ leftLane.score }}</strong>
           </div>
           <div class="score-divider">VS</div>
-          <div class="score-box opponent">
-            <span>Their Board</span>
-            <strong>{{ rightLane.score }}</strong>
+          <div class="score-box opponent" :class="{ timer: isTimedSoloMode }">
+            <span>{{ isTimedSoloMode ? 'Time Left' : 'Their Board' }}</span>
+            <strong>{{ isTimedSoloMode ? formattedTimeRemaining : rightLane.score }}</strong>
           </div>
         </div>
 
-        <div v-if="props.isMultiplayer ? gameStarted : true" class="arena">
+        <div v-if="props.isMultiplayer ? gameStarted : true" class="arena" :class="{ 'arena-solo': !showOpponentLane }">
           <GameLane
             :side="leftLane.side"
             :label="leftLane.label"
@@ -95,6 +97,7 @@
           />
 
           <GameLane
+            v-if="showOpponentLane"
             :side="rightLane.side"
             :label="rightLane.label"
             :submitted-word="rightLane.submittedWord"
@@ -114,7 +117,7 @@
         </div>
 
         <WordBuilder
-          v-if="(props.isMultiplayer ? gameStarted : true) && !gameEnded"
+          v-if="(props.isMultiplayer ? gameStarted : true) && !effectiveGameEnded"
           :selected-tiles="selectedTilesForCurrentSide"
           :current-word-length="currentWordLength"
           :current-word-score="currentWordScore"
@@ -136,13 +139,12 @@
       </section>
 
       <HistoryOverlay
-        v-if="gameEnded"
-        :winner-label="winnerLabel"
-        :winning-score="winningScore"
+        v-if="effectiveGameEnded"
+        :summary-text="historySummaryText"
         left-label="Your History"
-        right-label="Their History"
+        :right-label="showOpponentLane ? 'Their History' : ''"
         :left-history="leftLaneHistory"
-        :right-history="rightLaneHistory"
+        :right-history="showOpponentLane ? rightLaneHistory : []"
         @play-again="handlePlayAgain"
       />
     </main>
@@ -179,7 +181,15 @@ import HistoryOverlay from './components/HistoryOverlay.vue';
 import WordBuilder from './components/WordBuilder.vue';
 
 const props = defineProps({
-  isMultiplayer: Boolean
+  isMultiplayer: Boolean,
+  playMode: {
+    type: String,
+    default: 'timed_solo'
+  },
+  botDifficulty: {
+    type: String,
+    default: 'normal'
+  }
 });
 
 const emit = defineEmits(['home', 'showSettings', 'playAgain']);
@@ -187,7 +197,15 @@ const localMessage = ref('');
 const isPaused = ref(false);
 const activeBoonCardId = ref(null);
 const isMultiplayerRef = computed(() => props.isMultiplayer);
+const isTimedSoloMode = computed(() => !props.isMultiplayer && props.playMode === 'timed_solo');
+const isBotMode = computed(() => !props.isMultiplayer && props.playMode === 'bot_match');
+const attacksEnabled = computed(() => !isTimedSoloMode.value);
+const showOpponentLane = computed(() => props.isMultiplayer || isBotMode.value);
 const preferredLanguage = getPreferredLanguage();
+const SOLO_TIMER_SECONDS = 180;
+const timerRemainingSeconds = ref(SOLO_TIMER_SECONDS);
+const timedSoloFinalWordSpent = ref(false);
+let soloTimerId = null;
 
 const mySide = computed(() => {
   if (props.isMultiplayer) {
@@ -236,7 +254,7 @@ const {
 });
 
 const leftLane = computed(() => buildLane(mySide.value, 'Your Board'));
-const rightLane = computed(() => buildLane(opponentSide.value, 'Their Board'));
+const rightLane = computed(() => buildLane(opponentSide.value, isBotMode.value ? 'Bot Board' : 'Their Board'));
 const leftLaneHistory = computed(() => wordHistory.value[mySide.value] || []);
 const rightLaneHistory = computed(() => wordHistory.value[opponentSide.value] || []);
 
@@ -249,6 +267,9 @@ const {
   submitSinglePlayerWord
 } = useSinglePlayerGame({
   isMultiplayer: isMultiplayerRef,
+  botEnabled: isBotMode,
+  botDifficulty: computed(() => props.botDifficulty),
+  attacksEnabled,
   localMessage,
   selectedTilesForCurrentSide,
   clearSelectionForSide,
@@ -265,6 +286,13 @@ const myCards = computed(() => playerCards.value[mySide.value] || { boons: [], a
 const activeBoonCard = computed(() => {
   return myCards.value.boons.find((card) => card.id === activeBoonCardId.value) || null;
 });
+const visibleAttackCount = computed(() => attacksEnabled.value ? myCards.value.attacks.length : 0);
+const cardSummary = computed(() => {
+  return attacksEnabled.value
+    ? `${myCards.value.boons.length} Boon · ${visibleAttackCount.value} Attack`
+    : `${myCards.value.boons.length} Boon`;
+});
+const hasCardsInHand = computed(() => myCards.value.boons.length > 0 || visibleAttackCount.value > 0);
 const WINNING_SCORE = 250;
 const winningSide = computed(() => {
   if (playerScores.value.host >= WINNING_SCORE && playerScores.value.host >= playerScores.value.opponent) {
@@ -278,8 +306,21 @@ const winningSide = computed(() => {
   return null;
 });
 const gameEnded = computed(() => Boolean(winningSide.value));
-const winningScore = computed(() => winningSide.value ? playerScores.value[winningSide.value] : 0);
+const timeExpired = computed(() => isTimedSoloMode.value && timerRemainingSeconds.value <= 0);
+const finalWordWindowActive = computed(() => isTimedSoloMode.value && timeExpired.value && !timedSoloFinalWordSpent.value);
+const effectiveGameEnded = computed(() => gameEnded.value || (timeExpired.value && timedSoloFinalWordSpent.value));
+const winningScore = computed(() => {
+  if (timeExpired.value) {
+    return playerScores.value.host;
+  }
+
+  return winningSide.value ? playerScores.value[winningSide.value] : 0;
+});
 const winnerLabel = computed(() => {
+  if (timeExpired.value) {
+    return 'Time is up';
+  }
+
   if (winningSide.value === mySide.value) {
     return 'Your board';
   }
@@ -290,6 +331,48 @@ const winnerLabel = computed(() => {
 
   return 'No one';
 });
+const historySummaryText = computed(() => {
+  if (timeExpired.value) {
+    return `Time is up. Final score: ${playerScores.value.host}.`;
+  }
+
+  return `${winnerLabel.value} wins at ${winningScore.value} points.`;
+});
+const formattedTimeRemaining = computed(() => {
+  const safeSeconds = Math.max(0, timerRemainingSeconds.value);
+  const minutes = Math.floor(safeSeconds / 60);
+  const seconds = safeSeconds % 60;
+  return `${minutes}:${String(seconds).padStart(2, '0')}`;
+});
+const modeTitle = computed(() => {
+  if (props.isMultiplayer) {
+    return 'Real Time Duel';
+  }
+
+  return isTimedSoloMode.value ? 'Solo Sprint' : `Bot Pressure · ${props.botDifficulty}`;
+});
+const modeSubtitle = computed(() => {
+  if (props.isMultiplayer) {
+    return 'Build on your board and race the other board in real time.';
+  }
+
+  if (isTimedSoloMode.value) {
+    return 'Play alone against the clock and squeeze out the highest score before time expires.';
+  }
+
+  return `Fight the bot on ${props.botDifficulty} difficulty in the same live rack format.`;
+});
+const statusHeadline = computed(() => {
+  if (finalWordWindowActive.value) {
+    return 'Final word ready';
+  }
+
+  if (isTimedSoloMode.value) {
+    return `${formattedTimeRemaining.value} remaining`;
+  }
+
+  return 'Racks are live';
+});
 
 watch(myCards, () => {
   if (activeBoonCardId.value && !activeBoonCard.value) {
@@ -297,16 +380,8 @@ watch(myCards, () => {
   }
 }, { deep: true });
 
-const playerRoleText = computed(() => {
-  if (props.isMultiplayer) {
-    return 'Build on your board and race the other board in real time.';
-  }
-
-  return 'You and the bot are both constantly feeding the board with fresh tiles.';
-});
-
 const handleSubmit = async () => {
-  if (gameEnded.value) {
+  if (effectiveGameEnded.value) {
     localMessage.value = 'The match is already over.';
     return;
   }
@@ -353,6 +428,10 @@ const handleSubmit = async () => {
   }
 
   submitSinglePlayerWord(resolvedWord);
+
+  if (finalWordWindowActive.value) {
+    timedSoloFinalWordSpent.value = true;
+  }
 };
 
 const resetActionMode = () => {
@@ -371,6 +450,11 @@ const selectBoonCard = (card) => {
 };
 
 const useAttackCard = (card) => {
+  if (!attacksEnabled.value) {
+    localMessage.value = 'Solo sprint does not use attacks.';
+    return;
+  }
+
   if (props.isMultiplayer) {
     useMultiplayerAttack({ cardId: card.id });
     localMessage.value = `Played ${card.label} on a random enemy tile.`;
@@ -385,7 +469,7 @@ const useAttackCard = (card) => {
 };
 
 const handleClearRack = () => {
-  if (gameEnded.value) {
+  if (effectiveGameEnded.value) {
     localMessage.value = 'The match is already over.';
     return;
   }
@@ -408,7 +492,7 @@ const handleClearRack = () => {
 };
 
 const handleSaveLetters = () => {
-  if (gameEnded.value) {
+  if (effectiveGameEnded.value) {
     localMessage.value = 'The match is already over.';
     return;
   }
@@ -424,7 +508,7 @@ const handleSaveLetters = () => {
 };
 
 const handleTileClickWithCards = (tile, side) => {
-  if (gameEnded.value) {
+  if (effectiveGameEnded.value) {
     return;
   }
 
@@ -452,7 +536,7 @@ const handleTileClickWithCards = (tile, side) => {
 };
 
 const handleBuiltTileClick = (tile) => {
-  if (gameEnded.value) {
+  if (effectiveGameEnded.value) {
     return;
   }
 
@@ -500,11 +584,13 @@ const setPauseState = (nextPaused) => {
 
   if (nextPaused) {
     stopBotLoop();
+    stopSoloTimer();
     localMessage.value = 'Game paused.';
     return;
   }
 
   startBotLoop();
+  startSoloTimer();
   localMessage.value = 'Racks are live';
 };
 
@@ -515,6 +601,7 @@ const togglePause = () => {
 const handlePlayAgain = () => {
   resetActionMode();
   clearSelectionForSide(mySide.value);
+  timedSoloFinalWordSpent.value = false;
 
   if (props.isMultiplayer) {
     playMultiplayerAgain();
@@ -523,14 +610,61 @@ const handlePlayAgain = () => {
   }
 
   stopBotLoop();
+  stopSoloTimer();
   emit('playAgain');
 };
 
-watch(gameEnded, (ended) => {
+watch(effectiveGameEnded, (ended) => {
   if (ended) {
     stopBotLoop();
+    stopSoloTimer();
   }
 });
+
+const stopSoloTimer = () => {
+  window.clearInterval(soloTimerId);
+  soloTimerId = null;
+};
+
+const startSoloTimer = () => {
+  if (!isTimedSoloMode.value || effectiveGameEnded.value) {
+    stopSoloTimer();
+    return;
+  }
+
+  window.clearInterval(soloTimerId);
+  soloTimerId = window.setInterval(() => {
+    timerRemainingSeconds.value = Math.max(0, timerRemainingSeconds.value - 1);
+    if (timerRemainingSeconds.value <= 0) {
+      stopSoloTimer();
+      stopBotLoop();
+    }
+  }, 1000);
+};
+
+watch(() => props.playMode, (nextMode) => {
+  timerRemainingSeconds.value = nextMode === 'timed_solo' ? SOLO_TIMER_SECONDS : 0;
+  timedSoloFinalWordSpent.value = false;
+
+  if (nextMode === 'timed_solo') {
+    startSoloTimer();
+    return;
+  }
+
+  stopSoloTimer();
+}, { immediate: true });
+
+watch(effectiveGameEnded, (ended) => {
+  if (ended) {
+    stopBotLoop();
+    stopSoloTimer();
+    return;
+  }
+
+  if (isTimedSoloMode.value) {
+    startSoloTimer();
+  }
+}, { immediate: true });
 
 const handleKeydown = (event) => {
   if (event.key !== 'Escape') {
@@ -547,11 +681,14 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   window.removeEventListener('keydown', handleKeydown);
+  stopSoloTimer();
 });
 
 const resetAndGoHome = () => {
   isPaused.value = false;
   stopBotLoop();
+  stopSoloTimer();
+  timedSoloFinalWordSpent.value = false;
   resetMultiplayer();
   resetActionMode();
   localMessage.value = '';
@@ -925,6 +1062,10 @@ body {
   color: var(--teal);
 }
 
+.score-box.timer strong {
+  color: var(--gold);
+}
+
 .score-divider {
   font-size: 1rem;
   letter-spacing: 0.3em;
@@ -936,6 +1077,10 @@ body {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 18px;
+}
+
+.arena.arena-solo {
+  grid-template-columns: minmax(0, 1fr);
 }
 
 .waiting-card {

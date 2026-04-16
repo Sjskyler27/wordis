@@ -3,10 +3,10 @@
     <div class="history-scrim"></div>
     <section class="history-panel">
       <span class="history-kicker">Match Results</span>
-      <strong class="history-title">{{ winnerLabel }} wins at {{ winningScore }} points.</strong>
+      <strong class="history-title">{{ summaryText }}</strong>
       <p class="history-copy">Every scored word from the match lives here.</p>
 
-      <div class="history-columns">
+      <div class="history-columns" :class="{ single: !rightLabel }">
         <section class="history-column">
           <span class="history-label">{{ leftLabel }}</span>
           <ul class="history-list">
@@ -22,7 +22,7 @@
           </ul>
         </section>
 
-        <section class="history-column">
+        <section v-if="rightLabel" class="history-column">
           <span class="history-label">{{ rightLabel }}</span>
           <ul class="history-list">
             <li
@@ -51,12 +51,8 @@
 import { computed } from 'vue';
 
 const props = defineProps({
-  winnerLabel: {
+  summaryText: {
     type: String,
-    required: true
-  },
-  winningScore: {
-    type: Number,
     required: true
   },
   leftLabel: {
@@ -65,7 +61,7 @@ const props = defineProps({
   },
   rightLabel: {
     type: String,
-    required: true
+    default: ''
   },
   leftHistory: {
     type: Array,
@@ -73,7 +69,7 @@ const props = defineProps({
   },
   rightHistory: {
     type: Array,
-    required: true
+    default: () => []
   }
 });
 
@@ -153,6 +149,10 @@ const normalizedRightHistory = computed(() => props.rightHistory.map(normalizeEn
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 18px;
+}
+
+.history-columns.single {
+  grid-template-columns: minmax(0, 1fr);
 }
 
 .history-column {

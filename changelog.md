@@ -1,4 +1,10 @@
 # Changelog
+## 2026-04-16
+- adjust word builder styleing
+- fix history overlay to be seperate component 
+- added one more turn after time runs out in solo
+- removed attacks in solo mode
+
 
 ## 2026-04-15
 
@@ -53,3 +59,12 @@ Stop: 2026-04-15 22:26:15 EDT
 - Broke postgame history out into its own overlay component, styled it to match the game, and moved `Play Again` into that results panel.
 - Upgraded history entries to track both the word and the points scored for each play so the final board shows the full scoring trail.
 - Stopped the singleplayer bot loop as soon as the match ends so it cannot sneak in an extra move after a winning score.
+
+## 2026-04-16
+
+Start: 2026-04-16 00:19:08 EDT
+Stop: 2026-04-16 00:19:55 EDT
+
+- Fixed the postgame history overlay so the left history column always renders and solo results no longer collapse into a misleading empty state.
+- Removed attacks from timed solo mode, including attack cards, attack-granting tile modifiers, and attack messaging in the solo UI.
+- Added a dedicated solo modifier profile so timed solo uses a friendlier positive/negative modifier mix instead of duel-style comeback pressure.

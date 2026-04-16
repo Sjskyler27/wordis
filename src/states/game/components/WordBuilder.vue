@@ -4,7 +4,7 @@
     </div>
 
     <div class="word-input-shell">
-      <span class="console-label"></span>
+      <span class="console-label">{{ currentWordScore }} pts</span>
       <div class="built-word-strip" :class="{ empty: !selectedTiles.length }">
         <div
           v-for="slot in wordSlots"
@@ -38,7 +38,7 @@
           </Transition>
         </div>
       </div>
-      <span class="console-score">{{ currentWordScore }} pts</span>
+      <span class="console-score"></span>
     </div>
 
     <div class="builder-breakdown">
@@ -375,10 +375,13 @@ const getBadgeStyle = (tile) => {
 
 .console-label,
 .console-score {
-  text-transform: uppercase;
-  letter-spacing: 0.12em;
-  font-size: 0.78rem;
-  opacity: 0.82;
+  
+  font-size: 2rem;
+  font-weight: 900;
+  line-height: 1;
+  color: rgba(181, 181, 181, 0.997);
+  text-shadow: 0 1px 0 rgba(255, 226, 163, 0.08);
+  padding-right: 20px;
 }
 
 .console-actions {

@@ -30,14 +30,14 @@
         </div>
       </div>
       <div tabindex="-1" class="menu-option" ref="button2" 
-        @click="emit('game')"
-        @keydown.space.prevent="emit('game')"
-        @keydown.enter.prevent="emit('game')"
+        @click="emit('singleplayer', { mode: 'timed_solo' })"
+        @keydown.space.prevent="emit('singleplayer', { mode: 'timed_solo' })"
+        @keydown.enter.prevent="emit('singleplayer', { mode: 'timed_solo' })"
         >
         <img src="/src/assets/images/playTypes/image.png" alt="Knight" class="menu-img" />
         <div class="menu-text">
           <h3>Single Player</h3>
-          <p>Brave the dungeon and earn fame!</p>
+          <p>Race the clock and stack the highest score you can.</p>
         </div>
       </div>
     
@@ -86,7 +86,7 @@ const now = new Date();
 const lockContent = computed(() => (new Date() > demoDate || isDemo) && !props.isStreamer === true);
 
 
-const emit = defineEmits(["game", "multiplayerScreen", "home", "Dungeons", "FreePlay", "continue", "DungeonsCoop", "DraftDungeon", "DailyDungeon", 'EndlessDescent', 'Continue']);
+const emit = defineEmits(["game", "singleplayer", "multiplayerScreen", "home", "Dungeons", "FreePlay", "continue", "DungeonsCoop", "DraftDungeon", "DailyDungeon", 'EndlessDescent', 'Continue']);
 const gameInProgress = ref(localStorage.getItem("gameInProgress")); // Check if game is in progress
 const gameEnded = JSON.parse(localStorage.getItem('gameEnded'))
 const button0 =ref(null)
