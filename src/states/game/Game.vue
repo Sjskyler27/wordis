@@ -236,14 +236,9 @@ const timerRemainingSeconds = ref(SOLO_TIMER_SECONDS);
 const isSoloTimerPausedByAttack = ref(false);
 const timedSoloFinalWordSpent = ref(false);
 const gameMusic = new Audio('/audio/gameMusic.mp3');
-  gameMusic.volume = props.volume * props.musicVolume / 100
-  if(gameMusic.volume) gameMusic.play()
-
+gameMusic.loop = true;
 const tilePickupSound = new Audio('/audio/tile_pick_up.mp3');
 const tilePutBackSound = new Audio('/audio/tile_put_back.mp3');
-  tilePutBackSound.volume = props.volume * props.effectsVolume / 100
-  tilePickupSound.volume = props.volume * props.effectsVolume / 100
-
 const victorySound = new Audio('/audio/victory.mp3');
 const defeatSound = new Audio('/audio/defeat.mp3');
 let soloTimerId = null;
@@ -522,6 +517,45 @@ const playUiSound = (audio) => {
   }
 };
 
+const syncAudioLevels = () => {
+  const musicLevel = (props.volume || 0) * (props.musicVolume || 0) / 100;
+  const effectsLevel = (props.volume || 0) * (props.effectsVolume || 0) / 100;
+  gameMusic.volume = musicLevel;
+  tilePickupSound.volume = effectsLevel;
+  tilePutBackSound.volume = effectsLevel;
+  victorySound.volume = effectsLevel;
+  defeatSound.volume = effectsLevel;
+};
+
+const stopResultAudio = () => {
+  victorySound.pause();
+  defeatSound.pause();
+  victorySound.currentTime = 0;
+  defeatSound.currentTime = 0;
+};
+
+const stopGameMusic = () => {
+  gameMusic.pause();
+  gameMusic.currentTime = 0;
+};
+
+const startGameMusic = async ({ restart = false } = {}) => {
+  syncAudioLevels();
+  if (restart) {
+    gameMusic.currentTime = 0;
+  }
+
+  if (gameMusic.volume <= 0 || effectiveGameEnded.value) {
+    return;
+  }
+
+  try {
+    await gameMusic.play();
+  } catch (error) {
+    // Ignore autoplay failures until the user interacts again.
+  }
+};
+
 const playScoreAnimation = async (tileCount) => {
   if (!tileCount) {
     scorePopTiles.value = [];
@@ -577,6 +611,19 @@ watch(lastWordScores, (nextScores, previousScores = { host: 0, opponent: 0 }) =>
     }
   }
 }, { deep: true });
+
+watch(() => [props.volume, props.musicVolume, props.effectsVolume], () => {
+  syncAudioLevels();
+
+  if (gameMusic.volume <= 0) {
+    gameMusic.pause();
+    return;
+  }
+
+  if (!effectiveGameEnded.value && !isPaused.value) {
+    startGameMusic();
+  }
+}, { immediate: true });
 
 const handleSubmit = async () => {
   if (effectiveGameEnded.value) {
@@ -851,6 +898,8 @@ watch(effectiveGameEnded, (ended) => {
   if (ended) {
     stopBotLoop();
     stopSoloTimer();
+    gameMusic.pause();
+    return;
   }
 });
 
@@ -860,12 +909,9 @@ watch(effectiveGameEnded, async (ended, wasEnded) => {
   }
 
   const audio = historyResultState.value === 'defeat' ? defeatSound : victorySound;
-  audio.volume = props.volume * props.effectsVolume / 100
-
-  victorySound.pause();
-  defeatSound.pause();
-  victorySound.currentTime = 0;
-  defeatSound.currentTime = 0;
+  gameMusic.pause();
+  syncAudioLevels();
+  stopResultAudio();
 
   try {
     await audio.play();
