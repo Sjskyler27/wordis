@@ -862,12 +862,14 @@ const setPauseState = (nextPaused) => {
   if (nextPaused) {
     stopBotLoop();
     stopSoloTimer();
+    gameMusic.pause();
     localMessage.value = 'Game paused.';
     return;
   }
 
   startBotLoop();
   startSoloTimer();
+  startGameMusic();
   localMessage.value = 'Racks are live';
 };
 
@@ -891,6 +893,7 @@ const handlePlayAgain = () => {
 
   stopBotLoop();
   stopSoloTimer();
+  stopResultAudio();
   emit('playAgain');
 };
 
@@ -900,6 +903,11 @@ watch(effectiveGameEnded, (ended) => {
     stopSoloTimer();
     gameMusic.pause();
     return;
+  }
+
+  if (!isPaused.value) {
+    stopResultAudio();
+    startGameMusic({ restart: true });
   }
 });
 
@@ -981,15 +989,16 @@ const handleKeydown = (event) => {
 
 onMounted(() => {
   window.addEventListener('keydown', handleKeydown);
+  startGameMusic({ restart: true });
 });
 
 onBeforeUnmount(() => {
   window.removeEventListener('keydown', handleKeydown);
   stopSoloTimer();
+  stopGameMusic();
   tilePickupSound.pause();
   tilePutBackSound.pause();
-  victorySound.pause();
-  defeatSound.pause();
+  stopResultAudio();
 });
 
 const resetAndGoHome = () => {
@@ -998,6 +1007,8 @@ const resetAndGoHome = () => {
   stopSoloTimer();
   isSoloTimerPausedByAttack.value = false;
   timedSoloFinalWordSpent.value = false;
+  stopGameMusic();
+  stopResultAudio();
   resetMultiplayer();
   resetActionMode();
   localMessage.value = '';
