@@ -248,6 +248,8 @@ const tilePickupSound = new Audio('/audio/tile_pick_up.mp3');
 const tilePutBackSound = new Audio('/audio/tile_put_back.mp3');
 const victorySound = new Audio('/audio/victory.mp3');
 const defeatSound = new Audio('/audio/defeat.mp3');
+victorySound.loop = true;
+defeatSound.loop = true;
 let soloTimerId = null;
 
 const mySide = computed(() => {
