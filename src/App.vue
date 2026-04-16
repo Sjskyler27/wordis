@@ -220,7 +220,8 @@ const showFeedback = ref(false)
   const currentStateKey = computed(() => {
     const stateName = currentState.value?.__name || currentState.value?.name || 'state';
     const modeName = isMultiplayer.value ? 'multiplayer' : 'singleplayer';
-    return `${stateName}-${modeName}-${reloader.value}`;
+    const playVariant = isMultiplayer.value ? 'live' : playMode.value;
+    return `${stateName}-${modeName}-${playVariant}-${reloader.value}`;
   });
   const message = ref("");
   const hideGoogleTranslate = ref(false)

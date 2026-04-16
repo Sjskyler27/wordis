@@ -29,11 +29,11 @@
         </div>
         <div class="bonus-card accent-purple">
           <span class="bonus-kicker">Cards</span>
-          <strong>{{ myCards.boons.length }} Boon · {{ myCards.attacks.length }} Attack</strong>
+          <strong>{{ cardSummary }}</strong>
           <p v-if="activeBoonCard">
             {{ activeBoonCard.label }} is ready. Click one of your tiles to use it.
           </p>
-          <p v-else-if="myCards.boons.length || myCards.attacks.length">
+          <p v-else-if="hasCardsInHand">
             Drawn cards sit here until you spend them.
           </p>
           <p v-else>No cards in hand right now.</p>
@@ -51,6 +51,7 @@
               <span>{{ card.description }}</span>
             </button>
             <button
+              v-if="attacksEnabled"
               v-for="card in myCards.attacks"
               :key="card.id"
               type="button"
@@ -198,6 +199,7 @@ const activeBoonCardId = ref(null);
 const isMultiplayerRef = computed(() => props.isMultiplayer);
 const isTimedSoloMode = computed(() => !props.isMultiplayer && props.playMode === 'timed_solo');
 const isBotMode = computed(() => !props.isMultiplayer && props.playMode === 'bot_match');
+const attacksEnabled = computed(() => !isTimedSoloMode.value);
 const showOpponentLane = computed(() => props.isMultiplayer || isBotMode.value);
 const preferredLanguage = getPreferredLanguage();
 const SOLO_TIMER_SECONDS = 180;
@@ -266,6 +268,7 @@ const {
   isMultiplayer: isMultiplayerRef,
   botEnabled: isBotMode,
   botDifficulty: computed(() => props.botDifficulty),
+  attacksEnabled,
   localMessage,
   selectedTilesForCurrentSide,
   clearSelectionForSide,
@@ -282,6 +285,13 @@ const myCards = computed(() => playerCards.value[mySide.value] || { boons: [], a
 const activeBoonCard = computed(() => {
   return myCards.value.boons.find((card) => card.id === activeBoonCardId.value) || null;
 });
+const visibleAttackCount = computed(() => attacksEnabled.value ? myCards.value.attacks.length : 0);
+const cardSummary = computed(() => {
+  return attacksEnabled.value
+    ? `${myCards.value.boons.length} Boon · ${visibleAttackCount.value} Attack`
+    : `${myCards.value.boons.length} Boon`;
+});
+const hasCardsInHand = computed(() => myCards.value.boons.length > 0 || visibleAttackCount.value > 0);
 const WINNING_SCORE = 250;
 const winningSide = computed(() => {
   if (playerScores.value.host >= WINNING_SCORE && playerScores.value.host >= playerScores.value.opponent) {
@@ -430,6 +440,11 @@ const selectBoonCard = (card) => {
 };
 
 const useAttackCard = (card) => {
+  if (!attacksEnabled.value) {
+    localMessage.value = 'Solo sprint does not use attacks.';
+    return;
+  }
+
   if (props.isMultiplayer) {
     useMultiplayerAttack({ cardId: card.id });
     localMessage.value = `Played ${card.label} on a random enemy tile.`;

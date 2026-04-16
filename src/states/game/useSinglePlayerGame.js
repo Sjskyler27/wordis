@@ -15,6 +15,7 @@ export const useSinglePlayerGame = ({
   isMultiplayer,
   botEnabled,
   botDifficulty,
+  attacksEnabled,
   localMessage,
   selectedTilesForCurrentSide,
   clearSelectionForSide,
@@ -33,6 +34,7 @@ export const useSinglePlayerGame = ({
     normal: 9000,
     hard: 6500
   };
+  const modifierProfile = () => attacksEnabled.value ? 'duel' : 'solo';
 
   const gameEnded = () => {
     return playerScores.value.host >= WINNING_SCORE || playerScores.value.opponent >= WINNING_SCORE;
@@ -40,7 +42,9 @@ export const useSinglePlayerGame = ({
 
   const ensureSinglePlayerState = () => {
     if (!playerTiles.value.host.length && !playerTiles.value.opponent.length) {
-      playerTiles.value = createOpeningRackPair(playerScores.value);
+      playerTiles.value = createOpeningRackPair(playerScores.value, {
+        modifierProfile: modifierProfile()
+      });
       rackClears.value = {
         host: 2,
         opponent: 2
@@ -48,11 +52,11 @@ export const useSinglePlayerGame = ({
       playerCards.value = {
         host: {
           boons: drawCards('boon', 1),
-          attacks: drawCards('attack', 1)
+          attacks: attacksEnabled.value ? drawCards('attack', 1) : []
         },
         opponent: {
           boons: drawCards('boon', 1),
-          attacks: drawCards('attack', 1)
+          attacks: attacksEnabled.value ? drawCards('attack', 1) : []
         }
       };
     }
@@ -86,7 +90,8 @@ export const useSinglePlayerGame = ({
         ...playerTiles.value,
         opponent: createRack('opponent', playerScores.value, {
           mode: 'clear',
-          currentTiles: botTiles
+          currentTiles: botTiles,
+          modifierProfile: modifierProfile()
         })
       };
 
@@ -100,7 +105,9 @@ export const useSinglePlayerGame = ({
     }
 
     const botScoreDetails = getWordScoreDetails(selectedBotTiles);
-    const grantedResources = getResourceGrants(selectedBotTiles);
+    const grantedResources = getResourceGrants(selectedBotTiles, {
+      includeAttacks: attacksEnabled.value
+    });
 
     submittedWords.value = {
       host: submittedWords.value.host,
@@ -136,7 +143,9 @@ export const useSinglePlayerGame = ({
 
     playerTiles.value = {
       host: playerTiles.value.host,
-      opponent: refillTiles(botTiles, selectedBotTiles.map((tile) => tile.id), 'opponent', playerScores.value)
+      opponent: refillTiles(botTiles, selectedBotTiles.map((tile) => tile.id), 'opponent', playerScores.value, {
+        modifierProfile: modifierProfile()
+      })
     };
   };
 
@@ -171,7 +180,9 @@ export const useSinglePlayerGame = ({
     ensureSinglePlayerState();
     const selectedTiles = selectedTilesForCurrentSide.value;
     const scoreDetails = getWordScoreDetails(selectedTiles);
-    const grantedResources = getResourceGrants(selectedTiles);
+    const grantedResources = getResourceGrants(selectedTiles, {
+      includeAttacks: attacksEnabled.value
+    });
 
     submittedWords.value = {
       host: word,
@@ -206,7 +217,9 @@ export const useSinglePlayerGame = ({
     };
 
     playerTiles.value = {
-      host: refillTiles(playerTiles.value.host, selectedTiles.map((tile) => tile.id), 'host', playerScores.value),
+      host: refillTiles(playerTiles.value.host, selectedTiles.map((tile) => tile.id), 'host', playerScores.value, {
+        modifierProfile: modifierProfile()
+      }),
       opponent: playerTiles.value.opponent
     };
 
@@ -231,7 +244,8 @@ export const useSinglePlayerGame = ({
       ...playerTiles.value,
       [side]: createRack(side, playerScores.value, {
         mode: 'clear',
-        currentTiles: playerTiles.value[side]
+        currentTiles: playerTiles.value[side],
+        modifierProfile: modifierProfile()
       })
     };
 
@@ -284,6 +298,11 @@ export const useSinglePlayerGame = ({
   };
 
   const useSinglePlayerAttack = (side, cardId) => {
+    if (!attacksEnabled.value) {
+      localMessage.value = 'Attacks are off in solo sprint.';
+      return false;
+    }
+
     const opponentSide = side === 'host' ? 'opponent' : 'host';
     const hand = playerCards.value[side]?.attacks || [];
     const card = hand.find((entry) => entry.id === cardId);
