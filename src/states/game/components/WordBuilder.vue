@@ -5,7 +5,7 @@
 
     <div class="word-input-shell">
       <span class="console-label">{{ currentWordScore }} pts</span>
-      <div class="built-word-strip" :class="{ empty: !selectedTiles.length }">
+      <div class="built-word-strip" :class="{ empty: !selectedTiles.length, shaking: isShaking }">
         <div
           v-for="slot in wordSlots"
           :key="`word-slot-${slot.index}`"
@@ -72,13 +72,17 @@
 </template>
 
 <script setup>
-import { computed } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { getModifierBadge, getModifierUi, tileScore } from '../tile-logic.js';
 
 const props = defineProps({
   selectedTiles: {
     type: Array,
     required: true
+  },
+  invalidPulse: {
+    type: Number,
+    default: 0
   },
   currentWordLength: {
     type: Number,
@@ -139,6 +143,25 @@ const wordSlots = computed(() => {
     milestoneIndex: slot.bonus ? milestoneSlots.findIndex((entry) => entry.index === slot.index) : -1,
     milestoneCount
   }));
+});
+
+const isShaking = ref(false);
+let shakeTimeoutId = null;
+
+watch(() => props.invalidPulse, (nextPulse) => {
+  if (!nextPulse) {
+    return;
+  }
+
+  window.clearTimeout(shakeTimeoutId);
+  isShaking.value = false;
+
+  requestAnimationFrame(() => {
+    isShaking.value = true;
+    shakeTimeoutId = window.setTimeout(() => {
+      isShaking.value = false;
+    }, 320);
+  });
 });
 
 const getTileStyle = (tile) => {
@@ -245,6 +268,10 @@ const getPlaceholderStyle = (slot) => {
   grid-template-columns: repeat(9, minmax(0, 1fr));
 }
 
+.built-word-strip.shaking {
+  animation: invalid-word-shake 280ms ease;
+}
+
 .built-word-strip.empty {
   color: rgba(254, 183, 59, 0.62);
 }
@@ -320,6 +347,15 @@ const getPlaceholderStyle = (slot) => {
   font-size: 0.82rem;
   font-weight: 800;
   color: rgba(184, 184, 184, 0.99);
+}
+
+@keyframes invalid-word-shake {
+  0% { transform: translateX(0); }
+  20% { transform: translateX(-8px) rotate(-0.8deg); }
+  40% { transform: translateX(7px) rotate(0.7deg); }
+  60% { transform: translateX(-6px) rotate(-0.5deg); }
+  80% { transform: translateX(4px) rotate(0.35deg); }
+  100% { transform: translateX(0); }
 }
 
 .word-slot.filled .word-slot-placeholder {

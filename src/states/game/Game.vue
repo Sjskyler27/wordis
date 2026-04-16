@@ -121,6 +121,7 @@
         <WordBuilder
           v-if="(props.isMultiplayer ? gameStarted : true) && !effectiveGameEnded"
           :selected-tiles="selectedTilesForCurrentSide"
+          :invalid-pulse="invalidWordPulse"
           :current-word-length="currentWordLength"
           :current-word-score="currentWordScore"
           :current-letter-total="currentLetterTotal"
@@ -199,6 +200,7 @@ const emit = defineEmits(['home', 'showSettings', 'playAgain']);
 const localMessage = ref('');
 const isPaused = ref(false);
 const activeBoonCardId = ref(null);
+const invalidWordPulse = ref(0);
 const isMultiplayerRef = computed(() => props.isMultiplayer);
 const isTimedSoloMode = computed(() => !props.isMultiplayer && props.playMode === 'timed_solo');
 const isBotMode = computed(() => !props.isMultiplayer && props.playMode === 'bot_match');
@@ -387,6 +389,10 @@ const statusHeadline = computed(() => {
   return 'Racks are live';
 });
 
+const triggerInvalidWordShake = () => {
+  invalidWordPulse.value += 1;
+};
+
 watch(myCards, () => {
   if (activeBoonCardId.value && !activeBoonCard.value) {
     resetActionMode();
@@ -407,17 +413,20 @@ const handleSubmit = async () => {
 
   if (normalizedWord.length < MIN_WORD_LENGTH) {
     localMessage.value = `Words must be at least ${MIN_WORD_LENGTH} letters.`;
+    triggerInvalidWordShake();
     return;
   }
 
   const selectedTiles = selectedTilesForCurrentSide.value;
   if (!selectedTiles.length || !selectedTilesMatchWord(selectedTiles, normalizedWord)) {
     localMessage.value = 'That word cannot be made from your current tiles.';
+    triggerInvalidWordShake();
     return;
   }
 
   if (isMissingRequiredTile(myTiles.value, selectedTiles)) {
     localMessage.value = 'You have to use every MUST tile in your rack.';
+    triggerInvalidWordShake();
     return;
   }
 
@@ -425,6 +434,7 @@ const handleSubmit = async () => {
   const validationResult = await validateWord(normalizedWord, preferredLanguage.code);
   if (!validationResult.valid) {
     localMessage.value = `${normalizedWord} is not a valid ${preferredLanguage.label.toLowerCase()} word.`;
+    triggerInvalidWordShake();
     return;
   }
   const resolvedWord = (validationResult.resolvedWord || normalizedWord).toUpperCase();
