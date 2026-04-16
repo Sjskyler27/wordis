@@ -451,7 +451,6 @@ const handleSubmit = async () => {
 
   if (isMissingRequiredTile(myTiles.value, selectedTiles)) {
     localMessage.value = 'You have to use every MUST tile in your rack.';
-    triggerInvalidWordShake();
     triggerMustTileAlert(mySide.value, myTiles.value
       .filter((tile) => tile.status === 'mustuse' && !tile.locked)
       .map((tile) => tile.id));
