@@ -2,9 +2,9 @@ to do
 
 add other languages to dictionary
 
-bot is too hard add levels also dont use scary words lets limit it to more knowable words
+bot dont use scary words lets limit it to more knowable words
 
-up how much big words give
+up how much big words give, give attack or boon at high words 
 
 up how often you get ither modifiers
 

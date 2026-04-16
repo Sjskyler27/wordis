@@ -13,6 +13,7 @@ const sharedTileLogic = createSharedTileLogic({
 });
 
 const {
+  LETTER_KEYS,
   MIN_WORD_LENGTH,
   tileScore,
   getLengthBonus,
@@ -39,18 +40,28 @@ const {
 let nextLocalTileId = 1;
 let nextLocalCardId = 1;
 
-const { createRack, createOpeningRackPair, refillTiles, rerollRackExceptTile } = createTileLogic({
-  createTileId: () => `local-tile-${nextLocalTileId++}`
-});
-const { drawCard, drawCards } = createCardLogic({
-  createCardId: () => `local-card-${nextLocalCardId++}`
-});
-
-export {
+const {
   createRack,
   createOpeningRackPair,
   refillTiles,
   rerollRackExceptTile,
+  createTestingRack,
+  createTestingOpeningRackPair
+} = createTileLogic({
+  createTileId: () => `local-tile-${nextLocalTileId++}`
+});
+const { createCard, createCards, drawCard, drawCards } = createCardLogic({
+  createCardId: () => `local-card-${nextLocalCardId++}`
+});
+
+export {
+  LETTER_KEYS,
+  createRack,
+  createOpeningRackPair,
+  refillTiles,
+  rerollRackExceptTile,
+  createTestingRack,
+  createTestingOpeningRackPair,
   MIN_WORD_LENGTH,
   tileScore,
   getLengthBonus,
@@ -70,6 +81,8 @@ export {
   MODIFIER_DEFINITIONS,
   CARD_DEFINITIONS,
   getCardDefinition,
+  createCard,
+  createCards,
   drawCard,
   drawCards
 };

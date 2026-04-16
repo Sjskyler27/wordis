@@ -1,4 +1,5 @@
 const createSharedTileLogic = ({ letterConfig, wordBonuses }) => {
+  const LETTER_KEYS = Object.keys(letterConfig);
   const LETTER_POOL = Object.entries(letterConfig).flatMap(([letter, config]) =>
     Array.from({ length: config.count }, () => letter)
   );
@@ -508,10 +509,15 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses }) => {
       return Array.from({ length: count }, () => drawCard(kind)).filter(Boolean);
     };
 
+    const createCards = (cardKeys = []) => {
+      return cardKeys.map((cardKey) => createCard(cardKey)).filter(Boolean);
+    };
+
     return {
       createCard,
       drawCard,
-      drawCards
+      drawCards,
+      createCards
     };
   };
 
@@ -836,18 +842,41 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses }) => {
       return nextTiles;
     };
 
+    const createTestingRack = (offset = 0, side = null, scores = {}) => {
+      const modifierStatuses = Object.keys(MODIFIER_DEFINITIONS).filter((status) => status !== 'normal');
+
+      return Array.from({ length: RACK_SIZE }, (_, index) => {
+        const letter = LETTER_KEYS[(offset + index) % LETTER_KEYS.length];
+        const forcedStatus = modifierStatuses[index] || 'normal';
+
+        return createTile(letter, side, scores, forcedStatus, {
+          modifierProfile: 'duel'
+        });
+      });
+    };
+
+    const createTestingOpeningRackPair = (scores = {}) => {
+      return {
+        host: createTestingRack(0, 'host', scores),
+        opponent: createTestingRack(RACK_SIZE, 'opponent', scores)
+      };
+    };
+
     return {
       createTile,
       createRack,
       createClearRack,
       createOpeningRackPair,
       refillTiles,
-      rerollRackExceptTile
+      rerollRackExceptTile,
+      createTestingRack,
+      createTestingOpeningRackPair
     };
   };
 
   return {
     LETTER_CONFIG: letterConfig,
+    LETTER_KEYS,
     MIN_WORD_LENGTH,
     RACK_SIZE,
     CARD_DEFINITIONS,
