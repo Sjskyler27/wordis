@@ -95,6 +95,7 @@
             :is-active="leftLane.isActive"
             :selected-tile-ids="leftLane.selectedTileIds"
             :saved-tile-ids="leftLane.savedTileIds"
+            :must-alert-ids="leftLane.mustAlertIds"
             @tile-click="handleTileClickWithCards($event, leftLane.side)"
           />
 
@@ -109,6 +110,7 @@
             :is-active="rightLane.isActive"
             :selected-tile-ids="rightLane.selectedTileIds"
             :saved-tile-ids="rightLane.savedTileIds"
+            :must-alert-ids="rightLane.mustAlertIds"
             @tile-click="handleTileClickWithCards($event, rightLane.side)"
           />
         </div>
@@ -121,6 +123,7 @@
         <WordBuilder
           v-if="(props.isMultiplayer ? gameStarted : true) && !effectiveGameEnded"
           :selected-tiles="selectedTilesForCurrentSide"
+          :invalid-pulse="invalidWordPulse"
           :current-word-length="currentWordLength"
           :current-word-score="currentWordScore"
           :current-letter-total="currentLetterTotal"
@@ -199,6 +202,11 @@ const emit = defineEmits(['home', 'showSettings', 'playAgain']);
 const localMessage = ref('');
 const isPaused = ref(false);
 const activeBoonCardId = ref(null);
+const invalidWordPulse = ref(0);
+const mustAlertTileIds = ref({
+  host: new Set(),
+  opponent: new Set()
+});
 const isMultiplayerRef = computed(() => props.isMultiplayer);
 const isTimedSoloMode = computed(() => !props.isMultiplayer && props.playMode === 'timed_solo');
 const isBotMode = computed(() => !props.isMultiplayer && props.playMode === 'bot_match');
@@ -229,7 +237,8 @@ const buildLane = (side, label) => ({
   tiles: playerTiles.value[side],
   isActive: mySide.value === side,
   selectedTileIds: selectedTileIds.value[side],
-  savedTileIds: savedTileIds.value[side]
+  savedTileIds: savedTileIds.value[side],
+  mustAlertIds: mustAlertTileIds.value[side]
 });
 
 const {
@@ -387,6 +396,28 @@ const statusHeadline = computed(() => {
   return 'Racks are live';
 });
 
+const triggerInvalidWordShake = () => {
+  invalidWordPulse.value += 1;
+};
+
+const triggerMustTileAlert = (side, tileIds) => {
+  if (!tileIds?.length) {
+    return;
+  }
+
+  mustAlertTileIds.value = {
+    ...mustAlertTileIds.value,
+    [side]: new Set(tileIds)
+  };
+
+  window.setTimeout(() => {
+    mustAlertTileIds.value = {
+      ...mustAlertTileIds.value,
+      [side]: new Set()
+    };
+  }, 1100);
+};
+
 watch(myCards, () => {
   if (activeBoonCardId.value && !activeBoonCard.value) {
     resetActionMode();
@@ -407,17 +438,22 @@ const handleSubmit = async () => {
 
   if (normalizedWord.length < MIN_WORD_LENGTH) {
     localMessage.value = `Words must be at least ${MIN_WORD_LENGTH} letters.`;
+    triggerInvalidWordShake();
     return;
   }
 
   const selectedTiles = selectedTilesForCurrentSide.value;
   if (!selectedTiles.length || !selectedTilesMatchWord(selectedTiles, normalizedWord)) {
     localMessage.value = 'That word cannot be made from your current tiles.';
+    triggerInvalidWordShake();
     return;
   }
 
   if (isMissingRequiredTile(myTiles.value, selectedTiles)) {
     localMessage.value = 'You have to use every MUST tile in your rack.';
+    triggerMustTileAlert(mySide.value, myTiles.value
+      .filter((tile) => tile.status === 'mustuse' && !tile.locked)
+      .map((tile) => tile.id));
     return;
   }
 
@@ -425,6 +461,7 @@ const handleSubmit = async () => {
   const validationResult = await validateWord(normalizedWord, preferredLanguage.code);
   if (!validationResult.valid) {
     localMessage.value = `${normalizedWord} is not a valid ${preferredLanguage.label.toLowerCase()} word.`;
+    triggerInvalidWordShake();
     return;
   }
   const resolvedWord = (validationResult.resolvedWord || normalizedWord).toUpperCase();

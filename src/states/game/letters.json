@@ -27,7 +27,8 @@
   "Z": { "score": 9, "count": 1 },
   "SH": { "score": 3, "count": 1 },
   "QU": { "score": 4, "count": 1 },
-  "TH": { "score": 3, "count": 1 },
+  "TH": { "score": 4, "count": 1 },
   "CH": { "score": 3, "count": 1 },
-  "ED": { "score": 1, "count": 1 }
+  "ED": { "score": 3, "count": 1 },
+  "ING": { "score": 2, "count": 1 }
 }
