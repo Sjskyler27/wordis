@@ -73,12 +73,12 @@
 
       <section class="arena-shell">
         <div class="score-ribbon">
-          <div class="score-box host">
+          <div class="score-box host" :class="scoreBoxClass('host')">
             <span>Your Board</span>
             <strong>{{ leftLane.score }}</strong>
           </div>
           <div class="score-divider">VS</div>
-          <div class="score-box opponent" :class="{ timer: isTimedSoloMode }">
+          <div class="score-box opponent" :class="[{ timer: isTimedSoloMode }, scoreBoxClass('opponent')]">
             <span>{{ isTimedSoloMode ? 'Time Left' : 'Their Board' }}</span>
             <strong>{{ isTimedSoloMode ? formattedTimeRemaining : rightLane.score }}</strong>
           </div>
@@ -96,6 +96,7 @@
             :selected-tile-ids="leftLane.selectedTileIds"
             :saved-tile-ids="leftLane.savedTileIds"
             :must-alert-ids="leftLane.mustAlertIds"
+            :burst-pulse="laneBurstPulse[leftLane.side]"
             @tile-click="handleTileClickWithCards($event, leftLane.side)"
           />
 
@@ -111,6 +112,7 @@
             :selected-tile-ids="rightLane.selectedTileIds"
             :saved-tile-ids="rightLane.savedTileIds"
             :must-alert-ids="rightLane.mustAlertIds"
+            :burst-pulse="laneBurstPulse[rightLane.side]"
             @tile-click="handleTileClickWithCards($event, rightLane.side)"
           />
         </div>
@@ -150,6 +152,8 @@
         :right-label="showOpponentLane ? 'Their History' : ''"
         :left-history="leftLaneHistory"
         :right-history="showOpponentLane ? rightLaneHistory : []"
+        :play-again-text="playAgainButtonText"
+        :play-again-disabled="props.isMultiplayer && myReplayVote"
         @play-again="handlePlayAgain"
       />
     </main>
@@ -165,6 +169,7 @@ import {
   wordHistory,
   playerScores,
   lastWordScores,
+  playAgainVotes,
   playerTiles,
   rackClears,
   playerCards,
@@ -203,6 +208,10 @@ const localMessage = ref('');
 const isPaused = ref(false);
 const activeBoonCardId = ref(null);
 const invalidWordPulse = ref(0);
+const laneBurstPulse = ref({
+  host: 0,
+  opponent: 0
+});
 const mustAlertTileIds = ref({
   host: new Set(),
   opponent: new Set()
@@ -210,11 +219,12 @@ const mustAlertTileIds = ref({
 const isMultiplayerRef = computed(() => props.isMultiplayer);
 const isTimedSoloMode = computed(() => !props.isMultiplayer && props.playMode === 'timed_solo');
 const isBotMode = computed(() => !props.isMultiplayer && props.playMode === 'bot_match');
-const attacksEnabled = computed(() => isTestingMode || !isTimedSoloMode.value);
+const attacksEnabled = computed(() => isTestingMode || isTimedSoloMode.value || isBotMode.value || props.isMultiplayer);
 const showOpponentLane = computed(() => props.isMultiplayer || isBotMode.value);
 const preferredLanguage = getPreferredLanguage();
 const SOLO_TIMER_SECONDS = 180;
 const timerRemainingSeconds = ref(SOLO_TIMER_SECONDS);
+const isSoloTimerPausedByAttack = ref(false);
 const timedSoloFinalWordSpent = ref(false);
 let soloTimerId = null;
 
@@ -280,8 +290,8 @@ const {
 } = useSinglePlayerGame({
   isMultiplayer: isMultiplayerRef,
   botEnabled: isBotMode,
+  isTimedSoloMode,
   botDifficulty: computed(() => props.botDifficulty),
-  attacksEnabled,
   localMessage,
   selectedTilesForCurrentSide,
   clearSelectionForSide,
@@ -291,7 +301,13 @@ const {
   rackClears,
   playerCards,
   submittedWords,
-  wordHistory
+  wordHistory,
+  onTimedSoloPauseTime: () => {
+    isSoloTimerPausedByAttack.value = true;
+  },
+  onTimedSoloGainTime: (seconds) => {
+    timerRemainingSeconds.value += seconds;
+  }
 });
 
 const myCards = computed(() => playerCards.value[mySide.value] || { boons: [], attacks: [] });
@@ -299,6 +315,17 @@ const activeBoonCard = computed(() => {
   return myCards.value.boons.find((card) => card.id === activeBoonCardId.value) || null;
 });
 const visibleAttackCount = computed(() => attacksEnabled.value ? myCards.value.attacks.length : 0);
+const myReplayVote = computed(() => playAgainVotes.value[mySide.value]);
+const replayVoteCount = computed(() => Object.values(playAgainVotes.value).filter(Boolean).length);
+const playAgainButtonText = computed(() => {
+  if (!props.isMultiplayer) {
+    return 'Play Again';
+  }
+
+  return myReplayVote.value
+    ? `Waiting for Vote ${replayVoteCount.value}/2`
+    : `Vote to Play Again ${replayVoteCount.value}/2`;
+});
 const cardSummary = computed(() => {
   return attacksEnabled.value
     ? `${myCards.value.boons.length} Boon · ${visibleAttackCount.value} Attack`
@@ -395,9 +422,63 @@ const statusHeadline = computed(() => {
 
   return 'Racks are live';
 });
+const scoreGap = computed(() => {
+  if (!showOpponentLane.value) {
+    return 0;
+  }
+
+  return Math.abs(leftLane.value.score - rightLane.value.score);
+});
+const scoreGapTier = computed(() => {
+  if (scoreGap.value >= 120) {
+    return 'epic';
+  }
+
+  if (scoreGap.value >= 60) {
+    return 'high';
+  }
+
+  if (scoreGap.value >= 25) {
+    return 'medium';
+  }
+
+  if (scoreGap.value >= 10) {
+    return 'low';
+  }
+
+  return 'none';
+});
+const scoreBoxClass = (side) => {
+  if (!showOpponentLane.value || isTimedSoloMode.value || scoreGapTier.value === 'none') {
+    return {};
+  }
+
+  const sideScore = side === 'host' ? leftLane.value.score : rightLane.value.score;
+  const otherScore = side === 'host' ? rightLane.value.score : leftLane.value.score;
+
+  return {
+    'score-gap-low': scoreGapTier.value === 'low',
+    'score-gap-medium': scoreGapTier.value === 'medium',
+    'score-gap-high': scoreGapTier.value === 'high',
+    'score-gap-epic': scoreGapTier.value === 'epic',
+    'score-box-leading': sideScore > otherScore,
+    'score-box-trailing': sideScore < otherScore
+  };
+};
 
 const triggerInvalidWordShake = () => {
   invalidWordPulse.value += 1;
+};
+
+const triggerLaneBurst = (side, score) => {
+  if (!score || score < 18) {
+    return;
+  }
+
+  laneBurstPulse.value = {
+    ...laneBurstPulse.value,
+    [side]: laneBurstPulse.value[side] + (score >= 32 ? 2 : 1)
+  };
 };
 
 const triggerMustTileAlert = (side, tileIds) => {
@@ -424,6 +505,14 @@ watch(myCards, () => {
   }
 }, { deep: true });
 
+watch(lastWordScores, (nextScores, previousScores = { host: 0, opponent: 0 }) => {
+  for (const side of ['host', 'opponent']) {
+    if ((nextScores?.[side] || 0) > (previousScores?.[side] || 0)) {
+      triggerLaneBurst(side, nextScores[side]);
+    }
+  }
+}, { deep: true });
+
 const handleSubmit = async () => {
   if (effectiveGameEnded.value) {
     localMessage.value = 'The match is already over.';
@@ -431,18 +520,18 @@ const handleSubmit = async () => {
   }
 
   const normalizedWord = currentWordDisplay.value;
+  const selectedTiles = selectedTilesForCurrentSide.value;
   if (!normalizedWord) {
     localMessage.value = 'Pick at least one tile first.';
     return;
   }
 
-  if (normalizedWord.length < MIN_WORD_LENGTH) {
-    localMessage.value = `Words must be at least ${MIN_WORD_LENGTH} letters.`;
+  if (selectedTiles.length < MIN_WORD_LENGTH) {
+    localMessage.value = `Words must use at least ${MIN_WORD_LENGTH} tiles.`;
     triggerInvalidWordShake();
     return;
   }
 
-  const selectedTiles = selectedTilesForCurrentSide.value;
   if (!selectedTiles.length || !selectedTilesMatchWord(selectedTiles, normalizedWord)) {
     localMessage.value = 'That word cannot be made from your current tiles.';
     triggerInvalidWordShake();
@@ -475,6 +564,10 @@ const handleSubmit = async () => {
     localMessage.value = `Sent ${resolvedWord} for ${scoreDetails.total} pts.`;
     clearSelectionForSide(mySide.value);
     return;
+  }
+
+  if (isTimedSoloMode.value) {
+    isSoloTimerPausedByAttack.value = false;
   }
 
   submitSinglePlayerWord(resolvedWord);
@@ -512,8 +605,9 @@ const useAttackCard = (card) => {
     return;
   }
 
-  if (useSinglePlayerAttack(mySide.value, card.id)) {
-    localMessage.value = `Played ${card.label} on a random enemy tile.`;
+  const result = useSinglePlayerAttack(mySide.value, card.id);
+  if (result?.success) {
+    localMessage.value = result.message || `Played ${card.label}.`;
     resetActionMode();
   }
 };
@@ -558,7 +652,6 @@ const handleSaveLetters = () => {
 };
 
 const handleTileClickWithCards = (tile, side) => {
-  console.log(tile)
   if (effectiveGameEnded.value) {
     return;
   }
@@ -652,11 +745,14 @@ const togglePause = () => {
 const handlePlayAgain = () => {
   resetActionMode();
   clearSelectionForSide(mySide.value);
+  isSoloTimerPausedByAttack.value = false;
   timedSoloFinalWordSpent.value = false;
 
   if (props.isMultiplayer) {
     playMultiplayerAgain();
-    localMessage.value = 'Resetting the match...';
+    localMessage.value = myReplayVote.value
+      ? `Waiting for the other player. ${replayVoteCount.value}/2 votes in.`
+      : 'Replay vote locked in. Waiting for the other player.';
     return;
   }
 
@@ -685,6 +781,10 @@ const startSoloTimer = () => {
 
   window.clearInterval(soloTimerId);
   soloTimerId = window.setInterval(() => {
+    if (isSoloTimerPausedByAttack.value) {
+      return;
+    }
+
     timerRemainingSeconds.value = Math.max(0, timerRemainingSeconds.value - 1);
     if (timerRemainingSeconds.value <= 0) {
       stopSoloTimer();
@@ -695,6 +795,7 @@ const startSoloTimer = () => {
 
 watch(() => props.playMode, (nextMode) => {
   timerRemainingSeconds.value = nextMode === 'timed_solo' ? SOLO_TIMER_SECONDS : 0;
+  isSoloTimerPausedByAttack.value = false;
   timedSoloFinalWordSpent.value = false;
 
   if (nextMode === 'timed_solo') {
@@ -739,6 +840,7 @@ const resetAndGoHome = () => {
   isPaused.value = false;
   stopBotLoop();
   stopSoloTimer();
+  isSoloTimerPausedByAttack.value = false;
   timedSoloFinalWordSpent.value = false;
   resetMultiplayer();
   resetActionMode();
@@ -1075,6 +1177,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  transition: transform 180ms ease, box-shadow 180ms ease, filter 180ms ease;
 }
 
 .score-box span {
@@ -1099,6 +1202,80 @@ body {
 
 .score-box.timer strong {
   color: var(--gold);
+}
+
+.score-box-leading {
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 228, 176, 0.18),
+    0 0 0 1px rgba(255, 228, 176, 0.08);
+}
+
+.score-box-trailing {
+  filter: saturate(0.9);
+}
+
+.score-gap-low.score-box-leading {
+  animation: score-gap-pulse-low 2.6s ease-in-out infinite;
+}
+
+.score-gap-medium.score-box-leading {
+  animation: score-gap-pulse-medium 2s ease-in-out infinite;
+}
+
+.score-gap-high.score-box-leading {
+  animation: score-gap-pulse-high 1.5s ease-in-out infinite;
+}
+
+.score-gap-epic.score-box-leading {
+  animation: score-gap-pulse-epic 1s ease-in-out infinite;
+}
+
+@keyframes score-gap-pulse-low {
+  0%,
+  100% {
+    transform: translateY(0);
+    box-shadow: 0 0 0 0 rgba(255, 204, 111, 0.12);
+  }
+  50% {
+    transform: translateY(-1px);
+    box-shadow: 0 0 18px rgba(255, 204, 111, 0.16);
+  }
+}
+
+@keyframes score-gap-pulse-medium {
+  0%,
+  100% {
+    transform: translateY(0) scale(1);
+    box-shadow: 0 0 0 0 rgba(255, 204, 111, 0.16);
+  }
+  50% {
+    transform: translateY(-2px) scale(1.01);
+    box-shadow: 0 0 26px rgba(255, 204, 111, 0.24);
+  }
+}
+
+@keyframes score-gap-pulse-high {
+  0%,
+  100% {
+    transform: translateY(0) scale(1);
+    box-shadow: 0 0 0 0 rgba(255, 204, 111, 0.18);
+  }
+  50% {
+    transform: translateY(-3px) scale(1.018);
+    box-shadow: 0 0 34px rgba(255, 204, 111, 0.3);
+  }
+}
+
+@keyframes score-gap-pulse-epic {
+  0%,
+  100% {
+    transform: translateY(0) scale(1);
+    box-shadow: 0 0 0 0 rgba(255, 204, 111, 0.2);
+  }
+  50% {
+    transform: translateY(-4px) scale(1.03);
+    box-shadow: 0 0 44px rgba(255, 204, 111, 0.36);
+  }
 }
 
 .score-divider {

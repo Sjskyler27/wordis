@@ -39,8 +39,13 @@
       </div>
 
       <div class="history-actions">
-        <button type="button" class="play-again-button" @click="$emit('play-again')">
-          Play Again
+        <button
+          type="button"
+          class="play-again-button"
+          :disabled="playAgainDisabled"
+          @click="$emit('play-again')"
+        >
+          {{ playAgainText }}
         </button>
       </div>
     </section>
@@ -70,6 +75,14 @@ const props = defineProps({
   rightHistory: {
     type: Array,
     default: () => []
+  },
+  playAgainText: {
+    type: String,
+    default: 'Play Again'
+  },
+  playAgainDisabled: {
+    type: Boolean,
+    default: false
   }
 });
 
@@ -221,6 +234,12 @@ const normalizedRightHistory = computed(() => props.rightHistory.map(normalizeEn
   box-shadow:
     0 0 0 2px rgba(243, 228, 104, 0.9),
     0 14px 22px rgba(21, 12, 28, 0.2);
+}
+
+.play-again-button:disabled {
+  cursor: default;
+  opacity: 0.74;
+  filter: saturate(0.7);
 }
 
 @media (max-width: 820px) {

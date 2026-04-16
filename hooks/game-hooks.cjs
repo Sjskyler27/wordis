@@ -93,6 +93,10 @@ const createInitialState = ({ hostId, players = [hostId], isPrivate = true }) =>
         host: 0,
         opponent: 0
       },
+      playAgainVotes: {
+        host: false,
+        opponent: false
+      },
       rackClears: {
         host: 100,
         opponent: 100
@@ -121,6 +125,10 @@ const createInitialState = ({ hostId, players = [hostId], isPrivate = true }) =>
     lastWordScores: {
       host: 0,
       opponent: 0
+    },
+    playAgainVotes: {
+      host: false,
+      opponent: false
     },
     rackClears: {
       host: 2,
@@ -273,6 +281,16 @@ const playAgain = (roomCode, clientId) => {
     return { success: false, error: 'Player not in room' };
   }
 
+  const side = clientId === state.host ? 'host' : 'opponent';
+  state.playAgainVotes[side] = true;
+
+  const bothPlayersPresent = state.players.length >= 2;
+  const everyoneReady = bothPlayersPresent && state.playAgainVotes.host && state.playAgainVotes.opponent;
+
+  if (!everyoneReady) {
+    return { success: true, state, restarted: false };
+  }
+
   const nextState = createInitialState({
     hostId: state.host,
     players: state.players,
@@ -280,7 +298,7 @@ const playAgain = (roomCode, clientId) => {
   });
 
   games.set(roomCode, nextState);
-  return { success: true, state: nextState };
+  return { success: true, state: nextState, restarted: true };
 };
 
 const submitWord = async (roomCode, clientId, word, tileIds, languageCode = 'en') => {

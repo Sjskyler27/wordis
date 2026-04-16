@@ -56,6 +56,7 @@ const createGameStatePayload = (state) => ({
   history: state.history,
   scores: state.scores,
   lastWordScores: state.lastWordScores,
+  playAgainVotes: state.playAgainVotes,
   rackClears: state.rackClears,
   cards: state.cards,
   tiles: state.tiles,
@@ -99,9 +100,22 @@ const handlePlayAgain = (connection, clientId, data) => {
     return;
   }
 
-  const { success, error, state } = playAgain(requestedCode, clientId);
+  const { success, error, state, restarted } = playAgain(requestedCode, clientId);
   if (!success) {
     sendEvent(connection, 'joinError', error);
+    return;
+  }
+
+  if (!state) {
+    sendEvent(connection, 'joinError', 'Unable to update replay vote');
+    return;
+  }
+
+  if (!restarted) {
+    broadcastToRoom(requestedCode, {
+      type: 'playAgainUpdated',
+      data: createGameStatePayload(state)
+    });
     return;
   }
 
