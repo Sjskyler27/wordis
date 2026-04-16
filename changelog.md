@@ -2,6 +2,12 @@
 
 ## 2026-04-16
 # ADDED
+- letter shake
+- must use tile flash 
+- ing 
+
+## 2026-04-16
+# ADDED
 - ghost tile 
 - keep one tile boon
 - test mode env 
