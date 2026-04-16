@@ -2,6 +2,7 @@ import { onBeforeUnmount, watch } from 'vue';
 import { getBotWord } from './bot.js';
 import {
   CARD_DEFINITIONS,
+  MIN_WORD_LENGTH,
   createCards,
   createOpeningRackPair,
   createTestingOpeningRackPair,
@@ -19,8 +20,8 @@ import { isTestingMode } from './testing.js';
 export const useSinglePlayerGame = ({
   isMultiplayer,
   botEnabled,
+  isTimedSoloMode,
   botDifficulty,
-  attacksEnabled,
   localMessage,
   selectedTilesForCurrentSide,
   clearSelectionForSide,
@@ -30,7 +31,9 @@ export const useSinglePlayerGame = ({
   rackClears,
   playerCards,
   submittedWords,
-  wordHistory
+  wordHistory,
+  onTimedSoloPauseTime,
+  onTimedSoloGainTime
 }) => {
   let botLoopId = null;
   const WINNING_SCORE = 250;
@@ -39,7 +42,9 @@ export const useSinglePlayerGame = ({
     normal: 9000,
     hard: 6500
   };
-  const modifierProfile = () => attacksEnabled.value ? 'duel' : 'solo';
+  const modifierProfile = () => isTimedSoloMode.value ? 'solo' : 'duel';
+  const attackDeck = () => isTimedSoloMode.value ? 'timed_solo' : 'duel';
+  const shouldDrawAttacks = () => isTimedSoloMode.value || botEnabled.value;
   const createTestingHands = () => {
     const boonKeys = Object.entries(CARD_DEFINITIONS)
       .filter(([, definition]) => definition.kind === 'boon')
@@ -86,14 +91,36 @@ export const useSinglePlayerGame = ({
       playerCards.value = {
         host: {
           boons: drawCards('boon', 1),
-          attacks: attacksEnabled.value ? drawCards('attack', 1) : []
+          attacks: shouldDrawAttacks() ? drawCards('attack', 1, { deck: attackDeck() }) : []
         },
         opponent: {
           boons: drawCards('boon', 1),
-          attacks: attacksEnabled.value ? drawCards('attack', 1) : []
+          attacks: botEnabled.value ? drawCards('attack', 1, { deck: attackDeck() }) : []
         }
       };
     }
+  };
+
+  const clearBotRack = (botTiles) => {
+    if ((rackClears.value.opponent || 0) <= 0) {
+      return false;
+    }
+
+    rackClears.value = {
+      ...rackClears.value,
+      opponent: rackClears.value.opponent - 1
+    };
+
+    playerTiles.value = {
+      ...playerTiles.value,
+      opponent: createRack('opponent', playerScores.value, {
+        mode: 'clear',
+        currentTiles: botTiles,
+        modifierProfile: modifierProfile()
+      })
+    };
+
+    return true;
   };
 
   const submitBotWord = () => {
@@ -111,36 +138,20 @@ export const useSinglePlayerGame = ({
     ], botDifficulty.value);
 
     if (!botWord) {
-      if ((rackClears.value.opponent || 0) <= 0) {
-        return;
-      }
-
-      rackClears.value = {
-        ...rackClears.value,
-        opponent: rackClears.value.opponent - 1
-      };
-
-      playerTiles.value = {
-        ...playerTiles.value,
-        opponent: createRack('opponent', playerScores.value, {
-          mode: 'clear',
-          currentTiles: botTiles,
-          modifierProfile: modifierProfile()
-        })
-      };
-
+      clearBotRack(botTiles);
       return;
     }
 
     const normalizedBotWord = botWord.toUpperCase();
     const selectedBotTiles = getTilesForWord(botTiles, normalizedBotWord);
-    if (!selectedBotTiles.length) {
+    if (!selectedBotTiles.length || selectedBotTiles.length < MIN_WORD_LENGTH) {
+      clearBotRack(botTiles);
       return;
     }
 
     const botScoreDetails = getWordScoreDetails(selectedBotTiles);
     const grantedResources = getResourceGrants(selectedBotTiles, {
-      includeAttacks: attacksEnabled.value
+      includeAttacks: shouldDrawAttacks()
     });
 
     submittedWords.value = {
@@ -170,7 +181,7 @@ export const useSinglePlayerGame = ({
         ],
         attacks: [
           ...playerCards.value.opponent.attacks,
-          ...drawCards('attack', grantedResources.attacks)
+          ...drawCards('attack', grantedResources.attacks, { deck: attackDeck() })
         ]
       }
     };
@@ -215,7 +226,7 @@ export const useSinglePlayerGame = ({
     const selectedTiles = selectedTilesForCurrentSide.value;
     const scoreDetails = getWordScoreDetails(selectedTiles);
     const grantedResources = getResourceGrants(selectedTiles, {
-      includeAttacks: attacksEnabled.value
+      includeAttacks: shouldDrawAttacks()
     });
 
     submittedWords.value = {
@@ -244,7 +255,7 @@ export const useSinglePlayerGame = ({
         ],
         attacks: [
           ...playerCards.value.host.attacks,
-          ...drawCards('attack', grantedResources.attacks)
+          ...drawCards('attack', grantedResources.attacks, { deck: attackDeck() })
         ]
       },
       opponent: playerCards.value.opponent
@@ -343,11 +354,6 @@ export const useSinglePlayerGame = ({
   };
 
   const useSinglePlayerAttack = (side, cardId) => {
-    if (!attacksEnabled.value) {
-      localMessage.value = 'Attacks are off in solo sprint.';
-      return false;
-    }
-
     const opponentSide = side === 'host' ? 'opponent' : 'host';
     const hand = playerCards.value[side]?.attacks || [];
     const card = hand.find((entry) => entry.id === cardId);
@@ -355,19 +361,6 @@ export const useSinglePlayerGame = ({
       localMessage.value = 'That attack is no longer available.';
       return false;
     }
-
-    if (card.modifier === 'mustuse' && playerTiles.value[opponentSide].some((tile) => tile.status === 'mustuse')) {
-      localMessage.value = 'That board already has a MUST tile.';
-      return false;
-    }
-
-    const targetTiles = playerTiles.value[opponentSide].filter((tile) => !tile.locked);
-    if (!targetTiles.length) {
-      localMessage.value = 'No target tiles available.';
-      return false;
-    }
-
-    const targetTile = targetTiles[Math.floor(Math.random() * targetTiles.length)];
 
     playerCards.value = {
       ...playerCards.value,
@@ -377,12 +370,58 @@ export const useSinglePlayerGame = ({
       }
     };
 
+    if (card.effectType === 'pause_time') {
+      onTimedSoloPauseTime?.();
+      return {
+        success: true,
+        message: 'Paused the timer until your next word.'
+      };
+    }
+
+    if (card.effectType === 'gain_time') {
+      onTimedSoloGainTime?.(card.amount || 10);
+      return {
+        success: true,
+        message: `Added ${card.amount || 10} seconds to the clock.`
+      };
+    }
+
+    if (card.modifier === 'mustuse' && playerTiles.value[opponentSide].some((tile) => tile.status === 'mustuse')) {
+      localMessage.value = 'That board already has a MUST tile.';
+      playerCards.value = {
+        ...playerCards.value,
+        [side]: {
+          ...playerCards.value[side],
+          attacks: hand
+        }
+      };
+      return false;
+    }
+
+    const targetTiles = playerTiles.value[opponentSide].filter((tile) => !tile.locked);
+    if (!targetTiles.length) {
+      localMessage.value = 'No target tiles available.';
+      playerCards.value = {
+        ...playerCards.value,
+        [side]: {
+          ...playerCards.value[side],
+          attacks: hand
+        }
+      };
+      return false;
+    }
+
+    const targetTile = targetTiles[Math.floor(Math.random() * targetTiles.length)];
+
     playerTiles.value = {
       ...playerTiles.value,
       [opponentSide]: replaceTileWithModifier(playerTiles.value[opponentSide], targetTile.id, card.modifier)
     };
 
-    return true;
+    return {
+      success: true,
+      message: `Played ${card.label} on a random enemy tile.`
+    };
   };
 
   ensureSinglePlayerState();

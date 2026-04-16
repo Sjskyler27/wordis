@@ -65,12 +65,12 @@ export const useWordBuilder = ({ mySide, myTiles }) => {
   const handleTileClick = (tile) => {
     const side = mySide.value;
     if (tile.locked) {
-      return;
+      return null;
     }
 
     if (selectedTileSlots.value[side].includes(tile.id)) {
       removeSpecificTile(tile.id);
-      return;
+      return 'removed';
     }
 
     if (savedTileSlots.value[side].includes(tile.id)) {
@@ -84,14 +84,20 @@ export const useWordBuilder = ({ mySide, myTiles }) => {
       ...selectedTileSlots.value,
       [side]: [...selectedTileSlots.value[side], tile.id]
     };
+    return 'added';
   };
 
   const removeLastLetter = () => {
     const side = mySide.value;
+    if (!selectedTileSlots.value[side].length) {
+      return false;
+    }
+
     selectedTileSlots.value = {
       ...selectedTileSlots.value,
       [side]: selectedTileSlots.value[side].slice(0, -1)
     };
+    return true;
   };
 
   const removeSpecificTile = (tileId) => {
@@ -100,7 +106,7 @@ export const useWordBuilder = ({ mySide, myTiles }) => {
     const index = nextSlots.indexOf(tileId);
 
     if (index === -1) {
-      return;
+      return false;
     }
 
     nextSlots.splice(index, 1);
@@ -108,13 +114,19 @@ export const useWordBuilder = ({ mySide, myTiles }) => {
       ...selectedTileSlots.value,
       [side]: nextSlots
     };
+    return true;
   };
 
   const clearSelectionForSide = (side = mySide.value) => {
+    if (!selectedTileSlots.value[side].length) {
+      return false;
+    }
+
     selectedTileSlots.value = {
       ...selectedTileSlots.value,
       [side]: []
     };
+    return true;
   };
 
   const saveSelectionForSide = (side = mySide.value) => {

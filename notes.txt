@@ -8,13 +8,6 @@ up how much big words give, give attack or boon at high words
 
 up how often you get ither modifiers
 
-double letters are subing QU
-
-to many black tiles
-
-bring back blue as firts tile
-
-1 last word after timer or game end 
 
 preview what opponent is building 
 
@@ -47,18 +40,23 @@ add cleanse remove all negetive
 
 shake and sound tiles when not real word
 
-notify when must is on the board 
-
-add test env one of each attack and boon and one of each letter and 100 clear racks 
 
 there may be a bug with creating tile ids i had multiple with the same id  (Proxy(Object) {id: 'local-tile-2', letter: 'R', baseLetter: 'R', score: 1, baseScore: 1, …}
 Game.vue:524 Proxy(Object) {id: 'local-tile-1', letter: 'T', baseLetter: 'T', score: 1, baseScore: 1, …}
 Game.vue:524 Proxy(Object) {id: 'local-tile-2', letter: 'B', baseLetter: 'B', score: 3, baseScore: 3, …}
 Game.vue:524 Proxy(Object) {id: 'local-tile-1', letter: 'A', baseLetter: 'A', score: 1, baseScore: 1, …}
-ok how are we making tile ids?? there is no reason a tile should end up with the same id as another )
+ok how are we making tile ids?? there is no reason a tile should end up with the same id as another ) x2
 
-booons that give permennent upgrades like 
+booons that give permennent upgrades like this letter is worth more 
 
 add a way to attack the time with single player attacks 
 
 maybe add time by spelling words add add somewhere to get to a goal get to a certain num of points or something  
+no boon on neg atack a normal tile 
+
+
+game broke at some point while playing 
+
+maybe cycle what the length bonus is, add a next turn get this 
+
+bunch of audio bus like overlapping music sounds and such need to also pass all the audio info accross screens and update sounds real time restart sounds after game

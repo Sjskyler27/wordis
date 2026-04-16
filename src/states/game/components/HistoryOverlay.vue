@@ -3,6 +3,7 @@
     <div class="history-scrim"></div>
     <section class="history-panel">
       <span class="history-kicker">Match Results</span>
+      <span class="history-result" :class="resultState">{{ resultTitle }}</span>
       <strong class="history-title">{{ summaryText }}</strong>
       <p class="history-copy">Every scored word from the match lives here.</p>
 
@@ -39,8 +40,13 @@
       </div>
 
       <div class="history-actions">
-        <button type="button" class="play-again-button" @click="$emit('play-again')">
-          Play Again
+        <button
+          type="button"
+          class="play-again-button"
+          :disabled="playAgainDisabled"
+          @click="$emit('play-again')"
+        >
+          {{ playAgainText }}
         </button>
       </div>
     </section>
@@ -54,6 +60,14 @@ const props = defineProps({
   summaryText: {
     type: String,
     required: true
+  },
+  resultTitle: {
+    type: String,
+    default: 'Results'
+  },
+  resultState: {
+    type: String,
+    default: 'neutral'
   },
   leftLabel: {
     type: String,
@@ -70,6 +84,14 @@ const props = defineProps({
   rightHistory: {
     type: Array,
     default: () => []
+  },
+  playAgainText: {
+    type: String,
+    default: 'Play Again'
+  },
+  playAgainDisabled: {
+    type: Boolean,
+    default: false
   }
 });
 
@@ -106,6 +128,7 @@ const normalizedRightHistory = computed(() => props.rightHistory.map(normalizeEn
   border-radius: 30px;
   background: rgba(21, 8, 22, 0.74);
   backdrop-filter: blur(6px);
+  max-height: 96%;
 }
 
 .history-panel {
@@ -137,6 +160,41 @@ const normalizedRightHistory = computed(() => props.rightHistory.map(normalizeEn
   margin-top: 12px;
   font-size: clamp(1.45rem, 2.6vw, 2.35rem);
   color: var(--gold, #ffd265);
+}
+
+.history-result {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 10px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  font-weight: 900;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.history-result.victory {
+  color: #fef1be;
+  background: linear-gradient(180deg, rgba(249, 189, 72, 0.3), rgba(159, 92, 17, 0.42));
+  border-color: rgba(255, 219, 120, 0.35);
+  box-shadow: 0 0 22px rgba(255, 206, 102, 0.18);
+}
+
+.history-result.defeat {
+  color: #ffd8d8;
+  background: linear-gradient(180deg, rgba(193, 73, 90, 0.3), rgba(95, 25, 43, 0.46));
+  border-color: rgba(255, 163, 176, 0.28);
+  box-shadow: 0 0 22px rgba(202, 78, 104, 0.16);
+}
+
+.history-result.timeout {
+  color: #d5f3ff;
+  background: linear-gradient(180deg, rgba(82, 153, 213, 0.24), rgba(29, 68, 112, 0.42));
+  border-color: rgba(173, 220, 255, 0.24);
 }
 
 .history-copy {
@@ -221,6 +279,12 @@ const normalizedRightHistory = computed(() => props.rightHistory.map(normalizeEn
   box-shadow:
     0 0 0 2px rgba(243, 228, 104, 0.9),
     0 14px 22px rgba(21, 12, 28, 0.2);
+}
+
+.play-again-button:disabled {
+  cursor: default;
+  opacity: 0.74;
+  filter: saturate(0.7);
 }
 
 @media (max-width: 820px) {

@@ -20,6 +20,10 @@ export const lastWordScores = ref({
   host: 0,
   opponent: 0
 });
+export const playAgainVotes = ref({
+  host: false,
+  opponent: false
+});
 export const playerTiles = ref({
   host: [],
   opponent: []
@@ -55,6 +59,7 @@ const applyGameState = (data = {}) => {
   wordHistory.value = data.history || wordHistory.value;
   playerScores.value = data.scores || playerScores.value;
   lastWordScores.value = data.lastWordScores || lastWordScores.value;
+  playAgainVotes.value = data.playAgainVotes || playAgainVotes.value;
   playerTiles.value = data.tiles || playerTiles.value;
   rackClears.value = data.rackClears || rackClears.value;
   playerCards.value = data.cards || playerCards.value;
@@ -165,6 +170,10 @@ socket.on('gameRestarted', (data) => {
   applyGameState(data);
 });
 
+socket.on('playAgainUpdated', (data) => {
+  applyGameState(data);
+});
+
 socket.onStatusChange((status) => {
   connectionStatus.value = status;
   if (status !== 'connected') {
@@ -196,6 +205,10 @@ export const resetGame = () => {
   lastWordScores.value = {
     host: 0,
     opponent: 0
+  };
+  playAgainVotes.value = {
+    host: false,
+    opponent: false
   };
   playerTiles.value = {
     host: [],

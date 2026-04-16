@@ -4,8 +4,24 @@
     </div>
 
     <div class="word-input-shell">
-      <span class="console-label">{{ currentWordScore }} pts</span>
+      <span class="console-label"><span v-if="currentWordScore < 10" style="visibility:hidden">_</span>{{ currentWordScore }} pts</span>
       <div class="built-word-strip" :class="{ empty: !selectedTiles.length }">
+        <div v-if="scorePopTiles.length" class="score-pop-overlay">
+          <div
+            v-for="(tile, index) in scorePopTiles"
+            :key="`score-pop-${scorePopPulse}-${tile.id}-${index}`"
+            class="score-pop-slot"
+            :style="{ gridColumn: index + 1 }"
+          >
+            <div class="built-tile scoring score-pop-clone" :style="getTileStyle(tile, index)">
+              <span v-if="!getModifierUi(tile.status).hideBadge && tile.status !== 'normal'" class="tile-modifier" :style="getBadgeStyle(tile)">
+                {{ getModifierBadge(tile) }}
+              </span>
+              <span class="tile-score">{{ tileScore(tile) }}</span>
+              <span class="tile-letter">{{ tile.letter }}</span>
+            </div>
+          </div>
+        </div>
         <div
           v-for="slot in wordSlots"
           :key="`word-slot-${slot.index}`"
@@ -23,7 +39,7 @@
               type="button"
               class="built-tile"
               :class="{ shaking: isShaking }"
-              :style="getTileStyle(slot.tile)"
+              :style="getTileStyle(slot.tile, slot.index)"
               @click="$emit('tile-click', slot.tile)"
             >
               <span v-if="!getModifierUi(slot.tile.status).hideBadge && slot.tile.status !== 'normal'" class="tile-modifier" :style="getBadgeStyle(slot.tile)">
@@ -84,6 +100,14 @@ const props = defineProps({
   invalidPulse: {
     type: Number,
     default: 0
+  },
+  scorePopPulse: {
+    type: Number,
+    default: 0
+  },
+  scorePopTiles: {
+    type: Array,
+    default: () => []
   },
   currentWordLength: {
     type: Number,
@@ -165,13 +189,20 @@ watch(() => props.invalidPulse, (nextPulse) => {
   });
 });
 
-const getTileStyle = (tile) => {
+watch(() => props.scorePopPulse, (nextPulse) => {
+  if (!nextPulse || !props.scorePopTiles.length) {
+    return;
+  }
+});
+
+const getTileStyle = (tile, index = 0) => {
   const ui = getModifierUi(tile.status);
 
   return {
     '--built-tile-bg': ui.tileBackground,
     '--built-tile-shadow': ui.tileShadow,
-    '--built-tile-text-color': ui.textColor
+    '--built-tile-text-color': ui.textColor,
+    '--score-pop-delay': `${index * 110}ms`
   };
 };
 
@@ -267,6 +298,20 @@ const getPlaceholderStyle = (slot) => {
   min-height: 74px;
   display: grid;
   grid-template-columns: repeat(9, minmax(0, 1fr));
+  position: relative;
+}
+
+.score-pop-overlay {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-columns: repeat(9, minmax(0, 1fr));
+  pointer-events: none;
+  z-index: 3;
+}
+
+.score-pop-slot {
+  display: flex;
 }
 
 .built-word-strip.empty {
@@ -359,6 +404,15 @@ const getPlaceholderStyle = (slot) => {
   animation: invalid-word-shake 280ms ease;
 }
 
+.built-tile.scoring {
+  animation: built-tile-score-pop 520ms cubic-bezier(0.22, 0.9, 0.3, 1) both;
+  animation-delay: var(--score-pop-delay, 0ms);
+}
+
+.score-pop-clone {
+  pointer-events: none;
+}
+
 .word-slot.filled .word-slot-placeholder {
   opacity: 0.6;
 }
@@ -367,6 +421,9 @@ const getPlaceholderStyle = (slot) => {
   appearance: none;
   border: none;
   cursor: pointer;
+  font: inherit;
+  font-weight: inherit;
+  font-family: "Press Start 2P", cursive;
   min-height: 94px;
   width: 98px;
   border-radius: 14px;
@@ -448,6 +505,27 @@ const getPlaceholderStyle = (slot) => {
   100% {
     opacity: 0;
     transform: translateY(-10px) scale(0.84);
+  }
+}
+
+@keyframes built-tile-score-pop {
+  0% {
+    transform: translateY(0) scale(1);
+    box-shadow: var(--built-tile-shadow, inset 0 -3px 0 rgba(0, 0, 0, 0.16));
+    filter: brightness(1);
+  }
+  38% {
+    transform: translateY(-6px) scale(1.08);
+    box-shadow:
+      0 0 0 2px rgba(255, 214, 112, 0.55),
+      0 0 28px rgba(255, 214, 112, 0.28),
+      var(--built-tile-shadow, inset 0 -3px 0 rgba(0, 0, 0, 0.16));
+    filter: brightness(1.08);
+  }
+  100% {
+    transform: translateY(0) scale(1);
+    box-shadow: var(--built-tile-shadow, inset 0 -3px 0 rgba(0, 0, 0, 0.16));
+    filter: brightness(1);
   }
 }
 

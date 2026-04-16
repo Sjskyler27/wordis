@@ -99,7 +99,10 @@ const chooseCandidate = (candidates = [], difficulty = 'normal') => {
 };
 
 export const getBotWord = (tiles = [], recentWords = [], difficulty = 'normal') => {
-  const recentWordSet = new Set(recentWords.map((word) => (word || '').toLowerCase()));
+  const recentWordSet = new Set(recentWords.map((entry) => {
+    const word = typeof entry === 'string' ? entry : entry?.word;
+    return (word || '').toLowerCase();
+  }));
   const rackProfile = getRackProfile(tiles);
   const freshCandidates = [];
   const repeatCandidates = [];

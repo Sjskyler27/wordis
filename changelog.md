@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-04-16 0.0.6
+# ADDED
+- score animation
+- higher score animation 
+- big word animation
+- vote for next game 
+- single player attacks against the time 
+- victory and defeat sound placers
+- tile placement audio
+- moved game music 
+
 ## 2026-04-16
 # ADDED
 - letter shake
