@@ -270,6 +270,11 @@ export const useSinglePlayerGame = ({
       return false;
     }
 
+    if (card.modifier === 'mustuse' && playerTiles.value[opponentSide].some((tile) => tile.status === 'mustuse')) {
+      localMessage.value = 'That board already has a MUST tile.';
+      return false;
+    }
+
     const targetTiles = playerTiles.value[opponentSide].filter((tile) => !tile.locked);
     if (!targetTiles.length) {
       localMessage.value = 'No target tiles available.';
