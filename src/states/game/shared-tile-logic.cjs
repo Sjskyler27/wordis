@@ -250,7 +250,14 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses }) => {
 
   const getModifierDefinition = (status = 'normal') => MODIFIER_DEFINITIONS[status] || MODIFIER_DEFINITIONS.normal;
   const getCardDefinition = (cardKey) => CARD_DEFINITIONS[cardKey];
+  const hasModifierInRack = (rackTiles = [], status = 'normal') => {
+    return rackTiles.some((tile) => tile.status === status);
+  };
   const canApplyModifier = (status = 'normal', context = {}) => {
+    if (status === 'mustuse' && hasModifierInRack(context.rackTiles || [], 'mustuse')) {
+      return false;
+    }
+
     const definition = getModifierDefinition(status);
 
     if (typeof definition.canApply !== 'function') {
@@ -614,7 +621,11 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses }) => {
   const createTileLogic = ({ createTileId }) => {
     const createTile = (letter = drawLetter(), side = null, scores = {}, forcedStatus = null, chanceOverrides = null) => {
       const baseScore = letterConfig[letter]?.score || 0;
-      const status = forcedStatus || rollTileModifier(side, scores, { letter, baseScore }, chanceOverrides || {});
+      const status = forcedStatus || rollTileModifier(side, scores, {
+        letter,
+        baseScore,
+        rackTiles: chanceOverrides?.rackTiles || []
+      }, chanceOverrides || {});
       const modifierDefinition = getModifierDefinition(status);
       const lockTurns = modifierDefinition.effects.lockTurns || 0;
       const tileLetter = modifierDefinition.effects.wild ? '*' : letter;
@@ -637,7 +648,10 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses }) => {
     const buildFreshRack = (side = null, scores = {}, options = {}) => {
       const rack = [];
       while (rack.length < RACK_SIZE) {
-        rack.push(createTile(drawLetter(rack), side, scores, options.forcedStatus || null, options.chanceOverrides || null));
+        rack.push(createTile(drawLetter(rack), side, scores, options.forcedStatus || null, {
+          ...(options.chanceOverrides || {}),
+          rackTiles: rack
+        }));
       }
       return rack;
     };
@@ -708,8 +722,8 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses }) => {
         const hostLetter = drawLetter(hostRack);
         const opponentLetter = drawLetter(opponentRack);
         const sharedStatus = rollSharedOpeningModifier(scores, [
-          { letter: hostLetter, baseScore: letterConfig[hostLetter]?.score || 0 },
-          { letter: opponentLetter, baseScore: letterConfig[opponentLetter]?.score || 0 }
+          { letter: hostLetter, baseScore: letterConfig[hostLetter]?.score || 0, rackTiles: hostRack },
+          { letter: opponentLetter, baseScore: letterConfig[opponentLetter]?.score || 0, rackTiles: opponentRack }
         ]);
 
         hostRack.push(createTile(hostLetter, 'host', scores, sharedStatus));
@@ -741,7 +755,9 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses }) => {
           return entryIndex !== index && !usedIds.has(entry.id);
         });
 
-        nextTiles[index] = createTile(drawLetter(remainingTiles), side, scores);
+        nextTiles[index] = createTile(drawLetter(remainingTiles), side, scores, null, {
+          rackTiles: remainingTiles
+        });
       });
 
       return nextTiles;

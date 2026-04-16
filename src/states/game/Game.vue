@@ -130,6 +130,7 @@
           @clear-rack="handleClearRack"
           @submit="handleSubmit"
           @remove-specific="removeSpecificTile"
+          @tile-click="handleBuiltTileClick"
         />
 
         <div v-else-if="gameEnded" class="end-card">
@@ -241,6 +242,7 @@ const {
   handleTileClick,
   removeLastLetter,
   removeSpecificTile,
+  replaceSelectedTileId,
   clearWord,
   clearSelectionForSide,
   saveSelectionForSide
@@ -463,6 +465,33 @@ const handleTileClickWithCards = (tile, side) => {
   }
 
   handleTileClick(tile);
+};
+
+const handleBuiltTileClick = (tile) => {
+  if (gameEnded.value) {
+    return;
+  }
+
+  if (activeBoonCard.value) {
+    if (props.isMultiplayer) {
+      useMultiplayerBoon({ cardId: activeBoonCard.value.id, tileId: tile.id });
+      localMessage.value = `Played ${activeBoonCard.value.label} on your tile.`;
+      resetActionMode();
+      return;
+    }
+
+    const result = useSinglePlayerBoon(mySide.value, activeBoonCard.value.id, tile.id);
+    if (result?.success) {
+      if (result.replacementTileId) {
+        replaceSelectedTileId(mySide.value, tile.id, result.replacementTileId);
+      }
+      localMessage.value = `Played ${activeBoonCard.value.label} on your tile.`;
+      resetActionMode();
+    }
+    return;
+  }
+
+  removeSpecificTile(tile.id);
 };
 
 const copyRoomCode = async () => {

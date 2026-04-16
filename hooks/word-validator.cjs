@@ -38,8 +38,6 @@ const getFallbackDictionarySet = (word, languageCode) => {
   const normalizedWord = (word || '').trim().toLowerCase();
   const normalizedLanguageCode = normalizeLanguageCode(languageCode);
   const fallbackDictionaries = FALLBACK_DICTIONARIES[normalizedLanguageCode];
-
-  console.log('')
   if (!fallbackDictionaries) {
     return null;
   }
@@ -91,8 +89,6 @@ const checkFallbackDictionary = (word, languageCode) => {
   }
 
   if (fallbackDictionary.has(normalizedWord)) {
-    console.log(normalizedWord + ' in '+ fallbackDictionary)
-
     return {
       valid: true,
       source: 'fallback',
@@ -144,12 +140,21 @@ const validateWord = async (word, languageCode = 'en') => {
     return checkFallbackDictionary(normalizedWord, languageCode);
   }
 
+  const fallbackResult = checkFallbackDictionary(normalizedWord, languageCode);
+  if (fallbackResult.source === 'assumed' || fallbackResult.valid) {
+    return fallbackResult;
+  }
+
   const apiResult = await checkDictionaryApi(normalizedWord, normalizeLanguageCode(languageCode));
-  if (apiResult.valid !== null) {
+  if (apiResult.valid === true) {
     return apiResult;
   }
 
-  return checkFallbackDictionary(normalizedWord, languageCode);
+  if (apiResult.valid === false) {
+    return fallbackResult;
+  }
+
+  return fallbackResult;
 };
 
 module.exports = {

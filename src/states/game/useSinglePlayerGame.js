@@ -241,11 +241,16 @@ export const useSinglePlayerGame = ({
     };
 
     if (card.effectType === 'delete_tile') {
+      const nextTiles = refillTiles(playerTiles.value[side], [tileId], side, playerScores.value);
+      const replacementTile = nextTiles.find((entry) => entry.id !== tileId && !playerTiles.value[side].some((tile) => tile.id === entry.id));
       playerTiles.value = {
         ...playerTiles.value,
-        [side]: refillTiles(playerTiles.value[side], [tileId], side, playerScores.value)
+        [side]: nextTiles
       };
-      return true;
+      return {
+        success: true,
+        replacementTileId: replacementTile?.id || null
+      };
     }
 
     playerTiles.value = {
@@ -253,7 +258,7 @@ export const useSinglePlayerGame = ({
       [side]: replaceTileWithModifier(playerTiles.value[side], tileId, card.modifier)
     };
 
-    return true;
+    return { success: true };
   };
 
   const useSinglePlayerAttack = (side, cardId) => {
@@ -262,6 +267,11 @@ export const useSinglePlayerGame = ({
     const card = hand.find((entry) => entry.id === cardId);
     if (!card) {
       localMessage.value = 'That attack is no longer available.';
+      return false;
+    }
+
+    if (card.modifier === 'mustuse' && playerTiles.value[opponentSide].some((tile) => tile.status === 'mustuse')) {
+      localMessage.value = 'That board already has a MUST tile.';
       return false;
     }
 

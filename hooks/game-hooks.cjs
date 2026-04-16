@@ -160,6 +160,10 @@ const useAttack = (roomCode, clientId, cardId) => {
     return { success: false, error: 'No attacks remaining' };
   }
 
+  if (card.modifier === 'mustuse' && state.tiles[opponentSide].some((tile) => tile.status === 'mustuse')) {
+    return { success: false, error: 'That board already has a MUST tile' };
+  }
+
   const availableTiles = state.tiles[opponentSide].filter((tile) => !tile.locked);
   if (!availableTiles.length) {
     return { success: false, error: 'No opponent tiles available' };
