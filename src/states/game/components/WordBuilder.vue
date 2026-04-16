@@ -4,7 +4,7 @@
     </div>
 
     <div class="word-input-shell">
-      <span class="console-label">{{ currentWordScore }} pts</span>
+      <span class="console-label"><span v-if="currentWordScore < 10" style="visibility:hidden">_</span>{{ currentWordScore }} pts</span>
       <div class="built-word-strip" :class="{ empty: !selectedTiles.length }">
         <div v-if="scorePopTiles.length" class="score-pop-overlay">
           <div
