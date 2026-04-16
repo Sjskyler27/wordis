@@ -325,8 +325,8 @@ const submitWord = async (roomCode, clientId, word, tileIds, languageCode = 'en'
     return { success: false, error: 'Words must use letters only' };
   }
 
-  if (normalizedWord.length < MIN_WORD_LENGTH) {
-    return { success: false, error: `Words must be at least ${MIN_WORD_LENGTH} letters` };
+  if (tileIds?.length < MIN_WORD_LENGTH) {
+    return { success: false, error: `Words must use at least ${MIN_WORD_LENGTH} tiles` };
   }
 
   const selectedTiles = getSelectedTiles(state.tiles[side], tileIds);
