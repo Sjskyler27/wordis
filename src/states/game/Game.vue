@@ -246,11 +246,14 @@ const gameMusic = new Audio('/audio/gameMusic.mp3');
 gameMusic.loop = true;
 const tilePickupSound = new Audio('/audio/tile_pick_up.mp3');
 const tilePutBackSound = new Audio('/audio/tile_put_back.mp3');
+const scoreBuiltTileSound = new Audio('/audio/score_built_tile.mp3');
 const victorySound = new Audio('/audio/victory.mp3');
 const defeatSound = new Audio('/audio/defeat.mp3');
 victorySound.loop = true;
 defeatSound.loop = true;
 let soloTimerId = null;
+let scorePopTimeoutIds = [];
+let activeScorePopAudios = [];
 
 const mySide = computed(() => {
   if (props.isMultiplayer) {
@@ -578,6 +581,7 @@ const syncAudioLevels = () => {
   gameMusic.volume = musicLevel;
   tilePickupSound.volume = effectsLevel;
   tilePutBackSound.volume = effectsLevel;
+  scoreBuiltTileSound.volume = effectsLevel;
   victorySound.volume = effectsLevel;
   defeatSound.volume = effectsLevel;
 };
@@ -612,16 +616,45 @@ const startGameMusic = async ({ restart = false } = {}) => {
 };
 
 const playScoreAnimation = async (tileCount) => {
+  scorePopTimeoutIds.forEach((timeoutId) => window.clearTimeout(timeoutId));
+  scorePopTimeoutIds = [];
+  activeScorePopAudios.forEach((audio) => {
+    audio.pause();
+    audio.currentTime = 0;
+  });
+  activeScorePopAudios = [];
+
   if (!tileCount) {
     scorePopTiles.value = [];
     return;
   }
 
   scorePopPulse.value += 1;
+  const effectsLevel = (props.volume || 0) * (props.effectsVolume || 0) / 100;
+  if (effectsLevel > 0) {
+    Array.from({ length: tileCount }, (_, index) => {
+      const timeoutId = window.setTimeout(() => {
+        const audio = new Audio(scoreBuiltTileSound.src);
+        audio.volume = effectsLevel;
+        audio.playbackRate = Math.min(1.55, 0.9 + (index * 0.08));
+        activeScorePopAudios.push(audio);
+        audio.play().catch(() => {
+          // Ignore burst audio playback failures.
+        }).finally(() => {
+          activeScorePopAudios = activeScorePopAudios.filter((entry) => entry !== audio);
+        });
+      }, index * 110);
+
+      scorePopTimeoutIds.push(timeoutId);
+      return timeoutId;
+    });
+  }
+
   const totalDuration = Math.max(420, (tileCount * 110) + 260);
-  window.setTimeout(() => {
+  const cleanupTimeoutId = window.setTimeout(() => {
     scorePopTiles.value = [];
   }, totalDuration);
+  scorePopTimeoutIds.push(cleanupTimeoutId);
 };
 
 const triggerLaneBurst = (side, score) => {
@@ -1069,6 +1102,14 @@ onBeforeUnmount(() => {
   stopGameMusic();
   tilePickupSound.pause();
   tilePutBackSound.pause();
+  scoreBuiltTileSound.pause();
+  scorePopTimeoutIds.forEach((timeoutId) => window.clearTimeout(timeoutId));
+  activeScorePopAudios.forEach((audio) => {
+    audio.pause();
+    audio.currentTime = 0;
+  });
+  scorePopTimeoutIds = [];
+  activeScorePopAudios = [];
   stopResultAudio();
 });
 
