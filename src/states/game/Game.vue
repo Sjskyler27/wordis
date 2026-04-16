@@ -42,7 +42,8 @@
               v-for="card in myCards.boons"
               :key="card.id"
               type="button"
-              class="action-card boon-card"
+              class="action-card"
+              :style="getCardStyle(card)"
               :class="{ armed: activeBoonCardId === card.id }"
               @click="selectBoonCard(card)"
             >
@@ -55,7 +56,8 @@
               v-for="card in myCards.attacks"
               :key="card.id"
               type="button"
-              class="action-card attack-card"
+              class="action-card"
+              :style="getCardStyle(card)"
               @click="useAttackCard(card)"
             >
               <span class="action-card-type">Attack</span>
@@ -294,6 +296,16 @@ const cardSummary = computed(() => {
     : `${myCards.value.boons.length} Boon`;
 });
 const hasCardsInHand = computed(() => myCards.value.boons.length > 0 || visibleAttackCount.value > 0);
+const getCardStyle = (card) => {
+  const ui = card?.ui || {};
+  return {
+    '--card-glow': ui.cardGlow || 'rgba(255, 255, 255, 0.16)',
+    '--card-edge': ui.cardEdge || 'rgba(255, 255, 255, 0.24)',
+    '--card-pattern': ui.cardPattern || 'rgba(255, 255, 255, 0.08)',
+    '--card-background': ui.cardBackground || 'linear-gradient(180deg, rgba(119, 206, 113, 0.96), rgba(63, 129, 84, 0.96))',
+    '--card-badge-background': ui.cardBadgeBackground || 'rgba(24, 8, 22, 0.26)'
+  };
+};
 const WINNING_SCORE = 250;
 const winningSide = computed(() => {
   if (playerScores.value.host >= WINNING_SCORE && playerScores.value.host >= playerScores.value.opponent) {
@@ -894,6 +906,8 @@ body {
   --card-glow: rgba(255, 255, 255, 0.16);
   --card-edge: rgba(255, 255, 255, 0.22);
   --card-pattern: rgba(255, 255, 255, 0.08);
+  --card-background: linear-gradient(180deg, rgba(119, 206, 113, 0.96), rgba(63, 129, 84, 0.96));
+  --card-badge-background: rgba(24, 8, 22, 0.26);
   --card-ink: #fff7ee;
   appearance: none;
   border: 1px solid var(--card-edge);
@@ -909,6 +923,7 @@ body {
   font: inherit;
   position: relative;
   overflow: hidden;
+  background: var(--card-background);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.16),
     inset 0 -3px 0 rgba(39, 11, 25, 0.28),
@@ -977,32 +992,8 @@ body {
   text-transform: uppercase;
   letter-spacing: 0.16em;
   color: rgba(255, 248, 236, 0.92);
-  background: rgba(24, 8, 22, 0.26);
+  background: var(--card-badge-background);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
-}
-
-.boon-card {
-  --card-glow: rgba(189, 255, 195, 0.22);
-  --card-edge: rgba(196, 255, 204, 0.3);
-  --card-pattern: rgba(224, 255, 198, 0.08);
-  background:
-    linear-gradient(180deg, rgba(119, 206, 113, 0.96), rgba(63, 129, 84, 0.96));
-}
-
-.attack-card {
-  --card-glow: rgba(255, 190, 154, 0.22);
-  --card-edge: rgba(255, 194, 162, 0.3);
-  --card-pattern: rgba(255, 222, 199, 0.08);
-  background:
-    linear-gradient(180deg, rgba(226, 118, 77, 0.98), rgba(145, 39, 51, 0.96));
-}
-
-.boon-card .action-card-type {
-  background: rgba(18, 63, 42, 0.34);
-}
-
-.attack-card .action-card-type {
-  background: rgba(78, 19, 28, 0.34);
 }
 
 .action-card.armed {
