@@ -98,13 +98,12 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses }) => {
       rarityWeight: 0.95,
       canApply: ({ baseScore }) => baseScore <= 4,
       ui: {
-        tileBackground: 'linear-gradient(180deg, #3b3343 0%, #211926 72%, #100b14 100%)',
-        tileShadow: 'inset 0 -4px 0 rgba(0, 0, 0, 0.4), 0 12px 20px rgba(10, 5, 12, 0.34)',
-        textColor: '#f6efe1',
-        badgeBackground: 'rgba(255, 255, 255, 0.12)',
-        badgeColor: 'rgba(255, 255, 255, 0.88)',
-        hideBadge: true
-      }
+  tileBackground: 'linear-gradient(180deg, #d2a679 0%, #a87442 70%, #6b4423 100%)',
+  tileShadow: 'inset 0 -4px 0 rgba(60, 30, 10, 0.35), 0 10px 18px rgba(45, 20, 10, 0.25), 0 0 0 1px rgba(255, 220, 180, 0.25)',
+  textColor: '#2b1a0f',
+  badgeBackground: 'rgba(255, 235, 210, 0.9)',
+  hideBadge: true
+}
     },
     mustuse: {
       badge: 'MUST',
@@ -121,14 +120,15 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses }) => {
     },
     locked3: {
       badge: '',
-      effects: { lockTurns: 3 },
-      rarityWeight: 0.5,
+      effects: { lockTurns: 1 },
+      rarityWeight: 0.6,
       ui: {
-        tileBackground: 'linear-gradient(180deg, #d9edff 0%, #8cb1d8 72%, #4f6999 100%)',
-        tileShadow: 'inset 0 -4px 0 rgba(34, 58, 101, 0.25), 0 12px 20px rgba(24, 20, 46, 0.18), 0 0 0 1px rgba(173, 210, 255, 0.4)',
-        textColor: '#11213f',
-        badgeBackground: 'rgba(233, 244, 255, 0.96)',
-        badgeColor: '#274577'
+        tileBackground: 'linear-gradient(180deg, #3b3343 0%, #211926 72%, #100b14 100%)',
+        tileShadow: 'inset 0 -4px 0 rgba(0, 0, 0, 0.4), 0 12px 20px rgba(10, 5, 12, 0.34)',
+        textColor: '#f6efe1',
+        badgeBackground: 'rgba(255, 255, 255, 0.12)',
+        badgeColor: 'rgba(160, 160, 160, 0.88)',
+        badgeColor: '#fff'
       }
     }
   };
