@@ -13,10 +13,10 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
   const MODIFIER_SWING_DIVISOR = 90;
   const MAX_MODIFIER_BONUS = 0.18;
   const GOOD_MODIFIERS = ['gold', 'firsttile', 'wild', 'gainboon', 'gainattack'];
-  const BAD_MODIFIERS = ['zeroTile', 'mustuse', 'locked3'];
+  const BAD_MODIFIERS = ['zeroTile', 'mustuse', 'locked3', 'ghostTile'];
   const SOLO_GOOD_MODIFIERS = ['gold', 'firsttile', 'wild', 'gainboon'];
   const BOON_CARD_KEYS = ['boon_delete_tile', 'boon_isolate_tile', 'boon_firsttile', 'boon_wild', 'boon_gold'];
-  const ATTACK_CARD_KEYS = ['attack_zeroTile', 'attack_mustuse', 'attack_locked3'];
+  const ATTACK_CARD_KEYS = ['attack_zeroTile', 'attack_mustuse', 'attack_locked3', 'attack_ghostTile'];
   const MODIFIER_PROFILES = {
     duel: {
       goodModifiers: GOOD_MODIFIERS,
@@ -148,6 +148,19 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
         badgeColor: 'rgba(160, 160, 160, 0.88)',
         badgeColor: '#fff'
       }
+    },
+    ghostTile: {
+      badge: 'GHST',
+      effects: { fadesIfUnused: true },
+      rarityWeight: 0.52,
+      canApply: ({ baseScore }) => baseScore <= 4,
+      ui: {
+        tileBackground: 'linear-gradient(180deg, rgba(242, 250, 255, 0.88) 0%, rgba(198, 218, 236, 0.78) 58%, rgba(131, 156, 181, 0.74) 100%)',
+        tileShadow: 'inset 0 -4px 0 rgba(82, 105, 131, 0.18), 0 10px 18px rgba(44, 61, 86, 0.16), 0 0 0 1px rgba(236, 247, 255, 0.48)',
+        textColor: '#223247',
+        badgeBackground: 'rgba(244, 250, 255, 0.88)',
+        badgeColor: '#607890'
+      }
     }
   };
   const CARD_DEFINITIONS = {
@@ -267,6 +280,21 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
         cardPattern: 'rgba(232, 226, 255, 0.08)',
         cardBackground: 'linear-gradient(180deg, rgba(74, 67, 104, 0.98), rgba(26, 22, 39, 0.98))',
         cardBadgeBackground: 'rgba(14, 10, 24, 0.46)'
+      }
+    },
+    attack_ghostTile: {
+      kind: 'attack',
+      label: 'Ghost Tile',
+      description: 'Give a random enemy tile the ghostTile modifier.',
+      rarityWeight: 0.72,
+      effectType: 'random_attack',
+      modifier: 'ghostTile',
+      ui: {
+        cardGlow: 'rgba(220, 240, 255, 0.24)',
+        cardEdge: 'rgba(227, 243, 255, 0.34)',
+        cardPattern: 'rgba(244, 250, 255, 0.12)',
+        cardBackground: 'linear-gradient(180deg, rgba(161, 191, 219, 0.98), rgba(91, 119, 157, 0.96))',
+        cardBadgeBackground: 'rgba(50, 70, 104, 0.42)'
       }
     }
   };
@@ -864,8 +892,14 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
 
     const refillTiles = (tiles, usedTileIds, side = null, scores = {}, options = {}) => {
       const usedIds = new Set(usedTileIds);
+      const ghostIds = new Set(
+        tiles
+          .filter((tile) => tile.status === 'ghostTile' && !usedIds.has(tile.id))
+          .map((tile) => tile.id)
+      );
+      const replacedIds = new Set([...usedIds, ...ghostIds]);
       const nextTiles = tiles.map((tile) => {
-        if (usedIds.has(tile.id)) {
+        if (replacedIds.has(tile.id)) {
           return tile;
         }
 
@@ -873,12 +907,12 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
       });
 
       nextTiles.forEach((tile, index) => {
-        if (!usedIds.has(tile.id)) {
+        if (!replacedIds.has(tile.id)) {
           return;
         }
 
         const remainingTiles = nextTiles.filter((entry, entryIndex) => {
-          return entryIndex !== index && !usedIds.has(entry.id);
+          return entryIndex !== index && !replacedIds.has(entry.id);
         });
 
         nextTiles[index] = createTile(drawLetter(remainingTiles), side, scores, null, {
