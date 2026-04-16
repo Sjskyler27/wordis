@@ -14,7 +14,7 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses }) => {
   const GOOD_MODIFIERS = ['gold', 'firsttile', 'wild', 'gainboon', 'gainattack'];
   const BAD_MODIFIERS = ['black', 'mustuse', 'locked3'];
   const SOLO_GOOD_MODIFIERS = ['gold', 'firsttile', 'wild', 'gainboon'];
-  const BOON_CARD_KEYS = ['boon_delete_tile', 'boon_firsttile', 'boon_wild', 'boon_gold'];
+  const BOON_CARD_KEYS = ['boon_delete_tile', 'boon_isolate_tile', 'boon_firsttile', 'boon_wild', 'boon_gold'];
   const ATTACK_CARD_KEYS = ['attack_black', 'attack_mustuse', 'attack_locked3'];
   const MODIFIER_PROFILES = {
     duel: {
@@ -156,6 +156,13 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses }) => {
       description: 'Delete one of your tiles and draw a replacement.',
       rarityWeight: 1.25,
       effectType: 'delete_tile'
+    },
+    boon_isolate_tile: {
+      kind: 'boon',
+      label: 'Keep Only',
+      description: 'Keep the chosen tile and redraw every other tile on your rack.',
+      rarityWeight: 0.55,
+      effectType: 'isolate_tile'
     },
     boon_firsttile: {
       kind: 'boon',
@@ -800,12 +807,42 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses }) => {
       return nextTiles;
     };
 
+    const rerollRackExceptTile = (tiles, keptTileId, side = null, scores = {}, options = {}) => {
+      const keptTile = tiles.find((tile) => tile.id === keptTileId);
+      if (!keptTile) {
+        return tiles;
+      }
+
+      const nextTiles = tiles.map((tile) => {
+        if (tile.id === keptTileId) {
+          return tile;
+        }
+
+        return null;
+      });
+
+      nextTiles.forEach((tile, index) => {
+        if (tile) {
+          return;
+        }
+
+        const remainingTiles = nextTiles.filter((entry, entryIndex) => entryIndex !== index && entry);
+        nextTiles[index] = createTile(drawLetter(remainingTiles), side, scores, null, {
+          rackTiles: remainingTiles,
+          modifierProfile: options.modifierProfile || 'duel'
+        });
+      });
+
+      return nextTiles;
+    };
+
     return {
       createTile,
       createRack,
       createClearRack,
       createOpeningRackPair,
-      refillTiles
+      refillTiles,
+      rerollRackExceptTile
     };
   };
 

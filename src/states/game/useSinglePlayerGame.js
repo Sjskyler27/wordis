@@ -8,7 +8,8 @@ import {
   getResourceGrants,
   replaceTileWithModifier,
   getWordScoreDetails,
-  refillTiles
+  refillTiles,
+  rerollRackExceptTile
 } from './tile-logic.js';
 
 export const useSinglePlayerGame = ({
@@ -287,6 +288,17 @@ export const useSinglePlayerGame = ({
         success: true,
         replacementTileId: replacementTile?.id || null
       };
+    }
+
+    if (card.effectType === 'isolate_tile') {
+      playerTiles.value = {
+        ...playerTiles.value,
+        [side]: rerollRackExceptTile(playerTiles.value[side], tileId, side, playerScores.value, {
+          modifierProfile: modifierProfile()
+        })
+      };
+
+      return { success: true };
     }
 
     playerTiles.value = {

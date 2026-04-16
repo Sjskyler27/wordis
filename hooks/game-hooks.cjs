@@ -26,7 +26,7 @@ const {
 let nextTileId = 1;
 let nextCardId = 1;
 
-const { createRack, createOpeningRackPair, refillTiles: refillRack } = createTileLogic({
+const { createRack, createOpeningRackPair, refillTiles: refillRack, rerollRackExceptTile } = createTileLogic({
   createTileId: () => `tile-${nextTileId++}`
 });
 const { drawCard, drawCards } = createCardLogic({
@@ -140,6 +140,11 @@ const useBoon = (roomCode, clientId, cardId, tileId) => {
 
   if (card.effectType === 'delete_tile') {
     state.tiles[side] = refillRack(state.tiles[side], [tileId], side, state.scores);
+    return { success: true, state };
+  }
+
+  if (card.effectType === 'isolate_tile') {
+    state.tiles[side] = rerollRackExceptTile(state.tiles[side], tileId, side, state.scores);
     return { success: true, state };
   }
 
