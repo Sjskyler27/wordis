@@ -1,4 +1,19 @@
 # Changelog
+
+## 2026-04-16
+# ADDED
+- ghost tile 
+- keep one tile boon
+- test mode env 
+- milestone rewards
+
+# CHANGED
+- updated style for cards 
+- updated game view style 
+- black tile is now 0 tile 
+- milestones now have a gradient 
+- milestone now shows bonus 
+
 ## 2026-04-16
 - adjust word builder styleing
 - fix history overlay to be seperate component 
