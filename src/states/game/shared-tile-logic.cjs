@@ -999,23 +999,25 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
       return nextTiles;
     };
 
-    const createTestingRack = (offset = 0, side = null, scores = {}) => {
+    const createTestingRack = (side = null, scores = {}) => {
       const modifierStatuses = Object.keys(MODIFIER_DEFINITIONS).filter((status) => status !== 'normal');
+      const rack = [];
 
-      return Array.from({ length: RACK_SIZE }, (_, index) => {
-        const letter = LETTER_KEYS[(offset + index) % LETTER_KEYS.length];
-        const forcedStatus = modifierStatuses[index] || 'normal';
+      while (rack.length < RACK_SIZE) {
+        const forcedStatus = modifierStatuses[rack.length] || 'normal';
+        rack.push(createTile(drawLetter(rack), side, scores, forcedStatus, {
+          modifierProfile: 'duel',
+          rackTiles: rack
+        }));
+      }
 
-        return createTile(letter, side, scores, forcedStatus, {
-          modifierProfile: 'duel'
-        });
-      });
+      return rack;
     };
 
     const createTestingOpeningRackPair = (scores = {}) => {
       return {
-        host: createTestingRack(0, 'host', scores),
-        opponent: createTestingRack(RACK_SIZE, 'opponent', scores)
+        host: createTestingRack('host', scores),
+        opponent: createTestingRack('opponent', scores)
       };
     };
 
