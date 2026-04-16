@@ -18,10 +18,22 @@
 
       <section class="action-panel">
         <div class="panel-card">
-          <span class="kicker">Solo</span>
-          <h2>Warm Up First</h2>
-          <p>Practice the live rack flow against the bot before you take it online.</p>
-          <button class="arcade-button secondary" @click="$emit('singleplayer')">Play vs Bot</button>
+          <span class="kicker">Bot Match</span>
+          <h2>Train Against AI</h2>
+          <p>Pick a bot difficulty and jump into the same rack duel flow without opening a live lobby.</p>
+          <div class="difficulty-row">
+            <button
+              v-for="difficulty in difficulties"
+              :key="difficulty.value"
+              type="button"
+              class="difficulty-chip"
+              :class="{ active: selectedDifficulty === difficulty.value }"
+              @click="selectedDifficulty = difficulty.value"
+            >
+              {{ difficulty.label }}
+            </button>
+          </div>
+          <button class="arcade-button secondary" @click="startBotMatch">Play vs Bot</button>
         </div>
 
         <div class="panel-card panel-card-primary">
@@ -114,7 +126,20 @@ import {
 
 const joinCode = ref('');
 const hostIsPrivate = ref(true);
+const selectedDifficulty = ref('normal');
 const emit = defineEmits(['game', 'home', 'singleplayer']);
+const difficulties = [
+  { value: 'easy', label: 'Easy' },
+  { value: 'normal', label: 'Normal' },
+  { value: 'hard', label: 'Hard' }
+];
+
+const startBotMatch = () => {
+  emit('singleplayer', {
+    mode: 'bot_match',
+    difficulty: selectedDifficulty.value
+  });
+};
 
 const handleHostGame = () => {
   hostGame({ isPrivate: hostIsPrivate.value });
@@ -390,6 +415,31 @@ p {
 .toggle-row input {
   width: 20px;
   height: 20px;
+}
+
+.difficulty-row {
+  margin-top: 16px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.difficulty-chip {
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  cursor: pointer;
+  border-radius: 999px;
+  padding: 10px 14px;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--cream);
+  font-family: inherit;
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+
+.difficulty-chip.active {
+  background: linear-gradient(180deg, rgba(93, 230, 203, 0.24), rgba(46, 179, 151, 0.38));
+  border-color: rgba(111, 245, 221, 0.54);
 }
 
 .lobby-list {

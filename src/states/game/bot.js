@@ -82,17 +82,23 @@ const includesRequiredTiles = (matchedTiles = [], requiredTileIds = new Set()) =
   });
 };
 
-const chooseCandidate = (candidates = []) => {
+const chooseCandidate = (candidates = [], difficulty = 'normal') => {
   if (!candidates.length) {
     return '';
   }
 
-  const topSliceLength = Math.min(6, candidates.length);
+  const topSliceLengthByDifficulty = {
+    easy: Math.min(14, candidates.length),
+    normal: Math.min(8, candidates.length),
+    hard: Math.min(4, candidates.length)
+  };
+
+  const topSliceLength = topSliceLengthByDifficulty[difficulty] || topSliceLengthByDifficulty.normal;
   const offset = Math.floor(Math.random() * topSliceLength);
   return candidates[offset];
 };
 
-export const getBotWord = (tiles = [], recentWords = []) => {
+export const getBotWord = (tiles = [], recentWords = [], difficulty = 'normal') => {
   const recentWordSet = new Set(recentWords.map((word) => (word || '').toLowerCase()));
   const rackProfile = getRackProfile(tiles);
   const freshCandidates = [];
@@ -121,5 +127,5 @@ export const getBotWord = (tiles = [], recentWords = []) => {
     }
   }
 
-  return chooseCandidate(freshCandidates) || chooseCandidate(repeatCandidates);
+  return chooseCandidate(freshCandidates, difficulty) || chooseCandidate(repeatCandidates, difficulty);
 };

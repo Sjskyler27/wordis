@@ -13,6 +13,8 @@ import {
 
 export const useSinglePlayerGame = ({
   isMultiplayer,
+  botEnabled,
+  botDifficulty,
   localMessage,
   selectedTilesForCurrentSide,
   clearSelectionForSide,
@@ -26,6 +28,11 @@ export const useSinglePlayerGame = ({
 }) => {
   let botLoopId = null;
   const WINNING_SCORE = 250;
+  const BOT_DELAYS = {
+    easy: 12000,
+    normal: 9000,
+    hard: 6500
+  };
 
   const gameEnded = () => {
     return playerScores.value.host >= WINNING_SCORE || playerScores.value.opponent >= WINNING_SCORE;
@@ -63,7 +70,7 @@ export const useSinglePlayerGame = ({
     const botWord = getBotWord(botTiles, [
       ...wordHistory.value.host,
       ...wordHistory.value.opponent
-    ]);
+    ], botDifficulty.value);
 
     if (!botWord) {
       if ((rackClears.value.opponent || 0) <= 0) {
@@ -134,7 +141,7 @@ export const useSinglePlayerGame = ({
   };
 
   const scheduleBotLoop = () => {
-    if (isMultiplayer.value || gameEnded()) {
+    if (isMultiplayer.value || !botEnabled.value || gameEnded()) {
       return;
     }
 
@@ -142,7 +149,7 @@ export const useSinglePlayerGame = ({
     botLoopId = window.setTimeout(() => {
       submitBotWord();
       scheduleBotLoop();
-    }, 9000);
+    }, BOT_DELAYS[botDifficulty.value] || BOT_DELAYS.normal);
   };
 
   const stopBotLoop = () => {
@@ -151,7 +158,7 @@ export const useSinglePlayerGame = ({
   };
 
   const startBotLoop = () => {
-    if (gameEnded()) {
+    if (!botEnabled.value || gameEnded()) {
       stopBotLoop();
       return;
     }
@@ -317,8 +324,8 @@ export const useSinglePlayerGame = ({
   ensureSinglePlayerState();
   scheduleBotLoop();
 
-  watch(isMultiplayer, (nextIsMultiplayer) => {
-    if (nextIsMultiplayer) {
+  watch([isMultiplayer, botEnabled, botDifficulty], ([nextIsMultiplayer, nextBotEnabled]) => {
+    if (nextIsMultiplayer || !nextBotEnabled) {
       stopBotLoop();
       return;
     }
