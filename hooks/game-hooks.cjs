@@ -2,12 +2,15 @@ const games = new Map();
 const WINNING_SCORE = 250;
 const LETTER_CONFIG = require('../src/states/game/letters.json');
 const WORD_BONUSES = require('../src/states/game/word-bonuses.json');
+const MILESTONE_REWARDS = require('../src/states/game/word-milestone-rewards.json');
 const { validateWord } = require('./word-validator.cjs');
+const { isTestingMode } = require('./env.cjs');
 const {
   createSharedTileLogic
 } = require('../src/states/game/shared-tile-logic.cjs');
 
 const {
+  CARD_DEFINITIONS,
   MIN_WORD_LENGTH,
   getCardDefinition,
   getWordScoreDetails,
@@ -20,18 +23,45 @@ const {
   createTileLogic
 } = createSharedTileLogic({
   letterConfig: LETTER_CONFIG,
-  wordBonuses: WORD_BONUSES
+  wordBonuses: WORD_BONUSES,
+  milestoneRewards: MILESTONE_REWARDS
 });
 
 let nextTileId = 1;
 let nextCardId = 1;
 
-const { createRack, createOpeningRackPair, refillTiles: refillRack } = createTileLogic({
+const {
+  createRack,
+  createOpeningRackPair,
+  refillTiles: refillRack,
+  rerollRackExceptTile,
+  createTestingOpeningRackPair
+} = createTileLogic({
   createTileId: () => `tile-${nextTileId++}`
 });
-const { drawCard, drawCards } = createCardLogic({
+const { createCards, drawCard, drawCards } = createCardLogic({
   createCardId: () => `card-${nextCardId++}`
 });
+
+const createTestingHands = () => {
+  const boonKeys = Object.entries(CARD_DEFINITIONS)
+    .filter(([, definition]) => definition.kind === 'boon')
+    .map(([key]) => key);
+  const attackKeys = Object.entries(CARD_DEFINITIONS)
+    .filter(([, definition]) => definition.kind === 'attack')
+    .map(([key]) => key);
+
+  return {
+    host: {
+      boons: createCards(boonKeys),
+      attacks: createCards(attackKeys)
+    },
+    opponent: {
+      boons: createCards(boonKeys),
+      attacks: createCards(attackKeys)
+    }
+  };
+};
 
 const generateRoomCode = () => {
   let roomCode;
@@ -42,6 +72,36 @@ const generateRoomCode = () => {
 };
 
 const createInitialState = ({ hostId, players = [hostId], isPrivate = true }) => {
+  if (isTestingMode) {
+    return {
+      host: hostId,
+      players: [...players],
+      isPrivate,
+      words: {
+        host: '',
+        opponent: ''
+      },
+      history: {
+        host: [],
+        opponent: []
+      },
+      scores: {
+        host: 0,
+        opponent: 0
+      },
+      lastWordScores: {
+        host: 0,
+        opponent: 0
+      },
+      rackClears: {
+        host: 100,
+        opponent: 100
+      },
+      cards: createTestingHands(),
+      tiles: createTestingOpeningRackPair({ host: 0, opponent: 0 })
+    };
+  }
+
   return {
     host: hostId,
     players: [...players],
@@ -140,6 +200,11 @@ const useBoon = (roomCode, clientId, cardId, tileId) => {
 
   if (card.effectType === 'delete_tile') {
     state.tiles[side] = refillRack(state.tiles[side], [tileId], side, state.scores);
+    return { success: true, state };
+  }
+
+  if (card.effectType === 'isolate_tile') {
+    state.tiles[side] = rerollRackExceptTile(state.tiles[side], tileId, side, state.scores);
     return { success: true, state };
   }
 

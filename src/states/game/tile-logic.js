@@ -1,5 +1,6 @@
 import letterConfig from './letters.json';
 import wordBonuses from './word-bonuses.json';
+import milestoneRewards from './word-milestone-rewards.json';
 import './shared-tile-logic.cjs';
 
 const { createSharedTileLogic } = globalThis.__sharedTileLogic || {};
@@ -9,14 +10,17 @@ if (typeof createSharedTileLogic !== 'function') {
 
 const sharedTileLogic = createSharedTileLogic({
   letterConfig,
-  wordBonuses
+  wordBonuses,
+  milestoneRewards
 });
 
 const {
+  LETTER_KEYS,
   MIN_WORD_LENGTH,
   tileScore,
   getLengthBonus,
   getDifference,
+  getMilestoneReward,
   getTilesScore,
   getWordScoreDetails,
   getResourceGrants,
@@ -39,21 +43,33 @@ const {
 let nextLocalTileId = 1;
 let nextLocalCardId = 1;
 
-const { createRack, createOpeningRackPair, refillTiles } = createTileLogic({
+const {
+  createRack,
+  createOpeningRackPair,
+  refillTiles,
+  rerollRackExceptTile,
+  createTestingRack,
+  createTestingOpeningRackPair
+} = createTileLogic({
   createTileId: () => `local-tile-${nextLocalTileId++}`
 });
-const { drawCard, drawCards } = createCardLogic({
+const { createCard, createCards, drawCard, drawCards } = createCardLogic({
   createCardId: () => `local-card-${nextLocalCardId++}`
 });
 
 export {
+  LETTER_KEYS,
   createRack,
   createOpeningRackPair,
   refillTiles,
+  rerollRackExceptTile,
+  createTestingRack,
+  createTestingOpeningRackPair,
   MIN_WORD_LENGTH,
   tileScore,
   getLengthBonus,
   getDifference,
+  getMilestoneReward,
   getTilesScore,
   getWordScoreDetails,
   getResourceGrants,
@@ -69,6 +85,8 @@ export {
   MODIFIER_DEFINITIONS,
   CARD_DEFINITIONS,
   getCardDefinition,
+  createCard,
+  createCards,
   drawCard,
   drawCards
 };

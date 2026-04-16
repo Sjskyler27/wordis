@@ -2,9 +2,9 @@ to do
 
 add other languages to dictionary
 
-bot is too hard add levels also dont use scary words lets limit it to more knowable words
+bot dont use scary words lets limit it to more knowable words
 
-up how much big words give
+up how much big words give, give attack or boon at high words 
 
 up how often you get ither modifiers
 
@@ -32,4 +32,27 @@ add tile sense show what it dies
 
 add color blind friendliness
 
-fleeting 
+
+daily mode that pulls from list of letters and give the same boons in order 
+
+save a letter and clear the rest 
+
+add color shifitng to background
+
+pause should pause timer
+
+pause should throw up a pause on both players screen 
+
+add cleanse remove all negetive 
+
+shake and sound tiles when not real word
+
+notify when must is on the board 
+
+add test env one of each attack and boon and one of each letter and 100 clear racks 
+
+there may be a bug with creating tile ids i had multiple with the same id  (Proxy(Object) {id: 'local-tile-2', letter: 'R', baseLetter: 'R', score: 1, baseScore: 1, …}
+Game.vue:524 Proxy(Object) {id: 'local-tile-1', letter: 'T', baseLetter: 'T', score: 1, baseScore: 1, …}
+Game.vue:524 Proxy(Object) {id: 'local-tile-2', letter: 'B', baseLetter: 'B', score: 3, baseScore: 3, …}
+Game.vue:524 Proxy(Object) {id: 'local-tile-1', letter: 'A', baseLetter: 'A', score: 1, baseScore: 1, …}
+ok how are we making tile ids?? there is no reason a tile should end up with the same id as another )

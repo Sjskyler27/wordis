@@ -42,7 +42,8 @@
               v-for="card in myCards.boons"
               :key="card.id"
               type="button"
-              class="action-card boon-card"
+              class="action-card"
+              :style="getCardStyle(card)"
               :class="{ armed: activeBoonCardId === card.id }"
               @click="selectBoonCard(card)"
             >
@@ -55,7 +56,8 @@
               v-for="card in myCards.attacks"
               :key="card.id"
               type="button"
-              class="action-card attack-card"
+              class="action-card"
+              :style="getCardStyle(card)"
               @click="useAttackCard(card)"
             >
               <span class="action-card-type">Attack</span>
@@ -176,6 +178,7 @@ import { getPreferredLanguage } from './language.js';
 import { useWordBuilder } from './useWordBuilder.js';
 import { useSinglePlayerGame } from './useSinglePlayerGame.js';
 import { validateWord } from './word-validator.js';
+import { isTestingMode } from './testing.js';
 import GameLane from './components/GameLane.vue';
 import HistoryOverlay from './components/HistoryOverlay.vue';
 import WordBuilder from './components/WordBuilder.vue';
@@ -199,7 +202,7 @@ const activeBoonCardId = ref(null);
 const isMultiplayerRef = computed(() => props.isMultiplayer);
 const isTimedSoloMode = computed(() => !props.isMultiplayer && props.playMode === 'timed_solo');
 const isBotMode = computed(() => !props.isMultiplayer && props.playMode === 'bot_match');
-const attacksEnabled = computed(() => !isTimedSoloMode.value);
+const attacksEnabled = computed(() => isTestingMode || !isTimedSoloMode.value);
 const showOpponentLane = computed(() => props.isMultiplayer || isBotMode.value);
 const preferredLanguage = getPreferredLanguage();
 const SOLO_TIMER_SECONDS = 180;
@@ -293,6 +296,16 @@ const cardSummary = computed(() => {
     : `${myCards.value.boons.length} Boon`;
 });
 const hasCardsInHand = computed(() => myCards.value.boons.length > 0 || visibleAttackCount.value > 0);
+const getCardStyle = (card) => {
+  const ui = card?.ui || {};
+  return {
+    '--card-glow': ui.cardGlow || 'rgba(255, 255, 255, 0.16)',
+    '--card-edge': ui.cardEdge || 'rgba(255, 255, 255, 0.24)',
+    '--card-pattern': ui.cardPattern || 'rgba(255, 255, 255, 0.08)',
+    '--card-background': ui.cardBackground || 'linear-gradient(180deg, rgba(119, 206, 113, 0.96), rgba(63, 129, 84, 0.96))',
+    '--card-badge-background': ui.cardBadgeBackground || 'rgba(24, 8, 22, 0.26)'
+  };
+};
 const WINNING_SCORE = 250;
 const winningSide = computed(() => {
   if (playerScores.value.host >= WINNING_SCORE && playerScores.value.host >= playerScores.value.opponent) {
@@ -508,6 +521,7 @@ const handleSaveLetters = () => {
 };
 
 const handleTileClickWithCards = (tile, side) => {
+  console.log(tile)
   if (effectiveGameEnded.value) {
     return;
   }
@@ -706,7 +720,7 @@ body {
   --bg-mid: #b63e3b;
   --bg-bottom: #341137;
   --bg-corner: #f39a54;
-  --panel-deep: rgba(73, 18, 34, 0.9);
+  --panel-deep: rgba(73, 18, 34, 0.6);
   --cream: #f7efe1;
   --gold: #ffca67;
   --teal: #4bc7b0;
@@ -781,6 +795,7 @@ body {
 
 
 .board-frame {
+  padding-top: 25px;
   justify-content: center;
   display: flex;
   grid-template-columns: 250px minmax(0, 1fr);
@@ -799,6 +814,7 @@ body {
   display: flex;
   flex-direction: column;
   gap: 16px;
+  max-width: 350px;
 }
 
 .bonus-card {
@@ -883,17 +899,22 @@ body {
   margin-top: 12px;
   position: relative;
   z-index: 1;
+  max-height: 300px;
+  overflow-y: auto;
 }
 
 .action-card {
   --card-glow: rgba(255, 255, 255, 0.16);
   --card-edge: rgba(255, 255, 255, 0.22);
   --card-pattern: rgba(255, 255, 255, 0.08);
+  --card-background: linear-gradient(180deg, rgba(119, 206, 113, 0.96), rgba(63, 129, 84, 0.96));
+  --card-badge-background: rgba(24, 8, 22, 0.26);
   --card-ink: #fff7ee;
   appearance: none;
   border: 1px solid var(--card-edge);
   cursor: pointer;
   width: 100%;
+  max-width: 280px;
   text-align: left;
   display: grid;
   gap: 8px;
@@ -903,6 +924,7 @@ body {
   font: inherit;
   position: relative;
   overflow: hidden;
+  background: var(--card-background);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.16),
     inset 0 -3px 0 rgba(39, 11, 25, 0.28),
@@ -971,32 +993,8 @@ body {
   text-transform: uppercase;
   letter-spacing: 0.16em;
   color: rgba(255, 248, 236, 0.92);
-  background: rgba(24, 8, 22, 0.26);
+  background: var(--card-badge-background);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
-}
-
-.boon-card {
-  --card-glow: rgba(189, 255, 195, 0.22);
-  --card-edge: rgba(196, 255, 204, 0.3);
-  --card-pattern: rgba(224, 255, 198, 0.08);
-  background:
-    linear-gradient(180deg, rgba(119, 206, 113, 0.96), rgba(63, 129, 84, 0.96));
-}
-
-.attack-card {
-  --card-glow: rgba(255, 190, 154, 0.22);
-  --card-edge: rgba(255, 194, 162, 0.3);
-  --card-pattern: rgba(255, 222, 199, 0.08);
-  background:
-    linear-gradient(180deg, rgba(226, 118, 77, 0.98), rgba(145, 39, 51, 0.96));
-}
-
-.boon-card .action-card-type {
-  background: rgba(18, 63, 42, 0.34);
-}
-
-.attack-card .action-card-type {
-  background: rgba(78, 19, 28, 0.34);
 }
 
 .action-card.armed {
@@ -1015,7 +1013,7 @@ body {
   max-width: 1250px;
   max-height: 1000px;
   border-radius: 34px;
-  background: rgba(90, 23, 35, 0.72);
+  background: rgba(90, 23, 35, 0.22);
   border: 2px solid rgba(255, 255, 255, 0.12);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.12),

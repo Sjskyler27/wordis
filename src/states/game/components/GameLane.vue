@@ -108,7 +108,7 @@ const getBadgeStyle = (tile) => {
   padding: 20px;
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.02)),
-    rgba(72, 17, 38, 0.75);
+    rgba(72, 17, 38, 0.35);
   border: 2px solid rgba(255, 255, 255, 0.08);
   display: flex;
   flex-direction: column;

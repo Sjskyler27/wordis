@@ -1,15 +1,20 @@
 import { onBeforeUnmount, watch } from 'vue';
 import { getBotWord } from './bot.js';
 import {
+  CARD_DEFINITIONS,
+  createCards,
   createOpeningRackPair,
+  createTestingOpeningRackPair,
   createRack,
   drawCards,
   getTilesForWord,
   getResourceGrants,
   replaceTileWithModifier,
   getWordScoreDetails,
-  refillTiles
+  refillTiles,
+  rerollRackExceptTile
 } from './tile-logic.js';
+import { isTestingMode } from './testing.js';
 
 export const useSinglePlayerGame = ({
   isMultiplayer,
@@ -35,6 +40,25 @@ export const useSinglePlayerGame = ({
     hard: 6500
   };
   const modifierProfile = () => attacksEnabled.value ? 'duel' : 'solo';
+  const createTestingHands = () => {
+    const boonKeys = Object.entries(CARD_DEFINITIONS)
+      .filter(([, definition]) => definition.kind === 'boon')
+      .map(([key]) => key);
+    const attackKeys = Object.entries(CARD_DEFINITIONS)
+      .filter(([, definition]) => definition.kind === 'attack')
+      .map(([key]) => key);
+
+    return {
+      host: {
+        boons: createCards(boonKeys),
+        attacks: createCards(attackKeys)
+      },
+      opponent: {
+        boons: createCards(boonKeys),
+        attacks: createCards(attackKeys)
+      }
+    };
+  };
 
   const gameEnded = () => {
     return playerScores.value.host >= WINNING_SCORE || playerScores.value.opponent >= WINNING_SCORE;
@@ -42,6 +66,16 @@ export const useSinglePlayerGame = ({
 
   const ensureSinglePlayerState = () => {
     if (!playerTiles.value.host.length && !playerTiles.value.opponent.length) {
+      if (isTestingMode) {
+        playerTiles.value = createTestingOpeningRackPair(playerScores.value);
+        rackClears.value = {
+          host: 100,
+          opponent: 100
+        };
+        playerCards.value = createTestingHands();
+        return;
+      }
+
       playerTiles.value = createOpeningRackPair(playerScores.value, {
         modifierProfile: modifierProfile()
       });
@@ -287,6 +321,17 @@ export const useSinglePlayerGame = ({
         success: true,
         replacementTileId: replacementTile?.id || null
       };
+    }
+
+    if (card.effectType === 'isolate_tile') {
+      playerTiles.value = {
+        ...playerTiles.value,
+        [side]: rerollRackExceptTile(playerTiles.value[side], tileId, side, playerScores.value, {
+          modifierProfile: modifierProfile()
+        })
+      };
+
+      return { success: true };
     }
 
     playerTiles.value = {

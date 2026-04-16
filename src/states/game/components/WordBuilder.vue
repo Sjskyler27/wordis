@@ -31,10 +31,17 @@
               <span class="tile-score">{{ tileScore(slot.tile) }}</span>
               <span class="tile-letter">{{ slot.tile.letter }}</span>
             </button>
-            <div v-else :key="`placeholder-${slot.index}`" class="word-slot-placeholder">
-              <span v-if="slot.bonus" class="word-slot-bonus">+{{ slot.difference }}</span>
-              <span class="word-slot-index">{{ slot.position }}</span>
-            </div>
+	            <div v-else :key="`placeholder-${slot.index}`" class="word-slot-placeholder">
+	              <div
+	                class="word-slot-placeholder-surface"
+	                :class="{ milestone: !!slot.bonus }"
+	                :style="getPlaceholderStyle(slot)"
+	              >
+	                <span v-if="slot.bonus" class="word-slot-bonus">+{{ slot.bonus }}</span>
+	                <span v-if="slot.rewardLabel" class="word-slot-reward">{{ slot.rewardLabel }}</span>
+	                <span class="word-slot-index">{{ slot.position }}</span>
+	              </div>
+	            </div>
           </Transition>
         </div>
       </div>
@@ -110,18 +117,28 @@ const props = defineProps({
 defineEmits(['undo', 'clear', 'submit', 'remove-specific', 'clear-rack', 'save-letters', 'tile-click']);
 
 const wordSlots = computed(() => {
-  return Array.from({ length: 9 }, (_, index) => {
+  const slots = Array.from({ length: 9 }, (_, index) => {
     const position = index + 1;
     const bonusStep = props.lengthBonusSteps.find((step) => step.length === position);
 
-    return {
-      index,
-      position,
-      tile: props.selectedTiles[index] || null,
-      bonus: bonusStep?.bonus || 0,
-      difference: bonusStep?.difference || 0
-    };
-  });
+	    return {
+	      index,
+	      position,
+	      tile: props.selectedTiles[index] || null,
+	      bonus: bonusStep?.bonus || 0,
+	      difference: bonusStep?.difference || 0,
+	      rewardLabel: bonusStep?.rewardLabel || ''
+	    };
+	  });
+
+  const milestoneSlots = slots.filter((slot) => slot.bonus);
+  const milestoneCount = milestoneSlots.length || 1;
+
+  return slots.map((slot) => ({
+    ...slot,
+    milestoneIndex: slot.bonus ? milestoneSlots.findIndex((entry) => entry.index === slot.index) : -1,
+    milestoneCount
+  }));
 });
 
 const getTileStyle = (tile) => {
@@ -142,6 +159,20 @@ const getBadgeStyle = (tile) => {
     color: ui.badgeColor
   };
 };
+
+const getPlaceholderStyle = (slot) => {
+  if (!slot.bonus) {
+    return {};
+  }
+
+  const segmentCount = Math.max(1, slot.milestoneCount);
+  const segmentIndex = Math.max(0, slot.milestoneIndex);
+
+  return {
+    '--milestone-gradient-size': `${segmentCount * 100}% 100%`,
+    '--milestone-gradient-position': `${(segmentIndex / Math.max(1, segmentCount - 1)) * 100}% 0%`
+  };
+};
 </script>
 
 <style scoped>
@@ -153,7 +184,7 @@ const getBadgeStyle = (tile) => {
   justify-content: space-between;
   padding: 16px;
   border-radius: 24px;
-  background: rgba(48, 12, 28, 0.8);
+  background: rgba(48, 12, 28, 0.23);
 }
 
 .bonus-ladder {
@@ -206,7 +237,6 @@ const getBadgeStyle = (tile) => {
   align-items: center;
   padding: 10px 14px;
   border-radius: 18px;
-  background: rgba(255, 255, 255, 0.08);
 }
 
 .built-word-strip {
@@ -225,8 +255,13 @@ const getBadgeStyle = (tile) => {
 }
 
 .word-slot-placeholder {
-  min-height: 90px;
-  width: 106px;
+  min-height: 94px;
+  width: 98px;
+}
+
+.word-slot-placeholder-surface {
+  min-height: 94px;
+  width: 98px;
   border-radius: 14px;
   position: relative;
   display: flex;
@@ -234,15 +269,23 @@ const getBadgeStyle = (tile) => {
   justify-content: center;
   background:
     linear-gradient(180deg, rgba(147, 147, 147, 0.52), rgba(57, 57, 57, 0.58));
-  border: 1px solid rgba(255, 196, 94, 0.14);
   box-shadow:
     inset 0 1px 0 rgba(255, 227, 167, 0.08),
     inset 0 -2px 0 rgba(73, 31, 8, 0.28);
 }
 
-.word-slot.milestone .word-slot-placeholder {
+.word-slot-placeholder-surface.milestone {
   background:
-    linear-gradient(180deg, rgba(154, 83, 19, 0.58), rgba(120, 60, 16, 0.66));
+    linear-gradient(
+      90deg,
+      rgba(133, 92, 54, 0.80) 0%,
+      rgba(173, 101, 35, 0.75) 20%,
+      rgba(187, 111, 29, 0.76) 48%,
+      rgba(195, 130, 39, 0.8) 72%,
+      rgba(204, 153, 51, 0.84) 100%
+    );
+  background-size: var(--milestone-gradient-size, 100% 100%);
+  background-position: var(--milestone-gradient-position, 0% 0%);
   border-color: rgba(255, 202, 103, 0.22);
 }
 
@@ -253,6 +296,20 @@ const getBadgeStyle = (tile) => {
   line-height: 1;
   color: rgba(181, 181, 181, 0.997);
   text-shadow: 0 1px 0 rgba(255, 226, 163, 0.08);
+}
+
+.word-slot-reward {
+  position: absolute;
+  left: 50%;
+  bottom: 10px;
+  transform: translateX(-50%);
+  font-size: 0.5rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(255, 240, 218, 0.88);
+  text-align: center;
+  white-space: nowrap;
 }
 
 .word-slot-index {
@@ -273,8 +330,8 @@ const getBadgeStyle = (tile) => {
   appearance: none;
   border: none;
   cursor: pointer;
-  min-height: 90px;
-  width: 106px;
+  min-height: 94px;
+  width: 98px;
   border-radius: 14px;
   position: relative;
   background: var(--built-tile-bg, linear-gradient(180deg, #fffef8 0%, #f2ebe0 70%, #d9cec0 100%));
