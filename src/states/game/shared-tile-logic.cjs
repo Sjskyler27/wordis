@@ -1,4 +1,4 @@
-const createSharedTileLogic = ({ letterConfig, wordBonuses }) => {
+const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {} }) => {
   const LETTER_KEYS = Object.keys(letterConfig);
   const LETTER_POOL = Object.entries(letterConfig).flatMap(([letter, config]) =>
     Array.from({ length: config.count }, () => letter)
@@ -516,6 +516,15 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses }) => {
     return 0;
   }
 
+  const getMilestoneReward = (length, options = {}) => {
+    const reward = milestoneRewards[length] || milestoneRewards[String(length)] || {};
+
+    return {
+      boons: reward.boons || 0,
+      attacks: options.includeAttacks === false ? 0 : (reward.attacks || 0)
+    };
+  };
+
   const getTilesScore = (tiles) => tiles.reduce((total, tile) => total + tileScore(tile), 0);
 
   const getWordScoreDetails = (tiles) => {
@@ -543,12 +552,18 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses }) => {
 
   const getResourceGrants = (tiles = [], options = {}) => {
     const includeAttacks = options.includeAttacks !== false;
-    return tiles.reduce((totals, tile) => {
+    const totals = tiles.reduce((totals, tile) => {
       const definition = getModifierDefinition(tile.status);
       totals.boons += definition.effects.grantBoon || 0;
       totals.attacks += includeAttacks ? (definition.effects.grantAttack || 0) : 0;
       return totals;
     }, { boons: 0, attacks: 0 });
+
+    const milestoneReward = getMilestoneReward(tiles.length, { includeAttacks });
+    totals.boons += milestoneReward.boons;
+    totals.attacks += milestoneReward.attacks;
+
+    return totals;
   };
 
   const createCardLogic = ({ createCardId }) => {
@@ -945,6 +960,7 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses }) => {
     tileScore,
     getLengthBonus,
     getDifference,
+    getMilestoneReward,
     getTilesScore,
     getWordScoreDetails,
     getResourceGrants,

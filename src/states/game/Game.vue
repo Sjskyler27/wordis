@@ -521,6 +521,7 @@ const handleSaveLetters = () => {
 };
 
 const handleTileClickWithCards = (tile, side) => {
+  console.log(tile)
   if (effectiveGameEnded.value) {
     return;
   }

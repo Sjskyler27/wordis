@@ -2,6 +2,7 @@ const games = new Map();
 const WINNING_SCORE = 250;
 const LETTER_CONFIG = require('../src/states/game/letters.json');
 const WORD_BONUSES = require('../src/states/game/word-bonuses.json');
+const MILESTONE_REWARDS = require('../src/states/game/word-milestone-rewards.json');
 const { validateWord } = require('./word-validator.cjs');
 const { isTestingMode } = require('./env.cjs');
 const {
@@ -22,7 +23,8 @@ const {
   createTileLogic
 } = createSharedTileLogic({
   letterConfig: LETTER_CONFIG,
-  wordBonuses: WORD_BONUSES
+  wordBonuses: WORD_BONUSES,
+  milestoneRewards: MILESTONE_REWARDS
 });
 
 let nextTileId = 1;

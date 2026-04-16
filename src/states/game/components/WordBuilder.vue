@@ -31,16 +31,17 @@
               <span class="tile-score">{{ tileScore(slot.tile) }}</span>
               <span class="tile-letter">{{ slot.tile.letter }}</span>
             </button>
-            <div v-else :key="`placeholder-${slot.index}`" class="word-slot-placeholder">
-              <div
-                class="word-slot-placeholder-surface"
-                :class="{ milestone: !!slot.bonus }"
-                :style="getPlaceholderStyle(slot)"
-              >
-              <span v-if="slot.bonus" class="word-slot-bonus">+{{ slot.difference }}</span>
-              <span class="word-slot-index">{{ slot.position }}</span>
-              </div>
-            </div>
+	            <div v-else :key="`placeholder-${slot.index}`" class="word-slot-placeholder">
+	              <div
+	                class="word-slot-placeholder-surface"
+	                :class="{ milestone: !!slot.bonus }"
+	                :style="getPlaceholderStyle(slot)"
+	              >
+	                <span v-if="slot.bonus" class="word-slot-bonus">+{{ slot.bonus }}</span>
+	                <span v-if="slot.rewardLabel" class="word-slot-reward">{{ slot.rewardLabel }}</span>
+	                <span class="word-slot-index">{{ slot.position }}</span>
+	              </div>
+	            </div>
           </Transition>
         </div>
       </div>
@@ -120,14 +121,15 @@ const wordSlots = computed(() => {
     const position = index + 1;
     const bonusStep = props.lengthBonusSteps.find((step) => step.length === position);
 
-    return {
-      index,
-      position,
-      tile: props.selectedTiles[index] || null,
-      bonus: bonusStep?.bonus || 0,
-      difference: bonusStep?.difference || 0
-    };
-  });
+	    return {
+	      index,
+	      position,
+	      tile: props.selectedTiles[index] || null,
+	      bonus: bonusStep?.bonus || 0,
+	      difference: bonusStep?.difference || 0,
+	      rewardLabel: bonusStep?.rewardLabel || ''
+	    };
+	  });
 
   const milestoneSlots = slots.filter((slot) => slot.bonus);
   const milestoneCount = milestoneSlots.length || 1;
@@ -294,6 +296,20 @@ const getPlaceholderStyle = (slot) => {
   line-height: 1;
   color: rgba(181, 181, 181, 0.997);
   text-shadow: 0 1px 0 rgba(255, 226, 163, 0.08);
+}
+
+.word-slot-reward {
+  position: absolute;
+  left: 50%;
+  bottom: 10px;
+  transform: translateX(-50%);
+  font-size: 0.5rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(255, 240, 218, 0.88);
+  text-align: center;
+  white-space: nowrap;
 }
 
 .word-slot-index {

@@ -1,5 +1,6 @@
 import letterConfig from './letters.json';
 import wordBonuses from './word-bonuses.json';
+import milestoneRewards from './word-milestone-rewards.json';
 import './shared-tile-logic.cjs';
 
 const { createSharedTileLogic } = globalThis.__sharedTileLogic || {};
@@ -9,7 +10,8 @@ if (typeof createSharedTileLogic !== 'function') {
 
 const sharedTileLogic = createSharedTileLogic({
   letterConfig,
-  wordBonuses
+  wordBonuses,
+  milestoneRewards
 });
 
 const {
@@ -18,6 +20,7 @@ const {
   tileScore,
   getLengthBonus,
   getDifference,
+  getMilestoneReward,
   getTilesScore,
   getWordScoreDetails,
   getResourceGrants,
@@ -66,6 +69,7 @@ export {
   tileScore,
   getLengthBonus,
   getDifference,
+  getMilestoneReward,
   getTilesScore,
   getWordScoreDetails,
   getResourceGrants,
