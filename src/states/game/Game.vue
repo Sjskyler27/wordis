@@ -210,7 +210,14 @@ const props = defineProps({
     effectsVolume: Number,
 });
 
-const emit = defineEmits(['home', 'showSettings', 'playAgain']);
+const emit = defineEmits([
+  'home',
+  'showSettings',
+  'playAgain',
+  'volumeChange',
+  'musicVolumeChange',
+  'effectsVolumeChange'
+]);
 const localMessage = ref('');
 const isPaused = ref(false);
 const activeBoonCardId = ref(null);
