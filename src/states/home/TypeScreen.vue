@@ -172,6 +172,7 @@ const close = () => emit("close");
       radial-gradient(circle at 14% 18%, rgba(255, 228, 168, 0.2) 0, rgba(255, 228, 168, 0.2) 12%, transparent 30%),
       radial-gradient(circle at 82% 14%, rgba(255, 255, 255, 0.09) 0, rgba(255, 255, 255, 0.09) 8%, transparent 24%),
       linear-gradient(135deg, #f39a54 0%, #ca6937 24%, #b63e3b 58%, #341137 100%);
+      
     filter: saturate(1.08);
     overflow: hidden;
     pointer-events: none;
@@ -194,6 +195,7 @@ const close = () => emit("close");
   }
 
   .layer-near {
+    
     inset: -6%;
     opacity: 0.18;
     background-size: 190px 190px;
