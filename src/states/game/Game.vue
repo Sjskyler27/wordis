@@ -1,5 +1,5 @@
 <template>
-  <div class="game-shell">
+  <div class="game-shell" :style="backgroundMoodStyle">
     <div id="background-layer">
       <div class="shape-layer layer-far"></div>
       <div class="shape-layer layer-near"></div>
@@ -489,6 +489,52 @@ const scoreGapTier = computed(() => {
   }
 
   return 'none';
+});
+
+const clamp01 = (value) => Math.max(0, Math.min(1, value));
+const mixHexColor = (start, end, amount) => {
+  const mixChannel = (startChannel, endChannel) => {
+    return Math.round(startChannel + ((endChannel - startChannel) * amount));
+  };
+  const startColor = start.replace('#', '');
+  const endColor = end.replace('#', '');
+  const startChannels = [
+    Number.parseInt(startColor.slice(0, 2), 16),
+    Number.parseInt(startColor.slice(2, 4), 16),
+    Number.parseInt(startColor.slice(4, 6), 16)
+  ];
+  const endChannels = [
+    Number.parseInt(endColor.slice(0, 2), 16),
+    Number.parseInt(endColor.slice(2, 4), 16),
+    Number.parseInt(endColor.slice(4, 6), 16)
+  ];
+
+  return `#${startChannels.map((channel, index) => {
+    return mixChannel(channel, endChannels[index]).toString(16).padStart(2, '0');
+  }).join('')}`;
+};
+const backgroundProgress = computed(() => {
+  if (isTimedSoloMode.value) {
+    return clamp01(1 - (timerRemainingSeconds.value / SOLO_TIMER_SECONDS));
+  }
+
+  const highestScore = Math.max(playerScores.value.host || 0, playerScores.value.opponent || 0);
+  return clamp01(highestScore / WINNING_SCORE);
+});
+const backgroundMoodStyle = computed(() => {
+  const progress = backgroundProgress.value;
+  const intensity = progress * progress;
+
+  return {
+    '--bg-corner': mixHexColor('#ffd178', '#ff7b5c', intensity),
+    '--bg-top': mixHexColor('#ffb95d', '#d25b3f', intensity),
+    '--bg-mid': mixHexColor('#ff8658', '#a53149', intensity),
+    '--bg-bottom': mixHexColor('#6b2d71', '#24061f', intensity),
+    '--bg-glow-alpha': `${0.26 - (intensity * 0.1)}`,
+    '--bg-shape-far-opacity': `${0.18 + (progress * 0.1)}`,
+    '--bg-shape-near-opacity': `${0.14 + (progress * 0.1)}`,
+    '--bg-saturate': `${1.03 + (progress * 0.16)}`
+  };
 });
 const scoreBoxClass = (side) => {
   if (!showOpponentLane.value || isTimedSoloMode.value || scoreGapTier.value === 'none') {
@@ -1051,6 +1097,10 @@ body {
   --bg-mid: #b63e3b;
   --bg-bottom: #341137;
   --bg-corner: #f39a54;
+  --bg-glow-alpha: 0.2;
+  --bg-shape-far-opacity: 0.24;
+  --bg-shape-near-opacity: 0.18;
+  --bg-saturate: 1.08;
   --panel-deep: rgba(73, 18, 34, 0.6);
   --cream: #f7efe1;
   --gold: #ffca67;
@@ -1070,10 +1120,10 @@ body {
   inset: 0;
   z-index: -2;
   background:
-    radial-gradient(circle at 14% 18%, rgba(255, 228, 168, 0.2) 0, rgba(255, 228, 168, 0.2) 12%, transparent 30%),
+    radial-gradient(circle at 14% 18%, rgba(255, 228, 168, var(--bg-glow-alpha)) 0, rgba(255, 228, 168, var(--bg-glow-alpha)) 12%, transparent 30%),
     radial-gradient(circle at 82% 14%, rgba(255, 255, 255, 0.09) 0, rgba(255, 255, 255, 0.09) 8%, transparent 24%),
     linear-gradient(135deg, var(--bg-corner) 0%, var(--bg-top) 24%, var(--bg-mid) 58%, var(--bg-bottom) 100%);
-  filter: saturate(1.08);
+  filter: saturate(var(--bg-saturate));
   overflow: hidden;
 }
 
@@ -1091,7 +1141,7 @@ body {
 }
 
 .layer-far {
-  opacity: 0.24;
+  opacity: var(--bg-shape-far-opacity);
   background-position: 0 0;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='280' height='280' viewBox='0 0 280 280'%3E%3Cg fill='none' stroke='%23fff4dc' stroke-width='2.6' stroke-opacity='.34'%3E%3Cpolygon points='40,24 68,74 12,74'/%3E%3Crect x='106' y='18' width='46' height='46' rx='4'/%3E%3Cpolygon points='217,22 245,38 245,70 217,86 189,70 189,38'/%3E%3Cpolygon points='44,118 72,134 72,166 44,182 16,166 16,134'/%3E%3Crect x='108' y='110' width='54' height='54' rx='6'/%3E%3Cpolygon points='214,110 246,164 182,164'/%3E%3Crect x='28' y='204' width='50' height='50' rx='5'/%3E%3Cpolygon points='136,198 164,214 164,246 136,262 108,246 108,214'/%3E%3Cpolygon points='220,198 248,248 192,248'/%3E%3C/g%3E%3C/svg%3E");
   animation: driftLayerFar 25s linear infinite;
@@ -1099,7 +1149,7 @@ body {
 
 .layer-near {
   inset: -6%;
-  opacity: 0.18;
+  opacity: var(--bg-shape-near-opacity);
   background-size: 190px 190px;
   background-position: 28px 40px;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='190' height='190' viewBox='0 0 190 190'%3E%3Cg fill='rgba(255,244,220,.14)' stroke='rgba(255,255,255,.16)' stroke-width='1.8'%3E%3Cpolygon points='26,20 52,64 0,64'/%3E%3Crect x='74' y='20' width='34' height='34' rx='3'/%3E%3Cpolygon points='150,18 170,30 170,54 150,66 130,54 130,30'/%3E%3Crect x='18' y='92' width='38' height='38' rx='4'/%3E%3Cpolygon points='96,88 118,126 74,126'/%3E%3Cpolygon points='152,86 174,98 174,124 152,136 130,124 130,98'/%3E%3Ccircle cx='42' cy='156' r='12'/%3E%3Crect x='82' y='144' width='28' height='28' rx='4'/%3E%3Cpolygon points='152,142 174,180 130,180'/%3E%3C/g%3E%3C/svg%3E");
