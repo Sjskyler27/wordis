@@ -1,7 +1,7 @@
 <template>
   <div id="game-root" :class="[{'google-translate-iframe-hide': hideGoogleTranslate === true}]">        
       <component
-      :key="reloader" 
+      :key="currentStateKey" 
       :showSettings="showSettings" 
       @showSettings="showSettings = true" 
       @controllerExecuted="buttonPressed=null"
@@ -37,6 +37,7 @@
       @resetHints="resetHints"
       @nameChange="setNames"
       @home="goToHome"
+      @playAgain="playAgain"
        />
       
       <banner v-if="message">{{message}}</banner>
@@ -213,6 +214,11 @@ const showFeedback = ref(false)
   const seed = ref(localStorage.getItem("seed"));
   const gameEnded = ref(localStorage.getItem("gameEnded"));
   const isMultiplayer = ref(false);
+  const currentStateKey = computed(() => {
+    const stateName = currentState.value?.__name || currentState.value?.name || 'state';
+    const modeName = isMultiplayer.value ? 'multiplayer' : 'singleplayer';
+    return `${stateName}-${modeName}-${reloader.value}`;
+  });
   const message = ref("");
   const hideGoogleTranslate = ref(false)
   let deviceId = localStorage.getItem("deviceId");
@@ -350,6 +356,16 @@ const continueGame = () => {
     hideGoogleTranslate.value = true
     isMultiplayer.value = false;
     resetMultiplayerGame();
+    currentState.value = Game;
+  };
+
+  const playAgain = () => {
+    hideGoogleTranslateExtras();
+    hideGoogleTranslateIframesAfterDelay();
+    hideGoogleTranslate.value = true;
+    showSettings.value = false;
+    resetMultiplayerGame();
+    reloader.value += 1;
     currentState.value = Game;
   };
   

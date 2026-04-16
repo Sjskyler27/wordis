@@ -310,8 +310,22 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses }) => {
     return weightedCards[weightedCards.length - 1].cardKey;
   };
 
-  const rollTileModifier = (side, scores = {}, context = {}) => {
-    const { goodChance, badChance } = getModifierChances(side, scores);
+  const rollTileModifier = (side, scores = {}, context = {}, chanceOverrides = {}) => {
+    const baseChances = getModifierChances(side, scores);
+    const goodChance = Math.max(
+      0,
+      Math.min(
+        0.9,
+        chanceOverrides.goodChance ?? (baseChances.goodChance * (chanceOverrides.goodChanceMultiplier ?? 1))
+      )
+    );
+    const badChance = Math.max(
+      0,
+      Math.min(
+        0.9 - goodChance,
+        chanceOverrides.badChance ?? (baseChances.badChance * (chanceOverrides.badChanceMultiplier ?? 1))
+      )
+    );
     const roll = Math.random();
 
     if (roll < goodChance) {
@@ -598,9 +612,9 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses }) => {
   };
 
   const createTileLogic = ({ createTileId }) => {
-    const createTile = (letter = drawLetter(), side = null, scores = {}, forcedStatus = null) => {
+    const createTile = (letter = drawLetter(), side = null, scores = {}, forcedStatus = null, chanceOverrides = null) => {
       const baseScore = letterConfig[letter]?.score || 0;
-      const status = forcedStatus || rollTileModifier(side, scores, { letter, baseScore });
+      const status = forcedStatus || rollTileModifier(side, scores, { letter, baseScore }, chanceOverrides || {});
       const modifierDefinition = getModifierDefinition(status);
       const lockTurns = modifierDefinition.effects.lockTurns || 0;
       const tileLetter = modifierDefinition.effects.wild ? '*' : letter;
@@ -620,12 +634,70 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses }) => {
       };
     };
 
-    const createRack = (side = null, scores = {}) => {
+    const buildFreshRack = (side = null, scores = {}, options = {}) => {
       const rack = [];
       while (rack.length < RACK_SIZE) {
-        rack.push(createTile(drawLetter(rack), side, scores));
+        rack.push(createTile(drawLetter(rack), side, scores, options.forcedStatus || null, options.chanceOverrides || null));
       }
       return rack;
+    };
+
+    const countModifierGroups = (tiles = []) => {
+      return tiles.reduce((totals, tile) => {
+        if (GOOD_MODIFIERS.includes(tile.status)) {
+          totals.good += 1;
+        }
+
+        if (BAD_MODIFIERS.includes(tile.status)) {
+          totals.bad += 1;
+        }
+
+        return totals;
+      }, { good: 0, bad: 0 });
+    };
+
+    const applyTargetModifierGroup = (rack, modifierPool, targetCount) => {
+      for (let appliedCount = 0; appliedCount < targetCount; appliedCount += 1) {
+        const candidateIndexes = rack
+          .map((tile, index) => ({
+            index,
+            tile,
+            eligibleModifiers: modifierPool.filter((modifier) => canApplyModifier(modifier, {
+              letter: tile.baseLetter || tile.letter,
+              baseScore: tile.baseScore || letterConfig[tile.baseLetter || tile.letter]?.score || 0
+            }))
+          }))
+          .filter((entry) => entry.tile.status === 'normal' && entry.eligibleModifiers.length);
+
+        if (!candidateIndexes.length) {
+          return rack;
+        }
+
+        const targetEntry = candidateIndexes[Math.floor(Math.random() * candidateIndexes.length)];
+        const nextStatus = chooseWeightedModifier(targetEntry.eligibleModifiers);
+        rack[targetEntry.index] = applyModifierToTile(rack[targetEntry.index], nextStatus);
+      }
+
+      return rack;
+    };
+
+    const createClearRack = (currentTiles = [], side = null, scores = {}) => {
+      const currentModifierCounts = countModifierGroups(currentTiles);
+      const targetGoodModifiers = currentModifierCounts.good;
+      const targetBadModifiers = Math.max(0, currentModifierCounts.bad - 1);
+      const rack = buildFreshRack(side, scores, { forcedStatus: 'normal' });
+
+      applyTargetModifierGroup(rack, GOOD_MODIFIERS, targetGoodModifiers);
+      applyTargetModifierGroup(rack, BAD_MODIFIERS, targetBadModifiers);
+      return rack;
+    };
+
+    const createRack = (side = null, scores = {}, options = {}) => {
+      if (options.mode === 'clear') {
+        return createClearRack(options.currentTiles || [], side, scores);
+      }
+
+      return buildFreshRack(side, scores, options);
     };
 
     const createOpeningRackPair = (scores = {}) => {
@@ -678,6 +750,7 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses }) => {
     return {
       createTile,
       createRack,
+      createClearRack,
       createOpeningRackPair,
       refillTiles
     };

@@ -12,6 +12,8 @@ const {
   generateRoomCode,
   createGame,
   joinGame,
+  listOpenGames,
+  playAgain,
   submitWord,
   clearRack,
   useBoon,
@@ -38,6 +40,7 @@ httpServer.listen(PORT, () => {
 });
 
 const wsServer = new WebSocketServer({ httpServer });
+const connections = new Map();
 
 const sendEvent = (connection, type, data = null) => {
   if (!connection || !connection.connected) return;
@@ -55,12 +58,26 @@ const createGameStatePayload = (state) => ({
   lastWordScores: state.lastWordScores,
   rackClears: state.rackClears,
   cards: state.cards,
-  tiles: state.tiles
+  tiles: state.tiles,
+  isPrivate: state.isPrivate
 });
 
-const handleHostGame = (connection, clientId) => {
+const createLobbyListPayload = () => ({
+  lobbies: listOpenGames()
+});
+
+const broadcastLobbyList = () => {
+  const payload = createLobbyListPayload();
+  for (const connection of connections.values()) {
+    sendEvent(connection, 'lobbyList', payload);
+  }
+};
+
+const handleHostGame = (connection, clientId, data) => {
   const roomCode = generateRoomCode();
-  const { success, error, state } = createGame(roomCode, clientId);
+  const { success, error, state } = createGame(roomCode, clientId, {
+    isPrivate: data?.isPrivate ?? true
+  });
   if (!success) {
     sendEvent(connection, 'joinError', error);
     return;
@@ -71,7 +88,27 @@ const handleHostGame = (connection, clientId) => {
     roomCode,
     ...createGameStatePayload(state)
   });
+  broadcastLobbyList();
   console.log(`Client ${clientId} created room ${roomCode}`);
+};
+
+const handlePlayAgain = (connection, clientId, data) => {
+  const requestedCode = (data?.roomCode || '').toUpperCase();
+  if (!requestedCode) {
+    sendEvent(connection, 'joinError', 'Room code required');
+    return;
+  }
+
+  const { success, error, state } = playAgain(requestedCode, clientId);
+  if (!success) {
+    sendEvent(connection, 'joinError', error);
+    return;
+  }
+
+  broadcastToRoom(requestedCode, {
+    type: 'gameRestarted',
+    data: createGameStatePayload(state)
+  });
 };
 
 const handleJoinGame = (connection, clientId, data) => {
@@ -96,7 +133,12 @@ const handleJoinGame = (connection, clientId, data) => {
     type: 'startGame',
     data: createGameStatePayload(state)
   });
+  broadcastLobbyList();
   console.log(`Client ${clientId} joined room ${requestedCode}`);
+};
+
+const handleListLobbies = (connection) => {
+  sendEvent(connection, 'lobbyList', createLobbyListPayload());
 };
 
 const handleSubmitWord = async (connection, clientId, data) => {
@@ -176,13 +218,19 @@ const handleClientAction = async (connection, clientId, action) => {
 
   switch (action.type) {
     case 'hostGame':
-      handleHostGame(connection, clientId);
+      handleHostGame(connection, clientId, action.data);
       break;
     case 'joinGame':
       handleJoinGame(connection, clientId, action.data);
       break;
+    case 'listLobbies':
+      handleListLobbies(connection);
+      break;
     case 'submitWord':
       await handleSubmitWord(connection, clientId, action.data);
+      break;
+    case 'playAgain':
+      handlePlayAgain(connection, clientId, action.data);
       break;
     case 'clearRack':
       handleClearRack(connection, clientId, action.data);
@@ -200,15 +248,22 @@ const handleClientAction = async (connection, clientId, action) => {
 
 const cleanupClient = (clientId) => {
   const removed = removeClientFromRoom(clientId);
-  if (!removed) return;
+  connections.delete(clientId);
+  if (!removed) {
+    broadcastLobbyList();
+    return;
+  }
   removePlayerFromGame(removed.roomCode, clientId);
+  broadcastLobbyList();
   console.log(`Client ${clientId} left room ${removed.roomCode}`);
 };
 
 wsServer.on('request', (request) => {
   const connection = request.accept(null, request.origin);
   const clientId = generateClientId();
+  connections.set(clientId, connection);
   console.log(`Client connected: ${clientId}`);
+  sendEvent(connection, 'lobbyList', createLobbyListPayload());
 
   connection.on('message', async (message) => {
     if (message.type !== 'utf8') return;

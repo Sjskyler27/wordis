@@ -32,20 +32,22 @@ export const playerCards = ref({
   host: { boons: [], attacks: [] },
   opponent: { boons: [], attacks: [] }
 });
+export const isPrivateRoom = ref(true);
+export const availableLobbies = ref([]);
 export const gameStarted = ref(false);
 export const message = ref('');
 export const isConnecting = ref(false);
 export const connectionStatus = ref('connecting');
 export const isSocketConnected = computed(() => connectionStatus.value === 'connected');
 
-export const hostGame = () => {
+export const hostGame = ({ isPrivate = true } = {}) => {
   if (!isSocketConnected.value) {
     message.value = 'Multiplayer server is offline. Please check your connection.';
     return;
   }
 
   isConnecting.value = true;
-  socket.emit('hostGame');
+  socket.emit('hostGame', { isPrivate });
 };
 
 const applyGameState = (data = {}) => {
@@ -56,6 +58,7 @@ const applyGameState = (data = {}) => {
   playerTiles.value = data.tiles || playerTiles.value;
   rackClears.value = data.rackClears || rackClears.value;
   playerCards.value = data.cards || playerCards.value;
+  isPrivateRoom.value = data.isPrivate ?? isPrivateRoom.value;
 };
 
 export const joinGame = (code) => {
@@ -72,6 +75,10 @@ export const joinGame = (code) => {
 
   isConnecting.value = true;
   socket.emit('joinGame', { roomCode: normalizedCode });
+};
+
+export const requestLobbyList = () => {
+  socket.emit('listLobbies');
 };
 
 socket.on('gameHosted', (data) => {
@@ -95,6 +102,10 @@ socket.on('joinError', (error) => {
   isConnecting.value = false;
 });
 
+socket.on('lobbyList', (data) => {
+  availableLobbies.value = data?.lobbies || [];
+});
+
 export const submitWord = ({ word, tileIds }) => {
   const normalizedWord = (word || '').trim();
   if (!gameStarted.value || !normalizedWord || !Array.isArray(tileIds) || !tileIds.length) return;
@@ -109,6 +120,11 @@ export const submitWord = ({ word, tileIds }) => {
 export const clearRack = () => {
   if (!gameStarted.value) return;
   socket.emit('clearRack', { roomCode: roomCode.value });
+};
+
+export const playAgain = () => {
+  if (!roomCode.value) return;
+  socket.emit('playAgain', { roomCode: roomCode.value });
 };
 
 export const useBoon = ({ cardId, tileId }) => {
@@ -143,11 +159,23 @@ socket.on('attackUsed', (data) => {
   applyGameState(data);
 });
 
+socket.on('gameRestarted', (data) => {
+  gameStarted.value = true;
+  message.value = '';
+  applyGameState(data);
+});
+
 socket.onStatusChange((status) => {
   connectionStatus.value = status;
   if (status !== 'connected') {
     isConnecting.value = false;
+    if (status === 'disconnected' || status === 'error') {
+      availableLobbies.value = [];
+    }
+    return;
   }
+
+  requestLobbyList();
 });
 
 export const resetGame = () => {
@@ -181,6 +209,8 @@ export const resetGame = () => {
     host: { boons: [], attacks: [] },
     opponent: { boons: [], attacks: [] }
   };
+  isPrivateRoom.value = true;
+  availableLobbies.value = [];
   gameStarted.value = false;
   message.value = '';
 };

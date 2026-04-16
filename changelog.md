@@ -25,3 +25,13 @@ Stop: 2026-04-15 21:53:02 EDT
 - Ended matches at 250 points and blocked further submissions once the finish line is reached.
 - Added a postgame results panel that shows the winner plus each side's full word history.
 - Balanced opening racks so both sides begin with mirrored modifier slots instead of uneven opening modifier luck.
+
+## 2026-04-15
+
+Start: 2026-04-15 22:00:47 EDT
+Stop: 2026-04-15 22:07:30 EDT
+
+- Rebalanced full rack clears so they preserve the same amount of upside while trimming some bad modifiers instead of enabling modifier fishing.
+- Forced the game view to remount when switching between multiplayer and singleplayer so solo matches no longer inherit the opponent waiting state.
+- Added a Play Again reset flow so finished matches can restart cleanly from the game over panel.
+- Added public lobby hosting and open lobby browsing so non-private rooms can be discovered and joined without sharing a room code.

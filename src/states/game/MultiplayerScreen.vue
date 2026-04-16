@@ -28,7 +28,15 @@
           <span class="kicker">Host</span>
           <h2>Start a Room</h2>
           <p v-if="roomCode" class="room-preview">Room {{ roomCode }}</p>
-          <p v-else>Spin up a private room and share the code with your opponent.</p>
+          <p v-else>{{ hostVisibilityText }}</p>
+          <label class="toggle-row">
+            <span>Private Room</span>
+            <input
+              v-model="hostIsPrivate"
+              type="checkbox"
+              :disabled="isConnecting || !isSocketConnected"
+            />
+          </label>
           <button class="arcade-button" @click="handleHostGame" :disabled="isConnecting || !isSocketConnected">
             Host Multiplayer Game
           </button>
@@ -59,6 +67,26 @@
       </section>
 
       <section class="message-card">
+        <span class="kicker">Open Lobbies</span>
+        <strong>{{ availableLobbies.length ? 'Join a live public room' : 'No public lobbies right now.' }}</strong>
+        <div v-if="availableLobbies.length" class="lobby-list">
+          <button
+            v-for="lobby in availableLobbies"
+            :key="lobby.roomCode"
+            type="button"
+            class="lobby-row"
+            :disabled="isConnecting || !isSocketConnected"
+            @click="joinLobby(lobby.roomCode)"
+          >
+            <span class="lobby-room">{{ lobby.roomCode }}</span>
+            <span class="lobby-meta">{{ lobby.players }}/2 players</span>
+            <span class="lobby-cta">Join</span>
+          </button>
+        </div>
+        <p v-else>Host a public room to make it appear here for other players.</p>
+      </section>
+
+      <section class="message-card">
         <span class="kicker">Status</span>
         <strong>{{ message || 'Multiplayer is standing by.' }}</strong>
         <p v-if="roomCode">Active room: {{ roomCode }}</p>
@@ -78,19 +106,26 @@ import {
   isConnecting,
   hostGame,
   joinGame,
+  availableLobbies,
+  requestLobbyList,
   connectionStatus,
   isSocketConnected
 } from './multiplayer.js';
 
 const joinCode = ref('');
+const hostIsPrivate = ref(true);
 const emit = defineEmits(['game', 'home', 'singleplayer']);
 
 const handleHostGame = () => {
-  hostGame();
+  hostGame({ isPrivate: hostIsPrivate.value });
 };
 
 const handleJoinGame = () => {
   joinGame(joinCode.value);
+};
+
+const joinLobby = (code) => {
+  joinGame(code);
 };
 
 const connectionStatusLabel = computed(() => {
@@ -109,6 +144,11 @@ const connectionStatusLabel = computed(() => {
 });
 
 const statusClass = computed(() => `status-${connectionStatus.value}`);
+const hostVisibilityText = computed(() => {
+  return hostIsPrivate.value
+    ? 'Spin up a private room and share the code with your opponent.'
+    : 'Spin up a public room so anyone browsing open lobbies can jump in.';
+});
 const readyToStartMultiplayer = computed(
   () => !!roomCode.value && connectionStatus.value === 'connected'
 );
@@ -127,6 +167,12 @@ watch(joinCode, (value) => {
     joinCode.value = normalizedValue;
   }
 });
+
+watch(connectionStatus, (status) => {
+  if (status === 'connected') {
+    requestLobbyList();
+  }
+}, { immediate: true });
 </script>
 
 <style scoped>
@@ -325,6 +371,64 @@ p {
   font-size: 1.1rem;
   font-weight: 700;
   color: #ffdf86;
+}
+
+.toggle-row {
+  margin-top: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.09);
+  font-size: 0.82rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.toggle-row input {
+  width: 20px;
+  height: 20px;
+}
+
+.lobby-list {
+  margin-top: 16px;
+  display: grid;
+  gap: 12px;
+}
+
+.lobby-row {
+  border: none;
+  cursor: pointer;
+  width: 100%;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--cream);
+  font-family: inherit;
+  text-align: left;
+}
+
+.lobby-room {
+  font-size: 1.05rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+}
+
+.lobby-meta {
+  opacity: 0.75;
+}
+
+.lobby-cta {
+  font-size: 0.78rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #6ff5dd;
 }
 
 .arcade-button,
