@@ -6,8 +6,8 @@
       <strong class="history-title">{{ summaryText }}</strong>
       <p class="history-copy">Every scored word from the match lives here.</p>
 
-      <div class="history-columns">
-        <section v-if="rightLabel" class="history-column">
+      <div class="history-columns" :class="{ single: !rightLabel }">
+        <section class="history-column">
           <span class="history-label">{{ leftLabel }}</span>
           <ul class="history-list">
             <li
@@ -22,7 +22,7 @@
           </ul>
         </section>
 
-        <section class="history-column">
+        <section v-if="rightLabel" class="history-column">
           <span class="history-label">{{ rightLabel }}</span>
           <ul class="history-list">
             <li
@@ -149,6 +149,10 @@ const normalizedRightHistory = computed(() => props.rightHistory.map(normalizeEn
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 18px;
+}
+
+.history-columns.single {
+  grid-template-columns: minmax(0, 1fr);
 }
 
 .history-column {
