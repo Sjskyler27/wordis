@@ -37,6 +37,7 @@
       @resetHints="resetHints"
       @nameChange="setNames"
       @home="goToHome"
+      @playAgain="playAgain"
        />
       
       <banner v-if="message">{{message}}</banner>
@@ -355,6 +356,16 @@ const continueGame = () => {
     hideGoogleTranslate.value = true
     isMultiplayer.value = false;
     resetMultiplayerGame();
+    currentState.value = Game;
+  };
+
+  const playAgain = () => {
+    hideGoogleTranslateExtras();
+    hideGoogleTranslateIframesAfterDelay();
+    hideGoogleTranslate.value = true;
+    showSettings.value = false;
+    resetMultiplayerGame();
+    reloader.value += 1;
     currentState.value = Game;
   };
   

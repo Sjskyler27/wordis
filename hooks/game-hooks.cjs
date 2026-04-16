@@ -41,14 +41,11 @@ const generateRoomCode = () => {
   return roomCode;
 };
 
-const createGame = (roomCode, hostId) => {
-  if (games.has(roomCode)) {
-    return { success: false, error: 'Room already exists' };
-  }
-
-  const state = {
+const createInitialState = ({ hostId, players = [hostId], isPrivate = true }) => {
+  return {
     host: hostId,
-    players: [hostId],
+    players: [...players],
+    isPrivate,
     words: {
       host: '',
       opponent: ''
@@ -81,6 +78,18 @@ const createGame = (roomCode, hostId) => {
     },
     tiles: createOpeningRackPair({ host: 0, opponent: 0 })
   };
+};
+
+const createGame = (roomCode, hostId, options = {}) => {
+  if (games.has(roomCode)) {
+    return { success: false, error: 'Room already exists' };
+  }
+
+  const state = createInitialState({
+    hostId,
+    players: [hostId],
+    isPrivate: options.isPrivate ?? true
+  });
 
   games.set(roomCode, state);
   return { success: true, state };
@@ -175,6 +184,36 @@ const joinGame = (roomCode, clientId) => {
   return { success: true, state };
 };
 
+const listOpenGames = () => {
+  return Array.from(games.entries())
+    .filter(([, state]) => !state.isPrivate && state.players.length < 2)
+    .map(([roomCode, state]) => ({
+      roomCode,
+      players: state.players.length,
+      isPrivate: state.isPrivate
+    }));
+};
+
+const playAgain = (roomCode, clientId) => {
+  const state = games.get(roomCode);
+  if (!state) {
+    return { success: false, error: 'Room not found' };
+  }
+
+  if (!state.players.includes(clientId)) {
+    return { success: false, error: 'Player not in room' };
+  }
+
+  const nextState = createInitialState({
+    hostId: state.host,
+    players: state.players,
+    isPrivate: state.isPrivate
+  });
+
+  games.set(roomCode, nextState);
+  return { success: true, state: nextState };
+};
+
 const submitWord = async (roomCode, clientId, word, tileIds, languageCode = 'en') => {
   const state = games.get(roomCode);
   if (!state) {
@@ -255,6 +294,8 @@ module.exports = {
   generateRoomCode,
   createGame,
   joinGame,
+  listOpenGames,
+  playAgain,
   submitWord,
   clearRack,
   useBoon,

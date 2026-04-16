@@ -156,6 +156,9 @@
               </ul>
             </section>
           </div>
+          <button type="button" class="play-again-button" @click="handlePlayAgain">
+            Play Again
+          </button>
         </div>
       </section>
     </main>
@@ -179,6 +182,7 @@ import {
   clearRack as clearMultiplayerRack,
   useBoon as useMultiplayerBoon,
   useAttack as useMultiplayerAttack,
+  playAgain as playMultiplayerAgain,
   resetGame as resetMultiplayer
 } from './multiplayer.js';
 import { MIN_WORD_LENGTH, getWordScoreDetails, isMissingRequiredTile, selectedTilesMatchWord } from './tile-logic.js';
@@ -193,7 +197,7 @@ const props = defineProps({
   isMultiplayer: Boolean
 });
 
-const emit = defineEmits(['home', 'showSettings']);
+const emit = defineEmits(['home', 'showSettings', 'playAgain']);
 const localMessage = ref('');
 const isPaused = ref(false);
 const activeBoonCardId = ref(null);
@@ -493,6 +497,20 @@ const setPauseState = (nextPaused) => {
 
 const togglePause = () => {
   setPauseState(!isPaused.value);
+};
+
+const handlePlayAgain = () => {
+  resetActionMode();
+  clearSelectionForSide(mySide.value);
+
+  if (props.isMultiplayer) {
+    playMultiplayerAgain();
+    localMessage.value = 'Resetting the match...';
+    return;
+  }
+
+  stopBotLoop();
+  emit('playAgain');
 };
 
 const handleKeydown = (event) => {
@@ -976,6 +994,26 @@ body {
 
 .history-empty {
   opacity: 0.62;
+}
+
+.play-again-button {
+  margin-top: 22px;
+  border: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  padding: 13px 22px;
+  font-size: 0.95rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  font-family: "Press Start 2P", cursive;
+  background: linear-gradient(180deg, #5de6cb 0%, #2eb397 100%);
+  color: white;
+  box-shadow:
+    0 0 0 2px rgba(243, 228, 104, 0.9),
+    0 14px 22px rgba(21, 12, 28, 0.2);
 }
 
 .bottom-bar {

@@ -32,6 +32,7 @@ export const playerCards = ref({
   host: { boons: [], attacks: [] },
   opponent: { boons: [], attacks: [] }
 });
+export const isPrivateRoom = ref(true);
 export const gameStarted = ref(false);
 export const message = ref('');
 export const isConnecting = ref(false);
@@ -56,6 +57,7 @@ const applyGameState = (data = {}) => {
   playerTiles.value = data.tiles || playerTiles.value;
   rackClears.value = data.rackClears || rackClears.value;
   playerCards.value = data.cards || playerCards.value;
+  isPrivateRoom.value = data.isPrivate ?? isPrivateRoom.value;
 };
 
 export const joinGame = (code) => {
@@ -111,6 +113,11 @@ export const clearRack = () => {
   socket.emit('clearRack', { roomCode: roomCode.value });
 };
 
+export const playAgain = () => {
+  if (!roomCode.value) return;
+  socket.emit('playAgain', { roomCode: roomCode.value });
+};
+
 export const useBoon = ({ cardId, tileId }) => {
   if (!gameStarted.value) return;
   socket.emit('useBoon', { roomCode: roomCode.value, cardId, tileId });
@@ -140,6 +147,12 @@ socket.on('boonUsed', (data) => {
 });
 
 socket.on('attackUsed', (data) => {
+  applyGameState(data);
+});
+
+socket.on('gameRestarted', (data) => {
+  gameStarted.value = true;
+  message.value = '';
   applyGameState(data);
 });
 
@@ -181,6 +194,7 @@ export const resetGame = () => {
     host: { boons: [], attacks: [] },
     opponent: { boons: [], attacks: [] }
   };
+  isPrivateRoom.value = true;
   gameStarted.value = false;
   message.value = '';
 };

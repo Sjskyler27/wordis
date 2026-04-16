@@ -12,6 +12,8 @@ const {
   generateRoomCode,
   createGame,
   joinGame,
+  listOpenGames,
+  playAgain,
   submitWord,
   clearRack,
   useBoon,
@@ -55,12 +57,15 @@ const createGameStatePayload = (state) => ({
   lastWordScores: state.lastWordScores,
   rackClears: state.rackClears,
   cards: state.cards,
-  tiles: state.tiles
+  tiles: state.tiles,
+  isPrivate: state.isPrivate
 });
 
 const handleHostGame = (connection, clientId) => {
   const roomCode = generateRoomCode();
-  const { success, error, state } = createGame(roomCode, clientId);
+  const { success, error, state } = createGame(roomCode, clientId, {
+    isPrivate: connection.__hostPreferences?.isPrivate ?? true
+  });
   if (!success) {
     sendEvent(connection, 'joinError', error);
     return;
@@ -72,6 +77,25 @@ const handleHostGame = (connection, clientId) => {
     ...createGameStatePayload(state)
   });
   console.log(`Client ${clientId} created room ${roomCode}`);
+};
+
+const handlePlayAgain = (connection, clientId, data) => {
+  const requestedCode = (data?.roomCode || '').toUpperCase();
+  if (!requestedCode) {
+    sendEvent(connection, 'joinError', 'Room code required');
+    return;
+  }
+
+  const { success, error, state } = playAgain(requestedCode, clientId);
+  if (!success) {
+    sendEvent(connection, 'joinError', error);
+    return;
+  }
+
+  broadcastToRoom(requestedCode, {
+    type: 'gameRestarted',
+    data: createGameStatePayload(state)
+  });
 };
 
 const handleJoinGame = (connection, clientId, data) => {
@@ -183,6 +207,9 @@ const handleClientAction = async (connection, clientId, action) => {
       break;
     case 'submitWord':
       await handleSubmitWord(connection, clientId, action.data);
+      break;
+    case 'playAgain':
+      handlePlayAgain(connection, clientId, action.data);
       break;
     case 'clearRack':
       handleClearRack(connection, clientId, action.data);
