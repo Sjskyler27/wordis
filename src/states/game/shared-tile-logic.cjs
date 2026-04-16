@@ -17,6 +17,7 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
   const SOLO_GOOD_MODIFIERS = ['gold', 'firsttile', 'wild', 'gainboon'];
   const BOON_CARD_KEYS = ['boon_delete_tile', 'boon_isolate_tile', 'boon_firsttile', 'boon_wild', 'boon_gold'];
   const ATTACK_CARD_KEYS = ['attack_zeroTile', 'attack_mustuse', 'attack_locked3', 'attack_ghostTile'];
+  const TIMED_SOLO_ATTACK_CARD_KEYS = ['attack_pause_time', 'attack_gain_time'];
   const MODIFIER_PROFILES = {
     duel: {
       goodModifiers: GOOD_MODIFIERS,
@@ -151,7 +152,7 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
     },
     ghostTile: {
       badge: 'GHST',
-      effects: { fadesIfUnused: true },
+      effects: { fadesIfUnused: true, bonusScore: 3 },
       rarityWeight: 0.52,
       canApply: ({ baseScore }) => baseScore <= 4,
       ui: {
@@ -295,6 +296,37 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
         cardPattern: 'rgba(244, 250, 255, 0.12)',
         cardBackground: 'linear-gradient(180deg, rgba(161, 191, 219, 0.98), rgba(91, 119, 157, 0.96))',
         cardBadgeBackground: 'rgba(50, 70, 104, 0.42)'
+      }
+    },
+    attack_pause_time: {
+      kind: 'attack',
+      label: 'Pause Time',
+      description: 'Pause the clock until your next word.',
+      rarityWeight: 0.72,
+      effectType: 'pause_time',
+      timedSoloOnly: true,
+      ui: {
+        cardGlow: 'rgba(178, 247, 255, 0.24)',
+        cardEdge: 'rgba(196, 252, 255, 0.34)',
+        cardPattern: 'rgba(230, 255, 255, 0.12)',
+        cardBackground: 'linear-gradient(180deg, rgba(74, 188, 205, 0.98), rgba(28, 102, 133, 0.96))',
+        cardBadgeBackground: 'rgba(16, 63, 79, 0.42)'
+      }
+    },
+    attack_gain_time: {
+      kind: 'attack',
+      label: 'Gain Time',
+      description: 'Add 10 seconds to the timer.',
+      rarityWeight: 1.08,
+      effectType: 'gain_time',
+      amount: 10,
+      timedSoloOnly: true,
+      ui: {
+        cardGlow: 'rgba(170, 255, 185, 0.24)',
+        cardEdge: 'rgba(196, 255, 207, 0.34)',
+        cardPattern: 'rgba(232, 255, 236, 0.12)',
+        cardBackground: 'linear-gradient(180deg, rgba(84, 205, 132, 0.98), rgba(35, 122, 68, 0.96))',
+        cardBadgeBackground: 'rgba(18, 71, 35, 0.42)'
       }
     }
   };
@@ -524,7 +556,7 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
     return getModifierDefinition(tileOrStatus).badge;
   };
   const getModifierUi = (status = 'normal') => getModifierDefinition(status).ui || MODIFIER_DEFINITIONS.normal.ui;
-  const tileScore = (tile) => (tile?.score || 0) * (tile?.multiplier || 1);
+  const tileScore = (tile) => ((tile?.score || 0) + (tile?.bonusScore || 0)) * (tile?.multiplier || 1);
 
   const getLengthBonus = (length) => {
     if (wordBonuses[length]) {
@@ -595,7 +627,7 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
   };
 
   const createCardLogic = ({ createCardId }) => {
-    const createCard = (cardKey) => {
+      const createCard = (cardKey) => {
       const definition = getCardDefinition(cardKey);
 
       return {
@@ -605,13 +637,25 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
       };
     };
 
-    const drawCard = (kind) => {
-      const cardKey = chooseWeightedCard(kind === 'boon' ? BOON_CARD_KEYS : ATTACK_CARD_KEYS);
+    const getCardPool = (kind, options = {}) => {
+      if (kind === 'boon') {
+        return BOON_CARD_KEYS;
+      }
+
+      if (options.deck === 'timed_solo') {
+        return TIMED_SOLO_ATTACK_CARD_KEYS;
+      }
+
+      return ATTACK_CARD_KEYS;
+    };
+
+    const drawCard = (kind, options = {}) => {
+      const cardKey = chooseWeightedCard(getCardPool(kind, options));
       return cardKey ? createCard(cardKey) : null;
     };
 
-    const drawCards = (kind, count = 1) => {
-      return Array.from({ length: count }, () => drawCard(kind)).filter(Boolean);
+    const drawCards = (kind, count = 1, options = {}) => {
+      return Array.from({ length: count }, () => drawCard(kind, options)).filter(Boolean);
     };
 
     const createCards = (cardKeys = []) => {
@@ -718,6 +762,7 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
       baseLetter: tile.baseLetter || tile.letter,
       score: nextScore,
       baseScore,
+      bonusScore: definition.effects.bonusScore || 0,
       multiplier: definition.effects.zeroLetterScore ? 0 : 1,
       wordMultiplier: definition.effects.wordMultiplier || 1,
       firstTileBonus: definition.effects.firstTileBonus || 0,
@@ -782,6 +827,7 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
         baseLetter: letter,
         score: modifierDefinition.effects.setScore != null ? modifierDefinition.effects.setScore : baseScore,
         baseScore,
+        bonusScore: modifierDefinition.effects.bonusScore || 0,
         multiplier: modifierDefinition.effects.zeroLetterScore ? 0 : 1,
         wordMultiplier: modifierDefinition.effects.wordMultiplier || 1,
         firstTileBonus: modifierDefinition.effects.firstTileBonus || 0,
