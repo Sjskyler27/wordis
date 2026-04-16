@@ -238,7 +238,7 @@ const isBotMode = computed(() => !props.isMultiplayer && props.playMode === 'bot
 const attacksEnabled = computed(() => isTestingMode || isTimedSoloMode.value || isBotMode.value || props.isMultiplayer);
 const showOpponentLane = computed(() => props.isMultiplayer || isBotMode.value);
 const preferredLanguage = getPreferredLanguage();
-const SOLO_TIMER_SECONDS = 180;
+const SOLO_TIMER_SECONDS = isTestingMode ? 25 : 180;
 const timerRemainingSeconds = ref(SOLO_TIMER_SECONDS);
 const isSoloTimerPausedByAttack = ref(false);
 const timedSoloFinalWordSpent = ref(false);
@@ -366,7 +366,7 @@ const getCardStyle = (card) => {
     '--card-badge-background': ui.cardBadgeBackground || 'rgba(24, 8, 22, 0.26)'
   };
 };
-const WINNING_SCORE = 250;
+const WINNING_SCORE = isTestingMode ? 40 : 250;
 const winningSide = computed(() => {
   if (playerScores.value.host >= WINNING_SCORE && playerScores.value.host >= playerScores.value.opponent) {
     return 'host';

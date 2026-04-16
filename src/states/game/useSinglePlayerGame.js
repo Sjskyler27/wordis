@@ -36,7 +36,7 @@ export const useSinglePlayerGame = ({
   onTimedSoloGainTime
 }) => {
   let botLoopId = null;
-  const WINNING_SCORE = 250;
+  const WINNING_SCORE = isTestingMode ? 40 : 250;
   const BOT_DELAYS = {
     easy: 12000,
     normal: 9000,
