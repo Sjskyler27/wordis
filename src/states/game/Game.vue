@@ -114,7 +114,7 @@
         </div>
 
         <WordBuilder
-          v-if="props.isMultiplayer ? gameStarted : true"
+          v-if="(props.isMultiplayer ? gameStarted : true) && !gameEnded"
           :selected-tiles="selectedTilesForCurrentSide"
           :current-word-length="currentWordLength"
           :current-word-score="currentWordScore"
@@ -131,6 +131,12 @@
           @submit="handleSubmit"
           @remove-specific="removeSpecificTile"
         />
+
+        <div v-else-if="gameEnded" class="end-card">
+          <span class="bonus-kicker">Game Over</span>
+          <strong>{{ winnerLabel }} wins at {{ winningScore }} points.</strong>
+          <p>The match is finished.</p>
+        </div>
       </section>
     </main>
   </div>
@@ -247,6 +253,31 @@ const myCards = computed(() => playerCards.value[mySide.value] || { boons: [], a
 const activeBoonCard = computed(() => {
   return myCards.value.boons.find((card) => card.id === activeBoonCardId.value) || null;
 });
+const WINNING_SCORE = 250;
+const winningSide = computed(() => {
+  if (playerScores.value.host >= WINNING_SCORE && playerScores.value.host >= playerScores.value.opponent) {
+    return 'host';
+  }
+
+  if (playerScores.value.opponent >= WINNING_SCORE) {
+    return 'opponent';
+  }
+
+  return null;
+});
+const gameEnded = computed(() => Boolean(winningSide.value));
+const winningScore = computed(() => winningSide.value ? playerScores.value[winningSide.value] : 0);
+const winnerLabel = computed(() => {
+  if (winningSide.value === mySide.value) {
+    return 'Your board';
+  }
+
+  if (winningSide.value === opponentSide.value) {
+    return 'Their board';
+  }
+
+  return 'No one';
+});
 
 watch(myCards, () => {
   if (activeBoonCardId.value && !activeBoonCard.value) {
@@ -263,6 +294,11 @@ const playerRoleText = computed(() => {
 });
 
 const handleSubmit = async () => {
+  if (gameEnded.value) {
+    localMessage.value = 'The match is already over.';
+    return;
+  }
+
   const normalizedWord = currentWordDisplay.value;
   if (!normalizedWord) {
     localMessage.value = 'Pick at least one tile first.';
@@ -337,6 +373,11 @@ const useAttackCard = (card) => {
 };
 
 const handleClearRack = () => {
+  if (gameEnded.value) {
+    localMessage.value = 'The match is already over.';
+    return;
+  }
+
   if (props.isMultiplayer) {
     if ((rackClears.value[mySide.value] || 0) <= 0) {
       localMessage.value = 'No rack clears remaining.';
@@ -355,6 +396,11 @@ const handleClearRack = () => {
 };
 
 const handleSaveLetters = () => {
+  if (gameEnded.value) {
+    localMessage.value = 'The match is already over.';
+    return;
+  }
+
   if (!selectedTilesForCurrentSide.value.length) {
     localMessage.value = 'Pick tiles first if you want to save them for later.';
     return;
@@ -366,6 +412,10 @@ const handleSaveLetters = () => {
 };
 
 const handleTileClickWithCards = (tile, side) => {
+  if (gameEnded.value) {
+    return;
+  }
+
   if (activeBoonCard.value) {
     if (side !== mySide.value) {
       localMessage.value = 'Boons can only target your own tiles.';
@@ -835,12 +885,33 @@ body {
   text-align: center;
 }
 
+.end-card {
+  border-radius: 26px;
+  background:
+    linear-gradient(180deg, rgba(255, 214, 122, 0.14), rgba(255, 255, 255, 0.04)),
+    rgba(255, 255, 255, 0.06);
+  padding: 34px 24px;
+  text-align: center;
+  border: 1px solid rgba(255, 226, 155, 0.18);
+}
+
 .waiting-card strong {
   display: block;
   font-size: 1.4rem;
 }
 
+.end-card strong {
+  display: block;
+  font-size: 1.55rem;
+  color: var(--gold);
+}
+
 .waiting-card p {
+  margin: 10px 0 0;
+  opacity: 0.78;
+}
+
+.end-card p {
   margin: 10px 0 0;
   opacity: 0.78;
 }

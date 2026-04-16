@@ -1,4 +1,5 @@
 const games = new Map();
+const WINNING_SCORE = 250;
 const LETTER_CONFIG = require('../src/states/game/letters.json');
 const WORD_BONUSES = require('../src/states/game/word-bonuses.json');
 const { validateWord } = require('./word-validator.cjs');
@@ -178,6 +179,10 @@ const submitWord = async (roomCode, clientId, word, tileIds, languageCode = 'en'
   const state = games.get(roomCode);
   if (!state) {
     return { success: false, error: 'Room not found' };
+  }
+
+  if (state.scores.host >= WINNING_SCORE || state.scores.opponent >= WINNING_SCORE) {
+    return { success: false, error: 'Game is already over' };
   }
 
   const normalizedWord = (word || '').trim().toUpperCase();
