@@ -74,6 +74,7 @@
 import { ref, shallowRef, onMounted, onBeforeUnmount, computed } from "vue";
 import Game from "/src/states/game/Game.vue";
 import MultiplayerScreen from "./states/game/MultiplayerScreen.vue";
+import { resetGame as resetMultiplayerGame } from "./states/game/multiplayer.js";
 import TypeScreen from "./states/home/TypeScreen.vue";
 import StartScreen from "./states/home/StartScreen.vue";
 import Admin from "./admin/Admin.vue";
@@ -347,8 +348,9 @@ const continueGame = () => {
     hideGoogleTranslateExtras()
     hideGoogleTranslateIframesAfterDelay();
     hideGoogleTranslate.value = true
-    currentState.value = Game;
     isMultiplayer.value = false;
+    resetMultiplayerGame();
+    currentState.value = Game;
   };
   
 
