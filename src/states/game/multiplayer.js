@@ -33,20 +33,21 @@ export const playerCards = ref({
   opponent: { boons: [], attacks: [] }
 });
 export const isPrivateRoom = ref(true);
+export const availableLobbies = ref([]);
 export const gameStarted = ref(false);
 export const message = ref('');
 export const isConnecting = ref(false);
 export const connectionStatus = ref('connecting');
 export const isSocketConnected = computed(() => connectionStatus.value === 'connected');
 
-export const hostGame = () => {
+export const hostGame = ({ isPrivate = true } = {}) => {
   if (!isSocketConnected.value) {
     message.value = 'Multiplayer server is offline. Please check your connection.';
     return;
   }
 
   isConnecting.value = true;
-  socket.emit('hostGame');
+  socket.emit('hostGame', { isPrivate });
 };
 
 const applyGameState = (data = {}) => {
@@ -76,6 +77,10 @@ export const joinGame = (code) => {
   socket.emit('joinGame', { roomCode: normalizedCode });
 };
 
+export const requestLobbyList = () => {
+  socket.emit('listLobbies');
+};
+
 socket.on('gameHosted', (data) => {
   roomCode.value = data.roomCode;
   isHost.value = true;
@@ -95,6 +100,10 @@ socket.on('gameJoined', (data) => {
 socket.on('joinError', (error) => {
   message.value = error;
   isConnecting.value = false;
+});
+
+socket.on('lobbyList', (data) => {
+  availableLobbies.value = data?.lobbies || [];
 });
 
 export const submitWord = ({ word, tileIds }) => {
@@ -160,7 +169,13 @@ socket.onStatusChange((status) => {
   connectionStatus.value = status;
   if (status !== 'connected') {
     isConnecting.value = false;
+    if (status === 'disconnected' || status === 'error') {
+      availableLobbies.value = [];
+    }
+    return;
   }
+
+  requestLobbyList();
 });
 
 export const resetGame = () => {
@@ -195,6 +210,7 @@ export const resetGame = () => {
     opponent: { boons: [], attacks: [] }
   };
   isPrivateRoom.value = true;
+  availableLobbies.value = [];
   gameStarted.value = false;
   message.value = '';
 };
