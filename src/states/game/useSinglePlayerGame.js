@@ -85,7 +85,7 @@ export const useSinglePlayerGame = ({
 
     wordHistory.value = {
       host: wordHistory.value.host,
-      opponent: [normalizedBotWord, ...wordHistory.value.opponent].slice(0, 5)
+      opponent: [normalizedBotWord, ...wordHistory.value.opponent]
     };
 
     const botScoreDetails = getWordScoreDetails(selectedBotTiles);
@@ -153,7 +153,7 @@ export const useSinglePlayerGame = ({
     };
 
     wordHistory.value = {
-      host: [word, ...wordHistory.value.host].slice(0, 5),
+      host: [word, ...wordHistory.value.host],
       opponent: wordHistory.value.opponent
     };
 

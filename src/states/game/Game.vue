@@ -136,6 +136,26 @@
           <span class="bonus-kicker">Game Over</span>
           <strong>{{ winnerLabel }} wins at {{ winningScore }} points.</strong>
           <p>The match is finished.</p>
+          <div class="history-columns">
+            <section class="history-panel">
+              <span class="history-label">Your History</span>
+              <ul class="history-list">
+                <li v-for="(word, index) in leftLaneHistory" :key="`left-history-${index}-${word}`">
+                  {{ word }}
+                </li>
+                <li v-if="!leftLaneHistory.length" class="history-empty">No words played.</li>
+              </ul>
+            </section>
+            <section class="history-panel">
+              <span class="history-label">Their History</span>
+              <ul class="history-list">
+                <li v-for="(word, index) in rightLaneHistory" :key="`right-history-${index}-${word}`">
+                  {{ word }}
+                </li>
+                <li v-if="!rightLaneHistory.length" class="history-empty">No words played.</li>
+              </ul>
+            </section>
+          </div>
         </div>
       </section>
     </main>
@@ -227,6 +247,8 @@ const {
 
 const leftLane = computed(() => buildLane(mySide.value, 'Your Board'));
 const rightLane = computed(() => buildLane(opponentSide.value, 'Their Board'));
+const leftLaneHistory = computed(() => wordHistory.value[mySide.value] || []);
+const rightLaneHistory = computed(() => wordHistory.value[opponentSide.value] || []);
 
 const {
   startBotLoop,
@@ -914,6 +936,46 @@ body {
 .end-card p {
   margin: 10px 0 0;
   opacity: 0.78;
+}
+
+.history-columns {
+  margin-top: 20px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  text-align: left;
+}
+
+.history-panel {
+  border-radius: 18px;
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.history-label {
+  display: block;
+  margin-bottom: 10px;
+  font-size: 0.72rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  opacity: 0.74;
+}
+
+.history-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.history-list li {
+  font-size: 0.9rem;
+}
+
+.history-empty {
+  opacity: 0.62;
 }
 
 .bottom-bar {

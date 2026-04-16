@@ -231,7 +231,6 @@ const submitWord = async (roomCode, clientId, word, tileIds, languageCode = 'en'
 
   state.words[side] = resolvedWord;
   state.history[side].unshift(resolvedWord);
-  state.history[side] = state.history[side].slice(0, 5);
   state.lastWordScores[side] = wordScore;
   state.scores[side] += wordScore;
   state.cards[side].boons.push(...drawCards('boon', grantedResources.boons));
