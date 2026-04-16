@@ -82,6 +82,9 @@ export const useSinglePlayerGame = ({
       return;
     }
 
+    const botScoreDetails = getWordScoreDetails(selectedBotTiles);
+    const grantedResources = getResourceGrants(selectedBotTiles);
+
     submittedWords.value = {
       host: submittedWords.value.host,
       opponent: normalizedBotWord
@@ -89,11 +92,8 @@ export const useSinglePlayerGame = ({
 
     wordHistory.value = {
       host: wordHistory.value.host,
-      opponent: [normalizedBotWord, ...wordHistory.value.opponent]
+      opponent: [{ word: normalizedBotWord, score: botScoreDetails.total }, ...wordHistory.value.opponent]
     };
-
-    const botScoreDetails = getWordScoreDetails(selectedBotTiles);
-    const grantedResources = getResourceGrants(selectedBotTiles);
 
     playerScores.value = {
       host: playerScores.value.host,
@@ -157,7 +157,7 @@ export const useSinglePlayerGame = ({
     };
 
     wordHistory.value = {
-      host: [word, ...wordHistory.value.host],
+      host: [{ word, score: scoreDetails.total }, ...wordHistory.value.host],
       opponent: wordHistory.value.opponent
     };
 
