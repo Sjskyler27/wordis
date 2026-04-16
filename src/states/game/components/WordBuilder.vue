@@ -5,7 +5,7 @@
 
     <div class="word-input-shell">
       <span class="console-label">{{ currentWordScore }} pts</span>
-      <div class="built-word-strip" :class="{ empty: !selectedTiles.length, shaking: isShaking }">
+      <div class="built-word-strip" :class="{ empty: !selectedTiles.length }">
         <div
           v-for="slot in wordSlots"
           :key="`word-slot-${slot.index}`"
@@ -22,6 +22,7 @@
               :key="`built-${slot.tile.id}`"
               type="button"
               class="built-tile"
+              :class="{ shaking: isShaking }"
               :style="getTileStyle(slot.tile)"
               @click="$emit('tile-click', slot.tile)"
             >
@@ -268,10 +269,6 @@ const getPlaceholderStyle = (slot) => {
   grid-template-columns: repeat(9, minmax(0, 1fr));
 }
 
-.built-word-strip.shaking {
-  animation: invalid-word-shake 280ms ease;
-}
-
 .built-word-strip.empty {
   color: rgba(254, 183, 59, 0.62);
 }
@@ -356,6 +353,10 @@ const getPlaceholderStyle = (slot) => {
   60% { transform: translateX(-6px) rotate(-0.5deg); }
   80% { transform: translateX(4px) rotate(0.35deg); }
   100% { transform: translateX(0); }
+}
+
+.built-tile.shaking {
+  animation: invalid-word-shake 280ms ease;
 }
 
 .word-slot.filled .word-slot-placeholder {
