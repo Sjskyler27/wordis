@@ -1,4 +1,10 @@
 # Changelog
+## 2026-04-16
+- adjust word builder styleing
+- fix history overlay to be seperate component 
+- added one more turn after time runs out in solo
+- removed attacks in solo mode
+
 
 ## 2026-04-15
 
