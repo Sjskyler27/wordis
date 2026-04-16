@@ -35,3 +35,12 @@ Stop: 2026-04-15 22:07:30 EDT
 - Forced the game view to remount when switching between multiplayer and singleplayer so solo matches no longer inherit the opponent waiting state.
 - Added a Play Again reset flow so finished matches can restart cleanly from the game over panel.
 - Added public lobby hosting and open lobby browsing so non-private rooms can be discovered and joined without sharing a room code.
+
+## 2026-04-15
+
+Start: 2026-04-15 22:11:30 EDT
+Stop: 2026-04-15 22:13:54 EDT
+
+- Let armed boons target tiles that are already in the built word so modifier plays no longer kick those letters back out of the word strip.
+- Capped `mustuse` at one tile per board, including attack usage, so that penalty stays pressuring without stacking into dead racks.
+- Switched word validation to prefer the local fallback dictionaries first and only use the dictionary API as a rescue path for misses, while keeping wildcard words on fallback matching.
