@@ -102,7 +102,10 @@ const clearRack = (roomCode, clientId) => {
   }
 
   state.rackClears[side] -= 1;
-  state.tiles[side] = createRack(side, state.scores);
+  state.tiles[side] = createRack(side, state.scores, {
+    mode: 'clear',
+    currentTiles: state.tiles[side]
+  });
 
   return { success: true, state };
 };

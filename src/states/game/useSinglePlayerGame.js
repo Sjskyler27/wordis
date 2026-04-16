@@ -56,6 +56,10 @@ export const useSinglePlayerGame = ({
     ]);
 
     if (!botWord) {
+      if ((rackClears.value.opponent || 0) <= 0) {
+        return;
+      }
+
       rackClears.value = {
         ...rackClears.value,
         opponent: rackClears.value.opponent - 1
@@ -63,9 +67,11 @@ export const useSinglePlayerGame = ({
 
       playerTiles.value = {
         ...playerTiles.value,
-        opponent: createRack('opponent', playerScores.value)
+        opponent: createRack('opponent', playerScores.value, {
+          mode: 'clear',
+          currentTiles: botTiles
+        })
       };
-    
 
       return;
     }
@@ -201,7 +207,10 @@ export const useSinglePlayerGame = ({
 
     playerTiles.value = {
       ...playerTiles.value,
-      [side]: createRack(side, playerScores.value)
+      [side]: createRack(side, playerScores.value, {
+        mode: 'clear',
+        currentTiles: playerTiles.value[side]
+      })
     };
 
     clearSelectionForSide(side);
