@@ -56,3 +56,5 @@ Game.vue:524 Proxy(Object) {id: 'local-tile-1', letter: 'T', baseLetter: 'T', s
 Game.vue:524 Proxy(Object) {id: 'local-tile-2', letter: 'B', baseLetter: 'B', score: 3, baseScore: 3, …}
 Game.vue:524 Proxy(Object) {id: 'local-tile-1', letter: 'A', baseLetter: 'A', score: 1, baseScore: 1, …}
 ok how are we making tile ids?? there is no reason a tile should end up with the same id as another )
+
+booons that give permennent upgrades like 
