@@ -119,6 +119,7 @@ const normalizedRightHistory = computed(() => props.rightHistory.map(normalizeEn
   border-radius: 30px;
   background: rgba(21, 8, 22, 0.74);
   backdrop-filter: blur(6px);
+  max-height: 96%;
 }
 
 .history-panel {
