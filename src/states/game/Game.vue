@@ -126,6 +126,8 @@
           v-if="(props.isMultiplayer ? gameStarted : true) && !effectiveGameEnded"
           :selected-tiles="selectedTilesForCurrentSide"
           :invalid-pulse="invalidWordPulse"
+          :score-pop-pulse="scorePopPulse"
+          :score-pop-tiles="scorePopTiles"
           :current-word-length="currentWordLength"
           :current-word-score="currentWordScore"
           :current-letter-total="currentLetterTotal"
@@ -210,6 +212,8 @@ const localMessage = ref('');
 const isPaused = ref(false);
 const activeBoonCardId = ref(null);
 const invalidWordPulse = ref(0);
+const scorePopPulse = ref(0);
+const scorePopTiles = ref([]);
 const laneBurstPulse = ref({
   host: 0,
   opponent: 0
@@ -492,6 +496,19 @@ const triggerInvalidWordShake = () => {
   invalidWordPulse.value += 1;
 };
 
+const playScoreAnimation = async (tileCount) => {
+  if (!tileCount) {
+    scorePopTiles.value = [];
+    return;
+  }
+
+  scorePopPulse.value += 1;
+  const totalDuration = Math.max(420, (tileCount * 110) + 260);
+  window.setTimeout(() => {
+    scorePopTiles.value = [];
+  }, totalDuration);
+};
+
 const triggerLaneBurst = (side, score) => {
   if (!score || score < 18) {
     return;
@@ -576,6 +593,8 @@ const handleSubmit = async () => {
     return;
   }
   const resolvedWord = (validationResult.resolvedWord || normalizedWord).toUpperCase();
+  scorePopTiles.value = selectedTiles.map((tile) => ({ ...tile }));
+  playScoreAnimation(selectedTiles.length);
 
   if (props.isMultiplayer) {
     const scoreDetails = getWordScoreDetails(selectedTiles);
