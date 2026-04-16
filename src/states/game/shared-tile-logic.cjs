@@ -104,11 +104,11 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses }) => {
       effects: { firstTileBonus: 10 },
       rarityWeight: 0.3,
       ui: {
-        tileBackground: 'linear-gradient(180deg, #fff4de 0%, #ffb56b 72%, #d86e27 100%)',
-        tileShadow: 'inset 0 -4px 0 rgba(130, 52, 12, 0.24), 0 12px 20px rgba(45, 10, 24, 0.2), 0 0 0 1px rgba(255, 190, 120, 0.45)',
-        textColor: '#1c1930',
-        badgeBackground: 'rgba(255, 232, 210, 0.96)',
-        badgeColor: '#9b4708'
+        tileBackground: 'linear-gradient(180deg, #d9edff 0%, #8cb1d8 72%, #4f6999 100%)',
+        tileShadow: 'inset 0 -4px 0 rgba(34, 58, 101, 0.25), 0 12px 20px rgba(24, 20, 46, 0.18), 0 0 0 1px rgba(173, 210, 255, 0.4)',
+        textColor: '#11213f',
+        badgeBackground: 'rgba(233, 244, 255, 0.96)',
+        badgeColor: '#274577'
       }
     },
     black: {
