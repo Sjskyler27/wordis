@@ -13,10 +13,10 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses }) => {
   const MODIFIER_SWING_DIVISOR = 90;
   const MAX_MODIFIER_BONUS = 0.18;
   const GOOD_MODIFIERS = ['gold', 'firsttile', 'wild', 'gainboon', 'gainattack'];
-  const BAD_MODIFIERS = ['black', 'mustuse', 'locked3'];
+  const BAD_MODIFIERS = ['zeroTile', 'mustuse', 'locked3'];
   const SOLO_GOOD_MODIFIERS = ['gold', 'firsttile', 'wild', 'gainboon'];
   const BOON_CARD_KEYS = ['boon_delete_tile', 'boon_isolate_tile', 'boon_firsttile', 'boon_wild', 'boon_gold'];
-  const ATTACK_CARD_KEYS = ['attack_black', 'attack_mustuse', 'attack_locked3'];
+  const ATTACK_CARD_KEYS = ['attack_zeroTile', 'attack_mustuse', 'attack_locked3'];
   const MODIFIER_PROFILES = {
     duel: {
       goodModifiers: GOOD_MODIFIERS,
@@ -111,17 +111,17 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses }) => {
         badgeColor: '#274577'
       }
     },
-    black: {
+    zeroTile: {
       effects: { setScore: 0 },
       rarityWeight: 0.95,
       canApply: ({ baseScore }) => baseScore <= 4,
       ui: {
-  tileBackground: 'linear-gradient(180deg, #d2a679 0%, #a87442 70%, #91623c 100%)',
-  tileShadow: 'inset 0 -4px 0 rgba(60, 30, 10, 0.35), 0 10px 18px rgba(45, 20, 10, 0.25), 0 0 0 1px rgba(255, 220, 180, 0.25)',
-  textColor: '#2b1a0f',
-  badgeBackground: 'rgba(255, 235, 210, 0.9)',
-  hideBadge: true
-}
+        tileBackground: 'linear-gradient(180deg, #dfc1a3 0%, #cda278 70%, #91623c 100%)',
+        tileShadow: 'inset 0 -4px 0 rgba(60, 30, 10, 0.35), 0 10px 18px rgba(45, 20, 10, 0.25), 0 0 0 1px rgba(255, 220, 180, 0.25)',
+        textColor: '#2b1a0f',
+        badgeBackground: 'rgba(255, 235, 210, 0.9)',
+        hideBadge: true
+      }
     },
     mustuse: {
       badge: 'MUST',
@@ -224,19 +224,19 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses }) => {
         cardBadgeBackground: 'rgba(107, 67, 8, 0.42)'
       }
     },
-    attack_black: {
+    attack_zeroTile: {
       kind: 'attack',
-      label: 'Blackout',
-      description: 'Give a random enemy tile the black modifier.',
+      label: 'Zero Tile',
+      description: 'Give a random enemy tile the Zero Tile modifier.',
       rarityWeight: 1,
       effectType: 'random_attack',
-      modifier: 'black',
+      modifier: 'zeroTile',
       ui: {
-        cardGlow: 'rgba(132, 118, 172, 0.24)',
-        cardEdge: 'rgba(171, 156, 209, 0.3)',
-        cardPattern: 'rgba(232, 226, 255, 0.08)',
-        cardBackground: 'linear-gradient(180deg, rgba(74, 67, 104, 0.98), rgba(26, 22, 39, 0.98))',
-        cardBadgeBackground: 'rgba(14, 10, 24, 0.46)'
+        cardGlow: 'rgba(227, 195, 162, 0.24)',
+        cardEdge: 'rgba(233, 207, 180, 0.34)',
+        cardPattern: 'rgba(252, 238, 220, 0.1)',
+        cardBackground: 'linear-gradient(180deg, rgba(183, 131, 84, 0.98), rgba(103, 61, 31, 0.96))',
+        cardBadgeBackground: 'rgba(73, 41, 17, 0.42)'
       }
     },
     attack_mustuse: {
@@ -335,12 +335,18 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses }) => {
     };
   };
 
-  const getModifierDefinition = (status = 'normal') => MODIFIER_DEFINITIONS[status] || MODIFIER_DEFINITIONS.normal;
-  const getCardDefinition = (cardKey) => CARD_DEFINITIONS[cardKey];
+  const normalizeModifierStatus = (status = 'normal') => (status === 'black' ? 'zeroTile' : status);
+  const normalizeCardKey = (cardKey) => (cardKey === 'attack_black' ? 'attack_zeroTile' : cardKey);
+  const getModifierDefinition = (status = 'normal') => {
+    return MODIFIER_DEFINITIONS[normalizeModifierStatus(status)] || MODIFIER_DEFINITIONS.normal;
+  };
+  const getCardDefinition = (cardKey) => CARD_DEFINITIONS[normalizeCardKey(cardKey)];
   const hasModifierInRack = (rackTiles = [], status = 'normal') => {
     return rackTiles.some((tile) => tile.status === status);
   };
   const canApplyModifier = (status = 'normal', context = {}) => {
+    status = normalizeModifierStatus(status);
+
     if (status === 'mustuse' && hasModifierInRack(context.rackTiles || [], 'mustuse')) {
       return false;
     }
