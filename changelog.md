@@ -15,3 +15,13 @@ Stop: 2026-04-15 01:48:04 EDT
 - Added a wild tile modifier that can stand in for any selected letter and scores 1 point.
 - Restyled the multiplayer lobby to match the current game presentation.
 - Made the multiplayer room code input normalize to uppercase as you type.
+
+## 2026-04-15
+
+Start: 2026-04-15 21:47:46 EDT
+Stop: 2026-04-15 21:53:02 EDT
+
+- Reset multiplayer state before entering singleplayer so solo games no longer get stuck showing the opponent wait state.
+- Ended matches at 250 points and blocked further submissions once the finish line is reached.
+- Added a postgame results panel that shows the winner plus each side's full word history.
+- Balanced opening racks so both sides begin with mirrored modifier slots instead of uneven opening modifier luck.
