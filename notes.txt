@@ -58,3 +58,5 @@ no boon on neg atack a normal tile
 game broke at some point while playing 
 
 maybe cycle what the length bonus is, add a next turn get this 
+
+bunch of audio bus like overlapping music sounds and such need to also pass all the audio info accross screens and update sounds real time restart sounds after game
