@@ -11,3 +11,17 @@ up how often you get ither modifiers
 double letters are subing QU
 
 to many black tiles
+
+bring back blue as firts tile
+
+1 last word after timer or game end 
+
+preview what opponent is building 
+
+add sounds 
+
+add animations
+
+individual sound based on word length
+
+request to add word and other feedback
