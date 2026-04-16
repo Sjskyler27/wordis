@@ -705,6 +705,22 @@ const resetActionMode = () => {
 };
 
 const selectBoonCard = (card) => {
+  if (card.effectType === 'clear_negative_modifiers') {
+    if (props.isMultiplayer) {
+      useMultiplayerBoon({ cardId: card.id, tileId: null });
+      localMessage.value = `Played ${card.label}.`;
+      resetActionMode();
+      return;
+    }
+
+    const result = useSinglePlayerBoon(mySide.value, card.id, null);
+    if (result?.success) {
+      localMessage.value = `Played ${card.label}.`;
+      resetActionMode();
+    }
+    return;
+  }
+
   if (activeBoonCardId.value === card.id) {
     resetActionMode();
     localMessage.value = 'Boon selection cleared.';

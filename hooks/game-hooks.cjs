@@ -199,6 +199,19 @@ const useBoon = (roomCode, clientId, cardId, tileId) => {
     return { success: false, error: 'No boons remaining' };
   }
 
+  if (card.effectType === 'clear_negative_modifiers') {
+    state.cards[side].boons = state.cards[side].boons.filter((entry) => entry.id !== cardId);
+    state.tiles[side] = state.tiles[side].map((entry) => {
+      if (!['zeroTile', 'mustuse', 'locked3', 'ghostTile'].includes(entry.status)) {
+        return entry;
+      }
+
+      return replaceTileWithModifier([entry], entry.id, 'normal')[0];
+    });
+
+    return { success: true, state };
+  }
+
   const tile = state.tiles[side].find((entry) => entry.id === tileId);
   if (!tile || tile.locked) {
     return { success: false, error: 'That tile cannot take a boon' };

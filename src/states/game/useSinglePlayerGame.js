@@ -307,6 +307,29 @@ export const useSinglePlayerGame = ({
       return false;
     }
 
+    if (card.effectType === 'clear_negative_modifiers') {
+      playerCards.value = {
+        ...playerCards.value,
+        [side]: {
+          ...playerCards.value[side],
+          boons: hand.filter((entry) => entry.id !== cardId)
+        }
+      };
+
+      playerTiles.value = {
+        ...playerTiles.value,
+        [side]: playerTiles.value[side].map((entry) => {
+          if (!CARD_DEFINITIONS[entry.status] || !['zeroTile', 'mustuse', 'locked3', 'ghostTile'].includes(entry.status)) {
+            return entry;
+          }
+
+          return replaceTileWithModifier([entry], entry.id, 'normal')[0];
+        })
+      };
+
+      return { success: true };
+    }
+
     const tile = playerTiles.value[side]?.find((entry) => entry.id === tileId);
     if (!tile || tile.locked) {
       localMessage.value = 'That tile cannot take a boon.';
