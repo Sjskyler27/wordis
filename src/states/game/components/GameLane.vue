@@ -143,6 +143,7 @@ const getBadgeStyle = (tile) => {
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 10px;
+  max-width: 530px;
 }
 
 .rack-slot {
@@ -155,6 +156,7 @@ const getBadgeStyle = (tile) => {
   cursor: pointer;
   min-height: 94px;
   min-width: 94px;
+  max-width: 106px;
   width: 100%;
   border-radius: 16px;
   background: var(--tile-bg, linear-gradient(180deg, #fffef8 0%, #f2ebe0 70%, #d9cec0 100%));
