@@ -204,6 +204,7 @@ const showOpponentLane = computed(() => props.isMultiplayer || isBotMode.value);
 const preferredLanguage = getPreferredLanguage();
 const SOLO_TIMER_SECONDS = 180;
 const timerRemainingSeconds = ref(SOLO_TIMER_SECONDS);
+const timedSoloFinalWordSpent = ref(false);
 let soloTimerId = null;
 
 const mySide = computed(() => {
@@ -306,7 +307,8 @@ const winningSide = computed(() => {
 });
 const gameEnded = computed(() => Boolean(winningSide.value));
 const timeExpired = computed(() => isTimedSoloMode.value && timerRemainingSeconds.value <= 0);
-const effectiveGameEnded = computed(() => gameEnded.value || timeExpired.value);
+const finalWordWindowActive = computed(() => isTimedSoloMode.value && timeExpired.value && !timedSoloFinalWordSpent.value);
+const effectiveGameEnded = computed(() => gameEnded.value || (timeExpired.value && timedSoloFinalWordSpent.value));
 const winningScore = computed(() => {
   if (timeExpired.value) {
     return playerScores.value.host;
@@ -361,6 +363,10 @@ const modeSubtitle = computed(() => {
   return `Fight the bot on ${props.botDifficulty} difficulty in the same live rack format.`;
 });
 const statusHeadline = computed(() => {
+  if (finalWordWindowActive.value) {
+    return 'Final word ready';
+  }
+
   if (isTimedSoloMode.value) {
     return `${formattedTimeRemaining.value} remaining`;
   }
@@ -422,6 +428,10 @@ const handleSubmit = async () => {
   }
 
   submitSinglePlayerWord(resolvedWord);
+
+  if (finalWordWindowActive.value) {
+    timedSoloFinalWordSpent.value = true;
+  }
 };
 
 const resetActionMode = () => {
@@ -591,6 +601,7 @@ const togglePause = () => {
 const handlePlayAgain = () => {
   resetActionMode();
   clearSelectionForSide(mySide.value);
+  timedSoloFinalWordSpent.value = false;
 
   if (props.isMultiplayer) {
     playMultiplayerAgain();
@@ -633,6 +644,7 @@ const startSoloTimer = () => {
 
 watch(() => props.playMode, (nextMode) => {
   timerRemainingSeconds.value = nextMode === 'timed_solo' ? SOLO_TIMER_SECONDS : 0;
+  timedSoloFinalWordSpent.value = false;
 
   if (nextMode === 'timed_solo') {
     startSoloTimer();
@@ -676,6 +688,7 @@ const resetAndGoHome = () => {
   isPaused.value = false;
   stopBotLoop();
   stopSoloTimer();
+  timedSoloFinalWordSpent.value = false;
   resetMultiplayer();
   resetActionMode();
   localMessage.value = '';
