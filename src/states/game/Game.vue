@@ -136,8 +136,8 @@
           :current-word-multiplier="currentWordMultiplier"
           :clear-count="rackClears[mySide]"
           :length-bonus-steps="lengthBonusSteps"
-          @undo="removeLastLetter"
-          @clear="clearWord"
+          @undo="handleUndo"
+          @clear="handleClearWord"
           @save-letters="handleSaveLetters"
           @clear-rack="handleClearRack"
           @submit="handleSubmit"
@@ -204,7 +204,10 @@ const props = defineProps({
   botDifficulty: {
     type: String,
     default: 'normal'
-  }
+  },
+    volume: Number,
+    musicVolume: Number,
+    effectsVolume: Number,
 });
 
 const emit = defineEmits(['home', 'showSettings', 'playAgain']);
@@ -232,6 +235,11 @@ const SOLO_TIMER_SECONDS = 180;
 const timerRemainingSeconds = ref(SOLO_TIMER_SECONDS);
 const isSoloTimerPausedByAttack = ref(false);
 const timedSoloFinalWordSpent = ref(false);
+const tilePickupSound = new Audio('/audio/tile_pick_up.mp3');
+const tilePutBackSound = new Audio('/audio/tile_put_back.mp3');
+  tilePutBackSound.volume = props.volume * props.effectsVolume / 100
+  tilePickupSound.volume = props.volume * props.effectsVolume / 100
+
 const victorySound = new Audio('/audio/victory.mp3');
 const defeatSound = new Audio('/audio/defeat.mp3');
 let soloTimerId = null;
@@ -496,6 +504,20 @@ const triggerInvalidWordShake = () => {
   invalidWordPulse.value += 1;
 };
 
+const playUiSound = (audio) => {
+  if (!audio) {
+    return;
+  }
+
+  try {
+    audio.currentTime = 0;
+    if(props.effectsVolume > 0)
+    audio.play();
+  } catch (error) {
+    // Ignore UI sound playback failures.
+  }
+};
+
 const playScoreAnimation = async (tileCount) => {
   if (!tileCount) {
     scorePopTiles.value = [];
@@ -692,6 +714,18 @@ const handleSaveLetters = () => {
   }
 };
 
+const handleUndo = () => {
+  if (removeLastLetter()) {
+    playUiSound(tilePutBackSound);
+  }
+};
+
+const handleClearWord = () => {
+  if (clearWord()) {
+    playUiSound(tilePutBackSound);
+  }
+};
+
 const handleTileClickWithCards = (tile, side) => {
   if (effectiveGameEnded.value) {
     return;
@@ -717,7 +751,12 @@ const handleTileClickWithCards = (tile, side) => {
     return;
   }
 
-  handleTileClick(tile);
+  const result = handleTileClick(tile);
+  if (result === 'added') {
+    playUiSound(tilePickupSound);
+  } else if (result === 'removed') {
+    playUiSound(tilePutBackSound);
+  }
 };
 
 const handleBuiltTileClick = (tile) => {
@@ -744,7 +783,9 @@ const handleBuiltTileClick = (tile) => {
     return;
   }
 
-  removeSpecificTile(tile.id);
+  if (removeSpecificTile(tile.id)) {
+    playUiSound(tilePutBackSound);
+  }
 };
 
 const copyRoomCode = async () => {
@@ -815,6 +856,8 @@ watch(effectiveGameEnded, async (ended, wasEnded) => {
   }
 
   const audio = historyResultState.value === 'defeat' ? defeatSound : victorySound;
+  audio.volume = props.volume * props.effectsVolume / 100
+
   victorySound.pause();
   defeatSound.pause();
   victorySound.currentTime = 0;
@@ -893,6 +936,8 @@ onMounted(() => {
 onBeforeUnmount(() => {
   window.removeEventListener('keydown', handleKeydown);
   stopSoloTimer();
+  tilePickupSound.pause();
+  tilePutBackSound.pause();
   victorySound.pause();
   defeatSound.pause();
 });
