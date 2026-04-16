@@ -886,6 +886,8 @@ body {
   margin-top: 12px;
   position: relative;
   z-index: 1;
+  max-height: 300px;
+  overflow-y: auto;
 }
 
 .action-card {
