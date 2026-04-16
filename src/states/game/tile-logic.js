@@ -39,7 +39,7 @@ const {
 let nextLocalTileId = 1;
 let nextLocalCardId = 1;
 
-const { createRack, refillTiles } = createTileLogic({
+const { createRack, createOpeningRackPair, refillTiles } = createTileLogic({
   createTileId: () => `local-tile-${nextLocalTileId++}`
 });
 const { drawCard, drawCards } = createCardLogic({
@@ -48,6 +48,7 @@ const { drawCard, drawCards } = createCardLogic({
 
 export {
   createRack,
+  createOpeningRackPair,
   refillTiles,
   MIN_WORD_LENGTH,
   tileScore,

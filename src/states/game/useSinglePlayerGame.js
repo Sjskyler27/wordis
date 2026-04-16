@@ -1,6 +1,7 @@
 import { onBeforeUnmount, watch } from 'vue';
 import { getBotWord } from './bot.js';
 import {
+  createOpeningRackPair,
   createRack,
   drawCards,
   getTilesForWord,
@@ -27,10 +28,7 @@ export const useSinglePlayerGame = ({
 
   const ensureSinglePlayerState = () => {
     if (!playerTiles.value.host.length && !playerTiles.value.opponent.length) {
-      playerTiles.value = {
-        host: createRack('host', playerScores.value),
-        opponent: createRack('opponent', playerScores.value)
-      };
+      playerTiles.value = createOpeningRackPair(playerScores.value);
       rackClears.value = {
         host: 2,
         opponent: 2

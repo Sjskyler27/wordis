@@ -26,7 +26,7 @@ const {
 let nextTileId = 1;
 let nextCardId = 1;
 
-const { createRack, refillTiles: refillRack } = createTileLogic({
+const { createRack, createOpeningRackPair, refillTiles: refillRack } = createTileLogic({
   createTileId: () => `tile-${nextTileId++}`
 });
 const { drawCard, drawCards } = createCardLogic({
@@ -79,10 +79,7 @@ const createGame = (roomCode, hostId) => {
         attacks: drawCards('attack', 1)
       }
     },
-    tiles: {
-      host: createRack('host', { host: 0, opponent: 0 }),
-      opponent: createRack('opponent', { host: 0, opponent: 0 })
-    }
+    tiles: createOpeningRackPair({ host: 0, opponent: 0 })
   };
 
   games.set(roomCode, state);

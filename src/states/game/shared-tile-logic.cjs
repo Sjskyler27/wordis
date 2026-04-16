@@ -335,6 +335,37 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses }) => {
     return 'normal';
   };
 
+  const rollSharedOpeningModifier = (scores = {}, contexts = []) => {
+    const { goodChance, badChance } = getModifierChances(null, scores);
+    const roll = Math.random();
+
+    if (roll < goodChance) {
+      const eligibleGoodModifiers = GOOD_MODIFIERS.filter((modifier) => {
+        return contexts.every((context) => canApplyModifier(modifier, context));
+      });
+
+      if (!eligibleGoodModifiers.length) {
+        return 'normal';
+      }
+
+      return chooseWeightedModifier(eligibleGoodModifiers);
+    }
+
+    if (roll < goodChance + badChance) {
+      const eligibleBadModifiers = BAD_MODIFIERS.filter((modifier) => {
+        return contexts.every((context) => canApplyModifier(modifier, context));
+      });
+
+      if (!eligibleBadModifiers.length) {
+        return 'normal';
+      }
+
+      return chooseWeightedModifier(eligibleBadModifiers);
+    }
+
+    return 'normal';
+  };
+
   const getModifierBadge = (tileOrStatus = 'normal') => {
     if (tileOrStatus && typeof tileOrStatus === 'object') {
       if (tileOrStatus.locked) {
@@ -567,9 +598,9 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses }) => {
   };
 
   const createTileLogic = ({ createTileId }) => {
-    const createTile = (letter = drawLetter(), side = null, scores = {}) => {
+    const createTile = (letter = drawLetter(), side = null, scores = {}, forcedStatus = null) => {
       const baseScore = letterConfig[letter]?.score || 0;
-      const status = rollTileModifier(side, scores, { letter, baseScore });
+      const status = forcedStatus || rollTileModifier(side, scores, { letter, baseScore });
       const modifierDefinition = getModifierDefinition(status);
       const lockTurns = modifierDefinition.effects.lockTurns || 0;
       const tileLetter = modifierDefinition.effects.wild ? '*' : letter;
@@ -595,6 +626,28 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses }) => {
         rack.push(createTile(drawLetter(rack), side, scores));
       }
       return rack;
+    };
+
+    const createOpeningRackPair = (scores = {}) => {
+      const hostRack = [];
+      const opponentRack = [];
+
+      while (hostRack.length < RACK_SIZE) {
+        const hostLetter = drawLetter(hostRack);
+        const opponentLetter = drawLetter(opponentRack);
+        const sharedStatus = rollSharedOpeningModifier(scores, [
+          { letter: hostLetter, baseScore: letterConfig[hostLetter]?.score || 0 },
+          { letter: opponentLetter, baseScore: letterConfig[opponentLetter]?.score || 0 }
+        ]);
+
+        hostRack.push(createTile(hostLetter, 'host', scores, sharedStatus));
+        opponentRack.push(createTile(opponentLetter, 'opponent', scores, sharedStatus));
+      }
+
+      return {
+        host: hostRack,
+        opponent: opponentRack
+      };
     };
 
     const refillTiles = (tiles, usedTileIds, side = null, scores = {}) => {
@@ -625,6 +678,7 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses }) => {
     return {
       createTile,
       createRack,
+      createOpeningRackPair,
       refillTiles
     };
   };
