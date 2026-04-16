@@ -19,7 +19,8 @@
               active: isActive,
               'tile-in-use': selectedTileIds.has(tile.id),
               'tile-saved': savedTileIds.has(tile.id),
-              'tile-locked': tile.locked
+              'tile-locked': tile.locked,
+              'tile-must-alert': mustAlertIds.has(tile.id)
             }"
             :style="getTileStyle(tile)"
             @click="$emit('tile-click', tile)"
@@ -71,6 +72,10 @@ defineProps({
   savedTileIds: {
     type: Object,
     required: true
+  },
+  mustAlertIds: {
+    type: Object,
+    default: () => new Set()
   },
   lastWordScore: {
     type: Number,
@@ -240,6 +245,26 @@ const getBadgeStyle = (tile) => {
   letter-spacing: 0.12em;
   text-transform: uppercase;
   box-shadow: 0 4px 10px rgba(18, 57, 53, 0.2);
+}
+
+.tile-must-alert {
+  animation: must-tile-flash 520ms ease 2;
+}
+
+@keyframes must-tile-flash {
+  0%,
+  100% {
+    box-shadow: var(--tile-shadow, inset 0 -4px 0 rgba(0, 0, 0, 0.12), 0 10px 18px rgba(45, 10, 24, 0.16));
+    filter: saturate(1);
+  }
+  40% {
+    box-shadow:
+      inset 0 0 0 3px rgba(255, 247, 180, 0.92),
+      0 0 0 5px rgba(255, 205, 120, 0.28),
+      0 0 24px rgba(255, 226, 141, 0.68),
+      var(--tile-shadow, inset 0 -4px 0 rgba(0, 0, 0, 0.12), 0 10px 18px rgba(45, 10, 24, 0.16));
+    filter: saturate(1.18) brightness(1.08);
+  }
 }
 
 .tile-letter {

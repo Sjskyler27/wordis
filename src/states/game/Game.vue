@@ -95,6 +95,7 @@
             :is-active="leftLane.isActive"
             :selected-tile-ids="leftLane.selectedTileIds"
             :saved-tile-ids="leftLane.savedTileIds"
+            :must-alert-ids="leftLane.mustAlertIds"
             @tile-click="handleTileClickWithCards($event, leftLane.side)"
           />
 
@@ -109,6 +110,7 @@
             :is-active="rightLane.isActive"
             :selected-tile-ids="rightLane.selectedTileIds"
             :saved-tile-ids="rightLane.savedTileIds"
+            :must-alert-ids="rightLane.mustAlertIds"
             @tile-click="handleTileClickWithCards($event, rightLane.side)"
           />
         </div>
@@ -201,6 +203,10 @@ const localMessage = ref('');
 const isPaused = ref(false);
 const activeBoonCardId = ref(null);
 const invalidWordPulse = ref(0);
+const mustAlertTileIds = ref({
+  host: new Set(),
+  opponent: new Set()
+});
 const isMultiplayerRef = computed(() => props.isMultiplayer);
 const isTimedSoloMode = computed(() => !props.isMultiplayer && props.playMode === 'timed_solo');
 const isBotMode = computed(() => !props.isMultiplayer && props.playMode === 'bot_match');
@@ -231,7 +237,8 @@ const buildLane = (side, label) => ({
   tiles: playerTiles.value[side],
   isActive: mySide.value === side,
   selectedTileIds: selectedTileIds.value[side],
-  savedTileIds: savedTileIds.value[side]
+  savedTileIds: savedTileIds.value[side],
+  mustAlertIds: mustAlertTileIds.value[side]
 });
 
 const {
@@ -393,6 +400,24 @@ const triggerInvalidWordShake = () => {
   invalidWordPulse.value += 1;
 };
 
+const triggerMustTileAlert = (side, tileIds) => {
+  if (!tileIds?.length) {
+    return;
+  }
+
+  mustAlertTileIds.value = {
+    ...mustAlertTileIds.value,
+    [side]: new Set(tileIds)
+  };
+
+  window.setTimeout(() => {
+    mustAlertTileIds.value = {
+      ...mustAlertTileIds.value,
+      [side]: new Set()
+    };
+  }, 1100);
+};
+
 watch(myCards, () => {
   if (activeBoonCardId.value && !activeBoonCard.value) {
     resetActionMode();
@@ -427,6 +452,9 @@ const handleSubmit = async () => {
   if (isMissingRequiredTile(myTiles.value, selectedTiles)) {
     localMessage.value = 'You have to use every MUST tile in your rack.';
     triggerInvalidWordShake();
+    triggerMustTileAlert(mySide.value, myTiles.value
+      .filter((tile) => tile.status === 'mustuse' && !tile.locked)
+      .map((tile) => tile.id));
     return;
   }
 
