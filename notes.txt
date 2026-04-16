@@ -25,3 +25,11 @@ add animations
 individual sound based on word length
 
 request to add word and other feedback
+
+better notifications 
+
+add tile sense show what it dies 
+
+add color blind friendliness
+
+fleeting 
