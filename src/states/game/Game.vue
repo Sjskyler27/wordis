@@ -706,7 +706,7 @@ body {
   --bg-mid: #b63e3b;
   --bg-bottom: #341137;
   --bg-corner: #f39a54;
-  --panel-deep: rgba(73, 18, 34, 0.9);
+  --panel-deep: rgba(73, 18, 34, 0.6);
   --cream: #f7efe1;
   --gold: #ffca67;
   --teal: #4bc7b0;
@@ -781,6 +781,7 @@ body {
 
 
 .board-frame {
+  padding-top: 25px;
   justify-content: center;
   display: flex;
   grid-template-columns: 250px minmax(0, 1fr);
@@ -799,6 +800,7 @@ body {
   display: flex;
   flex-direction: column;
   gap: 16px;
+  max-width: 350px;
 }
 
 .bonus-card {
@@ -894,6 +896,7 @@ body {
   border: 1px solid var(--card-edge);
   cursor: pointer;
   width: 100%;
+  max-width: 280px;
   text-align: left;
   display: grid;
   gap: 8px;
@@ -1015,7 +1018,7 @@ body {
   max-width: 1250px;
   max-height: 1000px;
   border-radius: 34px;
-  background: rgba(90, 23, 35, 0.72);
+  background: rgba(90, 23, 35, 0.22);
   border: 2px solid rgba(255, 255, 255, 0.12);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.12),

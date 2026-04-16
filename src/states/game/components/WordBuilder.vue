@@ -153,7 +153,7 @@ const getBadgeStyle = (tile) => {
   justify-content: space-between;
   padding: 16px;
   border-radius: 24px;
-  background: rgba(48, 12, 28, 0.8);
+  background: rgba(48, 12, 28, 0.23);
 }
 
 .bonus-ladder {
@@ -206,7 +206,6 @@ const getBadgeStyle = (tile) => {
   align-items: center;
   padding: 10px 14px;
   border-radius: 18px;
-  background: rgba(255, 255, 255, 0.08);
 }
 
 .built-word-strip {
@@ -225,8 +224,8 @@ const getBadgeStyle = (tile) => {
 }
 
 .word-slot-placeholder {
-  min-height: 90px;
-  width: 106px;
+  min-height: 94px;
+  width: 98px;
   border-radius: 14px;
   position: relative;
   display: flex;
@@ -273,8 +272,8 @@ const getBadgeStyle = (tile) => {
   appearance: none;
   border: none;
   cursor: pointer;
-  min-height: 90px;
-  width: 106px;
+  min-height: 94px;
+  width: 98px;
   border-radius: 14px;
   position: relative;
   background: var(--built-tile-bg, linear-gradient(180deg, #fffef8 0%, #f2ebe0 70%, #d9cec0 100%));

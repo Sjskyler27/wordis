@@ -33,3 +33,21 @@ add tile sense show what it dies
 add color blind friendliness
 
 fleeting 
+
+daily mode that pulls from list of letters and give the same boons in order 
+
+save a letter and clear the rest 
+
+add color shifitng to background
+
+pause should pause timer
+
+pause should throw up a pause on both players screen 
+
+add cleanse remove all negetive 
+
+shake and sound tiles when not real word
+
+notify when must is on the board 
+
+add test env one of each attack and boon and one of each letter and 100 clear racks 
