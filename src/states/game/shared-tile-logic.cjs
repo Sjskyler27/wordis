@@ -62,7 +62,7 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
       }
     },
     gainboon: {
-      badge: '+BOON',
+      badge: 'BOON',
       effects: { grantBoon: 1 },
       rarityWeight: 0.28,
       ui: {
@@ -74,7 +74,7 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
       }
     },
     gainattack: {
-      badge: '+ATK',
+      badge: 'ATK',
       effects: { grantAttack: 1 },
       rarityWeight: 0.28,
       ui: {
@@ -547,7 +547,7 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
   const getModifierBadge = (tileOrStatus = 'normal') => {
     if (tileOrStatus && typeof tileOrStatus === 'object') {
       if (tileOrStatus.locked) {
-        return `LCK ${tileOrStatus.lockTurns || 0}`;
+        return `LCK${tileOrStatus.lockTurns || 0}`;
       }
 
       return getModifierDefinition(tileOrStatus.status).badge;
