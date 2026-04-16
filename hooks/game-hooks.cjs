@@ -1,4 +1,5 @@
 const games = new Map();
+const WINNING_SCORE = 250;
 const LETTER_CONFIG = require('../src/states/game/letters.json');
 const WORD_BONUSES = require('../src/states/game/word-bonuses.json');
 const { validateWord } = require('./word-validator.cjs');
@@ -25,7 +26,7 @@ const {
 let nextTileId = 1;
 let nextCardId = 1;
 
-const { createRack, refillTiles: refillRack } = createTileLogic({
+const { createRack, createOpeningRackPair, refillTiles: refillRack } = createTileLogic({
   createTileId: () => `tile-${nextTileId++}`
 });
 const { drawCard, drawCards } = createCardLogic({
@@ -78,10 +79,7 @@ const createGame = (roomCode, hostId) => {
         attacks: drawCards('attack', 1)
       }
     },
-    tiles: {
-      host: createRack('host', { host: 0, opponent: 0 }),
-      opponent: createRack('opponent', { host: 0, opponent: 0 })
-    }
+    tiles: createOpeningRackPair({ host: 0, opponent: 0 })
   };
 
   games.set(roomCode, state);
@@ -180,6 +178,10 @@ const submitWord = async (roomCode, clientId, word, tileIds, languageCode = 'en'
     return { success: false, error: 'Room not found' };
   }
 
+  if (state.scores.host >= WINNING_SCORE || state.scores.opponent >= WINNING_SCORE) {
+    return { success: false, error: 'Game is already over' };
+  }
+
   const normalizedWord = (word || '').trim().toUpperCase();
   if (!normalizedWord) {
     return { success: false, error: 'Word required' };
@@ -226,7 +228,6 @@ const submitWord = async (roomCode, clientId, word, tileIds, languageCode = 'en'
 
   state.words[side] = resolvedWord;
   state.history[side].unshift(resolvedWord);
-  state.history[side] = state.history[side].slice(0, 5);
   state.lastWordScores[side] = wordScore;
   state.scores[side] += wordScore;
   state.cards[side].boons.push(...drawCards('boon', grantedResources.boons));
