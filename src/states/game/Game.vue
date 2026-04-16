@@ -235,6 +235,10 @@ const SOLO_TIMER_SECONDS = 180;
 const timerRemainingSeconds = ref(SOLO_TIMER_SECONDS);
 const isSoloTimerPausedByAttack = ref(false);
 const timedSoloFinalWordSpent = ref(false);
+const gameMusic = new Audio('/audio/gameMusic.mp3');
+  gameMusic.volume = props.volume * props.musicVolume / 100
+  if(gameMusic.volume) gameMusic.play()
+
 const tilePickupSound = new Audio('/audio/tile_pick_up.mp3');
 const tilePutBackSound = new Audio('/audio/tile_put_back.mp3');
   tilePutBackSound.volume = props.volume * props.effectsVolume / 100

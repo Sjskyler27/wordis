@@ -165,7 +165,7 @@
   startMusic.currentTime = 0
   const playMusic = () => {
     // broken due to chrome not allowing sound until clicked
-    if (props.musicVolume > 0 && props.volume > 0) startMusic.play()
+    // if (props.musicVolume > 0 && props.volume > 0) startMusic.play()
   }
 
   const showSettings = () => {
