@@ -23,7 +23,7 @@
               type="button"
               class="built-tile"
               :style="getTileStyle(slot.tile)"
-              @click="$emit('remove-specific', slot.tile.id)"
+              @click="$emit('tile-click', slot.tile)"
             >
               <span v-if="!getModifierUi(slot.tile.status).hideBadge && slot.tile.status !== 'normal'" class="tile-modifier" :style="getBadgeStyle(slot.tile)">
                 {{ getModifierBadge(slot.tile) }}
@@ -107,7 +107,7 @@ const props = defineProps({
   }
 });
 
-defineEmits(['undo', 'clear', 'submit', 'remove-specific', 'clear-rack', 'save-letters']);
+defineEmits(['undo', 'clear', 'submit', 'remove-specific', 'clear-rack', 'save-letters', 'tile-click']);
 
 const wordSlots = computed(() => {
   return Array.from({ length: 9 }, (_, index) => {

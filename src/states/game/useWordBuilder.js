@@ -124,6 +124,22 @@ export const useWordBuilder = ({ mySide, myTiles }) => {
 
   const clearWord = () => clearSelectionForSide();
 
+  const replaceSelectedTileId = (side = mySide.value, fromTileId, toTileId) => {
+    if (!fromTileId || !toTileId || fromTileId === toTileId) {
+      return;
+    }
+
+    selectedTileSlots.value = {
+      ...selectedTileSlots.value,
+      [side]: selectedTileSlots.value[side].map((tileId) => (tileId === fromTileId ? toTileId : tileId))
+    };
+
+    savedTileSlots.value = {
+      ...savedTileSlots.value,
+      [side]: savedTileSlots.value[side].map((tileId) => (tileId === fromTileId ? toTileId : tileId))
+    };
+  };
+
   return {
     selectedTileIds,
     savedTileIds,
@@ -139,6 +155,7 @@ export const useWordBuilder = ({ mySide, myTiles }) => {
     handleTileClick,
     removeLastLetter,
     removeSpecificTile,
+    replaceSelectedTileId,
     clearWord,
     clearSelectionForSide,
     saveSelectionForSide
