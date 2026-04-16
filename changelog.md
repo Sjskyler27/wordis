@@ -44,3 +44,12 @@ Stop: 2026-04-15 22:13:54 EDT
 - Let armed boons target tiles that are already in the built word so modifier plays no longer kick those letters back out of the word strip.
 - Capped `mustuse` at one tile per board, including attack usage, so that penalty stays pressuring without stacking into dead racks.
 - Switched word validation to prefer the local fallback dictionaries first and only use the dictionary API as a rescue path for misses, while keeping wildcard words on fallback matching.
+
+## 2026-04-15
+
+Start: 2026-04-15 22:25:21 EDT
+Stop: 2026-04-15 22:26:15 EDT
+
+- Broke postgame history out into its own overlay component, styled it to match the game, and moved `Play Again` into that results panel.
+- Upgraded history entries to track both the word and the points scored for each play so the final board shows the full scoring trail.
+- Stopped the singleplayer bot loop as soon as the match ends so it cannot sneak in an extra move after a winning score.
