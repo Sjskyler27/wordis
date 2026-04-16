@@ -133,35 +133,18 @@
           @tile-click="handleBuiltTileClick"
         />
 
-        <div v-else-if="gameEnded" class="end-card">
-          <span class="bonus-kicker">Game Over</span>
-          <strong>{{ winnerLabel }} wins at {{ winningScore }} points.</strong>
-          <p>The match is finished.</p>
-          <div class="history-columns">
-            <section class="history-panel">
-              <span class="history-label">Your History</span>
-              <ul class="history-list">
-                <li v-for="(word, index) in leftLaneHistory" :key="`left-history-${index}-${word}`">
-                  {{ word }}
-                </li>
-                <li v-if="!leftLaneHistory.length" class="history-empty">No words played.</li>
-              </ul>
-            </section>
-            <section class="history-panel">
-              <span class="history-label">Their History</span>
-              <ul class="history-list">
-                <li v-for="(word, index) in rightLaneHistory" :key="`right-history-${index}-${word}`">
-                  {{ word }}
-                </li>
-                <li v-if="!rightLaneHistory.length" class="history-empty">No words played.</li>
-              </ul>
-            </section>
-          </div>
-          <button type="button" class="play-again-button" @click="handlePlayAgain">
-            Play Again
-          </button>
-        </div>
       </section>
+
+      <HistoryOverlay
+        v-if="gameEnded"
+        :winner-label="winnerLabel"
+        :winning-score="winningScore"
+        left-label="Your History"
+        right-label="Their History"
+        :left-history="leftLaneHistory"
+        :right-history="rightLaneHistory"
+        @play-again="handlePlayAgain"
+      />
     </main>
   </div>
 </template>
@@ -192,6 +175,7 @@ import { useWordBuilder } from './useWordBuilder.js';
 import { useSinglePlayerGame } from './useSinglePlayerGame.js';
 import { validateWord } from './word-validator.js';
 import GameLane from './components/GameLane.vue';
+import HistoryOverlay from './components/HistoryOverlay.vue';
 import WordBuilder from './components/WordBuilder.vue';
 
 const props = defineProps({
@@ -542,6 +526,12 @@ const handlePlayAgain = () => {
   emit('playAgain');
 };
 
+watch(gameEnded, (ended) => {
+  if (ended) {
+    stopBotLoop();
+  }
+});
+
 const handleKeydown = (event) => {
   if (event.key !== 'Escape') {
     return;
@@ -883,6 +873,7 @@ body {
 }
 
 .arena-shell {
+  position: relative;
   min-width: 0;
   max-width: 1250px;
   max-height: 1000px;
@@ -954,95 +945,14 @@ body {
   text-align: center;
 }
 
-.end-card {
-  border-radius: 26px;
-  background:
-    linear-gradient(180deg, rgba(255, 214, 122, 0.14), rgba(255, 255, 255, 0.04)),
-    rgba(255, 255, 255, 0.06);
-  padding: 34px 24px;
-  text-align: center;
-  border: 1px solid rgba(255, 226, 155, 0.18);
-}
-
 .waiting-card strong {
   display: block;
   font-size: 1.4rem;
 }
 
-.end-card strong {
-  display: block;
-  font-size: 1.55rem;
-  color: var(--gold);
-}
-
 .waiting-card p {
   margin: 10px 0 0;
   opacity: 0.78;
-}
-
-.end-card p {
-  margin: 10px 0 0;
-  opacity: 0.78;
-}
-
-.history-columns {
-  margin-top: 20px;
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 16px;
-  text-align: left;
-}
-
-.history-panel {
-  border-radius: 18px;
-  padding: 16px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-}
-
-.history-label {
-  display: block;
-  margin-bottom: 10px;
-  font-size: 0.72rem;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  opacity: 0.74;
-}
-
-.history-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: grid;
-  gap: 8px;
-}
-
-.history-list li {
-  font-size: 0.9rem;
-}
-
-.history-empty {
-  opacity: 0.62;
-}
-
-.play-again-button {
-  margin-top: 22px;
-  border: none;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 999px;
-  padding: 13px 22px;
-  font-size: 0.95rem;
-  font-weight: 800;
-  letter-spacing: 0.04em;
-  font-family: "Press Start 2P", cursive;
-  background: linear-gradient(180deg, #5de6cb 0%, #2eb397 100%);
-  color: white;
-  box-shadow:
-    0 0 0 2px rgba(243, 228, 104, 0.9),
-    0 14px 22px rgba(21, 12, 28, 0.2);
 }
 
 .bottom-bar {

@@ -25,6 +25,11 @@ export const useSinglePlayerGame = ({
   wordHistory
 }) => {
   let botLoopId = null;
+  const WINNING_SCORE = 250;
+
+  const gameEnded = () => {
+    return playerScores.value.host >= WINNING_SCORE || playerScores.value.opponent >= WINNING_SCORE;
+  };
 
   const ensureSinglePlayerState = () => {
     if (!playerTiles.value.host.length && !playerTiles.value.opponent.length) {
@@ -47,6 +52,11 @@ export const useSinglePlayerGame = ({
   };
 
   const submitBotWord = () => {
+    if (gameEnded()) {
+      stopBotLoop();
+      return;
+    }
+
     ensureSinglePlayerState();
 
     const botTiles = playerTiles.value.opponent || [];
@@ -82,6 +92,9 @@ export const useSinglePlayerGame = ({
       return;
     }
 
+    const botScoreDetails = getWordScoreDetails(selectedBotTiles);
+    const grantedResources = getResourceGrants(selectedBotTiles);
+
     submittedWords.value = {
       host: submittedWords.value.host,
       opponent: normalizedBotWord
@@ -89,11 +102,8 @@ export const useSinglePlayerGame = ({
 
     wordHistory.value = {
       host: wordHistory.value.host,
-      opponent: [normalizedBotWord, ...wordHistory.value.opponent]
+      opponent: [{ word: normalizedBotWord, score: botScoreDetails.total }, ...wordHistory.value.opponent]
     };
-
-    const botScoreDetails = getWordScoreDetails(selectedBotTiles);
-    const grantedResources = getResourceGrants(selectedBotTiles);
 
     playerScores.value = {
       host: playerScores.value.host,
@@ -124,7 +134,7 @@ export const useSinglePlayerGame = ({
   };
 
   const scheduleBotLoop = () => {
-    if (isMultiplayer.value) {
+    if (isMultiplayer.value || gameEnded()) {
       return;
     }
 
@@ -141,6 +151,11 @@ export const useSinglePlayerGame = ({
   };
 
   const startBotLoop = () => {
+    if (gameEnded()) {
+      stopBotLoop();
+      return;
+    }
+
     ensureSinglePlayerState();
     scheduleBotLoop();
   };
@@ -157,7 +172,7 @@ export const useSinglePlayerGame = ({
     };
 
     wordHistory.value = {
-      host: [word, ...wordHistory.value.host],
+      host: [{ word, score: scoreDetails.total }, ...wordHistory.value.host],
       opponent: wordHistory.value.opponent
     };
 
