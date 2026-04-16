@@ -147,6 +147,8 @@
 
       <HistoryOverlay
         v-if="effectiveGameEnded"
+        :result-title="historyResultTitle"
+        :result-state="historyResultState"
         :summary-text="historySummaryText"
         left-label="Your History"
         :right-label="showOpponentLane ? 'Their History' : ''"
@@ -226,6 +228,8 @@ const SOLO_TIMER_SECONDS = 180;
 const timerRemainingSeconds = ref(SOLO_TIMER_SECONDS);
 const isSoloTimerPausedByAttack = ref(false);
 const timedSoloFinalWordSpent = ref(false);
+const victorySound = new Audio('/audio/victory.mp3');
+const defeatSound = new Audio('/audio/defeat.mp3');
 let soloTimerId = null;
 
 const mySide = computed(() => {
@@ -386,6 +390,24 @@ const historySummaryText = computed(() => {
   }
 
   return `${winnerLabel.value} wins at ${winningScore.value} points.`;
+});
+const historyResultState = computed(() => {
+  if (timeExpired.value) {
+    return 'timeout';
+  }
+
+  if (props.isMultiplayer || isBotMode.value) {
+    return winningSide.value === mySide.value ? 'victory' : 'defeat';
+  }
+
+  return 'victory';
+});
+const historyResultTitle = computed(() => {
+  if (timeExpired.value) {
+    return 'Time Up';
+  }
+
+  return historyResultState.value === 'victory' ? 'Victory' : 'Defeat';
 });
 const formattedTimeRemaining = computed(() => {
   const safeSeconds = Math.max(0, timerRemainingSeconds.value);
@@ -768,6 +790,24 @@ watch(effectiveGameEnded, (ended) => {
   }
 });
 
+watch(effectiveGameEnded, async (ended, wasEnded) => {
+  if (!ended || wasEnded) {
+    return;
+  }
+
+  const audio = historyResultState.value === 'defeat' ? defeatSound : victorySound;
+  victorySound.pause();
+  defeatSound.pause();
+  victorySound.currentTime = 0;
+  defeatSound.currentTime = 0;
+
+  try {
+    await audio.play();
+  } catch (error) {
+    // Ignore autoplay failures; the overlay state still updates correctly.
+  }
+});
+
 const stopSoloTimer = () => {
   window.clearInterval(soloTimerId);
   soloTimerId = null;
@@ -834,6 +874,8 @@ onMounted(() => {
 onBeforeUnmount(() => {
   window.removeEventListener('keydown', handleKeydown);
   stopSoloTimer();
+  victorySound.pause();
+  defeatSound.pause();
 });
 
 const resetAndGoHome = () => {
