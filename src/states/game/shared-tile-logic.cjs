@@ -116,7 +116,7 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses }) => {
       rarityWeight: 0.95,
       canApply: ({ baseScore }) => baseScore <= 4,
       ui: {
-  tileBackground: 'linear-gradient(180deg, #d2a679 0%, #a87442 70%, #6b4423 100%)',
+  tileBackground: 'linear-gradient(180deg, #d2a679 0%, #a87442 70%, #91623c 100%)',
   tileShadow: 'inset 0 -4px 0 rgba(60, 30, 10, 0.35), 0 10px 18px rgba(45, 20, 10, 0.25), 0 0 0 1px rgba(255, 220, 180, 0.25)',
   textColor: '#2b1a0f',
   badgeBackground: 'rgba(255, 235, 210, 0.9)',
