@@ -58,3 +58,7 @@ Game.vue:524 Proxy(Object) {id: 'local-tile-1', letter: 'A', baseLetter: 'A', s
 ok how are we making tile ids?? there is no reason a tile should end up with the same id as another )
 
 booons that give permennent upgrades like 
+
+add a way to attack the time with single player attacks 
+
+maybe add time by spelling words add add somewhere to get to a goal get to a certain num of points or something  
