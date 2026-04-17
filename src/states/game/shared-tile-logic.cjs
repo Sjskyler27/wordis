@@ -189,7 +189,7 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
     },
     burningTile: {
       badge: 'BURN',
-      effects: { idleBonusScoreDelta: -3 },
+      effects: { setScore: 1, idleScorePenalty: 3 },
       rarityWeight: 0.5,
       canApply: ({ baseScore }) => baseScore <= 4,
       ui: {
@@ -744,6 +744,19 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
     };
   };
 
+  const getIdleScorePenalty = (tiles = [], usedTileIds = []) => {
+    const usedIds = new Set(usedTileIds);
+
+    return tiles.reduce((total, tile) => {
+      if (usedIds.has(tile?.id)) {
+        return total;
+      }
+
+      const definition = getModifierDefinition(tile?.status);
+      return total + (definition.effects.idleScorePenalty || 0);
+    }, 0);
+  };
+
   const getLengthBonus = (length) => {
     if (wordBonuses[length]) {
       return wordBonuses[length];
@@ -1253,6 +1266,7 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
     getMilestoneReward,
     getTilesScore,
     getWordScoreDetails,
+    getIdleScorePenalty,
     getResourceGrants,
     getTilesForWord,
     getSelectedTiles,

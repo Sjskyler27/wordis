@@ -13,6 +13,7 @@ import {
   replaceTileWithModifier,
   replaceSingleTile,
   getWordScoreDetails,
+  getIdleScorePenalty,
   refillTiles,
   rerollRackExceptTile
 } from './tile-logic.js';
@@ -175,6 +176,8 @@ export const useSinglePlayerGame = ({
     }
 
     const botScoreDetails = getWordScoreDetails(selectedBotTiles);
+    const botIdlePenalty = getIdleScorePenalty(botTiles, selectedBotTiles.map((tile) => tile.id));
+    const botScoreDelta = botScoreDetails.total - botIdlePenalty;
     const grantedResources = getResourceGrants(selectedBotTiles, {
       includeAttacks: shouldDrawAttacks()
     });
@@ -186,16 +189,16 @@ export const useSinglePlayerGame = ({
 
     wordHistory.value = {
       host: wordHistory.value.host,
-      opponent: [{ word: normalizedBotWord, score: botScoreDetails.total }, ...wordHistory.value.opponent]
+      opponent: [{ word: normalizedBotWord, score: botScoreDelta }, ...wordHistory.value.opponent]
     };
 
     playerScores.value = {
       host: playerScores.value.host,
-      opponent: playerScores.value.opponent + botScoreDetails.total
+      opponent: playerScores.value.opponent + botScoreDelta
     };
     lastWordScores.value = {
       host: lastWordScores.value.host,
-      opponent: botScoreDetails.total
+      opponent: botScoreDelta
     };
     playerCards.value = {
       host: playerCards.value.host,
@@ -250,6 +253,8 @@ export const useSinglePlayerGame = ({
     ensureSinglePlayerState();
     const selectedTiles = selectedTilesForCurrentSide.value;
     const scoreDetails = getWordScoreDetails(selectedTiles);
+    const idlePenalty = getIdleScorePenalty(playerTiles.value.host, selectedTiles.map((tile) => tile.id));
+    const scoreDelta = scoreDetails.total - idlePenalty;
     const grantedResources = getResourceGrants(selectedTiles, {
       includeAttacks: shouldDrawAttacks()
     });
@@ -260,16 +265,16 @@ export const useSinglePlayerGame = ({
     };
 
     wordHistory.value = {
-      host: [{ word, score: scoreDetails.total }, ...wordHistory.value.host],
+      host: [{ word, score: scoreDelta }, ...wordHistory.value.host],
       opponent: wordHistory.value.opponent
     };
 
     playerScores.value = {
-      host: playerScores.value.host + scoreDetails.total,
+      host: playerScores.value.host + scoreDelta,
       opponent: playerScores.value.opponent
     };
     lastWordScores.value = {
-      host: scoreDetails.total,
+      host: scoreDelta,
       opponent: lastWordScores.value.opponent
     };
     playerCards.value = {
@@ -294,7 +299,9 @@ export const useSinglePlayerGame = ({
     };
 
     clearSelectionForSide('host');
-    localMessage.value = `Submitted ${word} for ${scoreDetails.total} pts.`;
+    localMessage.value = idlePenalty > 0
+      ? `Submitted ${word} for ${scoreDelta} pts after a ${idlePenalty} pt burn penalty.`
+      : `Submitted ${word} for ${scoreDelta} pts.`;
   };
 
   const clearSinglePlayerRack = (side = 'host') => {

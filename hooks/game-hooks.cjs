@@ -15,6 +15,7 @@ const {
   MIN_WORD_LENGTH,
   getCardDefinition,
   getWordScoreDetails,
+  getIdleScorePenalty,
   getResourceGrants,
   getSelectedTiles,
   selectedTilesMatchWord,
@@ -409,15 +410,17 @@ const submitWord = async (roomCode, clientId, word, tileIds, languageCode = 'en'
   const resolvedWord = (validationResult.resolvedWord || normalizedWord).toUpperCase();
 
   const wordScore = getWordScoreDetails(selectedTiles).total;
+  const idlePenalty = getIdleScorePenalty(state.tiles[side], tileIds);
+  const scoreDelta = wordScore - idlePenalty;
   const grantedResources = getResourceGrants(selectedTiles);
 
   state.words[side] = resolvedWord;
   state.history[side].unshift({
     word: resolvedWord,
-    score: wordScore
+    score: scoreDelta
   });
-  state.lastWordScores[side] = wordScore;
-  state.scores[side] += wordScore;
+  state.lastWordScores[side] = scoreDelta;
+  state.scores[side] += scoreDelta;
   state.cards[side].boons.push(...drawCards('boon', grantedResources.boons));
   state.cards[side].attacks.push(...drawCards('attack', grantedResources.attacks));
   state.tiles[side] = refillRack(state.tiles[side], tileIds, side, state.scores);
