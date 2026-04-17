@@ -44,7 +44,7 @@ export const useSinglePlayerGame = ({
     normal: 9000,
     hard: 6500
   };
-  const modifierProfile = () => isTimedSoloMode.value ? 'solo' : 'duel';
+  const modifierProfile = () => isTimedSoloMode.value ? 'solo' : 'bot';
   const attackDeck = () => isTimedSoloMode.value ? 'timed_solo' : 'duel';
   const shouldDrawAttacks = () => isTimedSoloMode.value || botEnabled.value;
   const keepTestingHand = (hand = [], cardId) => {
@@ -96,7 +96,9 @@ export const useSinglePlayerGame = ({
   const ensureSinglePlayerState = () => {
     if (!playerTiles.value.host.length && !playerTiles.value.opponent.length) {
       if (isTestingMode) {
-        playerTiles.value = createTestingOpeningRackPair(playerScores.value);
+        playerTiles.value = createTestingOpeningRackPair(playerScores.value, {
+          modifierProfile: modifierProfile()
+        });
         rackClears.value = {
           host: 100,
           opponent: 100
@@ -178,7 +180,10 @@ export const useSinglePlayerGame = ({
       return;
     }
 
-    const botScoreDetails = getWordScoreDetails(selectedBotTiles);
+    const botScoreDetails = getWordScoreDetails(selectedBotTiles, {
+      side: 'opponent',
+      scores: playerScores.value
+    });
     const botIdlePenalty = getIdleScorePenalty(botTiles, selectedBotTiles.map((tile) => tile.id));
     const botScoreDelta = botScoreDetails.total - botIdlePenalty;
     const grantedResources = getResourceGrants(selectedBotTiles, {
@@ -255,7 +260,10 @@ export const useSinglePlayerGame = ({
   const submitSinglePlayerWord = (word) => {
     ensureSinglePlayerState();
     const selectedTiles = selectedTilesForCurrentSide.value;
-    const scoreDetails = getWordScoreDetails(selectedTiles);
+    const scoreDetails = getWordScoreDetails(selectedTiles, {
+      side: 'host',
+      scores: playerScores.value
+    });
     const idlePenalty = getIdleScorePenalty(playerTiles.value.host, selectedTiles.map((tile) => tile.id));
     const scoreDelta = scoreDetails.total - idlePenalty;
     const grantedResources = getResourceGrants(selectedTiles, {

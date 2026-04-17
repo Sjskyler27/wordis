@@ -10,6 +10,7 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
   const MIN_DUPLICATE_WEIGHT = 0.18;
   const BASE_GOOD_MODIFIER_CHANCE = 0.05;
   const BASE_BAD_MODIFIER_CHANCE = 0.04;
+  const BASE_NEUTRAL_MODIFIER_CHANCE = 0.03;
   const MODIFIER_SWING_DIVISOR = 90;
   const MAX_MODIFIER_BONUS = 0.18;
   const BLOOD_TILE_POSITION_VALUES = {
@@ -25,6 +26,7 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
   };
   const GOOD_MODIFIERS = ['gold', 'firsttile', 'wild', 'bloodTile', 'bankTile', 'gainboon', 'gainattack'];
   const BAD_MODIFIERS = ['zeroTile', 'mustuse', 'locked3', 'ghostTile', 'burningTile'];
+  const NEUTRAL_MODIFIERS = ['yinYang'];
   const SOLO_GOOD_MODIFIERS = ['gold', 'firsttile', 'wild', 'bloodTile', 'bankTile', 'gainboon'];
   const BOON_CARD_KEYS = ['boon_delete_tile', 'boon_isolate_tile', 'boon_clear_negative', 'boon_firsttile', 'boon_wild', 'boon_gold'];
   const ATTACK_CARD_KEYS = ['attack_zeroTile', 'attack_mustuse', 'attack_locked3', 'attack_ghostTile'];
@@ -33,15 +35,28 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
     duel: {
       goodModifiers: GOOD_MODIFIERS,
       badModifiers: BAD_MODIFIERS,
+      neutralModifiers: NEUTRAL_MODIFIERS,
       baseGoodChance: BASE_GOOD_MODIFIER_CHANCE,
       baseBadChance: BASE_BAD_MODIFIER_CHANCE,
+      baseNeutralChance: BASE_NEUTRAL_MODIFIER_CHANCE,
+      useScoreSwing: true
+    },
+    bot: {
+      goodModifiers: GOOD_MODIFIERS,
+      badModifiers: BAD_MODIFIERS,
+      neutralModifiers: [],
+      baseGoodChance: BASE_GOOD_MODIFIER_CHANCE,
+      baseBadChance: BASE_BAD_MODIFIER_CHANCE,
+      baseNeutralChance: 0,
       useScoreSwing: true
     },
     solo: {
       goodModifiers: SOLO_GOOD_MODIFIERS,
       badModifiers: BAD_MODIFIERS,
+      neutralModifiers: [],
       baseGoodChance: 0.085,
       baseBadChance: 0.022,
+      baseNeutralChance: 0,
       useScoreSwing: false
     }
   };
@@ -148,6 +163,24 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
         textColor: '#0a2b23',
         badgeBackground: 'rgba(231, 255, 241, 0.94)',
         badgeColor: '#0a8b63'
+      }
+    },
+    yinYang: {
+      badge: 'YIN',
+      effects: {
+        dynamicScoreByLead: {
+          ahead: -3,
+          behind: 3,
+          tied: 0
+        }
+      },
+      rarityWeight: 0.32,
+      ui: {
+        tileBackground: 'linear-gradient(135deg, #f6f0e4 0%, #f6f0e4 48%, #181217 49%, #181217 100%)',
+        tileShadow: 'inset 0 -4px 0 rgba(20, 14, 19, 0.28), 0 12px 22px rgba(20, 14, 19, 0.22), 0 0 0 1px rgba(255, 255, 255, 0.24)',
+        textColor: '#8a2f2f',
+        badgeBackground: 'rgba(255, 255, 255, 0.92)',
+        badgeColor: '#1a1519'
       }
     },
     zeroTile: {
@@ -445,7 +478,8 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
     if (!side || !profile.useScoreSwing) {
       return {
         goodChance: profile.baseGoodChance,
-        badChance: profile.baseBadChance
+        badChance: profile.baseBadChance,
+        neutralChance: profile.baseNeutralChance || 0
       };
     }
 
@@ -456,7 +490,8 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
 
     return {
       goodChance: Math.min(0.45, profile.baseGoodChance + catchupBonus),
-      badChance: Math.min(0.4, profile.baseBadChance + pressureBonus)
+      badChance: Math.min(0.4, profile.baseBadChance + pressureBonus),
+      neutralChance: Math.min(0.2, profile.baseNeutralChance || 0)
     };
   };
 
@@ -540,8 +575,10 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
     roll,
     goodChance,
     badChance,
+    neutralChance,
     eligibleGoodModifiers = [],
     eligibleBadModifiers = [],
+    eligibleNeutralModifiers = [],
     selectedModifier = 'normal'
   }) => {
     if (!devLogging) {
@@ -550,7 +587,8 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
 
     const modifierOdds = {
       ...getWeightedModifierOdds(eligibleGoodModifiers, goodChance),
-      ...getWeightedModifierOdds(eligibleBadModifiers, badChance)
+      ...getWeightedModifierOdds(eligibleBadModifiers, badChance),
+      ...getWeightedModifierOdds(eligibleNeutralModifiers, neutralChance)
     };
     const normalChance = Math.max(
       0,
@@ -565,6 +603,7 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
       roll: Number(roll.toFixed(4)),
       goodChance: Number(goodChance.toFixed(4)),
       badChance: Number(badChance.toFixed(4)),
+      neutralChance: Number((neutralChance || 0).toFixed(4)),
       odds: Object.fromEntries(
         Object.entries({
           normal: normalChance,
@@ -621,10 +660,18 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
         chanceOverrides.badChance ?? (baseChances.badChance * (chanceOverrides.badChanceMultiplier ?? 1))
       )
     );
+    const neutralChance = Math.max(
+      0,
+      Math.min(
+        0.9 - goodChance - badChance,
+        chanceOverrides.neutralChance ?? (baseChances.neutralChance * (chanceOverrides.neutralChanceMultiplier ?? 1))
+      )
+    );
     const roll = Math.random();
 
     const eligibleGoodModifiers = profile.goodModifiers.filter((modifier) => canApplyModifier(modifier, context));
     const eligibleBadModifiers = profile.badModifiers.filter((modifier) => canApplyModifier(modifier, context));
+    const eligibleNeutralModifiers = (profile.neutralModifiers || []).filter((modifier) => canApplyModifier(modifier, context));
 
     if (roll < goodChance) {
       const selectedModifier = eligibleGoodModifiers.length ? chooseWeightedModifier(eligibleGoodModifiers) : 'normal';
@@ -635,8 +682,10 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
         roll,
         goodChance,
         badChance,
+        neutralChance,
         eligibleGoodModifiers,
         eligibleBadModifiers,
+        eligibleNeutralModifiers,
         selectedModifier
       });
       return selectedModifier;
@@ -651,8 +700,28 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
         roll,
         goodChance,
         badChance,
+        neutralChance,
         eligibleGoodModifiers,
         eligibleBadModifiers,
+        eligibleNeutralModifiers,
+        selectedModifier
+      });
+      return selectedModifier;
+    }
+
+    if (roll < goodChance + badChance + neutralChance) {
+      const selectedModifier = eligibleNeutralModifiers.length ? chooseWeightedModifier(eligibleNeutralModifiers) : 'normal';
+      logModifierRoll({
+        side,
+        phase: chanceOverrides.phase || 'turn',
+        context,
+        roll,
+        goodChance,
+        badChance,
+        neutralChance,
+        eligibleGoodModifiers,
+        eligibleBadModifiers,
+        eligibleNeutralModifiers,
         selectedModifier
       });
       return selectedModifier;
@@ -665,8 +734,10 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
       roll,
       goodChance,
       badChance,
+      neutralChance,
       eligibleGoodModifiers,
       eligibleBadModifiers,
+      eligibleNeutralModifiers,
       selectedModifier: 'normal'
     });
     return 'normal';
@@ -675,13 +746,16 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
   const rollSharedOpeningModifier = (scores = {}, contexts = [], options = {}) => {
     const modifierProfile = options.modifierProfile || 'duel';
     const profile = getModifierProfile(modifierProfile);
-    const { goodChance, badChance } = getModifierChances(null, scores, modifierProfile);
+    const { goodChance, badChance, neutralChance } = getModifierChances(null, scores, modifierProfile);
     const roll = Math.random();
 
     const eligibleGoodModifiers = profile.goodModifiers.filter((modifier) => {
         return contexts.every((context) => canApplyModifier(modifier, context));
       });
     const eligibleBadModifiers = profile.badModifiers.filter((modifier) => {
+        return contexts.every((context) => canApplyModifier(modifier, context));
+      });
+    const eligibleNeutralModifiers = (profile.neutralModifiers || []).filter((modifier) => {
         return contexts.every((context) => canApplyModifier(modifier, context));
       });
 
@@ -694,8 +768,10 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
         roll,
         goodChance,
         badChance,
+        neutralChance,
         eligibleGoodModifiers,
         eligibleBadModifiers,
+        eligibleNeutralModifiers,
         selectedModifier
       });
       return selectedModifier;
@@ -710,8 +786,28 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
         roll,
         goodChance,
         badChance,
+        neutralChance,
         eligibleGoodModifiers,
         eligibleBadModifiers,
+        eligibleNeutralModifiers,
+        selectedModifier
+      });
+      return selectedModifier;
+    }
+
+    if (roll < goodChance + badChance + neutralChance) {
+      const selectedModifier = eligibleNeutralModifiers.length ? chooseWeightedModifier(eligibleNeutralModifiers) : 'normal';
+      logModifierRoll({
+        side: 'opening-pair',
+        phase: 'opening',
+        context: contexts[0] || {},
+        roll,
+        goodChance,
+        badChance,
+        neutralChance,
+        eligibleGoodModifiers,
+        eligibleBadModifiers,
+        eligibleNeutralModifiers,
         selectedModifier
       });
       return selectedModifier;
@@ -724,8 +820,10 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
       roll,
       goodChance,
       badChance,
+      neutralChance,
       eligibleGoodModifiers,
       eligibleBadModifiers,
+      eligibleNeutralModifiers,
       selectedModifier: 'normal'
     });
     return 'normal';
@@ -743,7 +841,25 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
     return getModifierDefinition(tileOrStatus).badge;
   };
   const getModifierUi = (status = 'normal') => getModifierDefinition(status).ui || MODIFIER_DEFINITIONS.normal.ui;
-  const tileScore = (tile) => ((tile?.score || 0) + (tile?.bonusScore || 0)) * (tile?.multiplier || 1);
+  const getLeadAwareModifierScore = (tile, options = {}) => {
+    const leadMap = getModifierDefinition(tile?.status).effects.dynamicScoreByLead;
+    if (!leadMap || !options.side || !options.scores) {
+      return 0;
+    }
+
+    const opponentSide = options.side === 'host' ? 'opponent' : 'host';
+    const scoreDelta = (options.scores[options.side] || 0) - (options.scores[opponentSide] || 0);
+    if (scoreDelta > 0) {
+      return leadMap.ahead || 0;
+    }
+    if (scoreDelta < 0) {
+      return leadMap.behind || 0;
+    }
+    return leadMap.tied || 0;
+  };
+  const tileScore = (tile, options = {}) => (
+    ((tile?.score || 0) + (tile?.bonusScore || 0) + getLeadAwareModifierScore(tile, options)) * (tile?.multiplier || 1)
+  );
   const tickIdleTile = (tile) => {
     const definition = getModifierDefinition(tile?.status);
     const idleBonusScoreDelta = definition.effects.idleBonusScoreDelta || 0;
@@ -798,10 +914,10 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
     };
   };
 
-  const getTilesScore = (tiles) => tiles.reduce((total, tile) => total + tileScore(tile), 0);
+  const getTilesScore = (tiles, options = {}) => tiles.reduce((total, tile) => total + tileScore(tile, options), 0);
 
-  const getWordScoreDetails = (tiles) => {
-    const baseLetterTotal = getTilesScore(tiles);
+  const getWordScoreDetails = (tiles, options = {}) => {
+    const baseLetterTotal = getTilesScore(tiles, options);
     const positionBonus = tiles.reduce((total, tile, index) => {
       const definition = getModifierDefinition(tile?.status);
       const positionKey = `pos${index + 1}`;
@@ -1078,8 +1194,12 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
           totals.bad += 1;
         }
 
+        if (NEUTRAL_MODIFIERS.includes(tile.status)) {
+          totals.neutral += 1;
+        }
+
         return totals;
-      }, { good: 0, bad: 0 });
+      }, { good: 0, bad: 0, neutral: 0 });
     };
 
     const applyTargetModifierGroup = (rack, modifierPool, targetCount) => {
@@ -1114,6 +1234,7 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
       const currentModifierCounts = countModifierGroups(currentTiles);
       const targetGoodModifiers = currentModifierCounts.good;
       const targetBadModifiers = Math.max(0, currentModifierCounts.bad - 1);
+      const targetNeutralModifiers = currentModifierCounts.neutral;
       const rack = buildFreshRack(side, scores, {
         forcedStatus: 'normal',
         chanceOverrides: {
@@ -1123,6 +1244,7 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
 
       applyTargetModifierGroup(rack, profile.goodModifiers, targetGoodModifiers);
       applyTargetModifierGroup(rack, profile.badModifiers, targetBadModifiers);
+      applyTargetModifierGroup(rack, profile.neutralModifiers || [], targetNeutralModifiers);
       return rack;
     };
 
@@ -1235,8 +1357,14 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
       return nextTiles;
     };
 
-    const createTestingRack = (side = null, scores = {}) => {
-      const modifierStatuses = Object.keys(MODIFIER_DEFINITIONS).filter((status) => status !== 'normal');
+    const createTestingRack = (side = null, scores = {}, options = {}) => {
+      const profile = getModifierProfile(options.modifierProfile || 'duel');
+      const allowedStatuses = new Set([
+        ...profile.goodModifiers,
+        ...profile.badModifiers,
+        ...(profile.neutralModifiers || [])
+      ]);
+      const modifierStatuses = Object.keys(MODIFIER_DEFINITIONS).filter((status) => status !== 'normal' && allowedStatuses.has(status));
       const rack = [];
 
       while (rack.length < RACK_SIZE) {
@@ -1250,10 +1378,10 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
       return rack;
     };
 
-    const createTestingOpeningRackPair = (scores = {}) => {
+    const createTestingOpeningRackPair = (scores = {}, options = {}) => {
       return {
-        host: createTestingRack('host', scores),
-        opponent: createTestingRack('opponent', scores)
+        host: createTestingRack('host', scores, options),
+        opponent: createTestingRack('opponent', scores, options)
       };
     };
 

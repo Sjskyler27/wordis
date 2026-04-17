@@ -339,7 +339,8 @@ const {
   saveSelectionForSide
 } = useWordBuilder({
   mySide,
-  myTiles
+  myTiles,
+  playerScores
 });
 
 const leftLane = computed(() => buildLane(mySide.value, 'Your Board'));
@@ -834,7 +835,10 @@ const handleSubmit = async () => {
   playScoreAnimation(selectedTiles.length);
 
   if (props.isMultiplayer) {
-    const scoreDetails = getWordScoreDetails(selectedTiles);
+    const scoreDetails = getWordScoreDetails(selectedTiles, {
+      side: mySide.value,
+      scores: playerScores.value
+    });
     submitMultiplayerWord({
       word: normalizedWord,
       tileIds: selectedTiles.map((tile) => tile.id)

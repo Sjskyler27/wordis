@@ -413,7 +413,10 @@ const submitWord = async (roomCode, clientId, word, tileIds, languageCode = 'en'
   }
   const resolvedWord = (validationResult.resolvedWord || normalizedWord).toUpperCase();
 
-  const wordScore = getWordScoreDetails(selectedTiles).total;
+  const wordScore = getWordScoreDetails(selectedTiles, {
+    side,
+    scores: state.scores
+  }).total;
   const idlePenalty = getIdleScorePenalty(state.tiles[side], tileIds);
   const scoreDelta = wordScore - idlePenalty;
   const grantedResources = getResourceGrants(selectedTiles);
