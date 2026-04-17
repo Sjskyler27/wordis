@@ -73,19 +73,50 @@
     </div>
 
     <div class="console-actions">
-      <button type="button" class="ghost-button" @click="$emit('undo')">
+      <button
+        type="button"
+        class="ghost-button"
+        :class="{ 'console-action-controller-focus': controllerFocusedActionIndex === 0 }"
+        data-controller-action="0"
+        @click="$emit('undo')"
+      >
         Undo
       </button>
-      <button type="button" class="ghost-button" @click="$emit('clear')">
+      <button
+        type="button"
+        class="ghost-button"
+        :class="{ 'console-action-controller-focus': controllerFocusedActionIndex === 1 }"
+        data-controller-action="1"
+        @click="$emit('clear')"
+      >
         Clear
       </button>
-      <button type="button" class="ghost-button" :disabled="currentWordLength <= 0" @click="$emit('save-letters')">
+      <button
+        type="button"
+        class="ghost-button"
+        :class="{ 'console-action-controller-focus': controllerFocusedActionIndex === 2 }"
+        data-controller-action="2"
+        :disabled="currentWordLength <= 0"
+        @click="$emit('save-letters')"
+      >
         Save Letters
       </button>
-      <button type="button" class="ghost-button" :disabled="clearCount <= 0" @click="$emit('clear-rack')">
+      <button
+        type="button"
+        class="ghost-button"
+        :class="{ 'console-action-controller-focus': controllerFocusedActionIndex === 3 }"
+        data-controller-action="3"
+        :disabled="clearCount <= 0"
+        @click="$emit('clear-rack')"
+      >
         New Rack {{ clearCount }}
       </button>
-      <button type="submit" class="submit-button">
+      <button
+        type="submit"
+        class="submit-button"
+        :class="{ 'console-action-controller-focus': controllerFocusedActionIndex === 4 }"
+        data-controller-action="4"
+      >
         Submit Word
       </button>
     </div>
@@ -148,6 +179,10 @@ const props = defineProps({
   controllerFocusedBuiltTileId: {
     type: String,
     default: ''
+  },
+  controllerFocusedActionIndex: {
+    type: Number,
+    default: -1
   }
 });
 
@@ -452,6 +487,11 @@ const getPlaceholderStyle = (slot) => {
 }
 
 .built-tile-controller-focus {
+  outline: 3px solid rgba(255, 202, 103, 0.85);
+  outline-offset: 2px;
+}
+
+.console-action-controller-focus {
   outline: 3px solid rgba(255, 202, 103, 0.85);
   outline-offset: 2px;
 }

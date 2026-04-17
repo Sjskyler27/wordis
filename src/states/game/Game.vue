@@ -147,6 +147,7 @@
           :clear-count="rackClears[mySide]"
           :length-bonus-steps="lengthBonusSteps"
           :controller-focused-built-tile-id="controllerRegion === 'builder' ? controllerFocusedBuiltTileId : ''"
+          :controller-focused-action-index="controllerRegion === 'actions' ? controllerActionCursorIndex : -1"
           @undo="handleUndo"
           @clear="handleClearWord"
           @save-letters="handleSaveLetters"
@@ -241,6 +242,7 @@ const controllerRegion = ref('rack');
 const controllerTileCursorIndex = ref(0);
 const controllerCardCursorIndex = ref(0);
 const controllerBuilderCursorIndex = ref(0);
+const controllerActionCursorIndex = ref(0);
 const laneBurstPulse = ref({
   host: 0,
   opponent: 0
@@ -1006,6 +1008,20 @@ const focusControllerBuilder = (index = controllerBuilderCursorIndex.value) => {
   });
 };
 
+const focusControllerAction = (index = controllerActionCursorIndex.value) => {
+  const actionCount = 5;
+  controllerRegion.value = 'actions';
+  const boundedIndex = Math.max(0, Math.min(index, actionCount - 1));
+  controllerActionCursorIndex.value = boundedIndex;
+
+  nextTick(() => {
+    const actionButton = document.querySelector(`[data-controller-action="${boundedIndex}"]`);
+    if (actionButton && typeof actionButton.focus === 'function') {
+      actionButton.focus();
+    }
+  });
+};
+
 const moveControllerTileFocus = (direction) => {
   if (!myTiles.value.length) {
     return;
@@ -1273,6 +1289,8 @@ const handleKeydown = (event) => {
       if (controllerRegion.value === 'builder') {
         const bottomRowStart = Math.max(0, myTiles.value.length - 5);
         focusControllerTile(Math.min(bottomRowStart + controllerBuilderCursorIndex.value, myTiles.value.length - 1));
+      } else if (controllerRegion.value === 'actions') {
+        focusControllerBuilder(Math.min(controllerActionCursorIndex.value, selectedTilesForCurrentSide.value.length - 1));
       } else {
         moveControllerTileFocus('up');
       }
@@ -1288,7 +1306,9 @@ const handleKeydown = (event) => {
           focusControllerCard(controllerCardCursorIndex.value + 1);
         }
       } else if (controllerRegion.value === 'builder') {
-        focusControllerBuilder(Math.min(controllerBuilderCursorIndex.value + 1, selectedTilesForCurrentSide.value.length - 1));
+        focusControllerAction(Math.min(controllerBuilderCursorIndex.value, 4));
+      } else if (controllerRegion.value === 'actions') {
+        focusControllerAction(controllerActionCursorIndex.value);
       } else {
         moveControllerTileFocus('down');
       }
