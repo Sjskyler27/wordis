@@ -50,6 +50,9 @@ export const useSinglePlayerGame = ({
   const keepTestingHand = (hand = [], cardId) => {
     return isTestingMode ? hand : hand.filter((entry) => entry.id !== cardId);
   };
+  const getTurnCount = () => {
+    return (wordHistory.value.host?.length || 0) + (wordHistory.value.opponent?.length || 0);
+  };
   const createTestingHands = () => {
     const boonKeys = Object.entries(CARD_DEFINITIONS)
       .filter(([, definition]) => definition.kind === 'boon')
@@ -109,7 +112,8 @@ export const useSinglePlayerGame = ({
       }
 
       playerTiles.value = createOpeningRackPair(playerScores.value, {
-        modifierProfile: modifierProfile()
+        modifierProfile: modifierProfile(),
+        turnCount: getTurnCount()
       });
       rackClears.value = {
         host: 2,
@@ -143,7 +147,8 @@ export const useSinglePlayerGame = ({
       opponent: createRack('opponent', playerScores.value, {
         mode: 'clear',
         currentTiles: botTiles,
-        modifierProfile: modifierProfile()
+        modifierProfile: modifierProfile(),
+        turnCount: getTurnCount()
       })
     };
 
@@ -227,7 +232,8 @@ export const useSinglePlayerGame = ({
       host: playerTiles.value.host,
       opponent: refillTiles(botTiles, selectedBotTiles.map((tile) => tile.id), 'opponent', playerScores.value, {
         modifierProfile: modifierProfile(),
-        phase: 'submit'
+        phase: 'submit',
+        turnCount: getTurnCount()
       })
     };
   };
@@ -307,7 +313,8 @@ export const useSinglePlayerGame = ({
     playerTiles.value = {
       host: refillTiles(playerTiles.value.host, selectedTiles.map((tile) => tile.id), 'host', playerScores.value, {
         modifierProfile: modifierProfile(),
-        phase: 'submit'
+        phase: 'submit',
+        turnCount: getTurnCount()
       }),
       opponent: playerTiles.value.opponent
     };
@@ -336,7 +343,8 @@ export const useSinglePlayerGame = ({
       [side]: createRack(side, playerScores.value, {
         mode: 'clear',
         currentTiles: playerTiles.value[side],
-        modifierProfile: modifierProfile()
+        modifierProfile: modifierProfile(),
+        turnCount: getTurnCount()
       })
     };
 
@@ -391,7 +399,8 @@ export const useSinglePlayerGame = ({
         }
       };
       const nextTiles = replaceSingleTile(playerTiles.value[side], tileId, side, playerScores.value, {
-        modifierProfile: modifierProfile()
+        modifierProfile: modifierProfile(),
+        turnCount: getTurnCount()
       });
       const replacementTile = nextTiles.find((entry) => entry.id !== tileId && !playerTiles.value[side].some((tile) => tile.id === entry.id));
       playerTiles.value = {
@@ -421,7 +430,8 @@ export const useSinglePlayerGame = ({
       playerTiles.value = {
         ...playerTiles.value,
         [side]: rerollRackExceptTile(playerTiles.value[side], tileId, side, playerScores.value, {
-          modifierProfile: modifierProfile()
+          modifierProfile: modifierProfile(),
+          turnCount: getTurnCount()
         })
       };
 

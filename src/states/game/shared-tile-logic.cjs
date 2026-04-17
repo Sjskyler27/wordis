@@ -14,6 +14,8 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
   const MODIFIER_SWING_DIVISOR = 90;
   const MAX_GOOD_MODIFIER_BONUS = 0.3;
   const MAX_BAD_MODIFIER_BONUS = 0.22;
+  const TURN_MODIFIER_CHANCE_STEP = 0.003;
+  const MAX_TURN_MODIFIER_BONUS = 0.08;
   const BLOOD_TILE_POSITION_VALUES = {
     pos1: 0,
     pos2: 2,
@@ -473,13 +475,14 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
     return MODIFIER_PROFILES[profileName] || MODIFIER_PROFILES.duel;
   };
 
-  const getModifierChances = (side, scores = {}, profileName = 'duel') => {
+  const getModifierChances = (side, scores = {}, profileName = 'duel', turnCount = 0) => {
     const profile = getModifierProfile(profileName);
+    const turnBonus = Math.min(MAX_TURN_MODIFIER_BONUS, Math.max(0, turnCount) * TURN_MODIFIER_CHANCE_STEP);
 
     if (!side || !profile.useScoreSwing) {
       return {
-        goodChance: profile.baseGoodChance,
-        badChance: profile.baseBadChance,
+        goodChance: Math.min(0.45, profile.baseGoodChance + turnBonus),
+        badChance: Math.min(0.4, profile.baseBadChance + turnBonus),
         neutralChance: profile.baseNeutralChance || 0
       };
     }
@@ -490,8 +493,8 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
     const pressureBonus = Math.min(MAX_BAD_MODIFIER_BONUS, Math.max(0, scoreDelta) / MODIFIER_SWING_DIVISOR);
 
     return {
-      goodChance: Math.min(0.45, profile.baseGoodChance + catchupBonus),
-      badChance: Math.min(0.4, profile.baseBadChance + pressureBonus),
+      goodChance: Math.min(0.45, profile.baseGoodChance + catchupBonus + turnBonus),
+      badChance: Math.min(0.4, profile.baseBadChance + pressureBonus + turnBonus),
       neutralChance: Math.min(0.2, profile.baseNeutralChance || 0)
     };
   };
@@ -670,7 +673,7 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
   const rollTileModifier = (side, scores = {}, context = {}, chanceOverrides = {}) => {
     const modifierProfile = chanceOverrides.modifierProfile || 'duel';
     const profile = getModifierProfile(modifierProfile);
-    const baseChances = getModifierChances(side, scores, modifierProfile);
+    const baseChances = getModifierChances(side, scores, modifierProfile, chanceOverrides.turnCount || 0);
     const goodChance = Math.max(
       0,
       Math.min(
@@ -716,7 +719,7 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
   const rollSharedOpeningModifier = (scores = {}, contexts = [], options = {}) => {
     const modifierProfile = options.modifierProfile || 'duel';
     const profile = getModifierProfile(modifierProfile);
-    const { goodChance, badChance, neutralChance } = getModifierChances(null, scores, modifierProfile);
+    const { goodChance, badChance, neutralChance } = getModifierChances(null, scores, modifierProfile, options.turnCount || 0);
     const roll = Math.random();
 
     const eligibleGoodModifiers = profile.goodModifiers.filter((modifier) => {
@@ -1068,7 +1071,7 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
 
       const modifierProfile = options.modifierProfile || 'duel';
       const profile = getModifierProfile(modifierProfile);
-      const { goodChance, badChance, neutralChance } = getModifierChances(side, scores, modifierProfile);
+      const { goodChance, badChance, neutralChance } = getModifierChances(side, scores, modifierProfile, options.turnCount || 0);
       const context = {
         letter: tile.baseLetter || tile.letter,
         baseScore: tile.baseScore || letterConfig[tile.baseLetter || tile.letter]?.score || 0,
@@ -1124,7 +1127,8 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
       while (rack.length < RACK_SIZE) {
         rack.push(createTile(drawLetter(rack), side, scores, options.forcedStatus || null, {
           ...(options.chanceOverrides || {}),
-          rackTiles: rack
+          rackTiles: rack,
+          turnCount: options.turnCount || 0
         }));
       }
       return rack;
@@ -1184,7 +1188,8 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
       const rack = buildFreshRack(side, scores, {
         forcedStatus: 'normal',
         chanceOverrides: {
-          modifierProfile
+          modifierProfile,
+          turnCount: options.turnCount || 0
         }
       });
 
@@ -1212,7 +1217,10 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
         const sharedStatus = rollSharedOpeningModifier(scores, [
           { letter: hostLetter, baseScore: letterConfig[hostLetter]?.score || 0, rackTiles: hostRack },
           { letter: opponentLetter, baseScore: letterConfig[opponentLetter]?.score || 0, rackTiles: opponentRack }
-        ], options);
+        ], {
+          ...options,
+          turnCount: options.turnCount || 0
+        });
 
         hostRack.push(createTile(hostLetter, 'host', scores, sharedStatus));
         opponentRack.push(createTile(opponentLetter, 'opponent', scores, sharedStatus));
@@ -1251,7 +1259,8 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
 
         nextTiles[index] = createTile(drawLetter(remainingTiles), side, scores, null, {
           rackTiles: remainingTiles,
-          modifierProfile: options.modifierProfile || 'duel'
+          modifierProfile: options.modifierProfile || 'duel',
+          turnCount: options.turnCount || 0
         });
         logSubmittedTilePull(nextTiles[index], side, scores, {
           ...options,
@@ -1272,7 +1281,8 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
       const remainingTiles = nextTiles.filter((entry, entryIndex) => entryIndex !== targetIndex);
       nextTiles[targetIndex] = createTile(drawLetter(remainingTiles), side, scores, null, {
         rackTiles: remainingTiles,
-        modifierProfile: options.modifierProfile || 'duel'
+        modifierProfile: options.modifierProfile || 'duel',
+        turnCount: options.turnCount || 0
       });
 
       return nextTiles;
@@ -1300,7 +1310,8 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
         const remainingTiles = nextTiles.filter((entry, entryIndex) => entryIndex !== index && entry);
         nextTiles[index] = createTile(drawLetter(remainingTiles), side, scores, null, {
           rackTiles: remainingTiles,
-          modifierProfile: options.modifierProfile || 'duel'
+          modifierProfile: options.modifierProfile || 'duel',
+          turnCount: options.turnCount || 0
         });
       });
 

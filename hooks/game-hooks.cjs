@@ -83,6 +83,10 @@ const keepTestingHand = (hand = [], cardId) => {
   return isTestingMode ? hand : hand.filter((entry) => entry.id !== cardId);
 };
 
+const getTurnCount = (state) => {
+  return (state?.history?.host?.length || 0) + (state?.history?.opponent?.length || 0);
+};
+
 const generateRoomCode = () => {
   let roomCode;
   do {
@@ -217,7 +221,8 @@ const clearRack = (roomCode, clientId) => {
   state.rackClears[side] -= 1;
   state.tiles[side] = createRack(side, state.scores, {
     mode: 'clear',
-    currentTiles: state.tiles[side]
+    currentTiles: state.tiles[side],
+    turnCount: getTurnCount(state)
   });
 
   return { success: true, state };
@@ -255,7 +260,9 @@ const useBoon = (roomCode, clientId, cardId, tileId) => {
 
   if (card.effectType === 'delete_tile') {
     state.cards[side].boons = keepTestingHand(state.cards[side].boons, cardId);
-    state.tiles[side] = replaceSingleTile(state.tiles[side], tileId, side, state.scores);
+    state.tiles[side] = replaceSingleTile(state.tiles[side], tileId, side, state.scores, {
+      turnCount: getTurnCount(state)
+    });
     return { success: true, state };
   }
 
@@ -266,7 +273,9 @@ const useBoon = (roomCode, clientId, cardId, tileId) => {
   state.cards[side].boons = keepTestingHand(state.cards[side].boons, cardId);
 
   if (card.effectType === 'isolate_tile') {
-    state.tiles[side] = rerollRackExceptTile(state.tiles[side], tileId, side, state.scores);
+    state.tiles[side] = rerollRackExceptTile(state.tiles[side], tileId, side, state.scores, {
+      turnCount: getTurnCount(state)
+    });
     return { success: true, state };
   }
 
@@ -433,7 +442,8 @@ const submitWord = async (roomCode, clientId, word, tileIds, languageCode = 'en'
   state.cards[side].boons.push(...drawCards('boon', grantedResources.boons));
   state.cards[side].attacks.push(...drawCards('attack', grantedResources.attacks));
   state.tiles[side] = refillRack(state.tiles[side], tileIds, side, state.scores, {
-    phase: 'submit'
+    phase: 'submit',
+    turnCount: getTurnCount(state)
   });
 
   return { success: true, state };
