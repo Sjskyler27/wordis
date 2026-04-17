@@ -11,6 +11,7 @@ import {
   getTilesForWord,
   getResourceGrants,
   replaceTileWithModifier,
+  replaceSingleTile,
   getWordScoreDetails,
   refillTiles,
   rerollRackExceptTile
@@ -368,7 +369,9 @@ export const useSinglePlayerGame = ({
           boons: hand.filter((entry) => entry.id !== cardId)
         }
       };
-      const nextTiles = refillTiles(playerTiles.value[side], [tileId], side, playerScores.value);
+      const nextTiles = replaceSingleTile(playerTiles.value[side], tileId, side, playerScores.value, {
+        modifierProfile: modifierProfile()
+      });
       const replacementTile = nextTiles.find((entry) => entry.id !== tileId && !playerTiles.value[side].some((tile) => tile.id === entry.id));
       playerTiles.value = {
         ...playerTiles.value,

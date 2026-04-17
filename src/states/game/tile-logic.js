@@ -66,6 +66,7 @@ const {
   createRack,
   createOpeningRackPair,
   refillTiles,
+  replaceSingleTile,
   rerollRackExceptTile,
   createTestingRack,
   createTestingOpeningRackPair
@@ -81,6 +82,7 @@ export {
   createRack,
   createOpeningRackPair,
   refillTiles,
+  replaceSingleTile,
   rerollRackExceptTile,
   createTestingRack,
   createTestingOpeningRackPair,

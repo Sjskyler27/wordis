@@ -39,6 +39,7 @@ const {
   createRack,
   createOpeningRackPair,
   refillTiles: refillRack,
+  replaceSingleTile,
   rerollRackExceptTile,
   createTestingOpeningRackPair
 } = createTileLogic({
@@ -246,7 +247,7 @@ const useBoon = (roomCode, clientId, cardId, tileId) => {
 
   if (card.effectType === 'delete_tile') {
     state.cards[side].boons = state.cards[side].boons.filter((entry) => entry.id !== cardId);
-    state.tiles[side] = refillRack(state.tiles[side], [tileId], side, state.scores);
+    state.tiles[side] = replaceSingleTile(state.tiles[side], tileId, side, state.scores);
     return { success: true, state };
   }
 
