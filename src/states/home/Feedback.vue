@@ -70,6 +70,7 @@
 import { ref, defineEmits, onMounted } from "vue";
 import { db } from "../../main.js";
 import { push, ref as dbRef } from "firebase/database";
+import { firebaseEnabled } from "../../firebaseClient.js";
 
 console.log('show feedback');
 
@@ -100,6 +101,10 @@ const submitFeedback = async () => {
     : type.value;
 
   try {
+    if (!firebaseEnabled || !db) {
+      throw new Error("Feedback is unavailable right now.");
+    }
+
     const feedbackRef = dbRef(db, "feedback");
     await push(feedbackRef, {
       name: name.value,
@@ -121,7 +126,9 @@ const submitFeedback = async () => {
   }
     , 1500);
   } catch (error) {
-    errorMessage.value = "Something went wrong. Please try again.";
+    errorMessage.value = firebaseEnabled
+      ? "Feedback could not be submitted right now."
+      : "Feedback is unavailable while Firebase is disabled.";
     console.error(error);
   } finally {
     loading.value = false;

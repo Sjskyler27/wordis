@@ -65,7 +65,8 @@
 
 <script setup>
 import { ref, onMounted, computed } from 'vue';
-import { getDatabase, ref as dbRef, get, update, remove } from 'firebase/database';
+import { ref as dbRef, get, update, remove } from 'firebase/database';
+import { db, firebaseEnabled } from '../firebaseClient.js';
 
 const feedbackList = ref([]);
 const loading = ref(true);
@@ -74,14 +75,23 @@ const sortKey = ref('timestamp');
 const sortDirection = ref('desc');
 
 onMounted(async () => {
-  const db = getDatabase();
-  const snap = await get(dbRef(db, '/feedback'));
-  const data = snap.exists() ? snap.val() : {};
-  feedbackList.value = Object.entries(data).map(([id, value]) => ({
-    id,
-    ...value
-  }));
-  loading.value = false;
+  if (!firebaseEnabled || !db) {
+    loading.value = false;
+    return;
+  }
+
+  try {
+    const snap = await get(dbRef(db, '/feedback'));
+    const data = snap.exists() ? snap.val() : {};
+    feedbackList.value = Object.entries(data).map(([id, value]) => ({
+      id,
+      ...value
+    }));
+  } catch (error) {
+    console.warn('Failed to load feedback from Firebase.', error);
+  } finally {
+    loading.value = false;
+  }
 });
 
 const priorityOrder = { low: 1, medium: 2, urgent: 3 };
@@ -118,7 +128,9 @@ function formatTime(timestamp) {
 }
 
 async function save(item) {
-  const db = getDatabase();
+  if (!firebaseEnabled || !db) {
+    return;
+  }
   const updates = {
     message: item.message,
     name: item.name || '',
@@ -126,14 +138,25 @@ async function save(item) {
     priority: item.priority || 'low',
     timestamp: item.timestamp || Date.now()
   };
-  await update(dbRef(db, `/feedback/${item.id}`), updates);
-  alert('Saved!');
+  try {
+    await update(dbRef(db, `/feedback/${item.id}`), updates);
+    alert('Saved!');
+  } catch (error) {
+    console.warn('Failed to save feedback.', error);
+  }
 }
 
 async function deleteItem(item) {
-  const db = getDatabase();
-  await remove(dbRef(db, `/feedback/${item.id}`));
-  item.deleted = true;
+  if (!firebaseEnabled || !db) {
+    return;
+  }
+
+  try {
+    await remove(dbRef(db, `/feedback/${item.id}`));
+    item.deleted = true;
+  } catch (error) {
+    console.warn('Failed to delete feedback.', error);
+  }
 }
 </script>
 

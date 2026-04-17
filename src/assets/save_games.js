@@ -1,13 +1,16 @@
-import { getDatabase, ref as dbRef, remove, set } from 'firebase/database';
-import { getAuth } from 'firebase/auth';
+import { ref as dbRef, remove, set } from 'firebase/database';
+import { auth, db, firebaseEnabled } from '../firebaseClient.js';
 
 /**
  * Prunes a user's completed games down to the last 5 (from localStorage),
  * deletes all remote completed games, then re-uploads the last 5 by ID.
  */
 export async function pruneCompletedGames() {
-  const db = getDatabase();
-  const auth = getAuth();
+  if (!firebaseEnabled || !db || !auth) {
+    console.warn("⏩ Skipping archive — Firebase is unavailable");
+    return false;
+  }
+
   const user = auth.currentUser;
 
   if (!navigator.onLine) {
@@ -43,38 +46,43 @@ export async function pruneCompletedGames() {
   const toKeep = validGames.slice(0, 3);
 
   // Delete all remote completed games
-  await remove(path);
+  try {
+    await remove(path);
 
-  // Upload the 3 kept games by their ID, but only a trimmed version of each
-  for (const game of toKeep) {
-    const trimmedGame = {
-      id: game.id,
-      level: game.level,
-      seed: game.seed,
-      timeCompleted: game.timeCompleted,
-      rounds: game.rounds,
-      ...(game.masteryLevel != null && { m: game.masteryLevel }),
-      players: game.players.map(p => ({
-        name: p.name,
-        emerald: p.emerald,
-        bust: p.bust,
-        totalRiskyPulls: p.totalRiskyPulls,
-        deck: (p.deck || []).map(monster => ({
-          name: monster.name,
-          fame: monster.fame,
-          fear: monster.fear,
-          gold: monster.gold,
-          emerald: monster.emerald,
-          class: monster.class ? `${monster.class}` : 'base',
-          action: monster.action ? { name: monster.action.name } : undefined,
+    // Upload the 3 kept games by their ID, but only a trimmed version of each
+    for (const game of toKeep) {
+      const trimmedGame = {
+        id: game.id,
+        level: game.level,
+        seed: game.seed,
+        timeCompleted: game.timeCompleted,
+        rounds: game.rounds,
+        ...(game.masteryLevel != null && { m: game.masteryLevel }),
+        players: game.players.map(p => ({
+          name: p.name,
+          emerald: p.emerald,
+          bust: p.bust,
+          totalRiskyPulls: p.totalRiskyPulls,
+          deck: (p.deck || []).map(monster => ({
+            name: monster.name,
+            fame: monster.fame,
+            fear: monster.fear,
+            gold: monster.gold,
+            emerald: monster.emerald,
+            class: monster.class ? `${monster.class}` : 'base',
+            action: monster.action ? { name: monster.action.name } : undefined,
+          }))
         }))
-      }))
-    };
+      };
 
-    // console.log('prunedgame', trimmedGame)
-    const gameRef = dbRef(db, `users/${uid}/gameData/completedGames/${game.id}`);
-    await set(gameRef, trimmedGame);
+      const gameRef = dbRef(db, `users/${uid}/gameData/completedGames/${game.id}`);
+      await set(gameRef, trimmedGame);
+    }
+  } catch (error) {
+    console.warn("Failed to prune completed games in Firebase.", error);
+    return false;
   }
 
   console.log(`✅ Replaced completedGames with ${toKeep.length} most recent from localStorage`);
+  return true;
 } 

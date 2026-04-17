@@ -66,7 +66,7 @@
   <script setup>
   import { ref, defineEmits, defineProps, computed, onMounted, onBeforeUnmount, watch } from "vue";
   import Feedback from "./Feedback.vue"
-  import { getAuth, onAuthStateChanged } from "firebase/auth";
+  import { onAuthStateChanged } from "firebase/auth";
   import PWA from "./PWA.vue";
   import TransitionAnimation from "../../assets/TransitionAnimation.vue";
   import pkg from '../../../package.json';
@@ -74,6 +74,7 @@
   import { getPreferredLanguage } from "../game/language.js";
   import IntroScreen from "./IntroScreen.vue";
   import Credit from './Credits.vue'
+  import { auth as firebaseAuth, firebaseEnabled } from "../../firebaseClient.js";
   
   const props = defineProps({
     monsterRoster: Array, // Expecting an array of monster objects [{ id, actionUsed, ready }]
@@ -226,10 +227,13 @@ onMounted(() => {
   if(props.hasSeenIntro) startMusic.play()
   
   //check logged in 
-  const auth = getAuth();
-  onAuthStateChanged(auth, (u) => {
-    user.value = u;
-  });
+  if (firebaseEnabled && firebaseAuth) {
+    onAuthStateChanged(firebaseAuth, (u) => {
+      user.value = u;
+    });
+  } else {
+    user.value = null;
+  }
 });
 
 onBeforeUnmount(() => {
