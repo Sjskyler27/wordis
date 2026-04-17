@@ -91,8 +91,9 @@ import Feedback from "./states/home/Feedback.vue";
 import Banner from "/src/assets/Banner.vue";
 import Settings from '/src/assets/Settings.vue'
 // import { initUserSync, logoutCleanup } from "./syncUserState";
-import { getAuth, reload, signOut } from "firebase/auth";
+import { signOut } from "firebase/auth";
 import AuthPrompt from "/src/assets/AuthPrompt.vue";
+import { auth as firebaseAuth, firebaseEnabled } from "./firebaseClient.js";
 import pkg from '../package.json';
 const hasSeenIntro = ref(false);
 
@@ -133,9 +134,12 @@ const showFeedback = ref(false)
 
   const handleLogout = async () => {
     console.log('logging out ')
-    const auth = getAuth();
+    if (!firebaseEnabled || !firebaseAuth) {
+      console.warn('Firebase auth is unavailable; skipping logout.');
+      return;
+    }
     logoutCleanup(); // clears localStorage
-    await signOut(auth);
+    await signOut(firebaseAuth);
     setTimeout(() => {
       reloader.value++;
     }, 200);
@@ -156,9 +160,13 @@ const showFeedback = ref(false)
   }
   function waitForUserAuth() {
     return new Promise((resolve) => {
-      const auth = getAuth();
-      if (auth.currentUser) return resolve(auth.currentUser);
-      const unsub = auth.onAuthStateChanged(user => {
+      if (!firebaseEnabled || !firebaseAuth) {
+        resolve(null);
+        return;
+      }
+
+      if (firebaseAuth.currentUser) return resolve(firebaseAuth.currentUser);
+      const unsub = firebaseAuth.onAuthStateChanged(user => {
         if (user) {
           unsub();
           resolve(user);

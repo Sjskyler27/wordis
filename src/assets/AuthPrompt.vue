@@ -21,6 +21,7 @@
   import { ref } from "vue";
   import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from "firebase/auth";
   import { auth } from "../main.js"
+  import { firebaseEnabled } from "../firebaseClient.js";
 // import { syncFromDB, syncStatsFromDB } from "../syncUserState.js";
   
   const emit = defineEmits(["close", "loggedIn"]);
@@ -47,6 +48,9 @@
         return;
     }
     try {
+        if (!firebaseEnabled || !auth) {
+            throw new Error("Account features are unavailable right now.");
+        }
         await createUserWithEmailAndPassword(auth, email.value, password.value);
         localStorage.setItem("userAgreed", true);
         visible.value = false;
@@ -63,6 +67,9 @@
         return;
     }
     try {
+        if (!firebaseEnabled || !auth) {
+            throw new Error("Account features are unavailable right now.");
+        }
         await signInWithEmailAndPassword(auth, email.value, password.value);
         // syncFromDB(auth.currentUser.uid)
         // syncStatsFromDB(auth.currentUser.uid)

@@ -32,7 +32,7 @@
 <script setup>
 import { ref, onMounted, defineEmits } from 'vue';
 
-import { getDatabase, ref as dbRef, get } from 'firebase/database';
+import { firebaseEnabled } from '../firebaseClient.js';
 import FeedbackEditor from './FeedbackEditor.vue';
 
 const isAdmin = (localStorage.getItem('isA') || 'null') === import.meta.env.VITE_AD_C;
@@ -44,8 +44,9 @@ const activePage = ref('home');
 const userCount = ref(12);
 
 onMounted(async () => {
-  const db = getDatabase();
-
+  if (!firebaseEnabled) {
+    return;
+  }
 });
 </script>
 

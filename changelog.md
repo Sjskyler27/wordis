@@ -1,6 +1,16 @@
 # Changelog
 
-## 2026-04-16 0.0.6
+## 2026-04-16 0.0.9
+# added
+- final score in history 
+- controller in game 
+
+# fixed
+- Major fix for firebase issues preventing mounting properly
+- tile placeholders coming back weird they now stay permenent
+- delete boon got rid of two letters
+- fixed tile ids sometimes duplicating 
+
 # ADDED
 - score animation
 - higher score animation 
