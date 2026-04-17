@@ -108,7 +108,7 @@ const getTileStyle = (tile) => {
   return {
     '--tile-bg': ui.tileBackground,
     '--tile-shadow': ui.tileShadow,
-    '--tile-hover-shadow': ui.tileHoverShadow || ui.tileShadow,
+    '--tile-hover-shadow': ui.tileHoverShadows || ui.tileShadow,
     '--tile-focus-shadow': ui.tileFocusShadow || ui.tileShadow,
     '--tile-text-color': ui.textColor
   };
@@ -253,28 +253,26 @@ watch(() => [props.burstPulse, props.lastWordScore], ([nextPulse]) => {
   box-shadow: var(--tile-hover-shadow, inset 0 -4px 0 rgba(0, 0, 0, 0.12), 0 14px 20px rgba(45, 10, 24, 0.24));
 }
 
-.tile:focus-visible {
+.tile:focus,
+.tile:focus-visible  {
   outline: 3px solid rgba(255, 202, 103, 0.85);
   outline-offset: 2px;
   transform: translateY(-2px);
-  box-shadow: var(--tile-focus-shadow, inset 0 -4px 0 rgba(0, 0, 0, 0.12), 0 0 0 4px rgba(92, 25, 41, 0.45), 0 14px 20px rgba(45, 10, 24, 0.24));
+  box-shadow: var(--tile-focus-shadow, inset 0 -4px 0 rgba(0, 0, 0, 0.12), 0 0 0 4px rgba(92, 25, 41, 0.45), 0 14px 20px rgba(45, 10, 24, 0.24)) !important;
 }
 
 .tile-controller-focus {
-  outline: 3px solid rgba(255, 202, 103, 0.85);
   outline-offset: 2px;
   transform: translateY(-2px);
   box-shadow: var(--tile-focus-shadow, inset 0 -4px 0 rgba(0, 0, 0, 0.12), 0 0 0 4px rgba(92, 25, 41, 0.45), 0 14px 20px rgba(45, 10, 24, 0.24));
 }
 
-.tile.active {
-  outline: 3px solid rgba(255, 202, 103, 0.55);
-}
 
 .tile.opponent.active {
   outline-color: rgba(75, 199, 176, 0.5);
 }
 
+.tile.opponent:focus,
 .tile.opponent:focus-visible {
   outline-color: rgba(75, 199, 176, 0.85);
 }
@@ -292,6 +290,7 @@ watch(() => [props.burstPulse, props.lastWordScore], ([nextPulse]) => {
 }
 
 .tile-in-use:hover,
+.tile-in-use:focus,
 .tile-in-use:focus-visible {
   box-shadow:
     inset 0 0 0 9999px rgba(0, 0, 0, 0.08), /* soft dark overlay */

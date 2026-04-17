@@ -1669,6 +1669,7 @@ body {
   border-color: rgba(255, 236, 187, 0.38);
 }
 
+.action-card:focus,
 .action-card:focus-visible {
   outline: 3px solid rgba(255, 227, 141, 0.88);
   outline-offset: 2px;
