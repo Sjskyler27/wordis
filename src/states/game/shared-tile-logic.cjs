@@ -47,19 +47,19 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
     bot: {
       goodModifiers: GOOD_MODIFIERS,
       badModifiers: BAD_MODIFIERS,
-      neutralModifiers: [],
+      neutralModifiers: NEUTRAL_MODIFIERS,
       baseGoodChance: BASE_GOOD_MODIFIER_CHANCE,
       baseBadChance: BASE_BAD_MODIFIER_CHANCE,
-      baseNeutralChance: 0,
+      baseNeutralChance: BASE_NEUTRAL_MODIFIER_CHANCE,
       useScoreSwing: true
     },
     solo: {
       goodModifiers: SOLO_GOOD_MODIFIERS,
       badModifiers: BAD_MODIFIERS,
-      neutralModifiers: [],
+      neutralModifiers: NEUTRAL_MODIFIERS,
       baseGoodChance: 0.085,
       baseBadChance: 0.022,
-      baseNeutralChance: 0,
+      baseNeutralChance: BASE_NEUTRAL_MODIFIER_CHANCE,
       useScoreSwing: false
     }
   };
@@ -106,6 +106,7 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
       badge: 'ATK',
       effects: { grantAttack: 1 },
       rarityWeight: 0.28,
+      noSinglePlayer: true,
       ui: {
         tileBackground: 'linear-gradient(180deg, #ffe8d9 0%, #ff9b6e 72%, #b64a1f 100%)',
         tileShadow: 'inset 0 -4px 0 rgba(116, 43, 12, 0.24), 0 12px 20px rgba(45, 10, 24, 0.18), 0 0 0 1px rgba(255, 190, 150, 0.42)',
@@ -178,6 +179,7 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
         }
       },
       rarityWeight: 0.32,
+      noSinglePlayer: true,
       ui: {
         tileBackground: 'linear-gradient(135deg, #f6f0e4 0%, #f6f0e4 48%, #181217 49%, #181217 100%)',
         tileShadow: 'inset 0 -4px 0 rgba(20, 14, 19, 0.28), 0 12px 22px rgba(20, 14, 19, 0.22), 0 0 0 1px rgba(255, 255, 255, 0.24)',
@@ -471,8 +473,27 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
     return weightedPool[weightedPool.length - 1]?.letter || 'E';
   };
 
+  const normalizeModifierStatus = (status = 'normal') => (status === 'black' ? 'zeroTile' : status);
+  const normalizeCardKey = (cardKey) => (cardKey === 'attack_black' ? 'attack_zeroTile' : cardKey);
+  const getModifierDefinition = (status = 'normal') => {
+    return MODIFIER_DEFINITIONS[normalizeModifierStatus(status)] || MODIFIER_DEFINITIONS.normal;
+  };
+  const getAllowedModifiersForProfile = (modifiers = [], profileName = 'duel') => {
+    return modifiers.filter((modifier) => {
+      const definition = getModifierDefinition(modifier);
+      return !(profileName !== 'duel' && definition.noSinglePlayer);
+    });
+  };
+  const getCardDefinition = (cardKey) => CARD_DEFINITIONS[normalizeCardKey(cardKey)];
   const getModifierProfile = (profileName = 'duel') => {
-    return MODIFIER_PROFILES[profileName] || MODIFIER_PROFILES.duel;
+    const profile = MODIFIER_PROFILES[profileName] || MODIFIER_PROFILES.duel;
+
+    return {
+      ...profile,
+      goodModifiers: getAllowedModifiersForProfile(profile.goodModifiers || [], profileName),
+      badModifiers: getAllowedModifiersForProfile(profile.badModifiers || [], profileName),
+      neutralModifiers: getAllowedModifiersForProfile(profile.neutralModifiers || [], profileName)
+    };
   };
 
   const getModifierChances = (side, scores = {}, profileName = 'duel', turnCount = 0) => {
@@ -498,13 +519,6 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
       neutralChance: Math.min(0.2, profile.baseNeutralChance || 0)
     };
   };
-
-  const normalizeModifierStatus = (status = 'normal') => (status === 'black' ? 'zeroTile' : status);
-  const normalizeCardKey = (cardKey) => (cardKey === 'attack_black' ? 'attack_zeroTile' : cardKey);
-  const getModifierDefinition = (status = 'normal') => {
-    return MODIFIER_DEFINITIONS[normalizeModifierStatus(status)] || MODIFIER_DEFINITIONS.normal;
-  };
-  const getCardDefinition = (cardKey) => CARD_DEFINITIONS[normalizeCardKey(cardKey)];
   const hasModifierInRack = (rackTiles = [], status = 'normal') => {
     return rackTiles.some((tile) => tile.status === status);
   };
@@ -1321,7 +1335,11 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
     const createTestingRack = (side = null, scores = {}, options = {}) => {
       const profile = getModifierProfile(options.modifierProfile || 'duel');
       const allowedStatuses = options.includeAllModifiers
-        ? new Set(Object.keys(MODIFIER_DEFINITIONS).filter((status) => status !== 'normal'))
+        ? new Set([
+            ...profile.goodModifiers,
+            ...profile.badModifiers,
+            ...(profile.neutralModifiers || [])
+          ])
         : new Set([
             ...profile.goodModifiers,
             ...profile.badModifiers,
