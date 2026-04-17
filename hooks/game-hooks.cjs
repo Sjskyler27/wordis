@@ -227,16 +227,21 @@ const useBoon = (roomCode, clientId, cardId, tileId) => {
   }
 
   const tile = state.tiles[side].find((entry) => entry.id === tileId);
-  if (!tile || tile.locked) {
+  if (!tile) {
+    return { success: false, error: 'That tile cannot take a boon' };
+  }
+
+  if (card.effectType === 'delete_tile') {
+    state.cards[side].boons = state.cards[side].boons.filter((entry) => entry.id !== cardId);
+    state.tiles[side] = refillRack(state.tiles[side], [tileId], side, state.scores);
+    return { success: true, state };
+  }
+
+  if (tile.locked) {
     return { success: false, error: 'That tile cannot take a boon' };
   }
 
   state.cards[side].boons = state.cards[side].boons.filter((entry) => entry.id !== cardId);
-
-  if (card.effectType === 'delete_tile') {
-    state.tiles[side] = refillRack(state.tiles[side], [tileId], side, state.scores);
-    return { success: true, state };
-  }
 
   if (card.effectType === 'isolate_tile') {
     state.tiles[side] = rerollRackExceptTile(state.tiles[side], tileId, side, state.scores);

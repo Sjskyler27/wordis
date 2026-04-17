@@ -355,20 +355,19 @@ export const useSinglePlayerGame = ({
     }
 
     const tile = playerTiles.value[side]?.find((entry) => entry.id === tileId);
-    if (!tile || tile.locked) {
+    if (!tile) {
       localMessage.value = 'That tile cannot take a boon.';
       return false;
     }
 
-    playerCards.value = {
-      ...playerCards.value,
-      [side]: {
-        ...playerCards.value[side],
-        boons: hand.filter((entry) => entry.id !== cardId)
-      }
-    };
-
     if (card.effectType === 'delete_tile') {
+      playerCards.value = {
+        ...playerCards.value,
+        [side]: {
+          ...playerCards.value[side],
+          boons: hand.filter((entry) => entry.id !== cardId)
+        }
+      };
       const nextTiles = refillTiles(playerTiles.value[side], [tileId], side, playerScores.value);
       const replacementTile = nextTiles.find((entry) => entry.id !== tileId && !playerTiles.value[side].some((tile) => tile.id === entry.id));
       playerTiles.value = {
@@ -380,6 +379,19 @@ export const useSinglePlayerGame = ({
         replacementTileId: replacementTile?.id || null
       };
     }
+
+    if (tile.locked) {
+      localMessage.value = 'That tile cannot take a boon.';
+      return false;
+    }
+
+    playerCards.value = {
+      ...playerCards.value,
+      [side]: {
+        ...playerCards.value[side],
+        boons: hand.filter((entry) => entry.id !== cardId)
+      }
+    };
 
     if (card.effectType === 'isolate_tile') {
       playerTiles.value = {
