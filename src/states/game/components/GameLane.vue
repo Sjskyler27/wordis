@@ -2,7 +2,9 @@
   <section
     class="lane"
     :class="{
-      'lane-burst': burstTier === 'burst',
+      'lane-burst-low': burstTier === 'low',
+      'lane-burst-medium': burstTier === 'medium',
+      'lane-burst-high': burstTier === 'high',
       'lane-burst-epic': burstTier === 'epic'
     }"
   >
@@ -125,13 +127,33 @@ const getBadgeStyle = (tile) => {
 
 const burstTier = ref('');
 let burstTimeoutId = null;
+const getBurstTier = (score) => {
+  if (!score || score < 6) {
+    return '';
+  }
+
+  if (score >= 25) {
+    return 'epic';
+  }
+
+  if (score >= 20) {
+    return 'high';
+  }
+
+  if (score >= 12) {
+    return 'medium';
+  }
+
+  return 'low';
+};
 
 watch(() => [props.burstPulse, props.lastWordScore], ([nextPulse]) => {
   if (!nextPulse) {
     return;
   }
 
-  if (!props.lastWordScore || props.lastWordScore < 18) {
+  const nextTier = getBurstTier(props.lastWordScore);
+  if (!nextTier) {
     return;
   }
 
@@ -139,10 +161,10 @@ watch(() => [props.burstPulse, props.lastWordScore], ([nextPulse]) => {
   burstTier.value = '';
 
   requestAnimationFrame(() => {
-    burstTier.value = props.lastWordScore >= 32 ? 'epic' : 'burst';
+    burstTier.value = nextTier;
     burstTimeoutId = window.setTimeout(() => {
       burstTier.value = '';
-    }, props.lastWordScore >= 32 ? 1200 : 850);
+    }, nextTier === 'epic' ? 1220 : nextTier === 'high' ? 1020 : nextTier === 'medium' ? 900 : 760);
   });
 });
 </script>
@@ -172,22 +194,42 @@ watch(() => [props.burstPulse, props.lastWordScore], ([nextPulse]) => {
   transform: scale(0.96);
 }
 
-.lane-burst {
-  animation: lane-burst 820ms ease-out;
+.lane-burst-low {
+  animation: lane-burst-low 760ms ease-out;
+}
+
+.lane-burst-medium {
+  animation: lane-burst-medium 900ms ease-out;
+}
+
+.lane-burst-high {
+  animation: lane-burst-high 1020ms ease-out;
 }
 
 .lane-burst-epic {
-  animation: lane-burst-epic 1180ms ease-out;
+  animation: lane-burst-epic 1220ms ease-out;
 }
 
-.lane-burst::after {
-  animation: lane-flare 820ms ease-out;
+.lane-burst-low::after {
+  animation: lane-flare-low 760ms ease-out;
+  background:
+    radial-gradient(circle at 50% 50%, rgba(255, 222, 145, 0.22) 0%, rgba(255, 182, 93, 0.12) 42%, rgba(255, 182, 93, 0) 72%);
+}
+
+.lane-burst-medium::after {
+  animation: lane-flare-medium 900ms ease-out;
   background:
     radial-gradient(circle at 50% 50%, rgba(255, 222, 145, 0.34) 0%, rgba(255, 182, 93, 0.18) 42%, rgba(255, 182, 93, 0) 72%);
 }
 
+.lane-burst-high::after {
+  animation: lane-flare-high 1020ms ease-out;
+  background:
+    radial-gradient(circle at 50% 50%, rgba(255, 229, 151, 0.42) 0%, rgba(255, 175, 79, 0.24) 40%, rgba(255, 175, 79, 0) 74%);
+}
+
 .lane-burst-epic::after {
-  animation: lane-flare-epic 1180ms ease-out;
+  animation: lane-flare-epic 1220ms ease-out;
   background:
     radial-gradient(circle at 50% 50%, rgba(125, 255, 227, 0.34) 0%, rgba(95, 240, 214, 0.2) 42%, rgba(95, 240, 214, 0) 72%);
 }
@@ -348,7 +390,24 @@ watch(() => [props.burstPulse, props.lastWordScore], ([nextPulse]) => {
   }
 }
 
-@keyframes lane-burst {
+@keyframes lane-burst-low {
+  0%,
+  100% {
+    transform: translateY(0);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.12),
+      0 0 0 rgba(255, 208, 120, 0);
+  }
+  35% {
+    transform: translateY(-1px);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.15),
+      0 0 18px rgba(255, 208, 120, 0.14),
+      0 0 0 1px rgba(255, 208, 120, 0.16);
+  }
+}
+
+@keyframes lane-burst-medium {
   0%,
   100% {
     transform: translateY(0);
@@ -365,7 +424,19 @@ watch(() => [props.burstPulse, props.lastWordScore], ([nextPulse]) => {
   }
 }
 
-@keyframes lane-flare {
+@keyframes lane-flare-low {
+  0%,
+  100% {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  35% {
+    opacity: 0.52;
+    transform: scale(1.01);
+  }
+}
+
+@keyframes lane-flare-medium {
   0%,
   100% {
     opacity: 0;
@@ -374,6 +445,35 @@ watch(() => [props.burstPulse, props.lastWordScore], ([nextPulse]) => {
   35% {
     opacity: 1;
     transform: scale(1.02);
+  }
+}
+
+@keyframes lane-burst-high {
+  0%,
+  100% {
+    transform: translateY(0) scale(1);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.12),
+      0 0 0 rgba(255, 196, 104, 0);
+  }
+  35% {
+    transform: translateY(-3px) scale(1.01);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.18),
+      0 0 38px rgba(255, 196, 104, 0.28),
+      0 0 0 3px rgba(255, 196, 104, 0.24);
+  }
+}
+
+@keyframes lane-flare-high {
+  0%,
+  100% {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  35% {
+    opacity: 1;
+    transform: scale(1.03);
   }
 }
 

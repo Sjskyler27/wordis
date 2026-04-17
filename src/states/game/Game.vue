@@ -729,13 +729,13 @@ const playScoreAnimation = async (tileCount) => {
 };
 
 const triggerLaneBurst = (side, score) => {
-  if (!score || score < 18) {
+  if (!score || score < 6) {
     return;
   }
 
   laneBurstPulse.value = {
     ...laneBurstPulse.value,
-    [side]: laneBurstPulse.value[side] + (score >= 32 ? 2 : 1)
+    [side]: laneBurstPulse.value[side] + 1
   };
 };
 
