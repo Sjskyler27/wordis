@@ -80,7 +80,7 @@
           <div class="score-divider">VS</div>
           <div class="score-box opponent" :class="[{ timer: isTimedSoloMode }, scoreBoxClass('opponent')]">
             <span>{{ isTimedSoloMode ? 'Time Left' : 'Their Board' }}</span>
-            <strong>{{ isTimedSoloMode ? formattedTimeRemaining : rightLane.score }}</strong>
+            <strong>{{ isTimedSoloMode ? timedSoloScoreRibbonLabel : rightLane.score }}</strong>
           </div>
         </div>
 
@@ -438,6 +438,13 @@ const formattedTimeRemaining = computed(() => {
   const seconds = safeSeconds % 60;
   return `${minutes}:${String(seconds).padStart(2, '0')}`;
 });
+const timedSoloScoreRibbonLabel = computed(() => {
+  if (finalWordWindowActive.value) {
+    return 'Play your last word!';
+  }
+
+  return formattedTimeRemaining.value;
+});
 const modeTitle = computed(() => {
   if (props.isMultiplayer) {
     return 'Real Time Duel';
@@ -529,10 +536,10 @@ const backgroundMoodStyle = computed(() => {
   const intensity = progress * progress;
 
   return {
-    '--bg-corner': mixHexColor('#ffd178', '#ff7b5c', intensity),
-    '--bg-top': mixHexColor('#ffb95d', '#d25b3f', intensity),
+    '--bg-corner': mixHexColor('#e9b248', '#ff7b5c', intensity),
+    '--bg-top': mixHexColor('#c79129', '#d25b3f', intensity),
     '--bg-mid': mixHexColor('#ff8658', '#a53149', intensity),
-    '--bg-bottom': mixHexColor('#6b2d71', '#24061f', intensity),
+    '--bg-bottom': mixHexColor('#76347c', '#24061f', intensity),
     '--bg-glow-alpha': `${0.26 - (intensity * 0.1)}`,
     '--bg-shape-far-opacity': `${0.18 + (progress * 0.1)}`,
     '--bg-shape-near-opacity': `${0.14 + (progress * 0.1)}`,
