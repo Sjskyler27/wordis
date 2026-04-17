@@ -5,7 +5,7 @@ const LETTER_CONFIG = require('../src/states/game/letters.json');
 const WORD_BONUSES = require('../src/states/game/word-bonuses.json');
 const MILESTONE_REWARDS = require('../src/states/game/word-milestone-rewards.json');
 const { validateWord } = require('./word-validator.cjs');
-const { isTestingMode } = require('./env.cjs');
+const { isTestingMode, isDevMode } = require('./env.cjs');
 const {
   createSharedTileLogic
 } = require('../src/states/game/shared-tile-logic.cjs');
@@ -25,7 +25,8 @@ const {
 } = createSharedTileLogic({
   letterConfig: LETTER_CONFIG,
   wordBonuses: WORD_BONUSES,
-  milestoneRewards: MILESTONE_REWARDS
+  milestoneRewards: MILESTONE_REWARDS,
+  devLogging: isDevMode
 });
 
 const serverIdState = {

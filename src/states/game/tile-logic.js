@@ -11,7 +11,8 @@ if (typeof createSharedTileLogic !== 'function') {
 const sharedTileLogic = createSharedTileLogic({
   letterConfig,
   wordBonuses,
-  milestoneRewards
+  milestoneRewards,
+  devLogging: import.meta.env.DEV
 });
 
 const {

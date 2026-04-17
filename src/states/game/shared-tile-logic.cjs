@@ -1,4 +1,4 @@
-const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {} }) => {
+const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {}, devLogging = false }) => {
   const LETTER_KEYS = Object.keys(letterConfig);
   const LETTER_POOL = Object.entries(letterConfig).flatMap(([letter, config]) =>
     Array.from({ length: config.count }, () => letter)
@@ -496,6 +496,74 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
     return weightedModifiers[weightedModifiers.length - 1].modifier;
   };
 
+  const getWeightedModifierOdds = (modifiers = [], poolChance = 0) => {
+    const weightedModifiers = modifiers
+      .map((modifier) => ({
+        modifier,
+        weight: Math.max(0, getModifierDefinition(modifier).rarityWeight ?? 1)
+      }))
+      .filter((entry) => entry.weight > 0);
+
+    if (!weightedModifiers.length || poolChance <= 0) {
+      return {};
+    }
+
+    const totalWeight = weightedModifiers.reduce((sum, entry) => sum + entry.weight, 0);
+    if (!totalWeight) {
+      return {};
+    }
+
+    return weightedModifiers.reduce((odds, entry) => {
+      odds[entry.modifier] = poolChance * (entry.weight / totalWeight);
+      return odds;
+    }, {});
+  };
+
+  const logModifierRoll = ({
+    side = 'unknown',
+    phase = 'turn',
+    context = {},
+    roll,
+    goodChance,
+    badChance,
+    eligibleGoodModifiers = [],
+    eligibleBadModifiers = [],
+    selectedModifier = 'normal'
+  }) => {
+    if (!devLogging) {
+      return;
+    }
+
+    const modifierOdds = {
+      ...getWeightedModifierOdds(eligibleGoodModifiers, goodChance),
+      ...getWeightedModifierOdds(eligibleBadModifiers, badChance)
+    };
+    const normalChance = Math.max(
+      0,
+      1 - Object.values(modifierOdds).reduce((sum, chance) => sum + chance, 0)
+    );
+
+    console.log('[modifier-roll]', {
+      side,
+      phase,
+      letter: context.letter || null,
+      baseScore: context.baseScore ?? null,
+      roll: Number(roll.toFixed(4)),
+      goodChance: Number(goodChance.toFixed(4)),
+      badChance: Number(badChance.toFixed(4)),
+      odds: Object.fromEntries(
+        Object.entries({
+          normal: normalChance,
+          ...modifierOdds
+        }).map(([modifier, chance]) => [modifier, Number(chance.toFixed(4))])
+      ),
+      actualModifier: selectedModifier,
+      actualChance: Number((selectedModifier === 'normal'
+        ? normalChance
+        : (modifierOdds[selectedModifier] || 0)).toFixed(4))
+    });
+  };
+
   const chooseWeightedCard = (cardKeys = []) => {
     const weightedCards = cardKeys
       .map((cardKey) => ({
@@ -541,24 +609,52 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
     );
     const roll = Math.random();
 
-    if (roll < goodChance) {
-      const eligibleGoodModifiers = profile.goodModifiers.filter((modifier) => canApplyModifier(modifier, context));
-      if (!eligibleGoodModifiers.length) {
-        return 'normal';
-      }
+    const eligibleGoodModifiers = profile.goodModifiers.filter((modifier) => canApplyModifier(modifier, context));
+    const eligibleBadModifiers = profile.badModifiers.filter((modifier) => canApplyModifier(modifier, context));
 
-      return chooseWeightedModifier(eligibleGoodModifiers);
+    if (roll < goodChance) {
+      const selectedModifier = eligibleGoodModifiers.length ? chooseWeightedModifier(eligibleGoodModifiers) : 'normal';
+      logModifierRoll({
+        side,
+        phase: chanceOverrides.phase || 'turn',
+        context,
+        roll,
+        goodChance,
+        badChance,
+        eligibleGoodModifiers,
+        eligibleBadModifiers,
+        selectedModifier
+      });
+      return selectedModifier;
     }
 
     if (roll < goodChance + badChance) {
-      const eligibleBadModifiers = profile.badModifiers.filter((modifier) => canApplyModifier(modifier, context));
-      if (!eligibleBadModifiers.length) {
-        return 'normal';
-      }
-
-      return chooseWeightedModifier(eligibleBadModifiers);
+      const selectedModifier = eligibleBadModifiers.length ? chooseWeightedModifier(eligibleBadModifiers) : 'normal';
+      logModifierRoll({
+        side,
+        phase: chanceOverrides.phase || 'turn',
+        context,
+        roll,
+        goodChance,
+        badChance,
+        eligibleGoodModifiers,
+        eligibleBadModifiers,
+        selectedModifier
+      });
+      return selectedModifier;
     }
 
+    logModifierRoll({
+      side,
+      phase: chanceOverrides.phase || 'turn',
+      context,
+      roll,
+      goodChance,
+      badChance,
+      eligibleGoodModifiers,
+      eligibleBadModifiers,
+      selectedModifier: 'normal'
+    });
     return 'normal';
   };
 
@@ -568,30 +664,56 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
     const { goodChance, badChance } = getModifierChances(null, scores, modifierProfile);
     const roll = Math.random();
 
-    if (roll < goodChance) {
-      const eligibleGoodModifiers = profile.goodModifiers.filter((modifier) => {
+    const eligibleGoodModifiers = profile.goodModifiers.filter((modifier) => {
+        return contexts.every((context) => canApplyModifier(modifier, context));
+      });
+    const eligibleBadModifiers = profile.badModifiers.filter((modifier) => {
         return contexts.every((context) => canApplyModifier(modifier, context));
       });
 
-      if (!eligibleGoodModifiers.length) {
-        return 'normal';
-      }
-
-      return chooseWeightedModifier(eligibleGoodModifiers);
+    if (roll < goodChance) {
+      const selectedModifier = eligibleGoodModifiers.length ? chooseWeightedModifier(eligibleGoodModifiers) : 'normal';
+      logModifierRoll({
+        side: 'opening-pair',
+        phase: 'opening',
+        context: contexts[0] || {},
+        roll,
+        goodChance,
+        badChance,
+        eligibleGoodModifiers,
+        eligibleBadModifiers,
+        selectedModifier
+      });
+      return selectedModifier;
     }
 
     if (roll < goodChance + badChance) {
-      const eligibleBadModifiers = profile.badModifiers.filter((modifier) => {
-        return contexts.every((context) => canApplyModifier(modifier, context));
+      const selectedModifier = eligibleBadModifiers.length ? chooseWeightedModifier(eligibleBadModifiers) : 'normal';
+      logModifierRoll({
+        side: 'opening-pair',
+        phase: 'opening',
+        context: contexts[0] || {},
+        roll,
+        goodChance,
+        badChance,
+        eligibleGoodModifiers,
+        eligibleBadModifiers,
+        selectedModifier
       });
-
-      if (!eligibleBadModifiers.length) {
-        return 'normal';
-      }
-
-      return chooseWeightedModifier(eligibleBadModifiers);
+      return selectedModifier;
     }
 
+    logModifierRoll({
+      side: 'opening-pair',
+      phase: 'opening',
+      context: contexts[0] || {},
+      roll,
+      goodChance,
+      badChance,
+      eligibleGoodModifiers,
+      eligibleBadModifiers,
+      selectedModifier: 'normal'
+    });
     return 'normal';
   };
 
