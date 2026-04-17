@@ -2,6 +2,16 @@
 
 ## 2026-04-17
 
+Start: 2026-04-17 11:56:00 EDT
+Stop: 2026-04-17 12:18:28 EDT
+
+- Split the comeback modifier caps so good and bad bonus pressure can be tuned independently.
+- Made good and bad tile pull chances ramp up as turns are played, including submit refills, rack clears, and boon-driven redraws.
+- Restored the neutral modifier pool to a fixed 2% baseline chance while keeping DEV odds logging aligned with the neutral pool.
+- Allowed neutral tiles in singleplayer and bot matches, while filtering out modifiers flagged `noSinglePlayer` like `yinYang` and `gainattack`.
+
+## 2026-04-17
+
 Start: 2026-04-17 08:44:00 EDT
 Stop: 2026-04-17 08:54:58 EDT
 
