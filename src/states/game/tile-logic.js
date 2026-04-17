@@ -40,21 +40,41 @@ const {
   createTileLogic
 } = sharedTileLogic;
 
-let nextLocalTileId = 1;
-let nextLocalCardId = 1;
+const createSessionKey = (prefix) => {
+  const uniquePart = globalThis.crypto?.randomUUID?.()
+    || `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+  return `${prefix}-${uniquePart}`;
+};
+const getIdState = (stateKey, prefix) => {
+  if (!globalThis[stateKey]) {
+    globalThis[stateKey] = {
+      session: createSessionKey(prefix),
+      next: 1
+    };
+  }
+
+  return globalThis[stateKey];
+};
+const nextClientId = (stateKey, prefix) => {
+  const state = getIdState(stateKey, prefix);
+  const id = `${prefix}-${state.session}-${state.next}`;
+  state.next += 1;
+  return id;
+};
 
 const {
   createRack,
   createOpeningRackPair,
   refillTiles,
+  replaceSingleTile,
   rerollRackExceptTile,
   createTestingRack,
   createTestingOpeningRackPair
 } = createTileLogic({
-  createTileId: () => `local-tile-${nextLocalTileId++}`
+  createTileId: () => nextClientId('__wordisLocalTileIdState', 'local-tile')
 });
 const { createCard, createCards, drawCard, drawCards } = createCardLogic({
-  createCardId: () => `local-card-${nextLocalCardId++}`
+  createCardId: () => nextClientId('__wordisLocalCardIdState', 'local-card')
 });
 
 export {
@@ -62,6 +82,7 @@ export {
   createRack,
   createOpeningRackPair,
   refillTiles,
+  replaceSingleTile,
   rerollRackExceptTile,
   createTestingRack,
   createTestingOpeningRackPair,

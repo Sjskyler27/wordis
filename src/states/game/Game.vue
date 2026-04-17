@@ -39,12 +39,16 @@
           <p v-else>No cards in hand right now.</p>
           <div class="card-hand">
             <button
-              v-for="card in myCards.boons"
+              v-for="(card, index) in myCards.boons"
               :key="card.id"
               type="button"
               class="action-card"
               :style="getCardStyle(card)"
-              :class="{ armed: activeBoonCardId === card.id }"
+              :class="{
+                armed: activeBoonCardId === card.id,
+                'action-card-controller-focus': controllerRegion === 'cards' && controllerCardCursorIndex === index
+              }"
+              :data-controller-card="index"
               @click="selectBoonCard(card)"
             >
               <span class="action-card-type">Boon</span>
@@ -53,11 +57,15 @@
             </button>
             <button
               v-if="attacksEnabled"
-              v-for="card in myCards.attacks"
+              v-for="(card, attackIndex) in myCards.attacks"
               :key="card.id"
               type="button"
               class="action-card"
               :style="getCardStyle(card)"
+              :class="{
+                'action-card-controller-focus': controllerRegion === 'cards' && controllerCardCursorIndex === myCards.boons.length + attackIndex
+              }"
+              :data-controller-card="myCards.boons.length + attackIndex"
               @click="useAttackCard(card)"
             >
               <span class="action-card-type">Attack</span>
@@ -97,6 +105,7 @@
             :saved-tile-ids="leftLane.savedTileIds"
             :must-alert-ids="leftLane.mustAlertIds"
             :burst-pulse="laneBurstPulse[leftLane.side]"
+            :controller-focused-tile-id="leftLane.side === mySide ? controllerFocusedTileId : ''"
             @tile-click="handleTileClickWithCards($event, leftLane.side)"
           />
 
@@ -113,6 +122,7 @@
             :saved-tile-ids="rightLane.savedTileIds"
             :must-alert-ids="rightLane.mustAlertIds"
             :burst-pulse="laneBurstPulse[rightLane.side]"
+            :controller-focused-tile-id="rightLane.side === mySide ? controllerFocusedTileId : ''"
             @tile-click="handleTileClickWithCards($event, rightLane.side)"
           />
         </div>
@@ -136,6 +146,8 @@
           :current-word-multiplier="currentWordMultiplier"
           :clear-count="rackClears[mySide]"
           :length-bonus-steps="lengthBonusSteps"
+          :controller-focused-built-tile-id="controllerRegion === 'builder' ? controllerFocusedBuiltTileId : ''"
+          :controller-focused-action-index="controllerRegion === 'actions' ? controllerActionCursorIndex : -1"
           @undo="handleUndo"
           @clear="handleClearWord"
           @save-letters="handleSaveLetters"
@@ -165,7 +177,7 @@
 </template>
 
 <script setup>
-import { computed, defineProps, onBeforeUnmount, onMounted, ref, watch } from 'vue';
+import { computed, defineProps, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import {
   roomCode,
   isHost,
@@ -205,9 +217,11 @@ const props = defineProps({
     type: String,
     default: 'normal'
   },
-    volume: Number,
-    musicVolume: Number,
-    effectsVolume: Number,
+  volume: Number,
+  musicVolume: Number,
+  effectsVolume: Number,
+  isControllerConnected: Boolean,
+  settingsShowing: Boolean
 });
 
 const emit = defineEmits([
@@ -224,6 +238,11 @@ const activeBoonCardId = ref(null);
 const invalidWordPulse = ref(0);
 const scorePopPulse = ref(0);
 const scorePopTiles = ref([]);
+const controllerRegion = ref('rack');
+const controllerTileCursorIndex = ref(0);
+const controllerCardCursorIndex = ref(0);
+const controllerBuilderCursorIndex = ref(0);
+const controllerActionCursorIndex = ref(0);
 const laneBurstPulse = ref({
   host: 0,
   opponent: 0
@@ -235,7 +254,26 @@ const mustAlertTileIds = ref({
 const isMultiplayerRef = computed(() => props.isMultiplayer);
 const isTimedSoloMode = computed(() => !props.isMultiplayer && props.playMode === 'timed_solo');
 const isBotMode = computed(() => !props.isMultiplayer && props.playMode === 'bot_match');
-const attacksEnabled = computed(() => isTestingMode || isTimedSoloMode.value || isBotMode.value || props.isMultiplayer);
+const scoreThresholdReached = computed(() => {
+  return playerScores.value.host >= WINNING_SCORE || playerScores.value.opponent >= WINNING_SCORE;
+});
+const overtimeTrailingSide = computed(() => {
+  if (isTimedSoloMode.value) {
+    return null;
+  }
+
+  const hostAtGoal = playerScores.value.host >= WINNING_SCORE;
+  const opponentAtGoal = playerScores.value.opponent >= WINNING_SCORE;
+  if (hostAtGoal === opponentAtGoal) {
+    return null;
+  }
+
+  return hostAtGoal ? 'opponent' : 'host';
+});
+const isOvertimeActive = computed(() => Boolean(overtimeTrailingSide.value));
+const attacksEnabled = computed(() => {
+  return !isOvertimeActive.value && (isTestingMode || isTimedSoloMode.value || isBotMode.value || props.isMultiplayer);
+});
 const showOpponentLane = computed(() => props.isMultiplayer || isBotMode.value);
 const preferredLanguage = getPreferredLanguage();
 const SOLO_TIMER_SECONDS = isTestingMode ? 25 : 180;
@@ -264,6 +302,8 @@ const mySide = computed(() => {
 });
 
 const myTiles = computed(() => playerTiles.value[mySide.value] || []);
+const controllerFocusedTileId = computed(() => myTiles.value[controllerTileCursorIndex.value]?.id || '');
+const controllerFocusedBuiltTileId = computed(() => selectedTilesForCurrentSide.value[controllerBuilderCursorIndex.value]?.id || '');
 const opponentSide = computed(() => (mySide.value === 'host' ? 'opponent' : 'host'));
 const buildLane = (side, label) => ({
   side,
@@ -338,6 +378,12 @@ const {
 });
 
 const myCards = computed(() => playerCards.value[mySide.value] || { boons: [], attacks: [] });
+const controllerCards = computed(() => {
+  return [
+    ...myCards.value.boons,
+    ...(attacksEnabled.value ? myCards.value.attacks : [])
+  ];
+});
 const activeBoonCard = computed(() => {
   return myCards.value.boons.find((card) => card.id === activeBoonCardId.value) || null;
 });
@@ -371,6 +417,10 @@ const getCardStyle = (card) => {
 };
 const WINNING_SCORE = isTestingMode ? 40 : 250;
 const winningSide = computed(() => {
+  if (isOvertimeActive.value) {
+    return null;
+  }
+
   if (playerScores.value.host >= WINNING_SCORE && playerScores.value.host >= playerScores.value.opponent) {
     return 'host';
   }
@@ -381,7 +431,13 @@ const winningSide = computed(() => {
 
   return null;
 });
-const gameEnded = computed(() => Boolean(winningSide.value));
+const gameEnded = computed(() => {
+  if (isTimedSoloMode.value) {
+    return Boolean(winningSide.value);
+  }
+
+  return scoreThresholdReached.value && !isOvertimeActive.value && Boolean(winningSide.value);
+});
 const timeExpired = computed(() => isTimedSoloMode.value && timerRemainingSeconds.value <= 0);
 const finalWordWindowActive = computed(() => isTimedSoloMode.value && timeExpired.value && !timedSoloFinalWordSpent.value);
 const effectiveGameEnded = computed(() => gameEnded.value || (timeExpired.value && timedSoloFinalWordSpent.value));
@@ -412,7 +468,11 @@ const historySummaryText = computed(() => {
     return `Time is up. Final score: ${playerScores.value.host}.`;
   }
 
-  return `${winnerLabel.value} wins at ${winningScore.value} points.`;
+  if (showOpponentLane.value) {
+    return `${winnerLabel.value} wins. Final score: ${playerScores.value.host} to ${playerScores.value.opponent}.`;
+  }
+
+  return `${winnerLabel.value} wins at ${winningScore.value} points. Final score: ${playerScores.value.host}.`;
 });
 const historyResultState = computed(() => {
   if (timeExpired.value) {
@@ -466,6 +526,10 @@ const modeSubtitle = computed(() => {
 const statusHeadline = computed(() => {
   if (finalWordWindowActive.value) {
     return 'Final word ready';
+  }
+
+  if (isOvertimeActive.value) {
+    return 'Overtime showdown';
   }
 
   if (isTimedSoloMode.value) {
@@ -726,6 +790,11 @@ const handleSubmit = async () => {
     return;
   }
 
+  if (isOvertimeActive.value && overtimeTrailingSide.value !== mySide.value) {
+    localMessage.value = 'Only the trailing player can submit during overtime.';
+    return;
+  }
+
   const normalizedWord = currentWordDisplay.value;
   const selectedTiles = selectedTilesForCurrentSide.value;
   if (!normalizedWord) {
@@ -819,7 +888,7 @@ const selectBoonCard = (card) => {
 
 const useAttackCard = (card) => {
   if (!attacksEnabled.value) {
-    localMessage.value = 'Solo sprint does not use attacks.';
+    localMessage.value = isOvertimeActive.value ? 'Overtime only allows boons.' : 'Solo sprint does not use attacks.';
     return;
   }
 
@@ -886,6 +955,101 @@ const handleClearWord = () => {
   if (clearWord()) {
     playUiSound(tilePutBackSound);
   }
+};
+
+const focusControllerTile = (index = controllerTileCursorIndex.value) => {
+  if (!myTiles.value.length) {
+    return;
+  }
+
+  controllerRegion.value = 'rack';
+  const boundedIndex = Math.max(0, Math.min(index, myTiles.value.length - 1));
+  controllerTileCursorIndex.value = boundedIndex;
+
+  nextTick(() => {
+    const tileButton = document.querySelector(`[data-controller-tile="${mySide.value}-${boundedIndex}"]`);
+    if (tileButton && typeof tileButton.focus === 'function') {
+      tileButton.focus();
+    }
+  });
+};
+
+const focusControllerCard = (index = controllerCardCursorIndex.value) => {
+  if (!controllerCards.value.length) {
+    return;
+  }
+
+  controllerRegion.value = 'cards';
+  const boundedIndex = Math.max(0, Math.min(index, controllerCards.value.length - 1));
+  controllerCardCursorIndex.value = boundedIndex;
+
+  nextTick(() => {
+    const cardButton = document.querySelector(`[data-controller-card="${boundedIndex}"]`);
+    if (cardButton && typeof cardButton.focus === 'function') {
+      cardButton.focus();
+    }
+  });
+};
+
+const focusControllerBuilder = (index = controllerBuilderCursorIndex.value) => {
+  if (!selectedTilesForCurrentSide.value.length) {
+    return;
+  }
+
+  controllerRegion.value = 'builder';
+  const boundedIndex = Math.max(0, Math.min(index, selectedTilesForCurrentSide.value.length - 1));
+  controllerBuilderCursorIndex.value = boundedIndex;
+
+  nextTick(() => {
+    const builtTileButton = document.querySelector(`[data-controller-built="${boundedIndex}"]`);
+    if (builtTileButton && typeof builtTileButton.focus === 'function') {
+      builtTileButton.focus();
+    }
+  });
+};
+
+const focusControllerAction = (index = controllerActionCursorIndex.value) => {
+  const actionCount = 5;
+  controllerRegion.value = 'actions';
+  const boundedIndex = Math.max(0, Math.min(index, actionCount - 1));
+  controllerActionCursorIndex.value = boundedIndex;
+
+  nextTick(() => {
+    const actionButton = document.querySelector(`[data-controller-action="${boundedIndex}"]`);
+    if (actionButton && typeof actionButton.focus === 'function') {
+      actionButton.focus();
+    }
+  });
+};
+
+const moveControllerTileFocus = (direction) => {
+  if (!myTiles.value.length) {
+    return;
+  }
+
+  const columns = 5;
+  const currentIndex = Math.max(0, Math.min(controllerTileCursorIndex.value, myTiles.value.length - 1));
+  let nextIndex = currentIndex;
+
+  if (direction === 'left') {
+    if (currentIndex % columns === 0 && controllerCards.value.length) {
+      focusControllerCard(0);
+      return;
+    }
+    nextIndex = Math.max(0, currentIndex - 1);
+  } else if (direction === 'right') {
+    nextIndex = Math.min(myTiles.value.length - 1, currentIndex + 1);
+  } else if (direction === 'up') {
+    nextIndex = Math.max(0, currentIndex - columns);
+  } else if (direction === 'down') {
+    if (currentIndex + columns >= myTiles.value.length && selectedTilesForCurrentSide.value.length) {
+      focusControllerBuilder(Math.min(currentIndex % columns, selectedTilesForCurrentSide.value.length - 1));
+      return;
+    }
+    nextIndex = Math.min(myTiles.value.length - 1, currentIndex + columns);
+  }
+
+  focusControllerTile(nextIndex);
 };
 
 const handleTileClickWithCards = (tile, side) => {
@@ -1090,7 +1254,100 @@ watch(effectiveGameEnded, (ended) => {
 }, { immediate: true });
 
 const handleKeydown = (event) => {
+  console.log('key')
+  if (props.settingsShowing) {
+    return;
+  }
+
   if (event.key !== 'Escape') {
+    if (!myTiles.value.length) {
+      return;
+    }
+
+    if (event.key === 'ArrowLeft') {
+      event.preventDefault();
+      if (controllerRegion.value === 'cards') {
+        focusControllerCard(Math.max(0, controllerCardCursorIndex.value - 1));
+      } else if (controllerRegion.value === 'builder') {
+        focusControllerBuilder(Math.max(0, controllerBuilderCursorIndex.value - 1));
+      } else if (controllerRegion.value === 'actions') {
+        focusControllerAction(Math.max(0, controllerActionCursorIndex.value - 1));
+      } else {
+        moveControllerTileFocus('left');
+      }
+      return;
+    }
+
+    if (event.key === 'ArrowRight') {
+      event.preventDefault();
+      if (controllerRegion.value === 'cards') {
+        focusControllerTile(0);
+      } else if (controllerRegion.value === 'builder') {
+        focusControllerBuilder(Math.min(controllerBuilderCursorIndex.value + 1, selectedTilesForCurrentSide.value.length - 1));
+      } else if (controllerRegion.value === 'actions') {
+        focusControllerAction(Math.min(controllerActionCursorIndex.value + 1, 4));
+      } else {
+        moveControllerTileFocus('right');
+      }
+      return;
+    }
+
+    if (event.key === 'ArrowUp') {
+      event.preventDefault();
+      if (controllerRegion.value === 'cards') {
+        if (controllerCardCursorIndex.value === 0) {
+          focusControllerCard(controllerCards.value.length);
+        } else {
+          focusControllerCard(controllerCardCursorIndex.value - 1);
+        }
+      } else if (controllerRegion.value === 'builder') {
+        const bottomRowStart = Math.max(0, myTiles.value.length - 5);
+        focusControllerTile(Math.min(bottomRowStart + controllerBuilderCursorIndex.value, myTiles.value.length - 1));
+      } else if (controllerRegion.value === 'actions') {
+        focusControllerBuilder(Math.min(controllerActionCursorIndex.value, selectedTilesForCurrentSide.value.length - 1));
+      } else {
+        moveControllerTileFocus('up');
+      }
+      return;
+    }
+
+    if (event.key === 'ArrowDown') {
+      event.preventDefault();
+      if (controllerRegion.value === 'cards') {
+        if (controllerCardCursorIndex.value >= controllerCards.value.length - 1) {
+          focusControllerCard(0);
+        } else {
+          focusControllerCard(controllerCardCursorIndex.value + 1);
+        }
+      } else if (controllerRegion.value === 'builder') {
+        focusControllerAction(Math.min(controllerBuilderCursorIndex.value, 4));
+      } else if (controllerRegion.value === 'actions') {
+        focusControllerAction(controllerActionCursorIndex.value);
+      } else {
+        moveControllerTileFocus('down');
+      }
+      return;
+    }
+
+    if (event.key === 'b') {
+      event.preventDefault();
+      handleUndo();
+      return;
+    }
+
+    if (event.key === 'y') {
+      console.log('y')
+      event.preventDefault();
+      handleClearWord();
+      return;
+    }
+
+    if (event.key === 'x') {
+      event.preventDefault();
+      handleSubmit();
+      return;
+    }
+
     return;
   }
 
@@ -1098,9 +1355,30 @@ const handleKeydown = (event) => {
   togglePause();
 };
 
+watch([myTiles, mySide], () => {
+  if (!props.isControllerConnected) {
+    return;
+  }
+
+  focusControllerTile(controllerTileCursorIndex.value);
+}, { deep: true });
+
+watch(() => props.isControllerConnected, (connected) => {
+  if (!connected) {
+    return;
+  }
+
+  focusControllerTile(0);
+}, { immediate: true });
+
 onMounted(() => {
   window.addEventListener('keydown', handleKeydown);
+  console.log('mount')
   startGameMusic({ restart: true });
+  if (props.isControllerConnected) {
+    console.log('connected')
+    focusControllerTile(0);
+  }
 });
 
 onBeforeUnmount(() => {
@@ -1391,9 +1669,16 @@ body {
   border-color: rgba(255, 236, 187, 0.38);
 }
 
+.action-card:focus,
 .action-card:focus-visible {
   outline: 3px solid rgba(255, 227, 141, 0.88);
   outline-offset: 2px;
+}
+
+.action-card-controller-focus {
+  outline: 3px solid rgba(255, 227, 141, 0.88);
+  outline-offset: 2px;
+  transform: translateY(-2px);
 }
 
 .action-card strong {

@@ -1,5 +1,6 @@
 const games = new Map();
 const WINNING_SCORE = isTestingMode ? 40 : 250;
+const { randomUUID } = require('crypto');
 const LETTER_CONFIG = require('../src/states/game/letters.json');
 const WORD_BONUSES = require('../src/states/game/word-bonuses.json');
 const MILESTONE_REWARDS = require('../src/states/game/word-milestone-rewards.json');
@@ -27,20 +28,33 @@ const {
   milestoneRewards: MILESTONE_REWARDS
 });
 
-let nextTileId = 1;
-let nextCardId = 1;
+const serverIdState = {
+  tileSession: randomUUID(),
+  cardSession: randomUUID(),
+  nextTileId: 1,
+  nextCardId: 1
+};
 
 const {
   createRack,
   createOpeningRackPair,
   refillTiles: refillRack,
+  replaceSingleTile,
   rerollRackExceptTile,
   createTestingOpeningRackPair
 } = createTileLogic({
-  createTileId: () => `tile-${nextTileId++}`
+  createTileId: () => {
+    const id = `tile-${serverIdState.tileSession}-${serverIdState.nextTileId}`;
+    serverIdState.nextTileId += 1;
+    return id;
+  }
 });
 const { createCards, drawCard, drawCards } = createCardLogic({
-  createCardId: () => `card-${nextCardId++}`
+  createCardId: () => {
+    const id = `card-${serverIdState.cardSession}-${serverIdState.nextCardId}`;
+    serverIdState.nextCardId += 1;
+    return id;
+  }
 });
 
 const createTestingHands = () => {
@@ -148,6 +162,20 @@ const createInitialState = ({ hostId, players = [hostId], isPrivate = true }) =>
   };
 };
 
+const hasOvertimeStarted = (state) => {
+  const hostAtGoal = state.scores.host >= WINNING_SCORE;
+  const opponentAtGoal = state.scores.opponent >= WINNING_SCORE;
+  return hostAtGoal !== opponentAtGoal;
+};
+
+const getOvertimeTrailingSide = (state) => {
+  if (!hasOvertimeStarted(state)) {
+    return null;
+  }
+
+  return state.scores.host >= WINNING_SCORE ? 'opponent' : 'host';
+};
+
 const createGame = (roomCode, hostId, options = {}) => {
   if (games.has(roomCode)) {
     return { success: false, error: 'Room already exists' };
@@ -213,16 +241,21 @@ const useBoon = (roomCode, clientId, cardId, tileId) => {
   }
 
   const tile = state.tiles[side].find((entry) => entry.id === tileId);
-  if (!tile || tile.locked) {
+  if (!tile) {
+    return { success: false, error: 'That tile cannot take a boon' };
+  }
+
+  if (card.effectType === 'delete_tile') {
+    state.cards[side].boons = state.cards[side].boons.filter((entry) => entry.id !== cardId);
+    state.tiles[side] = replaceSingleTile(state.tiles[side], tileId, side, state.scores);
+    return { success: true, state };
+  }
+
+  if (tile.locked) {
     return { success: false, error: 'That tile cannot take a boon' };
   }
 
   state.cards[side].boons = state.cards[side].boons.filter((entry) => entry.id !== cardId);
-
-  if (card.effectType === 'delete_tile') {
-    state.tiles[side] = refillRack(state.tiles[side], [tileId], side, state.scores);
-    return { success: true, state };
-  }
 
   if (card.effectType === 'isolate_tile') {
     state.tiles[side] = rerollRackExceptTile(state.tiles[side], tileId, side, state.scores);
@@ -237,6 +270,10 @@ const useAttack = (roomCode, clientId, cardId) => {
   const state = games.get(roomCode);
   if (!state) {
     return { success: false, error: 'Room not found' };
+  }
+
+  if (hasOvertimeStarted(state)) {
+    return { success: false, error: 'Overtime only allows boons' };
   }
 
   const side = clientId === state.host ? 'host' : 'opponent';
@@ -320,7 +357,7 @@ const submitWord = async (roomCode, clientId, word, tileIds, languageCode = 'en'
     return { success: false, error: 'Room not found' };
   }
 
-  if (state.scores.host >= WINNING_SCORE || state.scores.opponent >= WINNING_SCORE) {
+  if (state.scores.host >= WINNING_SCORE && state.scores.opponent >= WINNING_SCORE) {
     return { success: false, error: 'Game is already over' };
   }
 
@@ -332,6 +369,11 @@ const submitWord = async (roomCode, clientId, word, tileIds, languageCode = 'en'
   const side = clientId === state.host ? 'host' : 'opponent';
   if (!state.players.includes(clientId)) {
     return { success: false, error: 'Player not in room' };
+  }
+
+  const overtimeTrailingSide = getOvertimeTrailingSide(state);
+  if (overtimeTrailingSide && overtimeTrailingSide !== side) {
+    return { success: false, error: 'Only the trailing player can submit during overtime' };
   }
 
   if (!/^[A-Z*]+$/.test(normalizedWord)) {

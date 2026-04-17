@@ -26,9 +26,11 @@
               'tile-in-use': selectedTileIds.has(tile.id),
               'tile-saved': savedTileIds.has(tile.id),
               'tile-locked': tile.locked,
-              'tile-must-alert': mustAlertIds.has(tile.id)
+              'tile-must-alert': mustAlertIds.has(tile.id),
+              'tile-controller-focus': controllerFocusedTileId === tile.id
             }"
             :style="getTileStyle(tile)"
+            :data-controller-tile="`${side}-${index}`"
             @click="$emit('tile-click', tile)"
           >
             <span v-if="!getModifierUi(tile.status).hideBadge && tile.status !== 'normal'" class="tile-modifier" :style="getBadgeStyle(tile)">
@@ -91,6 +93,10 @@ const props = defineProps({
   burstPulse: {
     type: Number,
     default: 0
+  },
+  controllerFocusedTileId: {
+    type: String,
+    default: ''
   }
 });
 
@@ -102,7 +108,7 @@ const getTileStyle = (tile) => {
   return {
     '--tile-bg': ui.tileBackground,
     '--tile-shadow': ui.tileShadow,
-    '--tile-hover-shadow': ui.tileHoverShadow || ui.tileShadow,
+    '--tile-hover-shadow': ui.tileHoverShadows || ui.tileShadow,
     '--tile-focus-shadow': ui.tileFocusShadow || ui.tileShadow,
     '--tile-text-color': ui.textColor
   };
@@ -118,21 +124,32 @@ const getBadgeStyle = (tile) => {
 };
 
 const burstTier = ref('');
+let burstTimeoutId = null;
 
-watch(() => props.burstPulse, () => {
+watch(() => [props.burstPulse, props.lastWordScore], ([nextPulse]) => {
+  if (!nextPulse) {
+    return;
+  }
+
   if (!props.lastWordScore || props.lastWordScore < 18) {
     return;
   }
 
-  burstTier.value = props.lastWordScore >= 32 ? 'epic' : 'burst';
-  window.setTimeout(() => {
-    burstTier.value = '';
-  }, props.lastWordScore >= 32 ? 1200 : 850);
+  window.clearTimeout(burstTimeoutId);
+  burstTier.value = '';
+
+  requestAnimationFrame(() => {
+    burstTier.value = props.lastWordScore >= 32 ? 'epic' : 'burst';
+    burstTimeoutId = window.setTimeout(() => {
+      burstTier.value = '';
+    }, props.lastWordScore >= 32 ? 1200 : 850);
+  });
 });
 </script>
 
 <style scoped>
 .lane {
+  position: relative;
   border-radius: 28px;
   padding: 20px;
   background:
@@ -145,12 +162,34 @@ watch(() => props.burstPulse, () => {
   transition: box-shadow 180ms ease, transform 180ms ease;
 }
 
+.lane::after {
+  content: '';
+  position: absolute;
+  inset: -12px;
+  border-radius: 34px;
+  pointer-events: none;
+  opacity: 0;
+  transform: scale(0.96);
+}
+
 .lane-burst {
   animation: lane-burst 820ms ease-out;
 }
 
 .lane-burst-epic {
   animation: lane-burst-epic 1180ms ease-out;
+}
+
+.lane-burst::after {
+  animation: lane-flare 820ms ease-out;
+  background:
+    radial-gradient(circle at 50% 50%, rgba(255, 222, 145, 0.34) 0%, rgba(255, 182, 93, 0.18) 42%, rgba(255, 182, 93, 0) 72%);
+}
+
+.lane-burst-epic::after {
+  animation: lane-flare-epic 1180ms ease-out;
+  background:
+    radial-gradient(circle at 50% 50%, rgba(125, 255, 227, 0.34) 0%, rgba(95, 240, 214, 0.2) 42%, rgba(95, 240, 214, 0) 72%);
 }
 
 .lane-header {
@@ -214,40 +253,49 @@ watch(() => props.burstPulse, () => {
   box-shadow: var(--tile-hover-shadow, inset 0 -4px 0 rgba(0, 0, 0, 0.12), 0 14px 20px rgba(45, 10, 24, 0.24));
 }
 
-.tile:focus-visible {
+.tile:focus,
+.tile:focus-visible  {
   outline: 3px solid rgba(255, 202, 103, 0.85);
+  outline-offset: 2px;
+  transform: translateY(-2px);
+  box-shadow: var(--tile-focus-shadow, inset 0 -4px 0 rgba(0, 0, 0, 0.12), 0 0 0 4px rgba(92, 25, 41, 0.45), 0 14px 20px rgba(45, 10, 24, 0.24)) !important;
+}
+
+.tile-controller-focus {
   outline-offset: 2px;
   transform: translateY(-2px);
   box-shadow: var(--tile-focus-shadow, inset 0 -4px 0 rgba(0, 0, 0, 0.12), 0 0 0 4px rgba(92, 25, 41, 0.45), 0 14px 20px rgba(45, 10, 24, 0.24));
 }
 
-.tile.active {
-  outline: 3px solid rgba(255, 202, 103, 0.55);
-}
 
 .tile.opponent.active {
   outline-color: rgba(75, 199, 176, 0.5);
 }
 
+.tile.opponent:focus,
 .tile.opponent:focus-visible {
+  outline-color: rgba(75, 199, 176, 0.85);
+}
+
+.tile.opponent.tile-controller-focus {
   outline-color: rgba(75, 199, 176, 0.85);
 }
 
 .tile-in-use {
   box-shadow:
-    inset 0 0 0 9999px rgba(0, 0, 0, 0.18), /* soft dark overlay */
+    inset 0 0 0 9999px rgba(0, 0, 0, 0.38), /* soft dark overlay */
     inset 0 4px 10px rgba(38, 20, 12, 0.32),
     inset 0 -2px 0 rgba(255, 255, 255, 0.18);
   transform: translateY(2px) scale(0.98);
 }
 
 .tile-in-use:hover,
+.tile-in-use:focus,
 .tile-in-use:focus-visible {
   box-shadow:
-    inset 0 0 0 9999px rgba(0, 0, 0, 0.08), /* soft dark overlay */
+    inset 0 0 0 9999px rgba(0, 0, 0, 0.38), /* soft dark overlay */
     inset 0 4px 10px rgba(38, 20, 12, 0.22),
-    inset 0 -2px 0 rgba(255, 255, 255, 0.18);
-  transform: translateY(2px) scale(0.98);
+    inset 0 -2px 0 rgba(255, 255, 255, 0.18) !important;
   transform: translateY(1px) scale(0.98);
 }
 
@@ -317,6 +365,18 @@ watch(() => props.burstPulse, () => {
   }
 }
 
+@keyframes lane-flare {
+  0%,
+  100% {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  35% {
+    opacity: 1;
+    transform: scale(1.02);
+  }
+}
+
 @keyframes lane-burst-epic {
   0%,
   100% {
@@ -331,6 +391,18 @@ watch(() => props.burstPulse, () => {
       inset 0 1px 0 rgba(255, 255, 255, 0.16),
       0 0 42px rgba(95, 240, 214, 0.24),
       0 0 0 3px rgba(95, 240, 214, 0.22);
+  }
+}
+
+@keyframes lane-flare-epic {
+  0%,
+  100% {
+    opacity: 0;
+    transform: scale(0.94);
+  }
+  35% {
+    opacity: 1;
+    transform: scale(1.03);
   }
 }
 

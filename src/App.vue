@@ -390,12 +390,14 @@ const continueGame = () => {
   const isControllerConnected = ref(false);
 
   const checkGamepadConnection = () => {
+    console.log('checking for controller')
     const gamepads = navigator.getGamepads ? navigator.getGamepads() : [];
     isControllerConnected.value = gamepads.some(gp => gp);
+    console.log('gamepads'+ isControllerConnected.value)
   };
 
   const onGamepadConnected = (event) => {
-    // console.log("Gamepad connected:", event.gamepad);
+    console.log("Gamepad connected:", event.gamepad);
     isControllerConnected.value = true;
   };
 

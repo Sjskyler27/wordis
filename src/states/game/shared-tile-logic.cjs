@@ -984,6 +984,22 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
       return nextTiles;
     };
 
+    const replaceSingleTile = (tiles, replacedTileId, side = null, scores = {}, options = {}) => {
+      const targetIndex = tiles.findIndex((tile) => tile.id === replacedTileId);
+      if (targetIndex === -1) {
+        return tiles;
+      }
+
+      const nextTiles = [...tiles];
+      const remainingTiles = nextTiles.filter((entry, entryIndex) => entryIndex !== targetIndex);
+      nextTiles[targetIndex] = createTile(drawLetter(remainingTiles), side, scores, null, {
+        rackTiles: remainingTiles,
+        modifierProfile: options.modifierProfile || 'duel'
+      });
+
+      return nextTiles;
+    };
+
     const rerollRackExceptTile = (tiles, keptTileId, side = null, scores = {}, options = {}) => {
       const keptTile = tiles.find((tile) => tile.id === keptTileId);
       if (!keptTile) {
@@ -1041,6 +1057,7 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
       createClearRack,
       createOpeningRackPair,
       refillTiles,
+      replaceSingleTile,
       rerollRackExceptTile,
       createTestingRack,
       createTestingOpeningRackPair

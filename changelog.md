@@ -111,3 +111,14 @@ Stop: 2026-04-16 00:19:55 EDT
 - Fixed the postgame history overlay so the left history column always renders and solo results no longer collapse into a misleading empty state.
 - Removed attacks from timed solo mode, including attack cards, attack-granting tile modifiers, and attack messaging in the solo UI.
 - Added a dedicated solo modifier profile so timed solo uses a friendlier positive/negative modifier mix instead of duel-style comeback pressure.
+
+## 2026-04-16
+
+Start: 2026-04-16 21:38:00 EDT
+Stop: 2026-04-16 21:48:51 EDT
+
+- Updated the results overlay summary to include the final scoreline instead of only the winner text.
+- Added overtime after the score cap so play continues until both sides reach the threshold, while only the trailing side can submit and attacks are disabled.
+- Restored the high-score lane flare with a stronger visual treatment and a more reliable burst trigger.
+- Let delete boons remove locked tiles so redraw effects still work on trapped letters.
+- Hardened local and server tile ids with session-scoped unique generators to prevent duplicate ids after reloads or long play sessions.

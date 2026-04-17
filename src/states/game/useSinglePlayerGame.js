@@ -11,6 +11,7 @@ import {
   getTilesForWord,
   getResourceGrants,
   replaceTileWithModifier,
+  replaceSingleTile,
   getWordScoreDetails,
   refillTiles,
   rerollRackExceptTile
@@ -65,8 +66,27 @@ export const useSinglePlayerGame = ({
     };
   };
 
+  const bothSidesReachedWinningScore = () => {
+    return playerScores.value.host >= WINNING_SCORE && playerScores.value.opponent >= WINNING_SCORE;
+  };
+
+  const overtimeTrailingSide = () => {
+    const hostAtGoal = playerScores.value.host >= WINNING_SCORE;
+    const opponentAtGoal = playerScores.value.opponent >= WINNING_SCORE;
+
+    if (isTimedSoloMode.value || hostAtGoal === opponentAtGoal) {
+      return null;
+    }
+
+    return hostAtGoal ? 'opponent' : 'host';
+  };
+
   const gameEnded = () => {
-    return playerScores.value.host >= WINNING_SCORE || playerScores.value.opponent >= WINNING_SCORE;
+    if (isTimedSoloMode.value) {
+      return playerScores.value.host >= WINNING_SCORE || playerScores.value.opponent >= WINNING_SCORE;
+    }
+
+    return bothSidesReachedWinningScore();
   };
 
   const ensureSinglePlayerState = () => {
@@ -125,6 +145,11 @@ export const useSinglePlayerGame = ({
 
   const submitBotWord = () => {
     if (gameEnded()) {
+      stopBotLoop();
+      return;
+    }
+
+    if (overtimeTrailingSide() && overtimeTrailingSide() !== 'opponent') {
       stopBotLoop();
       return;
     }
@@ -331,7 +356,34 @@ export const useSinglePlayerGame = ({
     }
 
     const tile = playerTiles.value[side]?.find((entry) => entry.id === tileId);
-    if (!tile || tile.locked) {
+    if (!tile) {
+      localMessage.value = 'That tile cannot take a boon.';
+      return false;
+    }
+
+    if (card.effectType === 'delete_tile') {
+      playerCards.value = {
+        ...playerCards.value,
+        [side]: {
+          ...playerCards.value[side],
+          boons: hand.filter((entry) => entry.id !== cardId)
+        }
+      };
+      const nextTiles = replaceSingleTile(playerTiles.value[side], tileId, side, playerScores.value, {
+        modifierProfile: modifierProfile()
+      });
+      const replacementTile = nextTiles.find((entry) => entry.id !== tileId && !playerTiles.value[side].some((tile) => tile.id === entry.id));
+      playerTiles.value = {
+        ...playerTiles.value,
+        [side]: nextTiles
+      };
+      return {
+        success: true,
+        replacementTileId: replacementTile?.id || null
+      };
+    }
+
+    if (tile.locked) {
       localMessage.value = 'That tile cannot take a boon.';
       return false;
     }
@@ -343,19 +395,6 @@ export const useSinglePlayerGame = ({
         boons: hand.filter((entry) => entry.id !== cardId)
       }
     };
-
-    if (card.effectType === 'delete_tile') {
-      const nextTiles = refillTiles(playerTiles.value[side], [tileId], side, playerScores.value);
-      const replacementTile = nextTiles.find((entry) => entry.id !== tileId && !playerTiles.value[side].some((tile) => tile.id === entry.id));
-      playerTiles.value = {
-        ...playerTiles.value,
-        [side]: nextTiles
-      };
-      return {
-        success: true,
-        replacementTileId: replacementTile?.id || null
-      };
-    }
 
     if (card.effectType === 'isolate_tile') {
       playerTiles.value = {
@@ -377,6 +416,11 @@ export const useSinglePlayerGame = ({
   };
 
   const useSinglePlayerAttack = (side, cardId) => {
+    if (overtimeTrailingSide()) {
+      localMessage.value = 'Overtime only allows boons.';
+      return false;
+    }
+
     const opponentSide = side === 'host' ? 'opponent' : 'host';
     const hand = playerCards.value[side]?.attacks || [];
     const card = hand.find((entry) => entry.id === cardId);
