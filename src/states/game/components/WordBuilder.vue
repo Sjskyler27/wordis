@@ -32,7 +32,19 @@
             active: currentWordLength >= slot.position
           }"
         >
-          <Transition name="built-tile" mode="out-in">
+          <div v-if="!slot.tile" class="word-slot-placeholder">
+            <div
+              class="word-slot-placeholder-surface"
+              :class="{ milestone: !!slot.bonus }"
+              :style="getPlaceholderStyle(slot)"
+            >
+              <span v-if="slot.bonus" class="word-slot-bonus">+{{ slot.bonus }}</span>
+              <span v-if="slot.rewardLabel" class="word-slot-reward">{{ slot.rewardLabel }}</span>
+              <span class="word-slot-index">{{ slot.position }}</span>
+            </div>
+          </div>
+
+          <Transition name="built-tile">
             <button
               v-if="slot.tile"
               :key="`built-${slot.tile.id}`"
@@ -52,17 +64,6 @@
               <span class="tile-score">{{ tileScore(slot.tile) }}</span>
               <span class="tile-letter">{{ slot.tile.letter }}</span>
             </button>
-	            <div v-else :key="`placeholder-${slot.index}`" class="word-slot-placeholder">
-	              <div
-	                class="word-slot-placeholder-surface"
-	                :class="{ milestone: !!slot.bonus }"
-	                :style="getPlaceholderStyle(slot)"
-	              >
-	                <span v-if="slot.bonus" class="word-slot-bonus">+{{ slot.bonus }}</span>
-	                <span v-if="slot.rewardLabel" class="word-slot-reward">{{ slot.rewardLabel }}</span>
-	                <span class="word-slot-index">{{ slot.position }}</span>
-	              </div>
-	            </div>
           </Transition>
         </div>
       </div>
@@ -362,13 +363,17 @@ const getPlaceholderStyle = (slot) => {
 }
 
 .word-slot {
+  position: relative;
   max-width: 106px;
+  width: 98px;
+  min-height: 94px;
   border-radius: 14px;
 }
 
 .word-slot-placeholder {
-  min-height: 94px;
-  width: 98px;
+  position: absolute;
+  inset: 0;
+  z-index: 0;
 }
 
 .word-slot-placeholder-surface {
@@ -454,6 +459,7 @@ const getPlaceholderStyle = (slot) => {
 
 .score-pop-clone {
   pointer-events: none;
+  position: relative;
 }
 
 .word-slot.filled .word-slot-placeholder {
@@ -471,6 +477,7 @@ const getPlaceholderStyle = (slot) => {
   width: 98px;
   border-radius: 14px;
   position: relative;
+  z-index: 2;
   background: var(--built-tile-bg, linear-gradient(180deg, #fffef8 0%, #f2ebe0 70%, #d9cec0 100%));
   color: var(--built-tile-text-color, #1c1930);
   box-shadow: var(--built-tile-shadow, inset 0 -3px 0 rgba(0, 0, 0, 0.16));
@@ -543,6 +550,9 @@ const getPlaceholderStyle = (slot) => {
 .built-tile-leave-active {
   animation: builtTileOut 180ms ease-in forwards;
   pointer-events: none;
+  position: absolute;
+  inset: 0;
+  z-index: 1;
 }
 
 @keyframes builtTileIn {
