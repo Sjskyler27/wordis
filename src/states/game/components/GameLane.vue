@@ -261,10 +261,13 @@ watch(() => [props.burstPulse, props.lastWordScore], ([nextPulse]) => {
 }
 
 .tile-controller-focus {
-  outline: 3px solid rgba(255, 202, 103, 0.85);
-  outline-offset: 2px;
+  outline: 4px solid #fff3a6;
+  outline-offset: 3px;
   transform: translateY(-2px);
-  box-shadow: var(--tile-focus-shadow, inset 0 -4px 0 rgba(0, 0, 0, 0.12), 0 0 0 4px rgba(92, 25, 41, 0.45), 0 14px 20px rgba(45, 10, 24, 0.24));
+  box-shadow:
+    0 0 0 3px rgba(255, 170, 79, 0.92),
+    0 0 28px rgba(255, 214, 112, 0.46),
+    var(--tile-focus-shadow, inset 0 -4px 0 rgba(0, 0, 0, 0.12), 0 0 0 4px rgba(92, 25, 41, 0.45), 0 14px 20px rgba(45, 10, 24, 0.24));
 }
 
 .tile.active {
@@ -280,7 +283,11 @@ watch(() => [props.burstPulse, props.lastWordScore], ([nextPulse]) => {
 }
 
 .tile.opponent.tile-controller-focus {
-  outline-color: rgba(75, 199, 176, 0.85);
+  outline-color: #d8fff7;
+  box-shadow:
+    0 0 0 3px rgba(75, 199, 176, 0.94),
+    0 0 28px rgba(112, 244, 222, 0.42),
+    var(--tile-focus-shadow, inset 0 -4px 0 rgba(0, 0, 0, 0.12), 0 0 0 4px rgba(92, 25, 41, 0.45), 0 14px 20px rgba(45, 10, 24, 0.24));
 }
 
 .tile-in-use {

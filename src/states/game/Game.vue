@@ -1268,6 +1268,10 @@ const handleKeydown = (event) => {
       event.preventDefault();
       if (controllerRegion.value === 'cards') {
         focusControllerCard(Math.max(0, controllerCardCursorIndex.value - 1));
+      } else if (controllerRegion.value === 'builder') {
+        focusControllerBuilder(Math.max(0, controllerBuilderCursorIndex.value - 1));
+      } else if (controllerRegion.value === 'actions') {
+        focusControllerAction(Math.max(0, controllerActionCursorIndex.value - 1));
       } else {
         moveControllerTileFocus('left');
       }
@@ -1278,6 +1282,10 @@ const handleKeydown = (event) => {
       event.preventDefault();
       if (controllerRegion.value === 'cards') {
         focusControllerTile(0);
+      } else if (controllerRegion.value === 'builder') {
+        focusControllerBuilder(Math.min(controllerBuilderCursorIndex.value + 1, selectedTilesForCurrentSide.value.length - 1));
+      } else if (controllerRegion.value === 'actions') {
+        focusControllerAction(Math.min(controllerActionCursorIndex.value + 1, 4));
       } else {
         moveControllerTileFocus('right');
       }
@@ -1286,7 +1294,13 @@ const handleKeydown = (event) => {
 
     if (event.key === 'ArrowUp') {
       event.preventDefault();
-      if (controllerRegion.value === 'builder') {
+      if (controllerRegion.value === 'cards') {
+        if (controllerCardCursorIndex.value === 0) {
+          focusControllerCard(controllerCards.value.length);
+        } else {
+          focusControllerCard(controllerCardCursorIndex.value - 1);
+        }
+      } else if (controllerRegion.value === 'builder') {
         const bottomRowStart = Math.max(0, myTiles.value.length - 5);
         focusControllerTile(Math.min(bottomRowStart + controllerBuilderCursorIndex.value, myTiles.value.length - 1));
       } else if (controllerRegion.value === 'actions') {
