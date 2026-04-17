@@ -39,12 +39,16 @@
           <p v-else>No cards in hand right now.</p>
           <div class="card-hand">
             <button
-              v-for="card in myCards.boons"
+              v-for="(card, index) in myCards.boons"
               :key="card.id"
               type="button"
               class="action-card"
               :style="getCardStyle(card)"
-              :class="{ armed: activeBoonCardId === card.id }"
+              :class="{
+                armed: activeBoonCardId === card.id,
+                'action-card-controller-focus': controllerRegion === 'cards' && controllerCardCursorIndex === index
+              }"
+              :data-controller-card="index"
               @click="selectBoonCard(card)"
             >
               <span class="action-card-type">Boon</span>
@@ -53,11 +57,15 @@
             </button>
             <button
               v-if="attacksEnabled"
-              v-for="card in myCards.attacks"
+              v-for="(card, attackIndex) in myCards.attacks"
               :key="card.id"
               type="button"
               class="action-card"
               :style="getCardStyle(card)"
+              :class="{
+                'action-card-controller-focus': controllerRegion === 'cards' && controllerCardCursorIndex === myCards.boons.length + attackIndex
+              }"
+              :data-controller-card="myCards.boons.length + attackIndex"
               @click="useAttackCard(card)"
             >
               <span class="action-card-type">Attack</span>
@@ -228,7 +236,9 @@ const activeBoonCardId = ref(null);
 const invalidWordPulse = ref(0);
 const scorePopPulse = ref(0);
 const scorePopTiles = ref([]);
+const controllerRegion = ref('rack');
 const controllerTileCursorIndex = ref(0);
+const controllerCardCursorIndex = ref(0);
 const laneBurstPulse = ref({
   host: 0,
   opponent: 0
@@ -363,6 +373,12 @@ const {
 });
 
 const myCards = computed(() => playerCards.value[mySide.value] || { boons: [], attacks: [] });
+const controllerCards = computed(() => {
+  return [
+    ...myCards.value.boons,
+    ...(attacksEnabled.value ? myCards.value.attacks : [])
+  ];
+});
 const activeBoonCard = computed(() => {
   return myCards.value.boons.find((card) => card.id === activeBoonCardId.value) || null;
 });
@@ -941,6 +957,7 @@ const focusControllerTile = (index = controllerTileCursorIndex.value) => {
     return;
   }
 
+  controllerRegion.value = 'rack';
   const boundedIndex = Math.max(0, Math.min(index, myTiles.value.length - 1));
   controllerTileCursorIndex.value = boundedIndex;
 
@@ -948,6 +965,23 @@ const focusControllerTile = (index = controllerTileCursorIndex.value) => {
     const tileButton = document.querySelector(`[data-controller-tile="${mySide.value}-${boundedIndex}"]`);
     if (tileButton && typeof tileButton.focus === 'function') {
       tileButton.focus();
+    }
+  });
+};
+
+const focusControllerCard = (index = controllerCardCursorIndex.value) => {
+  if (!controllerCards.value.length) {
+    return;
+  }
+
+  controllerRegion.value = 'cards';
+  const boundedIndex = Math.max(0, Math.min(index, controllerCards.value.length - 1));
+  controllerCardCursorIndex.value = boundedIndex;
+
+  nextTick(() => {
+    const cardButton = document.querySelector(`[data-controller-card="${boundedIndex}"]`);
+    if (cardButton && typeof cardButton.focus === 'function') {
+      cardButton.focus();
     }
   });
 };
@@ -962,6 +996,10 @@ const moveControllerTileFocus = (direction) => {
   let nextIndex = currentIndex;
 
   if (direction === 'left') {
+    if (currentIndex % columns === 0 && controllerCards.value.length) {
+      focusControllerCard(0);
+      return;
+    }
     nextIndex = Math.max(0, currentIndex - 1);
   } else if (direction === 'right') {
     nextIndex = Math.min(myTiles.value.length - 1, currentIndex + 1);
@@ -1188,13 +1226,21 @@ const handleKeydown = (event) => {
 
     if (event.key === 'ArrowLeft') {
       event.preventDefault();
-      moveControllerTileFocus('left');
+      if (controllerRegion.value === 'cards') {
+        focusControllerCard(Math.max(0, controllerCardCursorIndex.value - 1));
+      } else {
+        moveControllerTileFocus('left');
+      }
       return;
     }
 
     if (event.key === 'ArrowRight') {
       event.preventDefault();
-      moveControllerTileFocus('right');
+      if (controllerRegion.value === 'cards') {
+        focusControllerTile(0);
+      } else {
+        moveControllerTileFocus('right');
+      }
       return;
     }
 
@@ -1206,7 +1252,15 @@ const handleKeydown = (event) => {
 
     if (event.key === 'ArrowDown') {
       event.preventDefault();
-      moveControllerTileFocus('down');
+      if (controllerRegion.value === 'cards') {
+        if (controllerCardCursorIndex.value >= controllerCards.value.length - 1) {
+          focusControllerCard(0);
+        } else {
+          focusControllerCard(controllerCardCursorIndex.value + 1);
+        }
+      } else {
+        moveControllerTileFocus('down');
+      }
       return;
     }
 
@@ -1553,6 +1607,12 @@ body {
 .action-card:focus-visible {
   outline: 3px solid rgba(255, 227, 141, 0.88);
   outline-offset: 2px;
+}
+
+.action-card-controller-focus {
+  outline: 3px solid rgba(255, 227, 141, 0.88);
+  outline-offset: 2px;
+  transform: translateY(-2px);
 }
 
 .action-card strong {
