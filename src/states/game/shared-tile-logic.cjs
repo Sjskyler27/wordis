@@ -608,12 +608,20 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
       1 - Object.values(modifierOdds).reduce((sum, chance) => sum + chance, 0)
     );
     return {
+      goodModifierOdds: getWeightedModifierOdds(eligibleGoodModifiers, goodChance),
+      badModifierOdds: getWeightedModifierOdds(eligibleBadModifiers, badChance),
+      neutralModifierOdds: getWeightedModifierOdds(eligibleNeutralModifiers, neutralChance),
       modifierOdds,
       normalChance
     };
   };
 
   const formatChancePercent = (chance = 0) => `${(Math.max(0, chance) * 100).toFixed(1)}%`;
+  const formatChanceGroup = (odds = {}) => {
+    return Object.fromEntries(
+      Object.entries(odds).map(([modifier, chance]) => [modifier, formatChancePercent(chance)])
+    );
+  };
 
   const logModifierRoll = ({
     selectedModifier = 'normal',
@@ -630,7 +638,13 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
       return;
     }
 
-    const { modifierOdds, normalChance } = getModifierOddsSnapshot({
+    const {
+      modifierOdds,
+      normalChance,
+      goodModifierOdds,
+      badModifierOdds,
+      neutralModifierOdds
+    } = getModifierOddsSnapshot({
       goodChance,
       badChance,
       neutralChance,
@@ -638,6 +652,13 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
       eligibleBadModifiers,
       eligibleNeutralModifiers
     });
+
+console.log(JSON.stringify({
+  goodTiles: formatChanceGroup(goodModifierOdds),
+  badTiles: formatChanceGroup(badModifierOdds),
+  neutralTiles: formatChanceGroup(neutralModifierOdds),
+  normal: formatChancePercent(normalChance)
+}, null, 2))
 
     console.log('[modifier-roll]', {
       actualModifier: selectedModifier,
@@ -650,12 +671,6 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
       goodChance: formatChancePercent(goodChance),
       badChance: formatChancePercent(badChance),
       neutralChance: formatChancePercent(neutralChance || 0),
-      odds: Object.fromEntries(
-        Object.entries({
-          normal: normalChance,
-          ...modifierOdds
-        }).map(([modifier, chance]) => [modifier, formatChancePercent(chance)])
-      ),
     });
   };
 
