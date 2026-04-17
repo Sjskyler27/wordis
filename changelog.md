@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-04-17
+
+Start: 2026-04-17 08:44:00 EDT
+Stop: 2026-04-17 08:54:58 EDT
+
+- Added the duel-only neutral `yinYang` tile with its own modifier pool and DEV chance logging, including neutral pull odds.
+- Made yin-yang score dynamically flip between `-3`, `0`, and `+3` depending on whether the owning side is ahead, tied, or behind.
+- Kept neutral tiles out of singleplayer and bot racks, including testing-mode singleplayer seeds, while preserving them in multiplayer/testing duel racks.
+
 ## 2026-04-16 0.0.9
 # added
 - final score in history 
