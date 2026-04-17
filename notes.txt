@@ -72,3 +72,5 @@ after 250 play continues until losing player submits words no attacks can be pla
 pause time does not pause 
 
 still no epic score thing flame in lane 
+
+New new modifier type neutral it's a yin and yellow. Enter. Add away from the menu to be able to disable certain tiles if you don't want to see them and attack.

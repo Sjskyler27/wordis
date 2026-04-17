@@ -47,6 +47,9 @@ export const useSinglePlayerGame = ({
   const modifierProfile = () => isTimedSoloMode.value ? 'solo' : 'duel';
   const attackDeck = () => isTimedSoloMode.value ? 'timed_solo' : 'duel';
   const shouldDrawAttacks = () => isTimedSoloMode.value || botEnabled.value;
+  const keepTestingHand = (hand = [], cardId) => {
+    return isTestingMode ? hand : hand.filter((entry) => entry.id !== cardId);
+  };
   const createTestingHands = () => {
     const boonKeys = Object.entries(CARD_DEFINITIONS)
       .filter(([, definition]) => definition.kind === 'boon')
@@ -344,7 +347,7 @@ export const useSinglePlayerGame = ({
         ...playerCards.value,
         [side]: {
           ...playerCards.value[side],
-          boons: hand.filter((entry) => entry.id !== cardId)
+          boons: keepTestingHand(hand, cardId)
         }
       };
 
@@ -373,7 +376,7 @@ export const useSinglePlayerGame = ({
         ...playerCards.value,
         [side]: {
           ...playerCards.value[side],
-          boons: hand.filter((entry) => entry.id !== cardId)
+          boons: keepTestingHand(hand, cardId)
         }
       };
       const nextTiles = replaceSingleTile(playerTiles.value[side], tileId, side, playerScores.value, {
@@ -399,7 +402,7 @@ export const useSinglePlayerGame = ({
       ...playerCards.value,
       [side]: {
         ...playerCards.value[side],
-        boons: hand.filter((entry) => entry.id !== cardId)
+        boons: keepTestingHand(hand, cardId)
       }
     };
 
@@ -440,7 +443,7 @@ export const useSinglePlayerGame = ({
       ...playerCards.value,
       [side]: {
         ...playerCards.value[side],
-        attacks: hand.filter((entry) => entry.id !== cardId)
+        attacks: keepTestingHand(hand, cardId)
       }
     };
 

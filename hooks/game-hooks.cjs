@@ -79,6 +79,10 @@ const createTestingHands = () => {
   };
 };
 
+const keepTestingHand = (hand = [], cardId) => {
+  return isTestingMode ? hand : hand.filter((entry) => entry.id !== cardId);
+};
+
 const generateRoomCode = () => {
   let roomCode;
   do {
@@ -230,7 +234,7 @@ const useBoon = (roomCode, clientId, cardId, tileId) => {
   }
 
   if (card.effectType === 'clear_negative_modifiers') {
-    state.cards[side].boons = state.cards[side].boons.filter((entry) => entry.id !== cardId);
+    state.cards[side].boons = keepTestingHand(state.cards[side].boons, cardId);
     state.tiles[side] = state.tiles[side].map((entry) => {
       if (!['zeroTile', 'mustuse', 'locked3', 'ghostTile', 'burningTile'].includes(entry.status)) {
         return entry;
@@ -248,7 +252,7 @@ const useBoon = (roomCode, clientId, cardId, tileId) => {
   }
 
   if (card.effectType === 'delete_tile') {
-    state.cards[side].boons = state.cards[side].boons.filter((entry) => entry.id !== cardId);
+    state.cards[side].boons = keepTestingHand(state.cards[side].boons, cardId);
     state.tiles[side] = replaceSingleTile(state.tiles[side], tileId, side, state.scores);
     return { success: true, state };
   }
@@ -257,7 +261,7 @@ const useBoon = (roomCode, clientId, cardId, tileId) => {
     return { success: false, error: 'That tile cannot take a boon' };
   }
 
-  state.cards[side].boons = state.cards[side].boons.filter((entry) => entry.id !== cardId);
+  state.cards[side].boons = keepTestingHand(state.cards[side].boons, cardId);
 
   if (card.effectType === 'isolate_tile') {
     state.tiles[side] = rerollRackExceptTile(state.tiles[side], tileId, side, state.scores);
@@ -295,7 +299,7 @@ const useAttack = (roomCode, clientId, cardId) => {
   }
 
   const targetTile = availableTiles[Math.floor(Math.random() * availableTiles.length)];
-  state.cards[side].attacks = state.cards[side].attacks.filter((entry) => entry.id !== cardId);
+  state.cards[side].attacks = keepTestingHand(state.cards[side].attacks, cardId);
   state.tiles[opponentSide] = replaceTileWithModifier(state.tiles[opponentSide], targetTile.id, card.modifier);
   return { success: true, state };
 };
