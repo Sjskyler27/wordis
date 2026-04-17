@@ -12,7 +12,8 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
   const BASE_BAD_MODIFIER_CHANCE = 0.03;
   const BASE_NEUTRAL_MODIFIER_CHANCE = 0.03;
   const MODIFIER_SWING_DIVISOR = 90;
-  const MAX_MODIFIER_BONUS = 0.26;
+  const MAX_GOOD_MODIFIER_BONUS = 0.3;
+  const MAX_BAD_MODIFIER_BONUS = 0.22;
   const BLOOD_TILE_POSITION_VALUES = {
     pos1: 0,
     pos2: 2,
@@ -485,8 +486,8 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
 
     const opponentSide = side === 'host' ? 'opponent' : 'host';
     const scoreDelta = (scores[side] || 0) - (scores[opponentSide] || 0);
-    const catchupBonus = Math.min(MAX_MODIFIER_BONUS, Math.max(0, -scoreDelta) / MODIFIER_SWING_DIVISOR);
-    const pressureBonus = Math.min(MAX_MODIFIER_BONUS, Math.max(0, scoreDelta) / MODIFIER_SWING_DIVISOR);
+    const catchupBonus = Math.min(MAX_GOOD_MODIFIER_BONUS, Math.max(0, -scoreDelta) / MODIFIER_SWING_DIVISOR);
+    const pressureBonus = Math.min(MAX_BAD_MODIFIER_BONUS, Math.max(0, scoreDelta) / MODIFIER_SWING_DIVISOR);
 
     return {
       goodChance: Math.min(0.45, profile.baseGoodChance + catchupBonus),
