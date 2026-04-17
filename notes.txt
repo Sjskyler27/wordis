@@ -60,3 +60,11 @@ game broke at some point while playing
 maybe cycle what the length bonus is, add a next turn get this 
 
 bunch of audio bus like overlapping music sounds and such need to also pass all the audio info accross screens and update sounds real time restart sounds after game
+
+delete is doing two if you do a locked then not 
+
+flame lane  if bbig word
+
+say final score in history 
+
+after 250 play continues until losing player submits words no attacks can be played only boons 
