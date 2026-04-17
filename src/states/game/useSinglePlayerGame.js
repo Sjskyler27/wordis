@@ -344,7 +344,7 @@ export const useSinglePlayerGame = ({
       playerTiles.value = {
         ...playerTiles.value,
         [side]: playerTiles.value[side].map((entry) => {
-          if (!CARD_DEFINITIONS[entry.status] || !['zeroTile', 'mustuse', 'locked3', 'ghostTile'].includes(entry.status)) {
+          if (!CARD_DEFINITIONS[entry.status] || !['zeroTile', 'mustuse', 'locked3', 'ghostTile', 'burningTile'].includes(entry.status)) {
             return entry;
           }
 

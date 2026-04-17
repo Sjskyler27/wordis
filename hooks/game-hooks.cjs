@@ -230,7 +230,7 @@ const useBoon = (roomCode, clientId, cardId, tileId) => {
   if (card.effectType === 'clear_negative_modifiers') {
     state.cards[side].boons = state.cards[side].boons.filter((entry) => entry.id !== cardId);
     state.tiles[side] = state.tiles[side].map((entry) => {
-      if (!['zeroTile', 'mustuse', 'locked3', 'ghostTile'].includes(entry.status)) {
+      if (!['zeroTile', 'mustuse', 'locked3', 'ghostTile', 'burningTile'].includes(entry.status)) {
         return entry;
       }
 

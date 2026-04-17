@@ -13,7 +13,7 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
   const MODIFIER_SWING_DIVISOR = 90;
   const MAX_MODIFIER_BONUS = 0.18;
   const GOOD_MODIFIERS = ['gold', 'firsttile', 'wild', 'gainboon', 'gainattack'];
-  const BAD_MODIFIERS = ['zeroTile', 'mustuse', 'locked3', 'ghostTile'];
+  const BAD_MODIFIERS = ['zeroTile', 'mustuse', 'locked3', 'ghostTile', 'burningTile'];
   const SOLO_GOOD_MODIFIERS = ['gold', 'firsttile', 'wild', 'gainboon'];
   const BOON_CARD_KEYS = ['boon_delete_tile', 'boon_isolate_tile', 'boon_clear_negative', 'boon_firsttile', 'boon_wild', 'boon_gold'];
   const ATTACK_CARD_KEYS = ['attack_zeroTile', 'attack_mustuse', 'attack_locked3', 'attack_ghostTile'];
@@ -161,6 +161,19 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
         textColor: '#223247',
         badgeBackground: 'rgba(244, 250, 255, 0.88)',
         badgeColor: '#607890'
+      }
+    },
+    burningTile: {
+      badge: 'BURN',
+      effects: { idleBonusScoreDelta: -3 },
+      rarityWeight: 0.5,
+      canApply: ({ baseScore }) => baseScore <= 4,
+      ui: {
+        tileBackground: 'linear-gradient(180deg, #2f160d 0%, #6d2513 32%, #c44717 72%, #ffb347 100%)',
+        tileShadow: 'inset 0 -4px 0 rgba(83, 23, 5, 0.32), 0 12px 20px rgba(85, 24, 6, 0.22), 0 0 0 1px rgba(255, 180, 94, 0.34)',
+        textColor: '#fff1dd',
+        badgeBackground: 'rgba(74, 18, 6, 0.92)',
+        badgeColor: '#ffd08b'
       }
     }
   };
@@ -571,6 +584,19 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
   };
   const getModifierUi = (status = 'normal') => getModifierDefinition(status).ui || MODIFIER_DEFINITIONS.normal.ui;
   const tileScore = (tile) => ((tile?.score || 0) + (tile?.bonusScore || 0)) * (tile?.multiplier || 1);
+  const tickIdleTile = (tile) => {
+    const definition = getModifierDefinition(tile?.status);
+    const idleBonusScoreDelta = definition.effects.idleBonusScoreDelta || 0;
+
+    if (!idleBonusScoreDelta) {
+      return tile;
+    }
+
+    return {
+      ...tile,
+      bonusScore: (tile?.bonusScore || 0) + idleBonusScoreDelta
+    };
+  };
 
   const getLengthBonus = (length) => {
     if (wordBonuses[length]) {
@@ -963,7 +989,7 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
           return tile;
         }
 
-        return tickLockedTile(tile);
+        return tickLockedTile(tickIdleTile(tile));
       });
 
       nextTiles.forEach((tile, index) => {
