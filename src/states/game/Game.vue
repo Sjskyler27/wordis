@@ -235,7 +235,26 @@ const mustAlertTileIds = ref({
 const isMultiplayerRef = computed(() => props.isMultiplayer);
 const isTimedSoloMode = computed(() => !props.isMultiplayer && props.playMode === 'timed_solo');
 const isBotMode = computed(() => !props.isMultiplayer && props.playMode === 'bot_match');
-const attacksEnabled = computed(() => isTestingMode || isTimedSoloMode.value || isBotMode.value || props.isMultiplayer);
+const scoreThresholdReached = computed(() => {
+  return playerScores.value.host >= WINNING_SCORE || playerScores.value.opponent >= WINNING_SCORE;
+});
+const overtimeTrailingSide = computed(() => {
+  if (isTimedSoloMode.value) {
+    return null;
+  }
+
+  const hostAtGoal = playerScores.value.host >= WINNING_SCORE;
+  const opponentAtGoal = playerScores.value.opponent >= WINNING_SCORE;
+  if (hostAtGoal === opponentAtGoal) {
+    return null;
+  }
+
+  return hostAtGoal ? 'opponent' : 'host';
+});
+const isOvertimeActive = computed(() => Boolean(overtimeTrailingSide.value));
+const attacksEnabled = computed(() => {
+  return !isOvertimeActive.value && (isTestingMode || isTimedSoloMode.value || isBotMode.value || props.isMultiplayer);
+});
 const showOpponentLane = computed(() => props.isMultiplayer || isBotMode.value);
 const preferredLanguage = getPreferredLanguage();
 const SOLO_TIMER_SECONDS = isTestingMode ? 25 : 180;
@@ -371,6 +390,10 @@ const getCardStyle = (card) => {
 };
 const WINNING_SCORE = isTestingMode ? 40 : 250;
 const winningSide = computed(() => {
+  if (isOvertimeActive.value) {
+    return null;
+  }
+
   if (playerScores.value.host >= WINNING_SCORE && playerScores.value.host >= playerScores.value.opponent) {
     return 'host';
   }
@@ -381,7 +404,13 @@ const winningSide = computed(() => {
 
   return null;
 });
-const gameEnded = computed(() => Boolean(winningSide.value));
+const gameEnded = computed(() => {
+  if (isTimedSoloMode.value) {
+    return Boolean(winningSide.value);
+  }
+
+  return scoreThresholdReached.value && !isOvertimeActive.value && Boolean(winningSide.value);
+});
 const timeExpired = computed(() => isTimedSoloMode.value && timerRemainingSeconds.value <= 0);
 const finalWordWindowActive = computed(() => isTimedSoloMode.value && timeExpired.value && !timedSoloFinalWordSpent.value);
 const effectiveGameEnded = computed(() => gameEnded.value || (timeExpired.value && timedSoloFinalWordSpent.value));
@@ -470,6 +499,10 @@ const modeSubtitle = computed(() => {
 const statusHeadline = computed(() => {
   if (finalWordWindowActive.value) {
     return 'Final word ready';
+  }
+
+  if (isOvertimeActive.value) {
+    return 'Overtime showdown';
   }
 
   if (isTimedSoloMode.value) {
@@ -730,6 +763,11 @@ const handleSubmit = async () => {
     return;
   }
 
+  if (isOvertimeActive.value && overtimeTrailingSide.value !== mySide.value) {
+    localMessage.value = 'Only the trailing player can submit during overtime.';
+    return;
+  }
+
   const normalizedWord = currentWordDisplay.value;
   const selectedTiles = selectedTilesForCurrentSide.value;
   if (!normalizedWord) {
@@ -823,7 +861,7 @@ const selectBoonCard = (card) => {
 
 const useAttackCard = (card) => {
   if (!attacksEnabled.value) {
-    localMessage.value = 'Solo sprint does not use attacks.';
+    localMessage.value = isOvertimeActive.value ? 'Overtime only allows boons.' : 'Solo sprint does not use attacks.';
     return;
   }
 

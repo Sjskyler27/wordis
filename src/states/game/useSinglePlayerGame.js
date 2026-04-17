@@ -65,8 +65,27 @@ export const useSinglePlayerGame = ({
     };
   };
 
+  const bothSidesReachedWinningScore = () => {
+    return playerScores.value.host >= WINNING_SCORE && playerScores.value.opponent >= WINNING_SCORE;
+  };
+
+  const overtimeTrailingSide = () => {
+    const hostAtGoal = playerScores.value.host >= WINNING_SCORE;
+    const opponentAtGoal = playerScores.value.opponent >= WINNING_SCORE;
+
+    if (isTimedSoloMode.value || hostAtGoal === opponentAtGoal) {
+      return null;
+    }
+
+    return hostAtGoal ? 'opponent' : 'host';
+  };
+
   const gameEnded = () => {
-    return playerScores.value.host >= WINNING_SCORE || playerScores.value.opponent >= WINNING_SCORE;
+    if (isTimedSoloMode.value) {
+      return playerScores.value.host >= WINNING_SCORE || playerScores.value.opponent >= WINNING_SCORE;
+    }
+
+    return bothSidesReachedWinningScore();
   };
 
   const ensureSinglePlayerState = () => {
@@ -125,6 +144,11 @@ export const useSinglePlayerGame = ({
 
   const submitBotWord = () => {
     if (gameEnded()) {
+      stopBotLoop();
+      return;
+    }
+
+    if (overtimeTrailingSide() && overtimeTrailingSide() !== 'opponent') {
       stopBotLoop();
       return;
     }
@@ -377,6 +401,11 @@ export const useSinglePlayerGame = ({
   };
 
   const useSinglePlayerAttack = (side, cardId) => {
+    if (overtimeTrailingSide()) {
+      localMessage.value = 'Overtime only allows boons.';
+      return false;
+    }
+
     const opponentSide = side === 'host' ? 'opponent' : 'host';
     const hand = playerCards.value[side]?.attacks || [];
     const card = hand.find((entry) => entry.id === cardId);

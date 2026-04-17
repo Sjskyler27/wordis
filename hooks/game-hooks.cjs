@@ -148,6 +148,20 @@ const createInitialState = ({ hostId, players = [hostId], isPrivate = true }) =>
   };
 };
 
+const hasOvertimeStarted = (state) => {
+  const hostAtGoal = state.scores.host >= WINNING_SCORE;
+  const opponentAtGoal = state.scores.opponent >= WINNING_SCORE;
+  return hostAtGoal !== opponentAtGoal;
+};
+
+const getOvertimeTrailingSide = (state) => {
+  if (!hasOvertimeStarted(state)) {
+    return null;
+  }
+
+  return state.scores.host >= WINNING_SCORE ? 'opponent' : 'host';
+};
+
 const createGame = (roomCode, hostId, options = {}) => {
   if (games.has(roomCode)) {
     return { success: false, error: 'Room already exists' };
@@ -239,6 +253,10 @@ const useAttack = (roomCode, clientId, cardId) => {
     return { success: false, error: 'Room not found' };
   }
 
+  if (hasOvertimeStarted(state)) {
+    return { success: false, error: 'Overtime only allows boons' };
+  }
+
   const side = clientId === state.host ? 'host' : 'opponent';
   const opponentSide = side === 'host' ? 'opponent' : 'host';
   const card = state.cards[side].attacks.find((entry) => entry.id === cardId);
@@ -320,7 +338,7 @@ const submitWord = async (roomCode, clientId, word, tileIds, languageCode = 'en'
     return { success: false, error: 'Room not found' };
   }
 
-  if (state.scores.host >= WINNING_SCORE || state.scores.opponent >= WINNING_SCORE) {
+  if (state.scores.host >= WINNING_SCORE && state.scores.opponent >= WINNING_SCORE) {
     return { success: false, error: 'Game is already over' };
   }
 
@@ -332,6 +350,11 @@ const submitWord = async (roomCode, clientId, word, tileIds, languageCode = 'en'
   const side = clientId === state.host ? 'host' : 'opponent';
   if (!state.players.includes(clientId)) {
     return { success: false, error: 'Player not in room' };
+  }
+
+  const overtimeTrailingSide = getOvertimeTrailingSide(state);
+  if (overtimeTrailingSide && overtimeTrailingSide !== side) {
+    return { success: false, error: 'Only the trailing player can submit during overtime' };
   }
 
   if (!/^[A-Z*]+$/.test(normalizedWord)) {
