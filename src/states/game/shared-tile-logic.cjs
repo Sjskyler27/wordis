@@ -10,7 +10,7 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
   const MIN_DUPLICATE_WEIGHT = 0.18;
   const BASE_GOOD_MODIFIER_CHANCE = 0.08;
   const BASE_BAD_MODIFIER_CHANCE = 0.03;
-  const BASE_NEUTRAL_MODIFIER_CHANCE = 0.03;
+  const BASE_NEUTRAL_MODIFIER_CHANCE = 0.02;
   const MODIFIER_SWING_DIVISOR = 90;
   const MAX_GOOD_MODIFIER_BONUS = 0.3;
   const MAX_BAD_MODIFIER_BONUS = 0.22;
