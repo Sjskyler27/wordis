@@ -1487,7 +1487,7 @@ body {
     background-position: 0 0;
   }
   100% {
-    background-position: 280px -140px;
+    background-position: 280px -280px;
   }
 }
 
