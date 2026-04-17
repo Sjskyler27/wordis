@@ -412,7 +412,11 @@ const historySummaryText = computed(() => {
     return `Time is up. Final score: ${playerScores.value.host}.`;
   }
 
-  return `${winnerLabel.value} wins at ${winningScore.value} points.`;
+  if (showOpponentLane.value) {
+    return `${winnerLabel.value} wins. Final score: ${playerScores.value.host} to ${playerScores.value.opponent}.`;
+  }
+
+  return `${winnerLabel.value} wins at ${winningScore.value} points. Final score: ${playerScores.value.host}.`;
 });
 const historyResultState = computed(() => {
   if (timeExpired.value) {
