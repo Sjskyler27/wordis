@@ -146,6 +146,7 @@
           :current-word-multiplier="currentWordMultiplier"
           :clear-count="rackClears[mySide]"
           :length-bonus-steps="lengthBonusSteps"
+          :controller-focused-built-tile-id="controllerRegion === 'builder' ? controllerFocusedBuiltTileId : ''"
           @undo="handleUndo"
           @clear="handleClearWord"
           @save-letters="handleSaveLetters"
@@ -239,6 +240,7 @@ const scorePopTiles = ref([]);
 const controllerRegion = ref('rack');
 const controllerTileCursorIndex = ref(0);
 const controllerCardCursorIndex = ref(0);
+const controllerBuilderCursorIndex = ref(0);
 const laneBurstPulse = ref({
   host: 0,
   opponent: 0
@@ -299,6 +301,7 @@ const mySide = computed(() => {
 
 const myTiles = computed(() => playerTiles.value[mySide.value] || []);
 const controllerFocusedTileId = computed(() => myTiles.value[controllerTileCursorIndex.value]?.id || '');
+const controllerFocusedBuiltTileId = computed(() => selectedTilesForCurrentSide.value[controllerBuilderCursorIndex.value]?.id || '');
 const opponentSide = computed(() => (mySide.value === 'host' ? 'opponent' : 'host'));
 const buildLane = (side, label) => ({
   side,
@@ -986,6 +989,23 @@ const focusControllerCard = (index = controllerCardCursorIndex.value) => {
   });
 };
 
+const focusControllerBuilder = (index = controllerBuilderCursorIndex.value) => {
+  if (!selectedTilesForCurrentSide.value.length) {
+    return;
+  }
+
+  controllerRegion.value = 'builder';
+  const boundedIndex = Math.max(0, Math.min(index, selectedTilesForCurrentSide.value.length - 1));
+  controllerBuilderCursorIndex.value = boundedIndex;
+
+  nextTick(() => {
+    const builtTileButton = document.querySelector(`[data-controller-built="${boundedIndex}"]`);
+    if (builtTileButton && typeof builtTileButton.focus === 'function') {
+      builtTileButton.focus();
+    }
+  });
+};
+
 const moveControllerTileFocus = (direction) => {
   if (!myTiles.value.length) {
     return;
@@ -1006,6 +1026,10 @@ const moveControllerTileFocus = (direction) => {
   } else if (direction === 'up') {
     nextIndex = Math.max(0, currentIndex - columns);
   } else if (direction === 'down') {
+    if (currentIndex + columns >= myTiles.value.length && selectedTilesForCurrentSide.value.length) {
+      focusControllerBuilder(Math.min(currentIndex % columns, selectedTilesForCurrentSide.value.length - 1));
+      return;
+    }
     nextIndex = Math.min(myTiles.value.length - 1, currentIndex + columns);
   }
 
@@ -1246,7 +1270,12 @@ const handleKeydown = (event) => {
 
     if (event.key === 'ArrowUp') {
       event.preventDefault();
-      moveControllerTileFocus('up');
+      if (controllerRegion.value === 'builder') {
+        const bottomRowStart = Math.max(0, myTiles.value.length - 5);
+        focusControllerTile(Math.min(bottomRowStart + controllerBuilderCursorIndex.value, myTiles.value.length - 1));
+      } else {
+        moveControllerTileFocus('up');
+      }
       return;
     }
 
@@ -1258,6 +1287,8 @@ const handleKeydown = (event) => {
         } else {
           focusControllerCard(controllerCardCursorIndex.value + 1);
         }
+      } else if (controllerRegion.value === 'builder') {
+        focusControllerBuilder(Math.min(controllerBuilderCursorIndex.value + 1, selectedTilesForCurrentSide.value.length - 1));
       } else {
         moveControllerTileFocus('down');
       }

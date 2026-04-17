@@ -38,8 +38,12 @@
               :key="`built-${slot.tile.id}`"
               type="button"
               class="built-tile"
-              :class="{ shaking: isShaking }"
+              :class="{
+                shaking: isShaking,
+                'built-tile-controller-focus': controllerFocusedBuiltTileId === slot.tile.id
+              }"
               :style="getTileStyle(slot.tile, slot.index)"
+              :data-controller-built="slot.index"
               @click="$emit('tile-click', slot.tile)"
             >
               <span v-if="!getModifierUi(slot.tile.status).hideBadge && slot.tile.status !== 'normal'" class="tile-modifier" :style="getBadgeStyle(slot.tile)">
@@ -140,6 +144,10 @@ const props = defineProps({
   lengthBonusSteps: {
     type: Array,
     required: true
+  },
+  controllerFocusedBuiltTileId: {
+    type: String,
+    default: ''
   }
 });
 
@@ -439,6 +447,11 @@ const getPlaceholderStyle = (slot) => {
 }
 
 .built-tile:focus-visible {
+  outline: 3px solid rgba(255, 202, 103, 0.85);
+  outline-offset: 2px;
+}
+
+.built-tile-controller-focus {
   outline: 3px solid rgba(255, 202, 103, 0.85);
   outline-offset: 2px;
 }
