@@ -118,21 +118,32 @@ const getBadgeStyle = (tile) => {
 };
 
 const burstTier = ref('');
+let burstTimeoutId = null;
 
-watch(() => props.burstPulse, () => {
+watch(() => [props.burstPulse, props.lastWordScore], ([nextPulse]) => {
+  if (!nextPulse) {
+    return;
+  }
+
   if (!props.lastWordScore || props.lastWordScore < 18) {
     return;
   }
 
-  burstTier.value = props.lastWordScore >= 32 ? 'epic' : 'burst';
-  window.setTimeout(() => {
-    burstTier.value = '';
-  }, props.lastWordScore >= 32 ? 1200 : 850);
+  window.clearTimeout(burstTimeoutId);
+  burstTier.value = '';
+
+  requestAnimationFrame(() => {
+    burstTier.value = props.lastWordScore >= 32 ? 'epic' : 'burst';
+    burstTimeoutId = window.setTimeout(() => {
+      burstTier.value = '';
+    }, props.lastWordScore >= 32 ? 1200 : 850);
+  });
 });
 </script>
 
 <style scoped>
 .lane {
+  position: relative;
   border-radius: 28px;
   padding: 20px;
   background:
@@ -145,12 +156,34 @@ watch(() => props.burstPulse, () => {
   transition: box-shadow 180ms ease, transform 180ms ease;
 }
 
+.lane::after {
+  content: '';
+  position: absolute;
+  inset: -12px;
+  border-radius: 34px;
+  pointer-events: none;
+  opacity: 0;
+  transform: scale(0.96);
+}
+
 .lane-burst {
   animation: lane-burst 820ms ease-out;
 }
 
 .lane-burst-epic {
   animation: lane-burst-epic 1180ms ease-out;
+}
+
+.lane-burst::after {
+  animation: lane-flare 820ms ease-out;
+  background:
+    radial-gradient(circle at 50% 50%, rgba(255, 222, 145, 0.34) 0%, rgba(255, 182, 93, 0.18) 42%, rgba(255, 182, 93, 0) 72%);
+}
+
+.lane-burst-epic::after {
+  animation: lane-flare-epic 1180ms ease-out;
+  background:
+    radial-gradient(circle at 50% 50%, rgba(125, 255, 227, 0.34) 0%, rgba(95, 240, 214, 0.2) 42%, rgba(95, 240, 214, 0) 72%);
 }
 
 .lane-header {
@@ -317,6 +350,18 @@ watch(() => props.burstPulse, () => {
   }
 }
 
+@keyframes lane-flare {
+  0%,
+  100% {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  35% {
+    opacity: 1;
+    transform: scale(1.02);
+  }
+}
+
 @keyframes lane-burst-epic {
   0%,
   100% {
@@ -331,6 +376,18 @@ watch(() => props.burstPulse, () => {
       inset 0 1px 0 rgba(255, 255, 255, 0.16),
       0 0 42px rgba(95, 240, 214, 0.24),
       0 0 0 3px rgba(95, 240, 214, 0.22);
+  }
+}
+
+@keyframes lane-flare-epic {
+  0%,
+  100% {
+    opacity: 0;
+    transform: scale(0.94);
+  }
+  35% {
+    opacity: 1;
+    transform: scale(1.03);
   }
 }
 
