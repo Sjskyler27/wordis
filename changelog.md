@@ -52,6 +52,16 @@ Stop: 2026-04-16 19:35:53 EDT
 - Made the in-game background shift from bright upbeat colors into a more intense palette as the timer drains or players approach the win score.
 - Added `score_built_tile.mp3` to the score-pop sequence so each built tile pop plays with a rising pitch as the chain continues.
 
+## 2026-04-17
+
+Start: 2026-04-17 08:17:00 EDT
+Stop: 2026-04-17 08:26:25 EDT
+
+- Added `burningTile`, a negative modifier that loses 3 points every turn you leave it unused and now gets cleared by the cleanse-style negative reset flow.
+- Added `bloodTile`, a red-black position-scaling modifier that becomes more valuable the later you place it in a word.
+- Added `bankTile`, a rare emerald modifier that starts at 0 and gains value each turn you leave it on your rack.
+- Added DEV-only modifier roll logging so each pull shows the current modifier odds, the actual modifier rolled, and the chance that rolled result had.
+
 ## 2026-04-16
 - adjust word builder styleing
 - fix history overlay to be seperate component 
