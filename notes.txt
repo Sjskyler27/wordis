@@ -68,3 +68,5 @@ flame lane  if bbig word
 say final score in history 
 
 after 250 play continues until losing player submits words no attacks can be played only boons 
+
+notes major need to fix firebase safety
