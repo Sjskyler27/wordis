@@ -97,6 +97,7 @@
             :saved-tile-ids="leftLane.savedTileIds"
             :must-alert-ids="leftLane.mustAlertIds"
             :burst-pulse="laneBurstPulse[leftLane.side]"
+            :controller-focused-tile-id="leftLane.side === mySide ? controllerFocusedTileId : ''"
             @tile-click="handleTileClickWithCards($event, leftLane.side)"
           />
 
@@ -113,6 +114,7 @@
             :saved-tile-ids="rightLane.savedTileIds"
             :must-alert-ids="rightLane.mustAlertIds"
             :burst-pulse="laneBurstPulse[rightLane.side]"
+            :controller-focused-tile-id="rightLane.side === mySide ? controllerFocusedTileId : ''"
             @tile-click="handleTileClickWithCards($event, rightLane.side)"
           />
         </div>
@@ -165,7 +167,7 @@
 </template>
 
 <script setup>
-import { computed, defineProps, onBeforeUnmount, onMounted, ref, watch } from 'vue';
+import { computed, defineProps, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import {
   roomCode,
   isHost,
@@ -205,9 +207,11 @@ const props = defineProps({
     type: String,
     default: 'normal'
   },
-    volume: Number,
-    musicVolume: Number,
-    effectsVolume: Number,
+  volume: Number,
+  musicVolume: Number,
+  effectsVolume: Number,
+  isControllerConnected: Boolean,
+  settingsShowing: Boolean
 });
 
 const emit = defineEmits([
@@ -224,6 +228,7 @@ const activeBoonCardId = ref(null);
 const invalidWordPulse = ref(0);
 const scorePopPulse = ref(0);
 const scorePopTiles = ref([]);
+const controllerTileCursorIndex = ref(0);
 const laneBurstPulse = ref({
   host: 0,
   opponent: 0
@@ -283,6 +288,7 @@ const mySide = computed(() => {
 });
 
 const myTiles = computed(() => playerTiles.value[mySide.value] || []);
+const controllerFocusedTileId = computed(() => myTiles.value[controllerTileCursorIndex.value]?.id || '');
 const opponentSide = computed(() => (mySide.value === 'host' ? 'opponent' : 'host'));
 const buildLane = (side, label) => ({
   side,
@@ -930,6 +936,44 @@ const handleClearWord = () => {
   }
 };
 
+const focusControllerTile = (index = controllerTileCursorIndex.value) => {
+  if (!myTiles.value.length) {
+    return;
+  }
+
+  const boundedIndex = Math.max(0, Math.min(index, myTiles.value.length - 1));
+  controllerTileCursorIndex.value = boundedIndex;
+
+  nextTick(() => {
+    const tileButton = document.querySelector(`[data-controller-tile="${mySide.value}-${boundedIndex}"]`);
+    if (tileButton && typeof tileButton.focus === 'function') {
+      tileButton.focus();
+    }
+  });
+};
+
+const moveControllerTileFocus = (direction) => {
+  if (!myTiles.value.length) {
+    return;
+  }
+
+  const columns = 5;
+  const currentIndex = Math.max(0, Math.min(controllerTileCursorIndex.value, myTiles.value.length - 1));
+  let nextIndex = currentIndex;
+
+  if (direction === 'left') {
+    nextIndex = Math.max(0, currentIndex - 1);
+  } else if (direction === 'right') {
+    nextIndex = Math.min(myTiles.value.length - 1, currentIndex + 1);
+  } else if (direction === 'up') {
+    nextIndex = Math.max(0, currentIndex - columns);
+  } else if (direction === 'down') {
+    nextIndex = Math.min(myTiles.value.length - 1, currentIndex + columns);
+  }
+
+  focusControllerTile(nextIndex);
+};
+
 const handleTileClickWithCards = (tile, side) => {
   if (effectiveGameEnded.value) {
     return;
@@ -1132,7 +1176,59 @@ watch(effectiveGameEnded, (ended) => {
 }, { immediate: true });
 
 const handleKeydown = (event) => {
+  console.log('key')
+  if (props.settingsShowing) {
+    return;
+  }
+
   if (event.key !== 'Escape') {
+    if (!myTiles.value.length) {
+      return;
+    }
+
+    if (event.key === 'ArrowLeft') {
+      event.preventDefault();
+      moveControllerTileFocus('left');
+      return;
+    }
+
+    if (event.key === 'ArrowRight') {
+      event.preventDefault();
+      moveControllerTileFocus('right');
+      return;
+    }
+
+    if (event.key === 'ArrowUp') {
+      event.preventDefault();
+      moveControllerTileFocus('up');
+      return;
+    }
+
+    if (event.key === 'ArrowDown') {
+      event.preventDefault();
+      moveControllerTileFocus('down');
+      return;
+    }
+
+    if (event.key === 'b') {
+      event.preventDefault();
+      handleUndo();
+      return;
+    }
+
+    if (event.key === 'y') {
+      console.log('y')
+      event.preventDefault();
+      handleClearWord();
+      return;
+    }
+
+    if (event.key === 'x') {
+      event.preventDefault();
+      handleSubmit();
+      return;
+    }
+
     return;
   }
 
@@ -1140,9 +1236,30 @@ const handleKeydown = (event) => {
   togglePause();
 };
 
+watch([myTiles, mySide], () => {
+  if (!props.isControllerConnected) {
+    return;
+  }
+
+  focusControllerTile(controllerTileCursorIndex.value);
+}, { deep: true });
+
+watch(() => props.isControllerConnected, (connected) => {
+  if (!connected) {
+    return;
+  }
+
+  focusControllerTile(0);
+}, { immediate: true });
+
 onMounted(() => {
   window.addEventListener('keydown', handleKeydown);
+  console.log('mount')
   startGameMusic({ restart: true });
+  if (props.isControllerConnected) {
+    console.log('connected')
+    focusControllerTile(0);
+  }
 });
 
 onBeforeUnmount(() => {

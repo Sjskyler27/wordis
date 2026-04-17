@@ -26,9 +26,11 @@
               'tile-in-use': selectedTileIds.has(tile.id),
               'tile-saved': savedTileIds.has(tile.id),
               'tile-locked': tile.locked,
-              'tile-must-alert': mustAlertIds.has(tile.id)
+              'tile-must-alert': mustAlertIds.has(tile.id),
+              'tile-controller-focus': controllerFocusedTileId === tile.id
             }"
             :style="getTileStyle(tile)"
+            :data-controller-tile="`${side}-${index}`"
             @click="$emit('tile-click', tile)"
           >
             <span v-if="!getModifierUi(tile.status).hideBadge && tile.status !== 'normal'" class="tile-modifier" :style="getBadgeStyle(tile)">
@@ -91,6 +93,10 @@ const props = defineProps({
   burstPulse: {
     type: Number,
     default: 0
+  },
+  controllerFocusedTileId: {
+    type: String,
+    default: ''
   }
 });
 
@@ -254,6 +260,13 @@ watch(() => [props.burstPulse, props.lastWordScore], ([nextPulse]) => {
   box-shadow: var(--tile-focus-shadow, inset 0 -4px 0 rgba(0, 0, 0, 0.12), 0 0 0 4px rgba(92, 25, 41, 0.45), 0 14px 20px rgba(45, 10, 24, 0.24));
 }
 
+.tile-controller-focus {
+  outline: 3px solid rgba(255, 202, 103, 0.85);
+  outline-offset: 2px;
+  transform: translateY(-2px);
+  box-shadow: var(--tile-focus-shadow, inset 0 -4px 0 rgba(0, 0, 0, 0.12), 0 0 0 4px rgba(92, 25, 41, 0.45), 0 14px 20px rgba(45, 10, 24, 0.24));
+}
+
 .tile.active {
   outline: 3px solid rgba(255, 202, 103, 0.55);
 }
@@ -263,6 +276,10 @@ watch(() => [props.burstPulse, props.lastWordScore], ([nextPulse]) => {
 }
 
 .tile.opponent:focus-visible {
+  outline-color: rgba(75, 199, 176, 0.85);
+}
+
+.tile.opponent.tile-controller-focus {
   outline-color: rgba(75, 199, 176, 0.85);
 }
 
