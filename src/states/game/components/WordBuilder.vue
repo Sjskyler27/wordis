@@ -17,7 +17,7 @@
               <span v-if="!getModifierUi(tile.status).hideBadge && tile.status !== 'normal'" class="tile-modifier" :style="getBadgeStyle(tile)">
                 {{ getModifierBadge(tile) }}
               </span>
-              <span class="tile-score">{{ tileScore(tile) }}</span>
+              <span class="tile-score">{{ getBuiltTileScore(tile, index) }}</span>
               <span class="tile-letter">{{ tile.letter }}</span>
             </div>
           </div>
@@ -61,7 +61,7 @@
               <span v-if="!getModifierUi(slot.tile.status).hideBadge && slot.tile.status !== 'normal'" class="tile-modifier" :style="getBadgeStyle(slot.tile)">
                 {{ getModifierBadge(slot.tile) }}
               </span>
-              <span class="tile-score">{{ tileScore(slot.tile) }}</span>
+              <span class="tile-score">{{ getBuiltTileScore(slot.tile, slot.index) }}</span>
               <span class="tile-letter">{{ slot.tile.letter }}</span>
             </button>
           </Transition>
@@ -169,6 +169,14 @@ const props = defineProps({
     type: Number,
     required: true
   },
+  currentWordSide: {
+    type: String,
+    default: 'host'
+  },
+  currentPlayerScores: {
+    type: Object,
+    default: () => ({ host: 0, opponent: 0 })
+  },
   clearCount: {
     type: Number,
     required: true
@@ -257,6 +265,14 @@ const getBadgeStyle = (tile) => {
     background: ui.badgeBackground,
     color: ui.badgeColor
   };
+};
+
+const getBuiltTileScore = (tile, index) => {
+  return tileScore(tile, {
+    side: props.currentWordSide,
+    scores: props.currentPlayerScores,
+    positionIndex: index
+  });
 };
 
 const getPlaceholderStyle = (slot) => {

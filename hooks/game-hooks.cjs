@@ -432,7 +432,9 @@ const submitWord = async (roomCode, clientId, word, tileIds, languageCode = 'en'
   state.scores[side] += scoreDelta;
   state.cards[side].boons.push(...drawCards('boon', grantedResources.boons));
   state.cards[side].attacks.push(...drawCards('attack', grantedResources.attacks));
-  state.tiles[side] = refillRack(state.tiles[side], tileIds, side, state.scores);
+  state.tiles[side] = refillRack(state.tiles[side], tileIds, side, state.scores, {
+    phase: 'submit'
+  });
 
   return { success: true, state };
 };

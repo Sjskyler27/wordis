@@ -226,7 +226,8 @@ export const useSinglePlayerGame = ({
     playerTiles.value = {
       host: playerTiles.value.host,
       opponent: refillTiles(botTiles, selectedBotTiles.map((tile) => tile.id), 'opponent', playerScores.value, {
-        modifierProfile: modifierProfile()
+        modifierProfile: modifierProfile(),
+        phase: 'submit'
       })
     };
   };
@@ -305,7 +306,8 @@ export const useSinglePlayerGame = ({
 
     playerTiles.value = {
       host: refillTiles(playerTiles.value.host, selectedTiles.map((tile) => tile.id), 'host', playerScores.value, {
-        modifierProfile: modifierProfile()
+        modifierProfile: modifierProfile(),
+        phase: 'submit'
       }),
       opponent: playerTiles.value.opponent
     };

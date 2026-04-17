@@ -144,6 +144,8 @@
           :current-length-bonus="currentLengthBonus"
           :current-first-tile-bonus="currentFirstTileBonus"
           :current-word-multiplier="currentWordMultiplier"
+          :current-word-side="mySide"
+          :current-player-scores="playerScores"
           :clear-count="rackClears[mySide]"
           :length-bonus-steps="lengthBonusSteps"
           :controller-focused-built-tile-id="controllerRegion === 'builder' ? controllerFocusedBuiltTileId : ''"
