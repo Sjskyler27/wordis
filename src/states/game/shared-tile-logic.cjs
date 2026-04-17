@@ -12,9 +12,9 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
   const BASE_BAD_MODIFIER_CHANCE = 0.04;
   const MODIFIER_SWING_DIVISOR = 90;
   const MAX_MODIFIER_BONUS = 0.18;
-  const GOOD_MODIFIERS = ['gold', 'firsttile', 'wild', 'gainboon', 'gainattack'];
+  const GOOD_MODIFIERS = ['gold', 'firsttile', 'wild', 'bloodTile', 'gainboon', 'gainattack'];
   const BAD_MODIFIERS = ['zeroTile', 'mustuse', 'locked3', 'ghostTile', 'burningTile'];
-  const SOLO_GOOD_MODIFIERS = ['gold', 'firsttile', 'wild', 'gainboon'];
+  const SOLO_GOOD_MODIFIERS = ['gold', 'firsttile', 'wild', 'bloodTile', 'gainboon'];
   const BOON_CARD_KEYS = ['boon_delete_tile', 'boon_isolate_tile', 'boon_clear_negative', 'boon_firsttile', 'boon_wild', 'boon_gold'];
   const ATTACK_CARD_KEYS = ['attack_zeroTile', 'attack_mustuse', 'attack_locked3', 'attack_ghostTile'];
   const TIMED_SOLO_ATTACK_CARD_KEYS = ['attack_pause_time', 'attack_gain_time'];
@@ -110,6 +110,18 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
         textColor: '#11213f',
         badgeBackground: 'rgba(233, 244, 255, 0.96)',
         badgeColor: '#274577'
+      }
+    },
+    bloodTile: {
+      badge: 'BLOOD',
+      effects: { positionBonusScale: 1 },
+      rarityWeight: 0.36,
+      ui: {
+        tileBackground: 'radial-gradient(circle at 26% 24%, rgba(255, 125, 125, 0.96) 0%, rgba(255, 125, 125, 0.96) 11%, rgba(120, 15, 21, 0.94) 12%, rgba(120, 15, 21, 0.94) 26%, rgba(28, 7, 12, 0.98) 27%, rgba(28, 7, 12, 0.98) 44%, rgba(182, 20, 34, 0.96) 45%, rgba(182, 20, 34, 0.96) 62%, rgba(24, 6, 10, 0.98) 63%, rgba(24, 6, 10, 0.98) 100%)',
+        tileShadow: 'inset 0 -4px 0 rgba(54, 7, 13, 0.4), 0 12px 22px rgba(54, 7, 13, 0.28), 0 0 0 1px rgba(255, 120, 130, 0.24)',
+        textColor: '#fff4f4',
+        badgeBackground: 'rgba(20, 6, 10, 0.92)',
+        badgeColor: '#ff9fa8'
       }
     },
     zeroTile: {
@@ -629,6 +641,10 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
 
   const getWordScoreDetails = (tiles) => {
     const baseLetterTotal = getTilesScore(tiles);
+    const positionBonus = tiles.reduce((total, tile, index) => {
+      const definition = getModifierDefinition(tile?.status);
+      return total + ((definition.effects.positionBonusScale || 0) * index);
+    }, 0);
     const firstTileBonus = tiles.reduce((total, tile, index) => {
       if (index !== 0) {
         return total;
@@ -636,12 +652,13 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
 
       return total + tile?.firstTileBonus;
     }, 0);
-    const letterTotal = baseLetterTotal + firstTileBonus;
+    const letterTotal = baseLetterTotal + firstTileBonus + positionBonus;
     const lengthBonus = getLengthBonus(tiles.length);
     const wordMultiplier = tiles.reduce((total, tile) => total * (tile?.wordMultiplier || 1), 1);
 
     return {
       baseLetterTotal,
+      positionBonus,
       firstTileBonus,
       letterTotal,
       lengthBonus,
