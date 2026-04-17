@@ -1,5 +1,6 @@
 const games = new Map();
 const WINNING_SCORE = isTestingMode ? 40 : 250;
+const { randomUUID } = require('crypto');
 const LETTER_CONFIG = require('../src/states/game/letters.json');
 const WORD_BONUSES = require('../src/states/game/word-bonuses.json');
 const MILESTONE_REWARDS = require('../src/states/game/word-milestone-rewards.json');
@@ -27,8 +28,12 @@ const {
   milestoneRewards: MILESTONE_REWARDS
 });
 
-let nextTileId = 1;
-let nextCardId = 1;
+const serverIdState = {
+  tileSession: randomUUID(),
+  cardSession: randomUUID(),
+  nextTileId: 1,
+  nextCardId: 1
+};
 
 const {
   createRack,
@@ -37,10 +42,18 @@ const {
   rerollRackExceptTile,
   createTestingOpeningRackPair
 } = createTileLogic({
-  createTileId: () => `tile-${nextTileId++}`
+  createTileId: () => {
+    const id = `tile-${serverIdState.tileSession}-${serverIdState.nextTileId}`;
+    serverIdState.nextTileId += 1;
+    return id;
+  }
 });
 const { createCards, drawCard, drawCards } = createCardLogic({
-  createCardId: () => `card-${nextCardId++}`
+  createCardId: () => {
+    const id = `card-${serverIdState.cardSession}-${serverIdState.nextCardId}`;
+    serverIdState.nextCardId += 1;
+    return id;
+  }
 });
 
 const createTestingHands = () => {
