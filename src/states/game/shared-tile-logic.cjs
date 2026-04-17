@@ -12,9 +12,9 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
   const BASE_BAD_MODIFIER_CHANCE = 0.04;
   const MODIFIER_SWING_DIVISOR = 90;
   const MAX_MODIFIER_BONUS = 0.18;
-  const GOOD_MODIFIERS = ['gold', 'firsttile', 'wild', 'bloodTile', 'gainboon', 'gainattack'];
+  const GOOD_MODIFIERS = ['gold', 'firsttile', 'wild', 'bloodTile', 'bankTile', 'gainboon', 'gainattack'];
   const BAD_MODIFIERS = ['zeroTile', 'mustuse', 'locked3', 'ghostTile', 'burningTile'];
-  const SOLO_GOOD_MODIFIERS = ['gold', 'firsttile', 'wild', 'bloodTile', 'gainboon'];
+  const SOLO_GOOD_MODIFIERS = ['gold', 'firsttile', 'wild', 'bloodTile', 'bankTile', 'gainboon'];
   const BOON_CARD_KEYS = ['boon_delete_tile', 'boon_isolate_tile', 'boon_clear_negative', 'boon_firsttile', 'boon_wild', 'boon_gold'];
   const ATTACK_CARD_KEYS = ['attack_zeroTile', 'attack_mustuse', 'attack_locked3', 'attack_ghostTile'];
   const TIMED_SOLO_ATTACK_CARD_KEYS = ['attack_pause_time', 'attack_gain_time'];
@@ -122,6 +122,18 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
         textColor: '#fff4f4',
         badgeBackground: 'rgba(20, 6, 10, 0.92)',
         badgeColor: '#ff9fa8'
+      }
+    },
+    bankTile: {
+      badge: 'BANK',
+      effects: { setScore: 0, idleBonusScoreDelta: 1 },
+      rarityWeight: 0.18,
+      ui: {
+        tileBackground: 'linear-gradient(180deg, #d7ffe9 0%, #5ee2a8 42%, #0b9a6f 76%, #046647 100%)',
+        tileShadow: 'inset 0 -4px 0 rgba(4, 82, 58, 0.34), 0 12px 22px rgba(4, 82, 58, 0.24), 0 0 0 1px rgba(175, 255, 213, 0.46)',
+        textColor: '#0a2b23',
+        badgeBackground: 'rgba(231, 255, 241, 0.94)',
+        badgeColor: '#0a8b63'
       }
     },
     zeroTile: {
