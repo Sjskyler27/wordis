@@ -481,7 +481,7 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
   const getAllowedModifiersForProfile = (modifiers = [], profileName = 'duel') => {
     return modifiers.filter((modifier) => {
       const definition = getModifierDefinition(modifier);
-      return !(profileName !== 'duel' && definition.noSinglePlayer);
+      return !(definition.noSinglePlayer);
     });
   };
   const getCardDefinition = (cardKey) => CARD_DEFINITIONS[normalizeCardKey(cardKey)];
@@ -594,6 +594,7 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
     eligibleBadModifiers = [],
     eligibleNeutralModifiers = []
   }) => {
+
     if (!devLogging) {
       return;
     }
