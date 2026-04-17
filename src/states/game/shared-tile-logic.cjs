@@ -17,19 +17,19 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
   const TURN_MODIFIER_CHANCE_STEP = 0.003;
   const MAX_TURN_MODIFIER_BONUS = 0.08;
   const BLOOD_TILE_POSITION_VALUES = {
-    pos1: 0,
-    pos2: 2,
-    pos3: 2,
-    pos4: 4,
-    pos5: 5,
-    pos6: 7,
-    pos7: 9,
-    pos8: 12,
-    pos9: 15
+    pos1: -2,
+    pos2: -1,
+    pos3: 0,
+    pos4: 1,
+    pos5: 2,
+    pos6: 3,
+    pos7: 4,
+    pos8: 5,
+    pos9: 6
   };
-  const GOOD_MODIFIERS = ['gold', 'firsttile', 'wild', 'bloodTile', 'bankTile', 'gainboon', 'gainattack'];
+  const GOOD_MODIFIERS = ['gold', 'firsttile', 'wild', 'bankTile', 'gainboon', 'gainattack'];
   const BAD_MODIFIERS = ['zeroTile', 'mustuse', 'locked3', 'burningTile'];
-  const NEUTRAL_MODIFIERS = ['yinYang', 'ghostTile'];
+  const NEUTRAL_MODIFIERS = ['yinYang', 'ghostTile','bloodTile'];
   const SOLO_GOOD_MODIFIERS = ['gold', 'firsttile', 'wild', 'bloodTile', 'bankTile', 'gainboon'];
   const BOON_CARD_KEYS = ['boon_delete_tile', 'boon_isolate_tile', 'boon_clear_negative', 'boon_firsttile', 'boon_wild', 'boon_gold'];
   const ATTACK_CARD_KEYS = ['attack_zeroTile', 'attack_mustuse', 'attack_locked3', 'attack_ghostTile'];
@@ -789,8 +789,22 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
     }
     return leadMap.tied || 0;
   };
+  const getPositionAwareModifierScore = (tile, options = {}) => {
+    if (options.positionIndex == null) {
+      return 0;
+    }
+
+    const positionKey = `pos${options.positionIndex + 1}`;
+    const positionBonusByIndex = getModifierDefinition(tile?.status).effects.positionBonusByIndex || {};
+    return positionBonusByIndex[positionKey] || 0;
+  };
   const tileScore = (tile, options = {}) => (
-    ((tile?.score || 0) + (tile?.bonusScore || 0) + getLeadAwareModifierScore(tile, options)) * (tile?.multiplier || 1)
+    (
+      (tile?.score || 0)
+      + (tile?.bonusScore || 0)
+      + getLeadAwareModifierScore(tile, options)
+      + getPositionAwareModifierScore(tile, options)
+    ) * (tile?.multiplier || 1)
   );
   const tickIdleTile = (tile) => {
     const definition = getModifierDefinition(tile?.status);
