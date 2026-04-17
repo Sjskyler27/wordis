@@ -32,6 +32,17 @@
 - milestone now shows bonus 
 
 ## 2026-04-16
+
+Start: 2026-04-16 19:29:00 EDT
+Stop: 2026-04-16 19:35:53 EDT
+
+- Looped the short in-match music and result audio so they hold up during longer results and play sessions.
+- Shortened testing mode thresholds so matches end at 40 points and timed solo starts at 25 seconds.
+- Added a new `Cleanse` boon card that removes all negative modifiers from your rack in both solo and multiplayer.
+- Made the in-game background shift from bright upbeat colors into a more intense palette as the timer drains or players approach the win score.
+- Added `score_built_tile.mp3` to the score-pop sequence so each built tile pop plays with a rising pitch as the chain continues.
+
+## 2026-04-16
 - adjust word builder styleing
 - fix history overlay to be seperate component 
 - added one more turn after time runs out in solo

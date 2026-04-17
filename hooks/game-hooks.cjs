@@ -1,5 +1,5 @@
 const games = new Map();
-const WINNING_SCORE = 250;
+const WINNING_SCORE = isTestingMode ? 40 : 250;
 const LETTER_CONFIG = require('../src/states/game/letters.json');
 const WORD_BONUSES = require('../src/states/game/word-bonuses.json');
 const MILESTONE_REWARDS = require('../src/states/game/word-milestone-rewards.json');
@@ -197,6 +197,19 @@ const useBoon = (roomCode, clientId, cardId, tileId) => {
   const card = state.cards[side].boons.find((entry) => entry.id === cardId);
   if (!card) {
     return { success: false, error: 'No boons remaining' };
+  }
+
+  if (card.effectType === 'clear_negative_modifiers') {
+    state.cards[side].boons = state.cards[side].boons.filter((entry) => entry.id !== cardId);
+    state.tiles[side] = state.tiles[side].map((entry) => {
+      if (!['zeroTile', 'mustuse', 'locked3', 'ghostTile'].includes(entry.status)) {
+        return entry;
+      }
+
+      return replaceTileWithModifier([entry], entry.id, 'normal')[0];
+    });
+
+    return { success: true, state };
   }
 
   const tile = state.tiles[side].find((entry) => entry.id === tileId);

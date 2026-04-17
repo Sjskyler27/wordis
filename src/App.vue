@@ -40,6 +40,9 @@
       @nameChange="setNames"
       @home="goToHome"
       @playAgain="playAgain"
+      @volumeChange="setVolume"
+      @musicVolumeChange="setmusicVolume"
+      @effectsVolumeChange="seteffectsVolume"
        />
       
       <banner v-if="message">{{message}}</banner>

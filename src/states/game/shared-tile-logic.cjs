@@ -15,7 +15,7 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
   const GOOD_MODIFIERS = ['gold', 'firsttile', 'wild', 'gainboon', 'gainattack'];
   const BAD_MODIFIERS = ['zeroTile', 'mustuse', 'locked3', 'ghostTile'];
   const SOLO_GOOD_MODIFIERS = ['gold', 'firsttile', 'wild', 'gainboon'];
-  const BOON_CARD_KEYS = ['boon_delete_tile', 'boon_isolate_tile', 'boon_firsttile', 'boon_wild', 'boon_gold'];
+  const BOON_CARD_KEYS = ['boon_delete_tile', 'boon_isolate_tile', 'boon_clear_negative', 'boon_firsttile', 'boon_wild', 'boon_gold'];
   const ATTACK_CARD_KEYS = ['attack_zeroTile', 'attack_mustuse', 'attack_locked3', 'attack_ghostTile'];
   const TIMED_SOLO_ATTACK_CARD_KEYS = ['attack_pause_time', 'attack_gain_time'];
   const MODIFIER_PROFILES = {
@@ -191,6 +191,20 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
         cardPattern: 'rgba(231, 244, 255, 0.11)',
         cardBackground: 'linear-gradient(180deg, rgba(88, 143, 232, 0.98), rgba(46, 78, 168, 0.96))',
         cardBadgeBackground: 'rgba(24, 46, 96, 0.42)'
+      }
+    },
+    boon_clear_negative: {
+      kind: 'boon',
+      label: 'Cleanse',
+      description: 'Remove all negative modifiers from your rack.',
+      rarityWeight: 0.48,
+      effectType: 'clear_negative_modifiers',
+      ui: {
+        cardGlow: 'rgba(174, 255, 224, 0.24)',
+        cardEdge: 'rgba(198, 255, 234, 0.34)',
+        cardPattern: 'rgba(232, 255, 246, 0.1)',
+        cardBackground: 'linear-gradient(180deg, rgba(78, 214, 183, 0.98), rgba(24, 126, 116, 0.96))',
+        cardBadgeBackground: 'rgba(15, 78, 72, 0.42)'
       }
     },
     boon_firsttile: {
