@@ -74,3 +74,5 @@ pause time does not pause
 still no epic score thing flame in lane 
 
 New new modifier type neutral it's a yin and yang. Enter. Add away from the menu to be able to disable certain tiles if you don't want to see them and attack.
+
+each turn increase chance of pulling either good or bad tiles

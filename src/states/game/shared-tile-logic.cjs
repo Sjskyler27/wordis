@@ -8,11 +8,11 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
   const RACK_SIZE = 20;
   const DUPLICATE_PENALTY = 0.38;
   const MIN_DUPLICATE_WEIGHT = 0.18;
-  const BASE_GOOD_MODIFIER_CHANCE = 0.05;
-  const BASE_BAD_MODIFIER_CHANCE = 0.04;
+  const BASE_GOOD_MODIFIER_CHANCE = 0.08;
+  const BASE_BAD_MODIFIER_CHANCE = 0.03;
   const BASE_NEUTRAL_MODIFIER_CHANCE = 0.03;
   const MODIFIER_SWING_DIVISOR = 90;
-  const MAX_MODIFIER_BONUS = 0.18;
+  const MAX_MODIFIER_BONUS = 0.26;
   const BLOOD_TILE_POSITION_VALUES = {
     pos1: 0,
     pos2: 2,
@@ -25,8 +25,8 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
     pos9: 15
   };
   const GOOD_MODIFIERS = ['gold', 'firsttile', 'wild', 'bloodTile', 'bankTile', 'gainboon', 'gainattack'];
-  const BAD_MODIFIERS = ['zeroTile', 'mustuse', 'locked3', 'ghostTile', 'burningTile'];
-  const NEUTRAL_MODIFIERS = ['yinYang'];
+  const BAD_MODIFIERS = ['zeroTile', 'mustuse', 'locked3', 'burningTile'];
+  const NEUTRAL_MODIFIERS = ['yinYang', 'ghostTile'];
   const SOLO_GOOD_MODIFIERS = ['gold', 'firsttile', 'wild', 'bloodTile', 'bankTile', 'gainboon'];
   const BOON_CARD_KEYS = ['boon_delete_tile', 'boon_isolate_tile', 'boon_clear_negative', 'boon_firsttile', 'boon_wild', 'boon_gold'];
   const ATTACK_CARD_KEYS = ['attack_zeroTile', 'attack_mustuse', 'attack_locked3', 'attack_ghostTile'];
