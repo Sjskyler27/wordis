@@ -12,6 +12,17 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
   const BASE_BAD_MODIFIER_CHANCE = 0.04;
   const MODIFIER_SWING_DIVISOR = 90;
   const MAX_MODIFIER_BONUS = 0.18;
+  const BLOOD_TILE_POSITION_VALUES = {
+    pos1: 0,
+    pos2: 2,
+    pos3: 2,
+    pos4: 4,
+    pos5: 5,
+    pos6: 7,
+    pos7: 9,
+    pos8: 12,
+    pos9: 15
+  };
   const GOOD_MODIFIERS = ['gold', 'firsttile', 'wild', 'bloodTile', 'bankTile', 'gainboon', 'gainattack'];
   const BAD_MODIFIERS = ['zeroTile', 'mustuse', 'locked3', 'ghostTile', 'burningTile'];
   const SOLO_GOOD_MODIFIERS = ['gold', 'firsttile', 'wild', 'bloodTile', 'bankTile', 'gainboon'];
@@ -114,7 +125,10 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
     },
     bloodTile: {
       badge: 'BLOOD',
-      effects: { positionBonusScale: 1 },
+      effects: {
+        setScore: 0,
+        positionBonusByIndex: BLOOD_TILE_POSITION_VALUES
+      },
       rarityWeight: 0.36,
       ui: {
         tileBackground: 'radial-gradient(circle at 26% 24%, rgba(255, 125, 125, 0.96) 0%, rgba(255, 125, 125, 0.96) 11%, rgba(120, 15, 21, 0.94) 12%, rgba(120, 15, 21, 0.94) 26%, rgba(28, 7, 12, 0.98) 27%, rgba(28, 7, 12, 0.98) 44%, rgba(182, 20, 34, 0.96) 45%, rgba(182, 20, 34, 0.96) 62%, rgba(24, 6, 10, 0.98) 63%, rgba(24, 6, 10, 0.98) 100%)',
@@ -790,7 +804,9 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
     const baseLetterTotal = getTilesScore(tiles);
     const positionBonus = tiles.reduce((total, tile, index) => {
       const definition = getModifierDefinition(tile?.status);
-      return total + ((definition.effects.positionBonusScale || 0) * index);
+      const positionKey = `pos${index + 1}`;
+      const positionBonusByIndex = definition.effects.positionBonusByIndex || {};
+      return total + (positionBonusByIndex[positionKey] || 0);
     }, 0);
     const firstTileBonus = tiles.reduce((total, tile, index) => {
       if (index !== 0) {
