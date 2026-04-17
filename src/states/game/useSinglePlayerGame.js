@@ -97,7 +97,8 @@ export const useSinglePlayerGame = ({
     if (!playerTiles.value.host.length && !playerTiles.value.opponent.length) {
       if (isTestingMode) {
         playerTiles.value = createTestingOpeningRackPair(playerScores.value, {
-          modifierProfile: modifierProfile()
+          modifierProfile: modifierProfile(),
+          includeAllModifiers: true
         });
         rackClears.value = {
           host: 100,

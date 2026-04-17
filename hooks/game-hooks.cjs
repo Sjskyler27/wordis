@@ -122,7 +122,9 @@ const createInitialState = ({ hostId, players = [hostId], isPrivate = true }) =>
         opponent: 100
       },
       cards: createTestingHands(),
-      tiles: createTestingOpeningRackPair({ host: 0, opponent: 0 })
+      tiles: createTestingOpeningRackPair({ host: 0, opponent: 0 }, {
+        includeAllModifiers: true
+      })
     };
   }
 

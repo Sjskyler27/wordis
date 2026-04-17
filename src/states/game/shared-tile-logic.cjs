@@ -1359,11 +1359,13 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
 
     const createTestingRack = (side = null, scores = {}, options = {}) => {
       const profile = getModifierProfile(options.modifierProfile || 'duel');
-      const allowedStatuses = new Set([
-        ...profile.goodModifiers,
-        ...profile.badModifiers,
-        ...(profile.neutralModifiers || [])
-      ]);
+      const allowedStatuses = options.includeAllModifiers
+        ? new Set(Object.keys(MODIFIER_DEFINITIONS).filter((status) => status !== 'normal'))
+        : new Set([
+            ...profile.goodModifiers,
+            ...profile.badModifiers,
+            ...(profile.neutralModifiers || [])
+          ]);
       const modifierStatuses = Object.keys(MODIFIER_DEFINITIONS).filter((status) => status !== 'normal' && allowedStatuses.has(status));
       const rack = [];
 
