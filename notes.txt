@@ -84,3 +84,6 @@ neutral tiles are always a zero percent chance right now we need to fix that we 
 
 you should be able to pull neutral tiles in single player, we will add a flag to tiles that says no single player this includes the yinyang and the attack tile
 
+first tile is hovering a bit for some reason 
+
+new rack slowly degrades to only nenutral tiles 

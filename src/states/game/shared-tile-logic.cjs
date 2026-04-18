@@ -481,7 +481,11 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
   const getAllowedModifiersForProfile = (modifiers = [], profileName = 'duel') => {
     return modifiers.filter((modifier) => {
       const definition = getModifierDefinition(modifier);
-      return !(definition.noSinglePlayer);
+      // return all if logging
+      if(devLogging) return true
+      // currently duel gets everything
+      console.log('profile'+ profileName)
+      if ((!definition.noMultiPlayer)) return true
     });
   };
   const getCardDefinition = (cardKey) => CARD_DEFINITIONS[normalizeCardKey(cardKey)];
