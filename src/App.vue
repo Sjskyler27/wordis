@@ -422,8 +422,8 @@ const continueGame = () => {
   3: 'y',     // Y
   12: 'ArrowUp',
   13: 'ArrowDown',
-  14: 'ShiftTab',
-  15: 'Tab',
+  14: 'ArrowLeft',
+  15: 'ArrowRight',
   9: 'Escape'
 };
 

@@ -245,6 +245,7 @@ const controllerTileCursorIndex = ref(0);
 const controllerCardCursorIndex = ref(0);
 const controllerBuilderCursorIndex = ref(0);
 const controllerActionCursorIndex = ref(0);
+const isControllerNavigationActive = ref(false);
 const laneBurstPulse = ref({
   host: 0,
   opponent: 0
@@ -964,11 +965,35 @@ const handleClearWord = () => {
   }
 };
 
+const refocusControllerSelection = () => {
+  if (!isControllerNavigationActive.value) {
+    return;
+  }
+
+  if (controllerRegion.value === 'cards') {
+    focusControllerCard(controllerCardCursorIndex.value);
+    return;
+  }
+
+  if (controllerRegion.value === 'builder') {
+    focusControllerBuilder(controllerBuilderCursorIndex.value);
+    return;
+  }
+
+  if (controllerRegion.value === 'actions') {
+    focusControllerAction(controllerActionCursorIndex.value);
+    return;
+  }
+
+  focusControllerTile(controllerTileCursorIndex.value);
+};
+
 const focusControllerTile = (index = controllerTileCursorIndex.value) => {
   if (!myTiles.value.length) {
     return;
   }
 
+  isControllerNavigationActive.value = true;
   controllerRegion.value = 'rack';
   const boundedIndex = Math.max(0, Math.min(index, myTiles.value.length - 1));
   controllerTileCursorIndex.value = boundedIndex;
@@ -986,6 +1011,7 @@ const focusControllerCard = (index = controllerCardCursorIndex.value) => {
     return;
   }
 
+  isControllerNavigationActive.value = true;
   controllerRegion.value = 'cards';
   const boundedIndex = Math.max(0, Math.min(index, controllerCards.value.length - 1));
   controllerCardCursorIndex.value = boundedIndex;
@@ -1003,6 +1029,7 @@ const focusControllerBuilder = (index = controllerBuilderCursorIndex.value) => {
     return;
   }
 
+  isControllerNavigationActive.value = true;
   controllerRegion.value = 'builder';
   const boundedIndex = Math.max(0, Math.min(index, selectedTilesForCurrentSide.value.length - 1));
   controllerBuilderCursorIndex.value = boundedIndex;
@@ -1017,6 +1044,7 @@ const focusControllerBuilder = (index = controllerBuilderCursorIndex.value) => {
 
 const focusControllerAction = (index = controllerActionCursorIndex.value) => {
   const actionCount = 5;
+  isControllerNavigationActive.value = true;
   controllerRegion.value = 'actions';
   const boundedIndex = Math.max(0, Math.min(index, actionCount - 1));
   controllerActionCursorIndex.value = boundedIndex;
@@ -1261,7 +1289,6 @@ watch(effectiveGameEnded, (ended) => {
 }, { immediate: true });
 
 const handleKeydown = (event) => {
-  console.log('key')
   if (props.settingsShowing) {
     return;
   }
@@ -1343,7 +1370,6 @@ const handleKeydown = (event) => {
     }
 
     if (event.key === 'y') {
-      console.log('y')
       event.preventDefault();
       handleClearWord();
       return;
@@ -1363,29 +1389,12 @@ const handleKeydown = (event) => {
 };
 
 watch([myTiles, mySide], () => {
-  if (!props.isControllerConnected) {
-    return;
-  }
-
-  focusControllerTile(controllerTileCursorIndex.value);
+  refocusControllerSelection();
 }, { deep: true });
-
-watch(() => props.isControllerConnected, (connected) => {
-  if (!connected) {
-    return;
-  }
-
-  focusControllerTile(0);
-}, { immediate: true });
 
 onMounted(() => {
   window.addEventListener('keydown', handleKeydown);
-  console.log('mount')
   startGameMusic({ restart: true });
-  if (props.isControllerConnected) {
-    console.log('connected')
-    focusControllerTile(0);
-  }
 });
 
 onBeforeUnmount(() => {
