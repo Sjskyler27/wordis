@@ -179,7 +179,7 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
       rarityWeight: 0.32,
       noSinglePlayer: true,
       ui: {
-        tileBackground: 'linear-gradient(135deg, #f6f0e4 0%, #f6f0e4 48%, #181217 49%, #181217 100%)',
+        tileBackground: 'linear-gradient(225deg, #f6f0e4 0%, #f6f0e4 48%, #181217 49%, #181217 100%)',
         tileShadow: 'inset 0 -4px 0 rgba(20, 14, 19, 0.28), 0 12px 22px rgba(20, 14, 19, 0.22), 0 0 0 1px rgba(255, 255, 255, 0.24)',
         textColor: '#8a2f2f',
         badgeBackground: 'rgba(255, 255, 255, 0.92)',
