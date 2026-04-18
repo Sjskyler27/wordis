@@ -1077,8 +1077,12 @@ const moveControllerTileFocus = (direction) => {
   } else if (direction === 'up') {
     nextIndex = Math.max(0, currentIndex - columns);
   } else if (direction === 'down') {
+    console.log('test')
     if (currentIndex + columns >= myTiles.value.length && selectedTilesForCurrentSide.value.length) {
       focusControllerBuilder(Math.min(currentIndex % columns, selectedTilesForCurrentSide.value.length - 1));
+      return;
+    } else if (currentIndex + columns >= myTiles.value.length && !selectedTilesForCurrentSide.value.length) {
+      focusControllerAction(Math.min(controllerBuilderCursorIndex.value, 4));
       return;
     }
     nextIndex = Math.min(myTiles.value.length - 1, currentIndex + columns);
@@ -1378,6 +1382,16 @@ const handleKeydown = (event) => {
     if (event.key === 'x') {
       event.preventDefault();
       handleSubmit();
+      return;
+    }
+    if (event.key === 'lb') {
+      event.preventDefault();
+      handleSaveLetters();
+      return;
+    }
+    if (event.key === 'rb') {
+      event.preventDefault();
+      handleClearRack();
       return;
     }
 
