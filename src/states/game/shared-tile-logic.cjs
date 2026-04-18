@@ -30,7 +30,6 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
   const GOOD_MODIFIERS = ['gold', 'firsttile', 'wild', 'bankTile', 'gainboon', 'gainattack'];
   const BAD_MODIFIERS = ['zeroTile', 'mustuse', 'locked3', 'burningTile'];
   const NEUTRAL_MODIFIERS = ['yinYang', 'ghostTile','bloodTile'];
-  const SOLO_GOOD_MODIFIERS = ['gold', 'firsttile', 'wild', 'bloodTile', 'bankTile', 'gainboon'];
   const BOON_CARD_KEYS = ['boon_delete_tile', 'boon_isolate_tile', 'boon_clear_negative', 'boon_firsttile', 'boon_wild', 'boon_gold'];
   const ATTACK_CARD_KEYS = ['attack_zeroTile', 'attack_mustuse', 'attack_locked3', 'attack_ghostTile'];
   const TIMED_SOLO_ATTACK_CARD_KEYS = ['attack_pause_time', 'attack_gain_time'];
@@ -54,7 +53,7 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
       useScoreSwing: true
     },
     solo: {
-      goodModifiers: SOLO_GOOD_MODIFIERS,
+      goodModifiers: GOOD_MODIFIERS,
       badModifiers: BAD_MODIFIERS,
       neutralModifiers: NEUTRAL_MODIFIERS,
       baseGoodChance: 0.085,
@@ -106,7 +105,6 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
       badge: 'ATK',
       effects: { grantAttack: 1 },
       rarityWeight: 0.28,
-      noSinglePlayer: true,
       ui: {
         tileBackground: 'linear-gradient(180deg, #ffe8d9 0%, #ff9b6e 72%, #b64a1f 100%)',
         tileShadow: 'inset 0 -4px 0 rgba(116, 43, 12, 0.24), 0 12px 20px rgba(45, 10, 24, 0.18), 0 0 0 1px rgba(255, 190, 150, 0.42)',
@@ -482,10 +480,22 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
     return modifiers.filter((modifier) => {
       const definition = getModifierDefinition(modifier);
       // return all if logging
-      if(devLogging) return true
+
+      if (devLogging) {
+        return true;
+      }
       // currently duel gets everything
+
+      if (profileName === 'solo') {
+        return !definition.noSinglePlayer;
+      }
       console.log('profile'+ profileName)
-      if ((!definition.noMultiPlayer)) return true
+
+      if (profileName === 'duel' || profileName === 'bot') {
+        return !definition.noMultiPlayer;
+      }
+
+      return !definition.noSinglePlayer && !definition.noMultiPlayer;
     });
   };
   const getCardDefinition = (cardKey) => CARD_DEFINITIONS[normalizeCardKey(cardKey)];
