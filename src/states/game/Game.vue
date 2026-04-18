@@ -163,7 +163,7 @@
       </section>
 
       <HistoryOverlay
-        v-if="effectiveGameEnded"
+        v-if="showHistoryOverlay"
         :result-title="historyResultTitle"
         :result-state="historyResultState"
         :summary-text="historySummaryText"
@@ -289,6 +289,8 @@ defeatSound.loop = true;
 let soloTimerId = null;
 let scorePopTimeoutIds = [];
 let activeScorePopAudios = [];
+let historyOverlayTimeoutId = null;
+const showHistoryOverlay = ref(false);
 
 const mySide = computed(() => {
   if (props.isMultiplayer) {
@@ -1245,9 +1247,17 @@ watch(effectiveGameEnded, (ended) => {
     stopBotLoop();
     stopSoloTimer();
     gameMusic.pause();
+    showHistoryOverlay.value = false;
+    window.clearTimeout(historyOverlayTimeoutId);
+    // Let the final word resolve on screen before the results overlay appears.
+    historyOverlayTimeoutId = window.setTimeout(() => {
+      showHistoryOverlay.value = true;
+    }, 1500);
     return;
   }
 
+  showHistoryOverlay.value = false;
+  window.clearTimeout(historyOverlayTimeoutId);
   if (!isPaused.value) {
     stopResultAudio();
     startGameMusic({ restart: true });
@@ -1447,6 +1457,7 @@ onBeforeUnmount(() => {
   window.removeEventListener('keydown', handleKeydown);
   stopSoloTimer();
   stopGameMusic();
+  window.clearTimeout(historyOverlayTimeoutId);
   tilePickupSound.pause();
   tilePutBackSound.pause();
   scoreBuiltTileSound.pause();
@@ -1464,6 +1475,8 @@ const resetAndGoHome = () => {
   isPaused.value = false;
   stopBotLoop();
   stopSoloTimer();
+  showHistoryOverlay.value = false;
+  window.clearTimeout(historyOverlayTimeoutId);
   isSoloTimerPausedByAttack.value = false;
   timedSoloFinalWordSpent.value = false;
   stopGameMusic();
