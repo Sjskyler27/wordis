@@ -1,5 +1,27 @@
 # Changelog
 
+## 2026-04-17 0.0.13
+- fixed tiles not ending in the correct group by seperating dev mode and test mode logic 
+
+## 2026-04-17
+
+Start: 2026-04-17 11:56:00 EDT
+Stop: 2026-04-17 12:18:28 EDT
+
+- Split the comeback modifier caps so good and bad bonus pressure can be tuned independently.
+- Made good and bad tile pull chances ramp up as turns are played, including submit refills, rack clears, and boon-driven redraws.
+- Restored the neutral modifier pool to a fixed 2% baseline chance while keeping DEV odds logging aligned with the neutral pool.
+- Allowed neutral tiles in singleplayer and bot matches, while filtering out modifiers flagged `noSinglePlayer` like `yinYang` and `gainattack`.
+
+## 2026-04-17
+
+Start: 2026-04-17 08:44:00 EDT
+Stop: 2026-04-17 08:54:58 EDT
+
+- Added the duel-only neutral `yinYang` tile with its own modifier pool and DEV chance logging, including neutral pull odds.
+- Made yin-yang score dynamically flip between `-3`, `0`, and `+3` depending on whether the owning side is ahead, tied, or behind.
+- Kept neutral tiles out of singleplayer and bot racks, including testing-mode singleplayer seeds, while preserving them in multiplayer/testing duel racks.
+
 ## 2026-04-16 0.0.9
 # added
 - final score in history 
@@ -51,6 +73,16 @@ Stop: 2026-04-16 19:35:53 EDT
 - Added a new `Cleanse` boon card that removes all negative modifiers from your rack in both solo and multiplayer.
 - Made the in-game background shift from bright upbeat colors into a more intense palette as the timer drains or players approach the win score.
 - Added `score_built_tile.mp3` to the score-pop sequence so each built tile pop plays with a rising pitch as the chain continues.
+
+## 2026-04-17
+
+Start: 2026-04-17 08:17:00 EDT
+Stop: 2026-04-17 08:26:25 EDT
+
+- Added `burningTile`, a negative modifier that loses 3 points every turn you leave it unused and now gets cleared by the cleanse-style negative reset flow.
+- Added `bloodTile`, a red-black position-scaling modifier that becomes more valuable the later you place it in a word.
+- Added `bankTile`, a rare emerald modifier that starts at 0 and gains value each turn you leave it on your rack.
+- Added DEV-only modifier roll logging so each pull shows the current modifier odds, the actual modifier rolled, and the chance that rolled result had.
 
 ## 2026-04-16
 - adjust word builder styleing

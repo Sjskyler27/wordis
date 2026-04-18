@@ -65,8 +65,25 @@ delete is doing two if you do a locked then not
 
 flame lane  if bbig word
 
-say final score in history 
 
 after 250 play continues until losing player submits words no attacks can be played only boons 
 
-notes major need to fix firebase safety
+
+pause time does not pause 
+
+still no epic score thing flame in lane 
+
+New new modifier type neutral it's a yin and yang. Enter. Add away from the menu to be able to disable certain tiles if you don't want to see them and attack.
+
+
+seperate max modifier bonus to max modifier bonus for good and bad 
+
+each turn increase chance of pulling either good or bad tiles so the game gets more diverse as you go 
+
+neutral tiles are always a zero percent chance right now we need to fix that we will have a set percent chance at 2 percent they should also have rarity weights i have moved ghost tile to neutral.
+
+you should be able to pull neutral tiles in single player, we will add a flag to tiles that says no single player this includes the yinyang and the attack tile
+
+first tile is hovering a bit for some reason 
+
+new rack slowly degrades to only nenutral tiles 

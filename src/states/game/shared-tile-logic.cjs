@@ -1,4 +1,4 @@
-const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {} }) => {
+const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {}, devLogging = false, testing = false }) => {
   const LETTER_KEYS = Object.keys(letterConfig);
   const LETTER_POOL = Object.entries(letterConfig).flatMap(([letter, config]) =>
     Array.from({ length: config.count }, () => letter)
@@ -8,13 +8,28 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
   const RACK_SIZE = 20;
   const DUPLICATE_PENALTY = 0.38;
   const MIN_DUPLICATE_WEIGHT = 0.18;
-  const BASE_GOOD_MODIFIER_CHANCE = 0.05;
-  const BASE_BAD_MODIFIER_CHANCE = 0.04;
+  const BASE_GOOD_MODIFIER_CHANCE = 0.08;
+  const BASE_BAD_MODIFIER_CHANCE = 0.03;
+  const BASE_NEUTRAL_MODIFIER_CHANCE = 0.02;
   const MODIFIER_SWING_DIVISOR = 90;
-  const MAX_MODIFIER_BONUS = 0.18;
-  const GOOD_MODIFIERS = ['gold', 'firsttile', 'wild', 'gainboon', 'gainattack'];
-  const BAD_MODIFIERS = ['zeroTile', 'mustuse', 'locked3', 'ghostTile'];
-  const SOLO_GOOD_MODIFIERS = ['gold', 'firsttile', 'wild', 'gainboon'];
+  const MAX_GOOD_MODIFIER_BONUS = 0.3;
+  const MAX_BAD_MODIFIER_BONUS = 0.22;
+  const TURN_MODIFIER_CHANCE_STEP = 0.003;
+  const MAX_TURN_MODIFIER_BONUS = 0.08;
+  const BLOOD_TILE_POSITION_VALUES = {
+    pos1: -2,
+    pos2: -1,
+    pos3: 0,
+    pos4: 1,
+    pos5: 2,
+    pos6: 3,
+    pos7: 4,
+    pos8: 5,
+    pos9: 6
+  };
+  const GOOD_MODIFIERS = ['gold', 'firsttile', 'wild', 'bankTile', 'gainboon', 'gainattack'];
+  const BAD_MODIFIERS = ['zeroTile', 'mustuse', 'locked3', 'burningTile'];
+  const NEUTRAL_MODIFIERS = ['yinYang', 'ghostTile','bloodTile'];
   const BOON_CARD_KEYS = ['boon_delete_tile', 'boon_isolate_tile', 'boon_clear_negative', 'boon_firsttile', 'boon_wild', 'boon_gold'];
   const ATTACK_CARD_KEYS = ['attack_zeroTile', 'attack_mustuse', 'attack_locked3', 'attack_ghostTile'];
   const TIMED_SOLO_ATTACK_CARD_KEYS = ['attack_pause_time', 'attack_gain_time'];
@@ -22,15 +37,28 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
     duel: {
       goodModifiers: GOOD_MODIFIERS,
       badModifiers: BAD_MODIFIERS,
+      neutralModifiers: NEUTRAL_MODIFIERS,
       baseGoodChance: BASE_GOOD_MODIFIER_CHANCE,
       baseBadChance: BASE_BAD_MODIFIER_CHANCE,
+      baseNeutralChance: BASE_NEUTRAL_MODIFIER_CHANCE,
+      useScoreSwing: true
+    },
+    bot: {
+      goodModifiers: GOOD_MODIFIERS,
+      badModifiers: BAD_MODIFIERS,
+      neutralModifiers: NEUTRAL_MODIFIERS,
+      baseGoodChance: BASE_GOOD_MODIFIER_CHANCE,
+      baseBadChance: BASE_BAD_MODIFIER_CHANCE,
+      baseNeutralChance: BASE_NEUTRAL_MODIFIER_CHANCE,
       useScoreSwing: true
     },
     solo: {
-      goodModifiers: SOLO_GOOD_MODIFIERS,
+      goodModifiers: GOOD_MODIFIERS,
       badModifiers: BAD_MODIFIERS,
+      neutralModifiers: NEUTRAL_MODIFIERS,
       baseGoodChance: 0.085,
       baseBadChance: 0.022,
+      baseNeutralChance: BASE_NEUTRAL_MODIFIER_CHANCE,
       useScoreSwing: false
     }
   };
@@ -103,13 +131,59 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
     firsttile: {
       badge: '1st',
       effects: { firstTileBonus: 10 },
-      rarityWeight: 0.3,
+      rarityWeight: 0.22,
       ui: {
         tileBackground: 'linear-gradient(180deg, #d9edff 0%, #8cb1d8 72%, #4f6999 100%)',
         tileShadow: 'inset 0 -4px 0 rgba(34, 58, 101, 0.25), 0 12px 20px rgba(24, 20, 46, 0.18), 0 0 0 1px rgba(173, 210, 255, 0.4)',
         textColor: '#11213f',
         badgeBackground: 'rgba(233, 244, 255, 0.96)',
         badgeColor: '#274577'
+      }
+    },
+    bloodTile: {
+      badge: 'BLOOD',
+      effects: {
+        setScore: 0,
+        positionBonusByIndex: BLOOD_TILE_POSITION_VALUES
+      },
+      rarityWeight: 0.36,
+      ui: {
+        tileBackground: 'radial-gradient(circle at 26% 24%, rgba(255, 125, 125, 0.96) 0%, rgba(255, 125, 125, 0.96) 11%, rgba(120, 15, 21, 0.94) 12%, rgba(120, 15, 21, 0.94) 26%, rgba(28, 7, 12, 0.98) 27%, rgba(28, 7, 12, 0.98) 44%, rgba(182, 20, 34, 0.96) 45%, rgba(182, 20, 34, 0.96) 62%, rgba(24, 6, 10, 0.98) 63%, rgba(24, 6, 10, 0.98) 100%)',
+        tileShadow: 'inset 0 -4px 0 rgba(54, 7, 13, 0.4), 0 12px 22px rgba(54, 7, 13, 0.28), 0 0 0 1px rgba(255, 120, 130, 0.24)',
+        textColor: '#fff4f4',
+        badgeBackground: 'rgba(20, 6, 10, 0.92)',
+        badgeColor: '#ff9fa8'
+      }
+    },
+    bankTile: {
+      badge: 'BANK',
+      effects: { setScore: 0, idleBonusScoreDelta: 1 },
+      rarityWeight: 0.18,
+      ui: {
+        tileBackground: 'linear-gradient(180deg, #d7ffe9 0%, #5ee2a8 42%, #0b9a6f 76%, #046647 100%)',
+        tileShadow: 'inset 0 -4px 0 rgba(4, 82, 58, 0.34), 0 12px 22px rgba(4, 82, 58, 0.24), 0 0 0 1px rgba(175, 255, 213, 0.46)',
+        textColor: '#0a2b23',
+        badgeBackground: 'rgba(231, 255, 241, 0.94)',
+        badgeColor: '#0a8b63'
+      }
+    },
+    yinYang: {
+      badge: 'YIN',
+      effects: {
+        dynamicScoreByLead: {
+          ahead: -3,
+          behind: 3,
+          tied: 0
+        }
+      },
+      rarityWeight: 0.32,
+      noSinglePlayer: true,
+      ui: {
+        tileBackground: 'linear-gradient(135deg, #f6f0e4 0%, #f6f0e4 48%, #181217 49%, #181217 100%)',
+        tileShadow: 'inset 0 -4px 0 rgba(20, 14, 19, 0.28), 0 12px 22px rgba(20, 14, 19, 0.22), 0 0 0 1px rgba(255, 255, 255, 0.24)',
+        textColor: '#8a2f2f',
+        badgeBackground: 'rgba(255, 255, 255, 0.92)',
+        badgeColor: '#1a1519'
       }
     },
     zeroTile: {
@@ -161,6 +235,20 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
         textColor: '#223247',
         badgeBackground: 'rgba(244, 250, 255, 0.88)',
         badgeColor: '#607890'
+      }
+    },
+    burningTile: {
+      noSinglePlayer: true,
+      badge: 'BURN',
+      effects: { setScore: 1, idleScorePenalty: 3 },
+      rarityWeight: 0.5,
+      canApply: ({ baseScore }) => baseScore <= 4,
+      ui: {
+        tileBackground: 'linear-gradient(180deg, #2f160d 0%, #6d2513 32%, #c44717 72%, #ffb347 100%)',
+        tileShadow: 'inset 0 -4px 0 rgba(83, 23, 5, 0.32), 0 12px 20px rgba(85, 24, 6, 0.22), 0 0 0 1px rgba(255, 180, 94, 0.34)',
+        textColor: '#fff1dd',
+        badgeBackground: 'rgba(74, 18, 6, 0.92)',
+        badgeColor: '#ffd08b'
       }
     }
   };
@@ -366,6 +454,7 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
   };
 
   const drawLetter = (tiles = []) => {
+    // weights determined by the letters 
     const weightedPool = getWeightedLetterPool(tiles);
     const totalWeight = weightedPool.reduce((sum, entry) => sum + entry.weight, 0);
 
@@ -384,37 +473,74 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
     return weightedPool[weightedPool.length - 1]?.letter || 'E';
   };
 
-  const getModifierProfile = (profileName = 'duel') => {
-    return MODIFIER_PROFILES[profileName] || MODIFIER_PROFILES.duel;
-  };
-
-  const getModifierChances = (side, scores = {}, profileName = 'duel') => {
-    const profile = getModifierProfile(profileName);
-
-    if (!side || !profile.useScoreSwing) {
-      return {
-        goodChance: profile.baseGoodChance,
-        badChance: profile.baseBadChance
-      };
-    }
-
-    const opponentSide = side === 'host' ? 'opponent' : 'host';
-    const scoreDelta = (scores[side] || 0) - (scores[opponentSide] || 0);
-    const catchupBonus = Math.min(MAX_MODIFIER_BONUS, Math.max(0, -scoreDelta) / MODIFIER_SWING_DIVISOR);
-    const pressureBonus = Math.min(MAX_MODIFIER_BONUS, Math.max(0, scoreDelta) / MODIFIER_SWING_DIVISOR);
-
-    return {
-      goodChance: Math.min(0.45, profile.baseGoodChance + catchupBonus),
-      badChance: Math.min(0.4, profile.baseBadChance + pressureBonus)
-    };
-  };
-
   const normalizeModifierStatus = (status = 'normal') => (status === 'black' ? 'zeroTile' : status);
   const normalizeCardKey = (cardKey) => (cardKey === 'attack_black' ? 'attack_zeroTile' : cardKey);
   const getModifierDefinition = (status = 'normal') => {
     return MODIFIER_DEFINITIONS[normalizeModifierStatus(status)] || MODIFIER_DEFINITIONS.normal;
   };
+  const getAllowedModifiersForProfile = (modifiers = [], profileName = 'duel') => {
+    return modifiers.filter((modifier) => {
+      const definition = getModifierDefinition(modifier);
+      // return all if logging
+
+      console.log('test mode is: '+ testing)
+      if (testing) {
+        return true;
+      }
+      // currently duel gets everything
+      if (profileName === 'solo') {
+        return !definition.noSinglePlayer;
+      }
+      if(devLogging)console.log('profile'+ profileName)
+
+      if (profileName === 'duel' || profileName === 'bot') {
+        return !definition.noMultiPlayer;
+      }
+
+      return !definition.noSinglePlayer && !definition.noMultiPlayer;
+    });
+  };
   const getCardDefinition = (cardKey) => CARD_DEFINITIONS[normalizeCardKey(cardKey)];
+  const getModifierProfile = (profileName = 'duel') => {
+    const profile = MODIFIER_PROFILES[profileName] || MODIFIER_PROFILES.duel;
+
+    return {
+      ...profile,
+      goodModifiers: getAllowedModifiersForProfile(profile.goodModifiers || [], profileName),
+      badModifiers: getAllowedModifiersForProfile(profile.badModifiers || [], profileName),
+      neutralModifiers: getAllowedModifiersForProfile(profile.neutralModifiers || [], profileName)
+    };
+  };
+
+  const getModifierChances = (side, scores = {}, profileName = 'duel', turnCount = 0) => {
+    // base tiles off profile 
+    const profile = getModifierProfile(profileName);
+    if(devLogging){
+      console.log('current profile' + profileName)
+      console.log('allowed Tiles!')
+      console.log(profile)
+    }
+    const turnBonus = Math.min(MAX_TURN_MODIFIER_BONUS, Math.max(0, turnCount) * TURN_MODIFIER_CHANCE_STEP);
+
+    if (!side || !profile.useScoreSwing) {
+      return {
+        goodChance: Math.min(0.45, profile.baseGoodChance + turnBonus),
+        badChance: Math.min(0.4, profile.baseBadChance + turnBonus),
+        neutralChance: profile.baseNeutralChance || 0
+      };
+    }
+
+    const opponentSide = side === 'host' ? 'opponent' : 'host';
+    const scoreDelta = (scores[side] || 0) - (scores[opponentSide] || 0);
+    const catchupBonus = Math.min(MAX_GOOD_MODIFIER_BONUS, Math.max(0, -scoreDelta) / MODIFIER_SWING_DIVISOR);
+    const pressureBonus = Math.min(MAX_BAD_MODIFIER_BONUS, Math.max(0, scoreDelta) / MODIFIER_SWING_DIVISOR);
+
+    return {
+      goodChance: Math.min(0.45, profile.baseGoodChance + catchupBonus + turnBonus),
+      badChance: Math.min(0.4, profile.baseBadChance + pressureBonus + turnBonus),
+      neutralChance: Math.min(0.2, profile.baseNeutralChance || 0)
+    };
+  };
   const hasModifierInRack = (rackTiles = [], status = 'normal') => {
     return rackTiles.some((tile) => tile.status === status);
   };
@@ -459,6 +585,118 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
     return weightedModifiers[weightedModifiers.length - 1].modifier;
   };
 
+  const getWeightedModifierOdds = (modifiers = [], poolChance = 0) => {
+    const weightedModifiers = modifiers
+      .map((modifier) => ({
+        modifier,
+        weight: Math.max(0, getModifierDefinition(modifier).rarityWeight ?? 1)
+      }))
+      .filter((entry) => entry.weight > 0);
+
+    if (!weightedModifiers.length || poolChance <= 0) {
+      return {};
+    }
+
+    const totalWeight = weightedModifiers.reduce((sum, entry) => sum + entry.weight, 0);
+    if (!totalWeight) {
+      return {};
+    }
+
+    return weightedModifiers.reduce((odds, entry) => {
+      odds[entry.modifier] = poolChance * (entry.weight / totalWeight);
+      return odds;
+    }, {});
+  };
+
+  const getModifierOddsSnapshot = ({
+    goodChance,
+    badChance,
+    neutralChance,
+    eligibleGoodModifiers = [],
+    eligibleBadModifiers = [],
+    eligibleNeutralModifiers = []
+  }) => {
+
+    if (!devLogging) {
+      return;
+    }
+
+    const modifierOdds = {
+      ...getWeightedModifierOdds(eligibleGoodModifiers, goodChance),
+      ...getWeightedModifierOdds(eligibleBadModifiers, badChance),
+      ...getWeightedModifierOdds(eligibleNeutralModifiers, neutralChance)
+    };
+    const normalChance = Math.max(
+      0,
+      1 - Object.values(modifierOdds).reduce((sum, chance) => sum + chance, 0)
+    );
+    return {
+      goodModifierOdds: getWeightedModifierOdds(eligibleGoodModifiers, goodChance),
+      badModifierOdds: getWeightedModifierOdds(eligibleBadModifiers, badChance),
+      neutralModifierOdds: getWeightedModifierOdds(eligibleNeutralModifiers, neutralChance),
+      modifierOdds,
+      normalChance
+    };
+  };
+
+  const formatChancePercent = (chance = 0) => `${(Math.max(0, chance) * 100).toFixed(1)}%`;
+  const formatChanceGroup = (odds = {}) => {
+    return Object.fromEntries(
+      Object.entries(odds).map(([modifier, chance]) => [modifier, formatChancePercent(chance)])
+    );
+  };
+
+  const logModifierRoll = ({
+    selectedModifier = 'normal',
+    context = {},
+    roll = null,
+    goodChance,
+    badChance,
+    neutralChance,
+    eligibleGoodModifiers = [],
+    eligibleBadModifiers = [],
+    eligibleNeutralModifiers = [],
+  }) => {
+    if (!devLogging) {
+      return;
+    }
+
+    const {
+      modifierOdds,
+      normalChance,
+      goodModifierOdds,
+      badModifierOdds,
+      neutralModifierOdds
+    } = getModifierOddsSnapshot({
+      goodChance,
+      badChance,
+      neutralChance,
+      eligibleGoodModifiers,
+      eligibleBadModifiers,
+      eligibleNeutralModifiers
+    });
+
+console.log(JSON.stringify({
+  goodTiles: formatChanceGroup(goodModifierOdds),
+  badTiles: formatChanceGroup(badModifierOdds),
+  neutralTiles: formatChanceGroup(neutralModifierOdds),
+  normal: formatChancePercent(normalChance)
+}, null, 2))
+
+    console.log('[modifier-roll]', {
+      actualModifier: selectedModifier,
+      actualChance: formatChancePercent(selectedModifier === 'normal'
+        ? normalChance
+        : (modifierOdds[selectedModifier] || 0)),
+      letter: context.letter || null,
+      baseScore: context.baseScore ?? null,
+      roll: roll == null ? null : Number(roll.toFixed(4)),
+      goodChance: formatChancePercent(goodChance),
+      badChance: formatChancePercent(badChance),
+      neutralChance: formatChancePercent(neutralChance || 0),
+    });
+  };
+
   const chooseWeightedCard = (cardKeys = []) => {
     const weightedCards = cardKeys
       .map((cardKey) => ({
@@ -486,8 +724,9 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
 
   const rollTileModifier = (side, scores = {}, context = {}, chanceOverrides = {}) => {
     const modifierProfile = chanceOverrides.modifierProfile || 'duel';
+    if(devLogging)console.log(modifierProfile)
     const profile = getModifierProfile(modifierProfile);
-    const baseChances = getModifierChances(side, scores, modifierProfile);
+    const baseChances = getModifierChances(side, scores, modifierProfile, chanceOverrides.turnCount || 0);
     const goodChance = Math.max(
       0,
       Math.min(
@@ -502,24 +741,29 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
         chanceOverrides.badChance ?? (baseChances.badChance * (chanceOverrides.badChanceMultiplier ?? 1))
       )
     );
+    const neutralChance = Math.max(
+      0,
+      Math.min(
+        0.9 - goodChance - badChance,
+        chanceOverrides.neutralChance ?? (baseChances.neutralChance * (chanceOverrides.neutralChanceMultiplier ?? 1))
+      )
+    );
     const roll = Math.random();
 
-    if (roll < goodChance) {
-      const eligibleGoodModifiers = profile.goodModifiers.filter((modifier) => canApplyModifier(modifier, context));
-      if (!eligibleGoodModifiers.length) {
-        return 'normal';
-      }
+    const eligibleGoodModifiers = profile.goodModifiers.filter((modifier) => canApplyModifier(modifier, context));
+    const eligibleBadModifiers = profile.badModifiers.filter((modifier) => canApplyModifier(modifier, context));
+    const eligibleNeutralModifiers = (profile.neutralModifiers || []).filter((modifier) => canApplyModifier(modifier, context));
 
-      return chooseWeightedModifier(eligibleGoodModifiers);
+    if (roll < goodChance) {
+      return eligibleGoodModifiers.length ? chooseWeightedModifier(eligibleGoodModifiers) : 'normal';
     }
 
     if (roll < goodChance + badChance) {
-      const eligibleBadModifiers = profile.badModifiers.filter((modifier) => canApplyModifier(modifier, context));
-      if (!eligibleBadModifiers.length) {
-        return 'normal';
-      }
+      return eligibleBadModifiers.length ? chooseWeightedModifier(eligibleBadModifiers) : 'normal';
+    }
 
-      return chooseWeightedModifier(eligibleBadModifiers);
+    if (roll < goodChance + badChance + neutralChance) {
+      return eligibleNeutralModifiers.length ? chooseWeightedModifier(eligibleNeutralModifiers) : 'normal';
     }
 
     return 'normal';
@@ -528,31 +772,29 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
   const rollSharedOpeningModifier = (scores = {}, contexts = [], options = {}) => {
     const modifierProfile = options.modifierProfile || 'duel';
     const profile = getModifierProfile(modifierProfile);
-    const { goodChance, badChance } = getModifierChances(null, scores, modifierProfile);
+    const { goodChance, badChance, neutralChance } = getModifierChances(null, scores, modifierProfile, options.turnCount || 0);
     const roll = Math.random();
 
-    if (roll < goodChance) {
-      const eligibleGoodModifiers = profile.goodModifiers.filter((modifier) => {
+    const eligibleGoodModifiers = profile.goodModifiers.filter((modifier) => {
+        return contexts.every((context) => canApplyModifier(modifier, context));
+      });
+    const eligibleBadModifiers = profile.badModifiers.filter((modifier) => {
+        return contexts.every((context) => canApplyModifier(modifier, context));
+      });
+    const eligibleNeutralModifiers = (profile.neutralModifiers || []).filter((modifier) => {
         return contexts.every((context) => canApplyModifier(modifier, context));
       });
 
-      if (!eligibleGoodModifiers.length) {
-        return 'normal';
-      }
-
-      return chooseWeightedModifier(eligibleGoodModifiers);
+    if (roll < goodChance) {
+      return eligibleGoodModifiers.length ? chooseWeightedModifier(eligibleGoodModifiers) : 'normal';
     }
 
     if (roll < goodChance + badChance) {
-      const eligibleBadModifiers = profile.badModifiers.filter((modifier) => {
-        return contexts.every((context) => canApplyModifier(modifier, context));
-      });
+      return eligibleBadModifiers.length ? chooseWeightedModifier(eligibleBadModifiers) : 'normal';
+    }
 
-      if (!eligibleBadModifiers.length) {
-        return 'normal';
-      }
-
-      return chooseWeightedModifier(eligibleBadModifiers);
+    if (roll < goodChance + badChance + neutralChance) {
+      return eligibleNeutralModifiers.length ? chooseWeightedModifier(eligibleNeutralModifiers) : 'normal';
     }
 
     return 'normal';
@@ -570,7 +812,65 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
     return getModifierDefinition(tileOrStatus).badge;
   };
   const getModifierUi = (status = 'normal') => getModifierDefinition(status).ui || MODIFIER_DEFINITIONS.normal.ui;
-  const tileScore = (tile) => ((tile?.score || 0) + (tile?.bonusScore || 0)) * (tile?.multiplier || 1);
+  const getLeadAwareModifierScore = (tile, options = {}) => {
+    const leadMap = getModifierDefinition(tile?.status).effects.dynamicScoreByLead;
+    if (!leadMap || !options.side || !options.scores) {
+      return 0;
+    }
+
+    const opponentSide = options.side === 'host' ? 'opponent' : 'host';
+    const scoreDelta = (options.scores[options.side] || 0) - (options.scores[opponentSide] || 0);
+    if (scoreDelta > 0) {
+      return leadMap.ahead || 0;
+    }
+    if (scoreDelta < 0) {
+      return leadMap.behind || 0;
+    }
+    return leadMap.tied || 0;
+  };
+  const getPositionAwareModifierScore = (tile, options = {}) => {
+    if (options.positionIndex == null) {
+      return 0;
+    }
+
+    const positionKey = `pos${options.positionIndex + 1}`;
+    const positionBonusByIndex = getModifierDefinition(tile?.status).effects.positionBonusByIndex || {};
+    return positionBonusByIndex[positionKey] || 0;
+  };
+  const tileScore = (tile, options = {}) => (
+    (
+      (tile?.score || 0)
+      + (tile?.bonusScore || 0)
+      + getLeadAwareModifierScore(tile, options)
+      + getPositionAwareModifierScore(tile, options)
+    ) * (tile?.multiplier || 1)
+  );
+  const tickIdleTile = (tile) => {
+    const definition = getModifierDefinition(tile?.status);
+    const idleBonusScoreDelta = definition.effects.idleBonusScoreDelta || 0;
+
+    if (!idleBonusScoreDelta) {
+      return tile;
+    }
+
+    return {
+      ...tile,
+      bonusScore: (tile?.bonusScore || 0) + idleBonusScoreDelta
+    };
+  };
+
+  const getIdleScorePenalty = (tiles = [], usedTileIds = []) => {
+    const usedIds = new Set(usedTileIds);
+
+    return tiles.reduce((total, tile) => {
+      if (usedIds.has(tile?.id)) {
+        return total;
+      }
+
+      const definition = getModifierDefinition(tile?.status);
+      return total + (definition.effects.idleScorePenalty || 0);
+    }, 0);
+  };
 
   const getLengthBonus = (length) => {
     if (wordBonuses[length]) {
@@ -599,10 +899,16 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
     };
   };
 
-  const getTilesScore = (tiles) => tiles.reduce((total, tile) => total + tileScore(tile), 0);
+  const getTilesScore = (tiles, options = {}) => tiles.reduce((total, tile) => total + tileScore(tile, options), 0);
 
-  const getWordScoreDetails = (tiles) => {
-    const baseLetterTotal = getTilesScore(tiles);
+  const getWordScoreDetails = (tiles, options = {}) => {
+    const baseLetterTotal = getTilesScore(tiles, options);
+    const positionBonus = tiles.reduce((total, tile, index) => {
+      const definition = getModifierDefinition(tile?.status);
+      const positionKey = `pos${index + 1}`;
+      const positionBonusByIndex = definition.effects.positionBonusByIndex || {};
+      return total + (positionBonusByIndex[positionKey] || 0);
+    }, 0);
     const firstTileBonus = tiles.reduce((total, tile, index) => {
       if (index !== 0) {
         return total;
@@ -610,12 +916,13 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
 
       return total + tile?.firstTileBonus;
     }, 0);
-    const letterTotal = baseLetterTotal + firstTileBonus;
+    const letterTotal = baseLetterTotal + firstTileBonus + positionBonus;
     const lengthBonus = getLengthBonus(tiles.length);
     const wordMultiplier = tiles.reduce((total, tile) => total * (tile?.wordMultiplier || 1), 1);
 
     return {
       baseLetterTotal,
+      positionBonus,
       firstTileBonus,
       letterTotal,
       lengthBonus,
@@ -824,8 +1131,40 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
   };
 
   const createTileLogic = ({ createTileId }) => {
+    const logSubmittedTilePull = (tile, side, scores = {}, options = {}) => {
+      if (!devLogging || options.phase !== 'submit') {
+        return;
+      }
+
+      const modifierProfile = options.modifierProfile || 'duel';
+      const profile = getModifierProfile(modifierProfile);
+      const { goodChance, badChance, neutralChance } = getModifierChances(side, scores, modifierProfile, options.turnCount || 0);
+      const context = {
+        letter: tile.baseLetter || tile.letter,
+        baseScore: tile.baseScore || letterConfig[tile.baseLetter || tile.letter]?.score || 0,
+        rackTiles: options.rackTiles || []
+      };
+      const eligibleGoodModifiers = profile.goodModifiers.filter((modifier) => canApplyModifier(modifier, context));
+      const eligibleBadModifiers = profile.badModifiers.filter((modifier) => canApplyModifier(modifier, context));
+      const eligibleNeutralModifiers = (profile.neutralModifiers || []).filter((modifier) => canApplyModifier(modifier, context));
+
+      logModifierRoll({
+        side,
+        phase: 'submit',
+        context,
+        goodChance,
+        badChance,
+        neutralChance,
+        eligibleGoodModifiers,
+        eligibleBadModifiers,
+        eligibleNeutralModifiers,
+        selectedModifier: tile.status
+      });
+    };
+
     const createTile = (letter = drawLetter(), side = null, scores = {}, forcedStatus = null, chanceOverrides = null) => {
       const baseScore = letterConfig[letter]?.score || 0;
+      // in charge of getting the modifier for tiles 
       const status = forcedStatus || rollTileModifier(side, scores, {
         letter,
         baseScore,
@@ -856,7 +1195,8 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
       while (rack.length < RACK_SIZE) {
         rack.push(createTile(drawLetter(rack), side, scores, options.forcedStatus || null, {
           ...(options.chanceOverrides || {}),
-          rackTiles: rack
+          rackTiles: rack,
+          turnCount: options.turnCount || 0
         }));
       }
       return rack;
@@ -872,8 +1212,12 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
           totals.bad += 1;
         }
 
+        if (NEUTRAL_MODIFIERS.includes(tile.status)) {
+          totals.neutral += 1;
+        }
+
         return totals;
-      }, { good: 0, bad: 0 });
+      }, { good: 0, bad: 0, neutral: 0 });
     };
 
     const applyTargetModifierGroup = (rack, modifierPool, targetCount) => {
@@ -908,15 +1252,18 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
       const currentModifierCounts = countModifierGroups(currentTiles);
       const targetGoodModifiers = currentModifierCounts.good;
       const targetBadModifiers = Math.max(0, currentModifierCounts.bad - 1);
+      const targetNeutralModifiers = currentModifierCounts.neutral;
       const rack = buildFreshRack(side, scores, {
         forcedStatus: 'normal',
         chanceOverrides: {
-          modifierProfile
+          modifierProfile,
+          turnCount: options.turnCount || 0
         }
       });
 
       applyTargetModifierGroup(rack, profile.goodModifiers, targetGoodModifiers);
       applyTargetModifierGroup(rack, profile.badModifiers, targetBadModifiers);
+      applyTargetModifierGroup(rack, profile.neutralModifiers || [], targetNeutralModifiers);
       return rack;
     };
 
@@ -938,7 +1285,10 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
         const sharedStatus = rollSharedOpeningModifier(scores, [
           { letter: hostLetter, baseScore: letterConfig[hostLetter]?.score || 0, rackTiles: hostRack },
           { letter: opponentLetter, baseScore: letterConfig[opponentLetter]?.score || 0, rackTiles: opponentRack }
-        ], options);
+        ], {
+          ...options,
+          turnCount: options.turnCount || 0
+        });
 
         hostRack.push(createTile(hostLetter, 'host', scores, sharedStatus));
         opponentRack.push(createTile(opponentLetter, 'opponent', scores, sharedStatus));
@@ -952,6 +1302,7 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
 
     const refillTiles = (tiles, usedTileIds, side = null, scores = {}, options = {}) => {
       const usedIds = new Set(usedTileIds);
+      // remove existing ghost tiles 
       const ghostIds = new Set(
         tiles
           .filter((tile) => tile.status === 'ghostTile' && !usedIds.has(tile.id))
@@ -963,7 +1314,7 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
           return tile;
         }
 
-        return tickLockedTile(tile);
+        return tickLockedTile(tickIdleTile(tile));
       });
 
       nextTiles.forEach((tile, index) => {
@@ -977,9 +1328,15 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
 
         nextTiles[index] = createTile(drawLetter(remainingTiles), side, scores, null, {
           rackTiles: remainingTiles,
-          modifierProfile: options.modifierProfile || 'duel'
+          modifierProfile: options.modifierProfile || 'duel',
+          turnCount: options.turnCount || 0
+        });
+        logSubmittedTilePull(nextTiles[index], side, scores, {
+          ...options,
+          rackTiles: remainingTiles
         });
       });
+      if(devLogging) console.log(nextTiles) // logs something callled status so modifier is determined by this point 
 
       return nextTiles;
     };
@@ -994,7 +1351,8 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
       const remainingTiles = nextTiles.filter((entry, entryIndex) => entryIndex !== targetIndex);
       nextTiles[targetIndex] = createTile(drawLetter(remainingTiles), side, scores, null, {
         rackTiles: remainingTiles,
-        modifierProfile: options.modifierProfile || 'duel'
+        modifierProfile: options.modifierProfile || 'duel',
+        turnCount: options.turnCount || 0
       });
 
       return nextTiles;
@@ -1022,15 +1380,28 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
         const remainingTiles = nextTiles.filter((entry, entryIndex) => entryIndex !== index && entry);
         nextTiles[index] = createTile(drawLetter(remainingTiles), side, scores, null, {
           rackTiles: remainingTiles,
-          modifierProfile: options.modifierProfile || 'duel'
+          modifierProfile: options.modifierProfile || 'duel',
+          turnCount: options.turnCount || 0
         });
       });
 
       return nextTiles;
     };
 
-    const createTestingRack = (side = null, scores = {}) => {
-      const modifierStatuses = Object.keys(MODIFIER_DEFINITIONS).filter((status) => status !== 'normal');
+    const createTestingRack = (side = null, scores = {}, options = {}) => {
+      const profile = getModifierProfile(options.modifierProfile || 'duel');
+      const allowedStatuses = options.includeAllModifiers
+        ? new Set([
+            ...profile.goodModifiers,
+            ...profile.badModifiers,
+            ...(profile.neutralModifiers || [])
+          ])
+        : new Set([
+            ...profile.goodModifiers,
+            ...profile.badModifiers,
+            ...(profile.neutralModifiers || [])
+          ]);
+      const modifierStatuses = Object.keys(MODIFIER_DEFINITIONS).filter((status) => status !== 'normal' && allowedStatuses.has(status));
       const rack = [];
 
       while (rack.length < RACK_SIZE) {
@@ -1044,10 +1415,10 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
       return rack;
     };
 
-    const createTestingOpeningRackPair = (scores = {}) => {
+    const createTestingOpeningRackPair = (scores = {}, options = {}) => {
       return {
-        host: createTestingRack('host', scores),
-        opponent: createTestingRack('opponent', scores)
+        host: createTestingRack('host', scores, options),
+        opponent: createTestingRack('opponent', scores, options)
       };
     };
 
@@ -1076,6 +1447,7 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
     getMilestoneReward,
     getTilesScore,
     getWordScoreDetails,
+    getIdleScorePenalty,
     getResourceGrants,
     getTilesForWord,
     getSelectedTiles,

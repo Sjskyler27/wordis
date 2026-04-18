@@ -16,7 +16,7 @@ const formatMilestoneReward = (length) => {
   return labels.join(' · ');
 };
 
-export const useWordBuilder = ({ mySide, myTiles }) => {
+export const useWordBuilder = ({ mySide, myTiles, playerScores }) => {
   const selectedTileSlots = ref({
     host: [],
     opponent: []
@@ -48,7 +48,10 @@ export const useWordBuilder = ({ mySide, myTiles }) => {
   });
 
   const currentWordLength = computed(() => selectedTilesForCurrentSide.value.length);
-  const currentScoreDetails = computed(() => getWordScoreDetails(selectedTilesForCurrentSide.value));
+  const currentScoreDetails = computed(() => getWordScoreDetails(selectedTilesForCurrentSide.value, {
+    side: mySide.value,
+    scores: playerScores.value
+  }));
   const currentLengthBonus = computed(() => currentScoreDetails.value.lengthBonus);
   const currentFirstTileBonus = computed(() => currentScoreDetails.value.firstTileBonus);
   const currentLetterTotal = computed(() => currentScoreDetails.value.letterTotal);

@@ -1,11 +1,11 @@
 const games = new Map();
-const WINNING_SCORE = isTestingMode ? 40 : 250;
 const { randomUUID } = require('crypto');
 const LETTER_CONFIG = require('../src/states/game/letters.json');
 const WORD_BONUSES = require('../src/states/game/word-bonuses.json');
 const MILESTONE_REWARDS = require('../src/states/game/word-milestone-rewards.json');
 const { validateWord } = require('./word-validator.cjs');
-const { isTestingMode } = require('./env.cjs');
+const { isTestingMode, isDevMode } = require('./env.cjs');
+const WINNING_SCORE = isTestingMode ? 40 : 250;
 const {
   createSharedTileLogic
 } = require('../src/states/game/shared-tile-logic.cjs');
@@ -15,6 +15,7 @@ const {
   MIN_WORD_LENGTH,
   getCardDefinition,
   getWordScoreDetails,
+  getIdleScorePenalty,
   getResourceGrants,
   getSelectedTiles,
   selectedTilesMatchWord,
@@ -25,7 +26,9 @@ const {
 } = createSharedTileLogic({
   letterConfig: LETTER_CONFIG,
   wordBonuses: WORD_BONUSES,
-  milestoneRewards: MILESTONE_REWARDS
+  milestoneRewards: MILESTONE_REWARDS,
+  devLogging: isDevMode,
+  testing: isTestingMode
 });
 
 const serverIdState = {
@@ -77,6 +80,14 @@ const createTestingHands = () => {
   };
 };
 
+const keepTestingHand = (hand = [], cardId) => {
+  return isTestingMode ? hand : hand.filter((entry) => entry.id !== cardId);
+};
+
+const getTurnCount = (state) => {
+  return (state?.history?.host?.length || 0) + (state?.history?.opponent?.length || 0);
+};
+
 const generateRoomCode = () => {
   let roomCode;
   do {
@@ -116,7 +127,9 @@ const createInitialState = ({ hostId, players = [hostId], isPrivate = true }) =>
         opponent: 100
       },
       cards: createTestingHands(),
-      tiles: createTestingOpeningRackPair({ host: 0, opponent: 0 })
+      tiles: createTestingOpeningRackPair({ host: 0, opponent: 0 }, {
+        includeAllModifiers: true
+      })
     };
   }
 
@@ -209,7 +222,8 @@ const clearRack = (roomCode, clientId) => {
   state.rackClears[side] -= 1;
   state.tiles[side] = createRack(side, state.scores, {
     mode: 'clear',
-    currentTiles: state.tiles[side]
+    currentTiles: state.tiles[side],
+    turnCount: getTurnCount(state)
   });
 
   return { success: true, state };
@@ -228,9 +242,9 @@ const useBoon = (roomCode, clientId, cardId, tileId) => {
   }
 
   if (card.effectType === 'clear_negative_modifiers') {
-    state.cards[side].boons = state.cards[side].boons.filter((entry) => entry.id !== cardId);
+    state.cards[side].boons = keepTestingHand(state.cards[side].boons, cardId);
     state.tiles[side] = state.tiles[side].map((entry) => {
-      if (!['zeroTile', 'mustuse', 'locked3', 'ghostTile'].includes(entry.status)) {
+      if (!['zeroTile', 'mustuse', 'locked3', 'ghostTile', 'burningTile'].includes(entry.status)) {
         return entry;
       }
 
@@ -246,8 +260,10 @@ const useBoon = (roomCode, clientId, cardId, tileId) => {
   }
 
   if (card.effectType === 'delete_tile') {
-    state.cards[side].boons = state.cards[side].boons.filter((entry) => entry.id !== cardId);
-    state.tiles[side] = replaceSingleTile(state.tiles[side], tileId, side, state.scores);
+    state.cards[side].boons = keepTestingHand(state.cards[side].boons, cardId);
+    state.tiles[side] = replaceSingleTile(state.tiles[side], tileId, side, state.scores, {
+      turnCount: getTurnCount(state)
+    });
     return { success: true, state };
   }
 
@@ -255,10 +271,12 @@ const useBoon = (roomCode, clientId, cardId, tileId) => {
     return { success: false, error: 'That tile cannot take a boon' };
   }
 
-  state.cards[side].boons = state.cards[side].boons.filter((entry) => entry.id !== cardId);
+  state.cards[side].boons = keepTestingHand(state.cards[side].boons, cardId);
 
   if (card.effectType === 'isolate_tile') {
-    state.tiles[side] = rerollRackExceptTile(state.tiles[side], tileId, side, state.scores);
+    state.tiles[side] = rerollRackExceptTile(state.tiles[side], tileId, side, state.scores, {
+      turnCount: getTurnCount(state)
+    });
     return { success: true, state };
   }
 
@@ -293,7 +311,7 @@ const useAttack = (roomCode, clientId, cardId) => {
   }
 
   const targetTile = availableTiles[Math.floor(Math.random() * availableTiles.length)];
-  state.cards[side].attacks = state.cards[side].attacks.filter((entry) => entry.id !== cardId);
+  state.cards[side].attacks = keepTestingHand(state.cards[side].attacks, cardId);
   state.tiles[opponentSide] = replaceTileWithModifier(state.tiles[opponentSide], targetTile.id, card.modifier);
   return { success: true, state };
 };
@@ -407,19 +425,27 @@ const submitWord = async (roomCode, clientId, word, tileIds, languageCode = 'en'
   }
   const resolvedWord = (validationResult.resolvedWord || normalizedWord).toUpperCase();
 
-  const wordScore = getWordScoreDetails(selectedTiles).total;
+  const wordScore = getWordScoreDetails(selectedTiles, {
+    side,
+    scores: state.scores
+  }).total;
+  const idlePenalty = getIdleScorePenalty(state.tiles[side], tileIds);
+  const scoreDelta = wordScore - idlePenalty;
   const grantedResources = getResourceGrants(selectedTiles);
 
   state.words[side] = resolvedWord;
   state.history[side].unshift({
     word: resolvedWord,
-    score: wordScore
+    score: scoreDelta
   });
-  state.lastWordScores[side] = wordScore;
-  state.scores[side] += wordScore;
+  state.lastWordScores[side] = scoreDelta;
+  state.scores[side] += scoreDelta;
   state.cards[side].boons.push(...drawCards('boon', grantedResources.boons));
   state.cards[side].attacks.push(...drawCards('attack', grantedResources.attacks));
-  state.tiles[side] = refillRack(state.tiles[side], tileIds, side, state.scores);
+  state.tiles[side] = refillRack(state.tiles[side], tileIds, side, state.scores, {
+    phase: 'submit',
+    turnCount: getTurnCount(state)
+  });
 
   return { success: true, state };
 };

@@ -11,7 +11,9 @@ if (typeof createSharedTileLogic !== 'function') {
 const sharedTileLogic = createSharedTileLogic({
   letterConfig,
   wordBonuses,
-  milestoneRewards
+  milestoneRewards,
+  devLogging: import.meta.env.VITE_MODE === 'dev',
+  testing: import.meta.env.VITE_TESTING === 't'
 });
 
 const {
@@ -23,6 +25,7 @@ const {
   getMilestoneReward,
   getTilesScore,
   getWordScoreDetails,
+  getIdleScorePenalty,
   getResourceGrants,
   getTilesForWord,
   getRequiredTiles,
@@ -93,6 +96,7 @@ export {
   getMilestoneReward,
   getTilesScore,
   getWordScoreDetails,
+  getIdleScorePenalty,
   getResourceGrants,
   getTilesForWord,
   getRequiredTiles,

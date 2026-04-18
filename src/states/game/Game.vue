@@ -144,6 +144,8 @@
           :current-length-bonus="currentLengthBonus"
           :current-first-tile-bonus="currentFirstTileBonus"
           :current-word-multiplier="currentWordMultiplier"
+          :current-word-side="mySide"
+          :current-player-scores="playerScores"
           :clear-count="rackClears[mySide]"
           :length-bonus-steps="lengthBonusSteps"
           :controller-focused-built-tile-id="controllerRegion === 'builder' ? controllerFocusedBuiltTileId : ''"
@@ -339,7 +341,8 @@ const {
   saveSelectionForSide
 } = useWordBuilder({
   mySide,
-  myTiles
+  myTiles,
+  playerScores
 });
 
 const leftLane = computed(() => buildLane(mySide.value, 'Your Board'));
@@ -729,13 +732,13 @@ const playScoreAnimation = async (tileCount) => {
 };
 
 const triggerLaneBurst = (side, score) => {
-  if (!score || score < 18) {
+  if (!score || score < 6) {
     return;
   }
 
   laneBurstPulse.value = {
     ...laneBurstPulse.value,
-    [side]: laneBurstPulse.value[side] + (score >= 32 ? 2 : 1)
+    [side]: laneBurstPulse.value[side] + 1
   };
 };
 
@@ -834,7 +837,11 @@ const handleSubmit = async () => {
   playScoreAnimation(selectedTiles.length);
 
   if (props.isMultiplayer) {
-    const scoreDetails = getWordScoreDetails(selectedTiles);
+    const scoreDetails = getWordScoreDetails(selectedTiles, {
+      side: mySide.value,
+      scores: playerScores.value
+    });
+    // 
     submitMultiplayerWord({
       word: normalizedWord,
       tileIds: selectedTiles.map((tile) => tile.id)
