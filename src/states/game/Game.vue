@@ -1341,7 +1341,10 @@ const handleKeydown = (event) => {
       } else if (controllerRegion.value === 'builder') {
         const bottomRowStart = Math.max(0, myTiles.value.length - 5);
         focusControllerTile(Math.min(bottomRowStart + controllerBuilderCursorIndex.value, myTiles.value.length - 1));
-      } else if (controllerRegion.value === 'actions') {
+      } else if (controllerRegion.value === 'actions' && !selectedTilesForCurrentSide.value.length ) {
+        const bottomRowStart = Math.max(0, myTiles.value.length - 5);
+        focusControllerTile(Math.min(bottomRowStart + controllerBuilderCursorIndex.value, myTiles.value.length - 1));
+      } else if (controllerRegion.value === 'actions' && selectedTilesForCurrentSide.value.length) {
         focusControllerBuilder(Math.min(controllerActionCursorIndex.value, selectedTilesForCurrentSide.value.length - 1));
       } else {
         moveControllerTileFocus('up');
