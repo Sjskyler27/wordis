@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-04-18 0.0.16
+
+Start: 2026-04-18 19:51:31 EDT
+Stop: 2026-04-18 19:54:04 EDT
+
+- Delayed the history overlay by 1.5 seconds after a match ends so players can actually see their final word land.
+- Animated the results panel in with the shared `animated-slide-up` treatment and hidden pre-animation visibility.
+- Restricted random attack cards so they only target clean normal tiles instead of stacking onto already modified enemy tiles.
+
 ## 2026-04-18 0.0.15
 
 Start: 2026-04-18 19:11:16 EDT
