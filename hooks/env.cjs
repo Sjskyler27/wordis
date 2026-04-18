@@ -21,7 +21,7 @@ const readEnvValue = (key) => {
 };
 
 const isTestingMode = readEnvValue('VITE_TESTING') === 't';
-const isDevMode = readEnvValue('NODE_ENV') !== 'production';
+const isDevMode = readEnvValue('VITE_MODE') === 'dev';
 
 module.exports = {
   isTestingMode,

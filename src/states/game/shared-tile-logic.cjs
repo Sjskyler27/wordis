@@ -1,4 +1,4 @@
-const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {}, devLogging = false }) => {
+const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {}, devLogging = false, testing = false }) => {
   const LETTER_KEYS = Object.keys(letterConfig);
   const LETTER_POOL = Object.entries(letterConfig).flatMap(([letter, config]) =>
     Array.from({ length: config.count }, () => letter)
@@ -238,6 +238,7 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
       }
     },
     burningTile: {
+      noSinglePlayer: true,
       badge: 'BURN',
       effects: { setScore: 1, idleScorePenalty: 3 },
       rarityWeight: 0.5,
@@ -453,6 +454,7 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
   };
 
   const drawLetter = (tiles = []) => {
+    // weights determined by the letters 
     const weightedPool = getWeightedLetterPool(tiles);
     const totalWeight = weightedPool.reduce((sum, entry) => sum + entry.weight, 0);
 
@@ -481,15 +483,15 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
       const definition = getModifierDefinition(modifier);
       // return all if logging
 
-      if (devLogging) {
+      console.log('test mode is: '+ testing)
+      if (testing) {
         return true;
       }
       // currently duel gets everything
-
       if (profileName === 'solo') {
         return !definition.noSinglePlayer;
       }
-      console.log('profile'+ profileName)
+      if(devLogging)console.log('profile'+ profileName)
 
       if (profileName === 'duel' || profileName === 'bot') {
         return !definition.noMultiPlayer;
@@ -511,7 +513,13 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
   };
 
   const getModifierChances = (side, scores = {}, profileName = 'duel', turnCount = 0) => {
+    // base tiles off profile 
     const profile = getModifierProfile(profileName);
+    if(devLogging){
+      console.log('current profile' + profileName)
+      console.log('allowed Tiles!')
+      console.log(profile)
+    }
     const turnBonus = Math.min(MAX_TURN_MODIFIER_BONUS, Math.max(0, turnCount) * TURN_MODIFIER_CHANCE_STEP);
 
     if (!side || !profile.useScoreSwing) {
@@ -716,6 +724,7 @@ console.log(JSON.stringify({
 
   const rollTileModifier = (side, scores = {}, context = {}, chanceOverrides = {}) => {
     const modifierProfile = chanceOverrides.modifierProfile || 'duel';
+    if(devLogging)console.log(modifierProfile)
     const profile = getModifierProfile(modifierProfile);
     const baseChances = getModifierChances(side, scores, modifierProfile, chanceOverrides.turnCount || 0);
     const goodChance = Math.max(
@@ -1155,6 +1164,7 @@ console.log(JSON.stringify({
 
     const createTile = (letter = drawLetter(), side = null, scores = {}, forcedStatus = null, chanceOverrides = null) => {
       const baseScore = letterConfig[letter]?.score || 0;
+      // in charge of getting the modifier for tiles 
       const status = forcedStatus || rollTileModifier(side, scores, {
         letter,
         baseScore,
@@ -1292,6 +1302,7 @@ console.log(JSON.stringify({
 
     const refillTiles = (tiles, usedTileIds, side = null, scores = {}, options = {}) => {
       const usedIds = new Set(usedTileIds);
+      // remove existing ghost tiles 
       const ghostIds = new Set(
         tiles
           .filter((tile) => tile.status === 'ghostTile' && !usedIds.has(tile.id))
@@ -1325,6 +1336,7 @@ console.log(JSON.stringify({
           rackTiles: remainingTiles
         });
       });
+      if(devLogging) console.log(nextTiles) // logs something callled status so modifier is determined by this point 
 
       return nextTiles;
     };

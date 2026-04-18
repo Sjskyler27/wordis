@@ -266,6 +266,7 @@ export const useSinglePlayerGame = ({
   };
 
   const submitSinglePlayerWord = (word) => {
+    //
     ensureSinglePlayerState();
     const selectedTiles = selectedTilesForCurrentSide.value;
     const scoreDetails = getWordScoreDetails(selectedTiles, {
@@ -311,6 +312,7 @@ export const useSinglePlayerGame = ({
     };
 
     playerTiles.value = {
+      
       host: refillTiles(playerTiles.value.host, selectedTiles.map((tile) => tile.id), 'host', playerScores.value, {
         modifierProfile: modifierProfile(),
         phase: 'submit',

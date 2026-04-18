@@ -27,7 +27,8 @@ const {
   letterConfig: LETTER_CONFIG,
   wordBonuses: WORD_BONUSES,
   milestoneRewards: MILESTONE_REWARDS,
-  devLogging: isDevMode || isTestingMode
+  devLogging: isDevMode,
+  testing: isTestingMode
 });
 
 const serverIdState = {

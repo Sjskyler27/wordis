@@ -841,6 +841,7 @@ const handleSubmit = async () => {
       side: mySide.value,
       scores: playerScores.value
     });
+    // 
     submitMultiplayerWord({
       word: normalizedWord,
       tileIds: selectedTiles.map((tile) => tile.id)
