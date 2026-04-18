@@ -920,6 +920,7 @@ const selectBoonCard = (card) => {
 
   activeBoonCardId.value = card.id;
   localMessage.value = `Ready ${card.label}. Click one of your tiles to use it.`;
+  focusControllerTile(controllerTileCursorIndex.value);
 };
 
 const useAttackCard = (card) => {
