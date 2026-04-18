@@ -341,7 +341,8 @@ const useAttack = (roomCode, clientId, cardId) => {
     return { success: false, error: 'That board already has a MUST tile' };
   }
 
-  const availableTiles = state.tiles[opponentSide].filter((tile) => !tile.locked);
+  // Random attacks should only hit clean tiles so modifiers do not stack unpredictably.
+  const availableTiles = state.tiles[opponentSide].filter((tile) => !tile.locked && tile.status === 'normal');
   if (!availableTiles.length) {
     return { success: false, error: 'No opponent tiles available' };
   }

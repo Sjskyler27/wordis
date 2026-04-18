@@ -531,7 +531,8 @@ export const useSinglePlayerGame = ({
       return false;
     }
 
-    const targetTiles = playerTiles.value[opponentSide].filter((tile) => !tile.locked);
+    // Random attacks should only hit clean tiles so modifiers do not stack unpredictably.
+    const targetTiles = playerTiles.value[opponentSide].filter((tile) => !tile.locked && tile.status === 'normal');
     if (!targetTiles.length) {
       localMessage.value = 'No target tiles available.';
       playerCards.value = {
