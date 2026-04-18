@@ -87,3 +87,11 @@ you should be able to pull neutral tiles in single player, we will add a flag to
 first tile is hovering a bit for some reason 
 
 new rack slowly degrades to only nenutral tiles 
+
+yin yang badge should change same with color of letter 
+
+the bot is not winning 
+
+multiplayer is not respevting test 
+
+when clicking boon move to tiles 

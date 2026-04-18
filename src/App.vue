@@ -415,16 +415,25 @@ const continueGame = () => {
 
 
 
-  const buttonMap = {
-  0: ' ', // A
-  1: 'b',     // B
-  2: 'x',
-  3: 'y',     // Y
-  12: 'ArrowUp',
-  13: 'ArrowDown',
-  14: 'ShiftTab',
-  15: 'Tab',
-  9: 'Escape'
+const buttonMap = {
+  0: ' ',          // A / Cross
+  1: 'b',          // B / Circle
+  2: 'x',          // X / Square
+  3: 'y',          // Y / Triangle
+  4: 'lb',         // Left Bumper (L1)
+  5: 'rb',         // Right Bumper (R1)
+  6: 'lt',         // Left Trigger (L2) (analog)
+  7: 'rt',         // Right Trigger (R2) (analog)
+  8: 'select',     // Back / Select / Share
+  9: 'Escape',     // Start / Options
+  10: 'ls',        // Left Stick Click (L3)
+  11: 'rs',        // Right Stick Click (R3)
+  12: 'ArrowUp',   // D-pad Up
+  13: 'ArrowDown', // D-pad Down
+  14: 'ArrowLeft', // D-pad Left
+  15: 'ArrowRight',// D-pad Right
+  16: 'home'       // Guide / PS button / Xbox button (not always available)
+
 };
 
   const prevButtonStates = [];

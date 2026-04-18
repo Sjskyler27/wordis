@@ -1,5 +1,8 @@
 # Changelog
 
+## 2026-04-17 0.0.14
+- fixed controller support and bottom row focus 
+
 ## 2026-04-17 0.0.13
 - fixed tiles not ending in the correct group by seperating dev mode and test mode logic 
 

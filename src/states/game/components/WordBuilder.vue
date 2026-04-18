@@ -291,6 +291,10 @@ const getPlaceholderStyle = (slot) => {
 </script>
 
 <style scoped>
+button:focus{
+  outline: none;
+  box-shadow: none;
+}
 .word-console {
   display: flex;
   flex-wrap: wrap;
@@ -504,7 +508,10 @@ const getPlaceholderStyle = (slot) => {
   will-change: transform, opacity;
 }
 
-.built-tile:focus,
+.built-tile:focus{
+  outline: 3px solid rgba(255, 202, 103, 0.85);
+
+}
 .built-tile:focus-visible {
   outline: 3px solid rgba(255, 202, 103, 0.85);
   outline-offset: 2px;
@@ -516,18 +523,10 @@ const getPlaceholderStyle = (slot) => {
 }
 
 .console-action-controller-focus {
-  outline: 3px solid rgba(255, 202, 103, 0.85);
+  outline: 3px solid rgba(255, 202, 103, 0.85) !important;
   outline-offset: 2px;
 }
 
-.ghost-button:focus,
-.ghost-button:focus-visible,
-.submit-button:focus,
-.submit-button:focus-visible {
-  outline: 3px solid rgba(255, 202, 103, 0.85);
-  outline-offset: 2px;
-  box-shadow: 0 0 0 3px rgba(92, 25, 41, 0.38);
-}
 
 .tile-letter {
   font-size: 2.4rem;
