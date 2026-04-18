@@ -41,6 +41,7 @@
 
       <div class="history-actions">
         <button
+          ref="playAgainButton"
           type="button"
           class="play-again-button"
           :disabled="playAgainDisabled"
@@ -54,7 +55,7 @@
 </template>
 
 <script setup>
-import { computed } from 'vue';
+import { computed, nextTick, onMounted, ref, watch } from 'vue';
 
 const props = defineProps({
   summaryText: {
@@ -97,6 +98,8 @@ const props = defineProps({
 
 defineEmits(['play-again']);
 
+const playAgainButton = ref(null);
+
 const normalizeEntry = (entry) => {
   if (typeof entry === 'string') {
     return { word: entry, score: 0 };
@@ -110,6 +113,28 @@ const normalizeEntry = (entry) => {
 
 const normalizedLeftHistory = computed(() => props.leftHistory.map(normalizeEntry));
 const normalizedRightHistory = computed(() => props.rightHistory.map(normalizeEntry));
+
+const focusPlayAgainButton = () => {
+  nextTick(() => {
+    if (props.playAgainDisabled) {
+      return;
+    }
+
+    playAgainButton.value?.focus();
+  });
+};
+
+onMounted(() => {
+  focusPlayAgainButton();
+});
+
+watch(() => props.playAgainDisabled, (disabled, wasDisabled) => {
+  if (disabled || !wasDisabled) {
+    return;
+  }
+
+  focusPlayAgainButton();
+});
 </script>
 
 <style scoped>
