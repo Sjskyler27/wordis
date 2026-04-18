@@ -131,7 +131,7 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
     firsttile: {
       badge: '1st',
       effects: { firstTileBonus: 10 },
-      rarityWeight: 0.3,
+      rarityWeight: 0.22,
       ui: {
         tileBackground: 'linear-gradient(180deg, #d9edff 0%, #8cb1d8 72%, #4f6999 100%)',
         tileShadow: 'inset 0 -4px 0 rgba(34, 58, 101, 0.25), 0 12px 20px rgba(24, 20, 46, 0.18), 0 0 0 1px rgba(173, 210, 255, 0.4)',
