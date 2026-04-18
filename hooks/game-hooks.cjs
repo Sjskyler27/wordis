@@ -96,12 +96,15 @@ const generateRoomCode = () => {
   return roomCode;
 };
 
-const createInitialState = ({ hostId, players = [hostId], isPrivate = true }) => {
+const createInitialState = ({ hostId, players = [hostId], isPrivate = true, overtimeEnabled = true }) => {
   if (isTestingMode) {
     return {
       host: hostId,
       players: [...players],
       isPrivate,
+      overtimeEnabled,
+      overtimePendingSide: null,
+      overtimeFinalWordSubmitted: false,
       words: {
         host: '',
         opponent: ''
@@ -137,6 +140,9 @@ const createInitialState = ({ hostId, players = [hostId], isPrivate = true }) =>
     host: hostId,
     players: [...players],
     isPrivate,
+    overtimeEnabled,
+    overtimePendingSide: null,
+    overtimeFinalWordSubmitted: false,
     words: {
       host: '',
       opponent: ''
@@ -197,7 +203,8 @@ const createGame = (roomCode, hostId, options = {}) => {
   const state = createInitialState({
     hostId,
     players: [hostId],
-    isPrivate: options.isPrivate ?? true
+    isPrivate: options.isPrivate ?? true,
+    overtimeEnabled: options.overtimeEnabled ?? true
   });
 
   games.set(roomCode, state);
@@ -362,7 +369,8 @@ const playAgain = (roomCode, clientId) => {
   const nextState = createInitialState({
     hostId: state.host,
     players: state.players,
-    isPrivate: state.isPrivate
+    isPrivate: state.isPrivate,
+    overtimeEnabled: state.overtimeEnabled
   });
 
   games.set(roomCode, nextState);

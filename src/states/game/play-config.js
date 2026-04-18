@@ -15,13 +15,17 @@ export const BOT_DIFFICULTIES = {
 export const playMode = ref(PLAY_MODES.TIMED_SOLO);
 export const botDifficulty = ref(BOT_DIFFICULTIES.NORMAL);
 export const soloTimerSeconds = ref(180);
+export const overtimeEnabled = ref(JSON.parse(localStorage.getItem('overtimeEnabled') ?? 'true'));
 
 export const updatePlayConfig = ({
   mode = playMode.value,
   difficulty = botDifficulty.value,
-  timerSeconds = soloTimerSeconds.value
+  timerSeconds = soloTimerSeconds.value,
+  overtime = overtimeEnabled.value
 } = {}) => {
   playMode.value = mode;
   botDifficulty.value = difficulty;
   soloTimerSeconds.value = timerSeconds;
+  overtimeEnabled.value = overtime;
+  localStorage.setItem('overtimeEnabled', JSON.stringify(overtime));
 };

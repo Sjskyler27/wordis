@@ -23,6 +23,7 @@
       :shopZoom="shopZoom"
       :isMultiplayer="isMultiplayer"
       :playMode="playMode"
+      :overtimeEnabled="overtimeEnabled"
       :botDifficulty="botDifficulty"
       :uiZoom="zoom"
       :isStreamer="validSeed"
@@ -81,7 +82,7 @@ import { ref, shallowRef, onMounted, onBeforeUnmount, computed } from "vue";
 import Game from "/src/states/game/Game.vue";
 import MultiplayerScreen from "./states/game/MultiplayerScreen.vue";
 import { resetGame as resetMultiplayerGame } from "./states/game/multiplayer.js";
-import { playMode, botDifficulty, updatePlayConfig, PLAY_MODES } from "./states/game/play-config.js";
+import { playMode, botDifficulty, overtimeEnabled, updatePlayConfig, PLAY_MODES } from "./states/game/play-config.js";
 import TypeScreen from "./states/home/TypeScreen.vue";
 import StartScreen from "./states/home/StartScreen.vue";
 import Admin from "./admin/Admin.vue";
