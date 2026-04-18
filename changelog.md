@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-04-18 0.0.15
+
+Start: 2026-04-18 19:11:16 EDT
+Stop: 2026-04-18 19:16:21 EDT
+
+- Added an overtime toggle to the multiplayer host options and wired that setting through the client and server room state.
+- Changed overtime so both sides can keep submitting, and the match now ends when the trailing side answers with one final word.
+- Darkened the word console during overtime and added a `Final Word!` banner to make the sudden-death state obvious.
+- Moved controller focus back to the rack immediately after selecting a target-based boon.
+
 ## 2026-04-17 0.0.14
 - fixed controller support and bottom row focus 
 
