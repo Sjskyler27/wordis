@@ -2161,7 +2161,11 @@ body {
   }
 }
 
-@media (max-width: 720px) {
+@media (max-width: 1000px) {
+  .accent-blue {
+    height: 0px;
+    display: none;
+  }
   .game-shell {
 
   }
