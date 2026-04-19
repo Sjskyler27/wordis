@@ -10,6 +10,33 @@
       <div class="history-columns" :class="{ single: !rightLabel }">
         <section class="history-column">
           <span class="history-label">{{ leftLabel }}</span>
+          <div v-if="bestLeftEntry" class="history-best-word">
+            <span class="history-best-label">Best Word</span>
+            <div class="history-best-main">
+              <div class="history-word-tiles">
+                <div
+                  v-for="(tile, tileIndex) in bestLeftEntry.tiles"
+                  :key="`left-best-tile-${tile.id || tileIndex}`"
+                  class="history-tile"
+                  :style="getTileStyle(tile)"
+                >
+                  <span
+                    v-if="!getModifierUi(tile.status).hideBadge && tile.status !== 'normal'"
+                    class="history-tile-modifier"
+                    :style="getBadgeStyle(tile)"
+                  >
+                    {{ getModifierBadge(tile) }}
+                  </span>
+                  <span class="history-tile-score">{{ getTileScore(tile, tileIndex) }}</span>
+                  <span class="history-tile-letter">{{ tile.letter }}</span>
+                </div>
+              </div>
+              <div class="history-best-copy">
+                <strong>{{ bestLeftEntry.word }}</strong>
+                <span>+{{ bestLeftEntry.score }}</span>
+              </div>
+            </div>
+          </div>
           <ul class="history-list">
             <li
               v-for="(entry, index) in normalizedLeftHistory"
@@ -45,6 +72,33 @@
 
         <section v-if="rightLabel" class="history-column">
           <span class="history-label">{{ rightLabel }}</span>
+          <div v-if="bestRightEntry" class="history-best-word">
+            <span class="history-best-label">Best Word</span>
+            <div class="history-best-main">
+              <div class="history-word-tiles">
+                <div
+                  v-for="(tile, tileIndex) in bestRightEntry.tiles"
+                  :key="`right-best-tile-${tile.id || tileIndex}`"
+                  class="history-tile"
+                  :style="getTileStyle(tile)"
+                >
+                  <span
+                    v-if="!getModifierUi(tile.status).hideBadge && tile.status !== 'normal'"
+                    class="history-tile-modifier"
+                    :style="getBadgeStyle(tile)"
+                  >
+                    {{ getModifierBadge(tile) }}
+                  </span>
+                  <span class="history-tile-score">{{ getTileScore(tile, tileIndex) }}</span>
+                  <span class="history-tile-letter">{{ tile.letter }}</span>
+                </div>
+              </div>
+              <div class="history-best-copy">
+                <strong>{{ bestRightEntry.word }}</strong>
+                <span>+{{ bestRightEntry.score }}</span>
+              </div>
+            </div>
+          </div>
           <ul class="history-list">
             <li
               v-for="(entry, index) in normalizedRightHistory"
@@ -187,6 +241,21 @@ const normalizeEntry = (entry) => {
 
 const normalizedLeftHistory = computed(() => props.leftHistory.map(normalizeEntry));
 const normalizedRightHistory = computed(() => props.rightHistory.map(normalizeEntry));
+const getBestEntry = (entries = []) => {
+  if (!entries.length) {
+    return null;
+  }
+
+  return entries.reduce((bestEntry, entry) => {
+    if (!bestEntry || entry.score > bestEntry.score) {
+      return entry;
+    }
+
+    return bestEntry;
+  }, null);
+};
+const bestLeftEntry = computed(() => getBestEntry(normalizedLeftHistory.value));
+const bestRightEntry = computed(() => getBestEntry(normalizedRightHistory.value));
 
 const getTileStyle = (tile) => {
   const ui = getModifierUi(tile.status);
@@ -341,6 +410,47 @@ watch(() => props.playAgainDisabled, (disabled, wasDisabled) => {
   padding: 18px;
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.history-best-word {
+  margin-top: 14px;
+  padding: 14px;
+  border-radius: 16px;
+  background: linear-gradient(180deg, rgba(255, 210, 101, 0.12), rgba(255, 255, 255, 0.04));
+  border: 1px solid rgba(255, 210, 101, 0.18);
+}
+
+.history-best-label {
+  display: inline-block;
+  font-size: 0.64rem;
+  font-weight: 900;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #ffd265;
+}
+
+.history-best-main {
+  display: grid;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.history-best-copy {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.history-best-copy strong {
+  font-size: 1rem;
+  color: #fff3c0;
+}
+
+.history-best-copy span {
+  color: var(--teal, #6ff5dd);
+  font-weight: 800;
+  white-space: nowrap;
 }
 
 .history-list {

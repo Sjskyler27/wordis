@@ -121,12 +121,8 @@ ghost boon not working
 
 burns not showing up? 
 
-too many banks 
-
 swap boon attack and add more 
 
 show tiles at history instead of the word 
 
 show best word 
-
-bank should be lower letters 
