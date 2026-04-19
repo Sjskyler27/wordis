@@ -150,6 +150,7 @@
           :length-bonus-steps="lengthBonusSteps"
           :controller-focused-built-tile-id="controllerRegion === 'builder' ? controllerFocusedBuiltTileId : ''"
           :controller-focused-action-index="controllerRegion === 'actions' ? controllerActionCursorIndex : -1"
+          :is-overtime-active="isOvertimeActive"
           @undo="handleUndo"
           @clear="handleClearWord"
           @save-letters="handleSaveLetters"
@@ -162,7 +163,7 @@
       </section>
 
       <HistoryOverlay
-        v-if="effectiveGameEnded"
+        v-if="showHistoryOverlay"
         :result-title="historyResultTitle"
         :result-state="historyResultState"
         :summary-text="historySummaryText"
@@ -197,7 +198,10 @@ import {
   useBoon as useMultiplayerBoon,
   useAttack as useMultiplayerAttack,
   playAgain as playMultiplayerAgain,
-  resetGame as resetMultiplayer
+  resetGame as resetMultiplayer,
+  multiplayerOvertimeEnabled,
+  multiplayerOvertimePendingSide,
+  multiplayerOvertimeFinalWordSubmitted
 } from './multiplayer.js';
 import { MIN_WORD_LENGTH, getWordScoreDetails, isMissingRequiredTile, selectedTilesMatchWord } from './tile-logic.js';
 import { getPreferredLanguage } from './language.js';
@@ -223,7 +227,11 @@ const props = defineProps({
   musicVolume: Number,
   effectsVolume: Number,
   isControllerConnected: Boolean,
-  settingsShowing: Boolean
+  settingsShowing: Boolean,
+  overtimeEnabled: {
+    type: Boolean,
+    default: true
+  }
 });
 
 const emit = defineEmits([
@@ -257,23 +265,9 @@ const mustAlertTileIds = ref({
 const isMultiplayerRef = computed(() => props.isMultiplayer);
 const isTimedSoloMode = computed(() => !props.isMultiplayer && props.playMode === 'timed_solo');
 const isBotMode = computed(() => !props.isMultiplayer && props.playMode === 'bot_match');
-const scoreThresholdReached = computed(() => {
-  return playerScores.value.host >= WINNING_SCORE || playerScores.value.opponent >= WINNING_SCORE;
+const matchOvertimeEnabled = computed(() => {
+  return props.isMultiplayer ? multiplayerOvertimeEnabled.value : props.overtimeEnabled;
 });
-const overtimeTrailingSide = computed(() => {
-  if (isTimedSoloMode.value) {
-    return null;
-  }
-
-  const hostAtGoal = playerScores.value.host >= WINNING_SCORE;
-  const opponentAtGoal = playerScores.value.opponent >= WINNING_SCORE;
-  if (hostAtGoal === opponentAtGoal) {
-    return null;
-  }
-
-  return hostAtGoal ? 'opponent' : 'host';
-});
-const isOvertimeActive = computed(() => Boolean(overtimeTrailingSide.value));
 const attacksEnabled = computed(() => {
   return !isOvertimeActive.value && (isTestingMode || isTimedSoloMode.value || isBotMode.value || props.isMultiplayer);
 });
@@ -295,6 +289,8 @@ defeatSound.loop = true;
 let soloTimerId = null;
 let scorePopTimeoutIds = [];
 let activeScorePopAudios = [];
+let historyOverlayTimeoutId = null;
+const showHistoryOverlay = ref(false);
 
 const mySide = computed(() => {
   if (props.isMultiplayer) {
@@ -357,11 +353,14 @@ const {
   clearSinglePlayerRack,
   useSinglePlayerBoon,
   useSinglePlayerAttack,
-  submitSinglePlayerWord
+  submitSinglePlayerWord,
+  overtimePendingSide: singlePlayerOvertimePendingSide,
+  overtimeFinalWordSubmitted: singlePlayerOvertimeFinalWordSubmitted
 } = useSinglePlayerGame({
   isMultiplayer: isMultiplayerRef,
   botEnabled: isBotMode,
   isTimedSoloMode,
+  overtimeEnabled: matchOvertimeEnabled,
   botDifficulty: computed(() => props.botDifficulty),
   localMessage,
   selectedTilesForCurrentSide,
@@ -380,6 +379,26 @@ const {
     timerRemainingSeconds.value += seconds;
   }
 });
+
+const overtimeTrailingSide = computed(() => {
+  if (isTimedSoloMode.value || !matchOvertimeEnabled.value) {
+    return null;
+  }
+
+  return props.isMultiplayer
+    ? multiplayerOvertimePendingSide.value
+    : singlePlayerOvertimePendingSide.value;
+});
+const overtimeFinalWordSubmitted = computed(() => {
+  if (isTimedSoloMode.value || !matchOvertimeEnabled.value) {
+    return false;
+  }
+
+  return props.isMultiplayer
+    ? multiplayerOvertimeFinalWordSubmitted.value
+    : singlePlayerOvertimeFinalWordSubmitted.value;
+});
+const isOvertimeActive = computed(() => Boolean(overtimeTrailingSide.value) && !overtimeFinalWordSubmitted.value);
 
 const myCards = computed(() => playerCards.value[mySide.value] || { boons: [], attacks: [] });
 const controllerCards = computed(() => {
@@ -425,6 +444,18 @@ const winningSide = computed(() => {
     return null;
   }
 
+  if (overtimeFinalWordSubmitted.value) {
+    if (playerScores.value.host > playerScores.value.opponent) {
+      return 'host';
+    }
+
+    if (playerScores.value.opponent > playerScores.value.host) {
+      return 'opponent';
+    }
+
+    return null;
+  }
+
   if (playerScores.value.host >= WINNING_SCORE && playerScores.value.host >= playerScores.value.opponent) {
     return 'host';
   }
@@ -440,7 +471,11 @@ const gameEnded = computed(() => {
     return Boolean(winningSide.value);
   }
 
-  return scoreThresholdReached.value && !isOvertimeActive.value && Boolean(winningSide.value);
+  if (matchOvertimeEnabled.value) {
+    return overtimeFinalWordSubmitted.value;
+  }
+
+  return Boolean(winningSide.value);
 });
 const timeExpired = computed(() => isTimedSoloMode.value && timerRemainingSeconds.value <= 0);
 const finalWordWindowActive = computed(() => isTimedSoloMode.value && timeExpired.value && !timedSoloFinalWordSpent.value);
@@ -794,11 +829,6 @@ const handleSubmit = async () => {
     return;
   }
 
-  if (isOvertimeActive.value && overtimeTrailingSide.value !== mySide.value) {
-    localMessage.value = 'Only the trailing player can submit during overtime.';
-    return;
-  }
-
   const normalizedWord = currentWordDisplay.value;
   const selectedTiles = selectedTilesForCurrentSide.value;
   if (!normalizedWord) {
@@ -892,6 +922,7 @@ const selectBoonCard = (card) => {
 
   activeBoonCardId.value = card.id;
   localMessage.value = `Ready ${card.label}. Click one of your tiles to use it.`;
+  focusControllerTile(controllerTileCursorIndex.value);
 };
 
 const useAttackCard = (card) => {
@@ -1216,9 +1247,17 @@ watch(effectiveGameEnded, (ended) => {
     stopBotLoop();
     stopSoloTimer();
     gameMusic.pause();
+    showHistoryOverlay.value = false;
+    window.clearTimeout(historyOverlayTimeoutId);
+    // Let the final word resolve on screen before the results overlay appears.
+    historyOverlayTimeoutId = window.setTimeout(() => {
+      showHistoryOverlay.value = true;
+    }, 1500);
     return;
   }
 
+  showHistoryOverlay.value = false;
+  window.clearTimeout(historyOverlayTimeoutId);
   if (!isPaused.value) {
     stopResultAudio();
     startGameMusic({ restart: true });
@@ -1418,6 +1457,7 @@ onBeforeUnmount(() => {
   window.removeEventListener('keydown', handleKeydown);
   stopSoloTimer();
   stopGameMusic();
+  window.clearTimeout(historyOverlayTimeoutId);
   tilePickupSound.pause();
   tilePutBackSound.pause();
   scoreBuiltTileSound.pause();
@@ -1435,6 +1475,8 @@ const resetAndGoHome = () => {
   isPaused.value = false;
   stopBotLoop();
   stopSoloTimer();
+  showHistoryOverlay.value = false;
+  window.clearTimeout(historyOverlayTimeoutId);
   isSoloTimerPausedByAttack.value = false;
   timedSoloFinalWordSpent.value = false;
   stopGameMusic();

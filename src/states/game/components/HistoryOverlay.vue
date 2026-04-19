@@ -1,7 +1,7 @@
 <template>
   <div class="history-overlay">
     <div class="history-scrim"></div>
-    <section class="history-panel">
+    <section class="history-panel animated-slide-up">
       <span class="history-kicker">Match Results</span>
       <span class="history-result" :class="resultState">{{ resultTitle }}</span>
       <strong class="history-title">{{ summaryText }}</strong>
@@ -159,6 +159,7 @@ watch(() => props.playAgainDisabled, (disabled, wasDisabled) => {
 .history-panel {
   position: relative;
   z-index: 1;
+  visibility: hidden;
   width: min(100%, 920px);
   border-radius: 30px;
   padding: 28px;

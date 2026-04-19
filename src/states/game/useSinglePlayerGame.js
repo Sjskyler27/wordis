@@ -1,4 +1,4 @@
-import { onBeforeUnmount, watch } from 'vue';
+import { onBeforeUnmount, ref, watch } from 'vue';
 import { getBotWord } from './bot.js';
 import {
   CARD_DEFINITIONS,
@@ -23,6 +23,7 @@ export const useSinglePlayerGame = ({
   isMultiplayer,
   botEnabled,
   isTimedSoloMode,
+  overtimeEnabled,
   botDifficulty,
   localMessage,
   selectedTilesForCurrentSide,
@@ -76,16 +77,47 @@ export const useSinglePlayerGame = ({
   const bothSidesReachedWinningScore = () => {
     return playerScores.value.host >= WINNING_SCORE && playerScores.value.opponent >= WINNING_SCORE;
   };
+  const overtimePendingSide = ref(null);
+  const overtimeFinalWordSubmitted = ref(false);
 
   const overtimeTrailingSide = () => {
     const hostAtGoal = playerScores.value.host >= WINNING_SCORE;
     const opponentAtGoal = playerScores.value.opponent >= WINNING_SCORE;
 
-    if (isTimedSoloMode.value || hostAtGoal === opponentAtGoal) {
+    if (!overtimeEnabled.value || isTimedSoloMode.value || overtimeFinalWordSubmitted.value) {
+      return null;
+    }
+
+    if (overtimePendingSide.value) {
+      return overtimePendingSide.value;
+    }
+
+    if (hostAtGoal === opponentAtGoal) {
       return null;
     }
 
     return hostAtGoal ? 'opponent' : 'host';
+  };
+
+  const updateOvertimeStateAfterSubmit = (side) => {
+    if (!overtimeEnabled.value || isTimedSoloMode.value || overtimeFinalWordSubmitted.value) {
+      return;
+    }
+
+    if (overtimePendingSide.value) {
+      if (overtimePendingSide.value === side) {
+        overtimeFinalWordSubmitted.value = true;
+      }
+      return;
+    }
+
+    const hostAtGoal = playerScores.value.host >= WINNING_SCORE;
+    const opponentAtGoal = playerScores.value.opponent >= WINNING_SCORE;
+    if (hostAtGoal === opponentAtGoal) {
+      return;
+    }
+
+    overtimePendingSide.value = hostAtGoal ? 'opponent' : 'host';
   };
 
   const gameEnded = () => {
@@ -93,7 +125,11 @@ export const useSinglePlayerGame = ({
       return playerScores.value.host >= WINNING_SCORE || playerScores.value.opponent >= WINNING_SCORE;
     }
 
-    return bothSidesReachedWinningScore();
+    if (overtimeEnabled.value) {
+      return overtimeFinalWordSubmitted.value;
+    }
+
+    return playerScores.value.host >= WINNING_SCORE || playerScores.value.opponent >= WINNING_SCORE || bothSidesReachedWinningScore();
   };
 
   const ensureSinglePlayerState = () => {
@@ -157,11 +193,6 @@ export const useSinglePlayerGame = ({
 
   const submitBotWord = () => {
     if (gameEnded()) {
-      stopBotLoop();
-      return;
-    }
-
-    if (overtimeTrailingSide() && overtimeTrailingSide() !== 'opponent') {
       stopBotLoop();
       return;
     }
@@ -236,6 +267,7 @@ export const useSinglePlayerGame = ({
         turnCount: getTurnCount()
       })
     };
+    updateOvertimeStateAfterSubmit('opponent');
   };
 
   const scheduleBotLoop = () => {
@@ -322,6 +354,7 @@ export const useSinglePlayerGame = ({
     };
 
     clearSelectionForSide('host');
+    updateOvertimeStateAfterSubmit('host');
     localMessage.value = idlePenalty > 0
       ? `Submitted ${word} for ${scoreDelta} pts after a ${idlePenalty} pt burn penalty.`
       : `Submitted ${word} for ${scoreDelta} pts.`;
@@ -498,7 +531,8 @@ export const useSinglePlayerGame = ({
       return false;
     }
 
-    const targetTiles = playerTiles.value[opponentSide].filter((tile) => !tile.locked);
+    // Random attacks should only hit clean tiles so modifiers do not stack unpredictably.
+    const targetTiles = playerTiles.value[opponentSide].filter((tile) => !tile.locked && tile.status === 'normal');
     if (!targetTiles.length) {
       localMessage.value = 'No target tiles available.';
       playerCards.value = {
@@ -547,6 +581,8 @@ export const useSinglePlayerGame = ({
     clearSinglePlayerRack,
     useSinglePlayerBoon,
     useSinglePlayerAttack,
-    submitSinglePlayerWord
+    submitSinglePlayerWord,
+    overtimePendingSide,
+    overtimeFinalWordSubmitted
   };
 };

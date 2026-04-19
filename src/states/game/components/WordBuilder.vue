@@ -1,5 +1,6 @@
 <template>
-  <form class="word-console" @submit.prevent="$emit('submit')">
+  <form class="word-console" :class="{ overtime: isOvertimeActive }" @submit.prevent="$emit('submit')">
+    <div v-if="isOvertimeActive" class="overtime-banner">Final Word!</div>
     <div class="bonus-ladder">
     </div>
 
@@ -192,6 +193,10 @@ const props = defineProps({
   controllerFocusedActionIndex: {
     type: Number,
     default: -1
+  },
+  isOvertimeActive: {
+    type: Boolean,
+    default: false
   }
 });
 
@@ -304,6 +309,23 @@ button:focus{
   padding: 16px;
   border-radius: 24px;
   background: rgba(48, 12, 28, 0.23);
+}
+
+.overtime-banner {
+  width: 100%;
+  padding: 10px 14px;
+  border-radius: 14px;
+  background: linear-gradient(180deg, rgba(153, 25, 41, 0.96), rgba(82, 10, 22, 0.96));
+  color: #ffd5cf;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  text-align: center;
+  box-shadow: inset 0 1px 0 rgba(255, 205, 193, 0.12);
+}
+
+.word-console.overtime {
+  background: rgba(72, 11, 21, 0.54);
+  border: 1px solid rgba(255, 140, 140, 0.2);
 }
 
 .bonus-ladder {

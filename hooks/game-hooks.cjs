@@ -96,12 +96,15 @@ const generateRoomCode = () => {
   return roomCode;
 };
 
-const createInitialState = ({ hostId, players = [hostId], isPrivate = true }) => {
+const createInitialState = ({ hostId, players = [hostId], isPrivate = true, overtimeEnabled = true }) => {
   if (isTestingMode) {
     return {
       host: hostId,
       players: [...players],
       isPrivate,
+      overtimeEnabled,
+      overtimePendingSide: null,
+      overtimeFinalWordSubmitted: false,
       words: {
         host: '',
         opponent: ''
@@ -137,6 +140,9 @@ const createInitialState = ({ hostId, players = [hostId], isPrivate = true }) =>
     host: hostId,
     players: [...players],
     isPrivate,
+    overtimeEnabled,
+    overtimePendingSide: null,
+    overtimeFinalWordSubmitted: false,
     words: {
       host: '',
       opponent: ''
@@ -176,17 +182,46 @@ const createInitialState = ({ hostId, players = [hostId], isPrivate = true }) =>
 };
 
 const hasOvertimeStarted = (state) => {
+  if (!state.overtimeEnabled || state.overtimeFinalWordSubmitted) {
+    return false;
+  }
+
   const hostAtGoal = state.scores.host >= WINNING_SCORE;
   const opponentAtGoal = state.scores.opponent >= WINNING_SCORE;
   return hostAtGoal !== opponentAtGoal;
 };
 
 const getOvertimeTrailingSide = (state) => {
+  if (state.overtimePendingSide) {
+    return state.overtimePendingSide;
+  }
+
   if (!hasOvertimeStarted(state)) {
     return null;
   }
 
   return state.scores.host >= WINNING_SCORE ? 'opponent' : 'host';
+};
+
+const updateOvertimeStateAfterSubmit = (state, side) => {
+  if (!state.overtimeEnabled || state.overtimeFinalWordSubmitted) {
+    return;
+  }
+
+  if (state.overtimePendingSide) {
+    if (state.overtimePendingSide === side) {
+      state.overtimeFinalWordSubmitted = true;
+    }
+    return;
+  }
+
+  const hostAtGoal = state.scores.host >= WINNING_SCORE;
+  const opponentAtGoal = state.scores.opponent >= WINNING_SCORE;
+  if (hostAtGoal === opponentAtGoal) {
+    return;
+  }
+
+  state.overtimePendingSide = hostAtGoal ? 'opponent' : 'host';
 };
 
 const createGame = (roomCode, hostId, options = {}) => {
@@ -197,7 +232,8 @@ const createGame = (roomCode, hostId, options = {}) => {
   const state = createInitialState({
     hostId,
     players: [hostId],
-    isPrivate: options.isPrivate ?? true
+    isPrivate: options.isPrivate ?? true,
+    overtimeEnabled: options.overtimeEnabled ?? true
   });
 
   games.set(roomCode, state);
@@ -305,7 +341,8 @@ const useAttack = (roomCode, clientId, cardId) => {
     return { success: false, error: 'That board already has a MUST tile' };
   }
 
-  const availableTiles = state.tiles[opponentSide].filter((tile) => !tile.locked);
+  // Random attacks should only hit clean tiles so modifiers do not stack unpredictably.
+  const availableTiles = state.tiles[opponentSide].filter((tile) => !tile.locked && tile.status === 'normal');
   if (!availableTiles.length) {
     return { success: false, error: 'No opponent tiles available' };
   }
@@ -362,7 +399,8 @@ const playAgain = (roomCode, clientId) => {
   const nextState = createInitialState({
     hostId: state.host,
     players: state.players,
-    isPrivate: state.isPrivate
+    isPrivate: state.isPrivate,
+    overtimeEnabled: state.overtimeEnabled
   });
 
   games.set(roomCode, nextState);
@@ -375,7 +413,7 @@ const submitWord = async (roomCode, clientId, word, tileIds, languageCode = 'en'
     return { success: false, error: 'Room not found' };
   }
 
-  if (state.scores.host >= WINNING_SCORE && state.scores.opponent >= WINNING_SCORE) {
+  if (state.overtimeFinalWordSubmitted || (!state.overtimeEnabled && (state.scores.host >= WINNING_SCORE || state.scores.opponent >= WINNING_SCORE))) {
     return { success: false, error: 'Game is already over' };
   }
 
@@ -387,11 +425,6 @@ const submitWord = async (roomCode, clientId, word, tileIds, languageCode = 'en'
   const side = clientId === state.host ? 'host' : 'opponent';
   if (!state.players.includes(clientId)) {
     return { success: false, error: 'Player not in room' };
-  }
-
-  const overtimeTrailingSide = getOvertimeTrailingSide(state);
-  if (overtimeTrailingSide && overtimeTrailingSide !== side) {
-    return { success: false, error: 'Only the trailing player can submit during overtime' };
   }
 
   if (!/^[A-Z*]+$/.test(normalizedWord)) {
@@ -446,6 +479,7 @@ const submitWord = async (roomCode, clientId, word, tileIds, languageCode = 'en'
     phase: 'submit',
     turnCount: getTurnCount(state)
   });
+  updateOvertimeStateAfterSubmit(state, side);
 
   return { success: true, state };
 };

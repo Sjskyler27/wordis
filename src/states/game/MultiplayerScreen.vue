@@ -41,6 +41,17 @@
           <h2>Start a Room</h2>
           <p v-if="roomCode" class="room-preview">Room {{ roomCode }}</p>
           <p v-else>{{ hostVisibilityText }}</p>
+          <div class="host-options">
+            <span class="kicker">Options</span>
+            <label class="toggle-row">
+              <span>Overtime</span>
+              <input
+                v-model="hostOvertimeEnabled"
+                type="checkbox"
+                :disabled="isConnecting || !isSocketConnected"
+              />
+            </label>
+          </div>
           <label class="toggle-row">
             <span>Private Room</span>
             <input
@@ -123,9 +134,11 @@ import {
   connectionStatus,
   isSocketConnected
 } from './multiplayer.js';
+import { overtimeEnabled } from './play-config.js';
 
 const joinCode = ref('');
 const hostIsPrivate = ref(true);
+const hostOvertimeEnabled = ref(overtimeEnabled.value);
 const selectedDifficulty = ref('normal');
 const emit = defineEmits(['game', 'home', 'singleplayer']);
 const difficulties = [
@@ -142,7 +155,12 @@ const startBotMatch = () => {
 };
 
 const handleHostGame = () => {
-  hostGame({ isPrivate: hostIsPrivate.value });
+  overtimeEnabled.value = hostOvertimeEnabled.value;
+  localStorage.setItem('overtimeEnabled', JSON.stringify(hostOvertimeEnabled.value));
+  hostGame({
+    isPrivate: hostIsPrivate.value,
+    overtimeEnabled: hostOvertimeEnabled.value
+  });
 };
 
 const handleJoinGame = () => {
@@ -295,6 +313,14 @@ watch(connectionStatus, (status) => {
 
 .panel-card-primary {
   background: linear-gradient(180deg, rgba(230, 117, 53, 0.92), rgba(160, 64, 36, 0.9));
+}
+
+.host-options {
+  margin: 16px 0 14px;
+  padding: 14px 16px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .message-card {

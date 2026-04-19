@@ -43,15 +43,18 @@ export const message = ref('');
 export const isConnecting = ref(false);
 export const connectionStatus = ref('connecting');
 export const isSocketConnected = computed(() => connectionStatus.value === 'connected');
+export const multiplayerOvertimeEnabled = ref(true);
+export const multiplayerOvertimePendingSide = ref(null);
+export const multiplayerOvertimeFinalWordSubmitted = ref(false);
 
-export const hostGame = ({ isPrivate = true } = {}) => {
+export const hostGame = ({ isPrivate = true, overtimeEnabled = true } = {}) => {
   if (!isSocketConnected.value) {
     message.value = 'Multiplayer server is offline. Please check your connection.';
     return;
   }
 
   isConnecting.value = true;
-  socket.emit('hostGame', { isPrivate });
+  socket.emit('hostGame', { isPrivate, overtimeEnabled });
 };
 
 const applyGameState = (data = {}) => {
@@ -64,6 +67,9 @@ const applyGameState = (data = {}) => {
   rackClears.value = data.rackClears || rackClears.value;
   playerCards.value = data.cards || playerCards.value;
   isPrivateRoom.value = data.isPrivate ?? isPrivateRoom.value;
+  multiplayerOvertimeEnabled.value = data.overtimeEnabled ?? multiplayerOvertimeEnabled.value;
+  multiplayerOvertimePendingSide.value = data.overtimePendingSide ?? null;
+  multiplayerOvertimeFinalWordSubmitted.value = Boolean(data.overtimeFinalWordSubmitted);
 };
 
 export const joinGame = (code) => {
@@ -226,4 +232,7 @@ export const resetGame = () => {
   availableLobbies.value = [];
   gameStarted.value = false;
   message.value = '';
+  multiplayerOvertimeEnabled.value = true;
+  multiplayerOvertimePendingSide.value = null;
+  multiplayerOvertimeFinalWordSubmitted.value = false;
 };

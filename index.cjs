@@ -60,7 +60,10 @@ const createGameStatePayload = (state) => ({
   rackClears: state.rackClears,
   cards: state.cards,
   tiles: state.tiles,
-  isPrivate: state.isPrivate
+  isPrivate: state.isPrivate,
+  overtimeEnabled: state.overtimeEnabled,
+  overtimePendingSide: state.overtimePendingSide,
+  overtimeFinalWordSubmitted: state.overtimeFinalWordSubmitted
 });
 
 const createLobbyListPayload = () => ({
@@ -77,7 +80,8 @@ const broadcastLobbyList = () => {
 const handleHostGame = (connection, clientId, data) => {
   const roomCode = generateRoomCode();
   const { success, error, state } = createGame(roomCode, clientId, {
-    isPrivate: data?.isPrivate ?? true
+    isPrivate: data?.isPrivate ?? true,
+    overtimeEnabled: data?.overtimeEnabled ?? true
   });
   if (!success) {
     sendEvent(connection, 'joinError', error);
