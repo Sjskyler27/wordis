@@ -376,10 +376,10 @@ watch(() => props.playAgainDisabled, (disabled, wasDisabled) => {
 }
 
 .history-tile {
-  min-width: 42px;
-  min-height: 42px;
-  padding: 8px 6px;
-  border-radius: 12px;
+  min-width: 58px;
+  min-height: 58px;
+  padding: 10px;
+  border-radius: 16px;
   position: relative;
   display: flex;
   align-items: center;
@@ -387,36 +387,41 @@ watch(() => props.playAgainDisabled, (disabled, wasDisabled) => {
   background: var(--history-tile-bg, linear-gradient(180deg, #fffef8 0%, #f2ebe0 70%, #d9cec0 100%));
   color: var(--history-tile-text-color, #1c1930);
   box-shadow: var(--history-tile-shadow, inset 0 -4px 0 rgba(0, 0, 0, 0.12), 0 10px 18px rgba(45, 10, 24, 0.16));
+  font-family: "Press Start 2P", cursive;
+  overflow: hidden;
 }
 
 .history-tile-letter {
-  font-size: 1.1rem;
+  font-size: 1.45rem;
   line-height: 1;
   font-weight: 900;
 }
 
 .history-tile-score {
   position: absolute;
-  top: 4px;
-  right: 5px;
-  font-size: 0.56rem;
+  top: 7px;
+  right: 8px;
+  font-size: 0.58rem;
   font-weight: 800;
+  line-height: 1;
 }
 
 .history-tile-modifier {
   position: absolute;
-  top: 4px;
-  left: 5px;
-  max-width: calc(100% - 10px);
-  padding: 2px 4px;
+  top: 7px;
+  left: 8px;
+  max-width: calc(100% - 16px);
+  min-width: 18px;
+  padding: 2px 5px;
   border-radius: 999px;
-  font-size: 0.4rem;
+  font-size: 0.42rem;
   font-weight: 900;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  box-shadow: 0 4px 10px rgba(27, 11, 20, 0.18);
 }
 
 .history-word {
@@ -478,6 +483,16 @@ watch(() => props.playAgainDisabled, (disabled, wasDisabled) => {
 
   .history-columns {
     grid-template-columns: 1fr;
+  }
+
+  .history-tile {
+    min-width: 50px;
+    min-height: 50px;
+    padding: 8px;
+  }
+
+  .history-tile-letter {
+    font-size: 1.2rem;
   }
 }
 </style>
