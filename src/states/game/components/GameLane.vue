@@ -29,7 +29,8 @@
               'tile-saved': savedTileIds.has(tile.id),
               'tile-locked': tile.locked,
               'tile-must-alert': mustAlertIds.has(tile.id),
-              'tile-controller-focus': controllerFocusedTileId === tile.id
+              'tile-controller-focus': controllerFocusedTileId === tile.id,
+              [getTileAnimationClass(tile)]: !!getTileAnimationClass(tile)
             }"
             :style="getTileStyle(tile)"
             :data-controller-tile="`${side}-${index}`"
@@ -48,7 +49,7 @@
 </template>
 
 <script setup>
-import { ref, watch } from 'vue';
+import { onBeforeUnmount, ref, watch } from 'vue';
 import { getModifierBadge, getModifierUi, tileScore } from '../tile-logic.js';
 
 const props = defineProps({
@@ -125,6 +126,62 @@ const getBadgeStyle = (tile) => {
   };
 };
 
+const activeTileAnimations = ref({});
+const seenTileAnimationKeys = ref({});
+const tileAnimationTimeoutIds = new Map();
+const TILE_ANIMATION_DURATIONS = {
+  blaze: 1080
+};
+
+const stopTileAnimation = (tileId) => {
+  window.clearTimeout(tileAnimationTimeoutIds.get(tileId));
+  tileAnimationTimeoutIds.delete(tileId);
+
+  if (!activeTileAnimations.value[tileId]) {
+    return;
+  }
+
+  const nextAnimations = { ...activeTileAnimations.value };
+  delete nextAnimations[tileId];
+  activeTileAnimations.value = nextAnimations;
+};
+
+const startTileAnimation = (tile) => {
+  const animationState = tile?.animationState;
+  if (!tile?.id || !animationState?.name || !animationState?.key) {
+    return;
+  }
+
+  if (seenTileAnimationKeys.value[tile.id] === animationState.key) {
+    return;
+  }
+
+  seenTileAnimationKeys.value = {
+    ...seenTileAnimationKeys.value,
+    [tile.id]: animationState.key
+  };
+  activeTileAnimations.value = {
+    ...activeTileAnimations.value,
+    [tile.id]: animationState.key
+  };
+
+  window.clearTimeout(tileAnimationTimeoutIds.get(tile.id));
+  tileAnimationTimeoutIds.set(tile.id, window.setTimeout(() => {
+    stopTileAnimation(tile.id);
+  }, TILE_ANIMATION_DURATIONS[animationState.name] || 900));
+};
+
+const getTileAnimationClass = (tile) => {
+  const animationState = tile?.animationState;
+  if (!animationState?.name) {
+    return '';
+  }
+
+  return activeTileAnimations.value[tile.id] === animationState.key
+    ? `tile-anim-${animationState.name}`
+    : '';
+};
+
 const burstTier = ref('');
 let burstTimeoutId = null;
 const getBurstTier = (score) => {
@@ -166,6 +223,21 @@ watch(() => [props.burstPulse, props.lastWordScore], ([nextPulse]) => {
       burstTier.value = '';
     }, nextTier === 'epic' ? 1220 : nextTier === 'high' ? 1020 : nextTier === 'medium' ? 900 : 760);
   });
+});
+
+watch(() => props.tiles, (nextTiles) => {
+  nextTiles.forEach((tile) => startTileAnimation(tile));
+}, {
+  immediate: true,
+  deep: true
+});
+
+onBeforeUnmount(() => {
+  window.clearTimeout(burstTimeoutId);
+  tileAnimationTimeoutIds.forEach((timeoutId) => {
+    window.clearTimeout(timeoutId);
+  });
+  tileAnimationTimeoutIds.clear();
 });
 </script>
 
@@ -374,6 +446,22 @@ watch(() => [props.burstPulse, props.lastWordScore], ([nextPulse]) => {
   animation: must-tile-flash 520ms ease 2;
 }
 
+.tile-anim-blaze {
+  animation: tile-blaze 1080ms ease-out;
+}
+
+.tile-anim-blaze::after {
+  content: '';
+  position: absolute;
+  inset: -8px;
+  border-radius: 22px;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 50% 86%, rgba(255, 218, 134, 0.95) 0%, rgba(255, 179, 64, 0.6) 16%, rgba(255, 101, 22, 0.52) 34%, rgba(255, 83, 34, 0.24) 52%, rgba(255, 83, 34, 0) 72%);
+  mix-blend-mode: screen;
+  animation: tile-blaze-flare 1080ms ease-out;
+}
+
 @keyframes must-tile-flash {
   0%,
   100% {
@@ -387,6 +475,37 @@ watch(() => [props.burstPulse, props.lastWordScore], ([nextPulse]) => {
       0 0 24px rgba(255, 226, 141, 0.68),
       var(--tile-shadow, inset 0 -4px 0 rgba(0, 0, 0, 0.12), 0 10px 18px rgba(45, 10, 24, 0.16));
     filter: saturate(1.18) brightness(1.08);
+  }
+}
+
+@keyframes tile-blaze {
+  0%,
+  100% {
+    transform: translateY(0) scale(1);
+    filter: saturate(1) brightness(1);
+  }
+  24% {
+    transform: translateY(-3px) scale(1.03) rotate(-1deg);
+    filter: saturate(1.14) brightness(1.08);
+  }
+  48% {
+    transform: translateY(-1px) scale(1.01) rotate(1deg);
+    filter: saturate(1.2) brightness(1.12);
+  }
+}
+
+@keyframes tile-blaze-flare {
+  0% {
+    opacity: 0;
+    transform: translateY(8px) scale(0.9);
+  }
+  22% {
+    opacity: 1;
+    transform: translateY(-2px) scale(1.06);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-12px) scale(1.16);
   }
 }
 

@@ -95,3 +95,38 @@ the bot is not winning
 multiplayer is not respevting test 
 
 when clicking boon move to tiles 
+
+
+multi tasks:
+
+
+
+
+when you receive a boon or an atk throw the card up in the middle of the screen then animate it going left into the cards slot so the user knows what they got
+
+for screens smaller than 1250px lets make the side stack a drawer with a handle that can be taped to slide it out, or if the cards become focussed open the drawer close it if cards become defocessed 
+
+if you are on mobile it is very hard to see everything, for mobile multiplayer we should replace the opponnents rack grid with the word console you still see what word they are playing and score but have more room 
+
+if single player we will move it next to the your own rack grid so you can see it 
+
+
+
+can change neg with a boon
+lock disapering it should be an animation
+
+attack destroyed background
+
+ghost boon not working 
+
+burns not showing up? 
+
+too many banks 
+
+swap boon attack and add more 
+
+show tiles at history instead of the word 
+
+show best word 
+
+bank should be lower letters 
