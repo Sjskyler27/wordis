@@ -1,11 +1,13 @@
 <template>
   <form class="word-console" :class="{ overtime: isOvertimeActive }" @submit.prevent="$emit('submit')">
-    <div v-if="isOvertimeActive" class="overtime-banner">Final Word!</div>
+    <div class="console-topline">
+      <span class="console-label"><span v-if="currentWordScore < 10" style="visibility:hidden">_</span>{{ currentWordScore }} pts</span>
+      <div v-if="isOvertimeActive" class="overtime-banner animated-pulse ">Final Word!</div>
+    </div>
     <div class="bonus-ladder">
     </div>
 
     <div class="word-input-shell">
-      <span class="console-label"><span v-if="currentWordScore < 10" style="visibility:hidden">_</span>{{ currentWordScore }} pts</span>
       <div class="built-word-strip" :class="{ empty: !selectedTiles.length }">
         <div v-if="scorePopTiles.length" class="score-pop-overlay">
           <div
@@ -309,10 +311,19 @@ button:focus{
   padding: 16px;
   border-radius: 24px;
   background: rgba(48, 12, 28, 0.23);
+  position: relative;
+}
+
+.console-topline {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
 }
 
 .overtime-banner {
-  width: 100%;
+  flex: 0 0 auto;
   padding: 10px 14px;
   border-radius: 14px;
   background: linear-gradient(180deg, rgba(153, 25, 41, 0.96), rgba(82, 10, 22, 0.96));
@@ -373,7 +384,7 @@ button:focus{
   min-height: 110px;
   flex: 1;
   display: grid;
-  grid-template-columns: auto 1fr auto;
+  grid-template-columns: 1fr auto;
   gap: 12px;
   align-items: center;
   padding: 10px 14px;
@@ -698,10 +709,24 @@ button:focus{
   min-width: 130px;
 }
 
-@media (max-width: 720px) {
+@media (max-width: 1000px) {
   .word-console {
     flex-direction: column;
     align-items: stretch;
+  }
+
+  .console-topline {
+    position: absolute;
+    top: 10px;
+    left: 12px;
+    right: 12px;
+    z-index: 2;
+    pointer-events: none;
+  }
+
+  .overtime-banner {
+    margin: 0;
+    max-width: 200px;
   }
 
   .bonus-ladder {
@@ -709,11 +734,9 @@ button:focus{
   }
 
   .word-input-shell {
+    padding: 0px;
     grid-template-columns: 1fr;
-  }
-
-  .built-word-strip {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    padding-top: 10px;
   }
 
   .console-actions {

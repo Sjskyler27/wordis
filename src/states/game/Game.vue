@@ -1649,7 +1649,7 @@ body {
 
 
 .board-frame {
-  padding-top: 25px;
+
   justify-content: center;
   display: flex;
   grid-template-columns: 250px minmax(0, 1fr);
@@ -2089,10 +2089,6 @@ body {
 }
 
 @media (max-width: 1400px) {
-  .game-shell {
-    padding-top: 108px;
-  }
-
   .score-ribbon {
     position: fixed;
     top: 18px;
@@ -2124,13 +2120,9 @@ body {
   }
 }
 
-@media (max-width: 920px) {
+@media (max-width: 680px) {
   .arena {
     grid-template-columns: 1fr;
-  }
-
-  .game-shell {
-    padding-top: 16px;
   }
 
   .score-ribbon {
@@ -2171,7 +2163,7 @@ body {
 
 @media (max-width: 720px) {
   .game-shell {
-    padding: 16px;
+
   }
 }
 
