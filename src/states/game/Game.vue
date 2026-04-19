@@ -6,7 +6,23 @@
     </div>
 
     <main class="board-frame" :class="{ paused: isPaused }">
-      <aside class="side-stack">
+      <button
+        v-if="isSideDrawerMode"
+        type="button"
+        class="side-drawer-handle"
+        :class="{ open: isSideDrawerOpen }"
+        @click="toggleSideDrawer"
+      >
+        <span class="side-drawer-handle-grip"></span>
+      </button>
+      <button
+        v-if="isSideDrawerMode && isSideDrawerOpen"
+        type="button"
+        class="side-drawer-scrim"
+        aria-label="Close side drawer"
+        @click="closeSideDrawer"
+      ></button>
+      <aside class="side-stack" :class="{ 'side-stack-drawer': isSideDrawerMode, open: isSideDrawerOpen }">
         <div class="bonus-card accent-blue">
           <span class="bonus-kicker">Game mode</span>
           <strong>{{ modeTitle }}</strong>
@@ -272,6 +288,7 @@ const attacksEnabled = computed(() => {
   return !isOvertimeActive.value && (isTestingMode || isTimedSoloMode.value || isBotMode.value || props.isMultiplayer);
 });
 const showOpponentLane = computed(() => props.isMultiplayer || isBotMode.value);
+const isSideDrawerMode = computed(() => windowWidth.value < 1250);
 const preferredLanguage = getPreferredLanguage();
 const SOLO_TIMER_SECONDS = isTestingMode ? 25 : 180;
 const timerRemainingSeconds = ref(SOLO_TIMER_SECONDS);
@@ -291,6 +308,9 @@ let scorePopTimeoutIds = [];
 let activeScorePopAudios = [];
 let historyOverlayTimeoutId = null;
 const showHistoryOverlay = ref(false);
+const windowWidth = ref(typeof window !== 'undefined' ? window.innerWidth : 1440);
+const isSideDrawerOpen = ref(false);
+const sideDrawerAutoOpen = ref(false);
 
 const mySide = computed(() => {
   if (props.isMultiplayer) {
@@ -1019,6 +1039,29 @@ const refocusControllerSelection = () => {
   focusControllerTile(controllerTileCursorIndex.value);
 };
 
+const openSideDrawer = ({ auto = false } = {}) => {
+  if (!isSideDrawerMode.value) {
+    return;
+  }
+
+  isSideDrawerOpen.value = true;
+  sideDrawerAutoOpen.value = auto;
+};
+
+const closeSideDrawer = () => {
+  isSideDrawerOpen.value = false;
+  sideDrawerAutoOpen.value = false;
+};
+
+const toggleSideDrawer = () => {
+  if (isSideDrawerOpen.value) {
+    closeSideDrawer();
+    return;
+  }
+
+  openSideDrawer({ auto: false });
+};
+
 const focusControllerTile = (index = controllerTileCursorIndex.value) => {
   if (!myTiles.value.length) {
     return;
@@ -1448,12 +1491,40 @@ watch([myTiles, mySide], () => {
   refocusControllerSelection();
 }, { deep: true });
 
+watch(isSideDrawerMode, (isDrawerMode) => {
+  if (!isDrawerMode) {
+    closeSideDrawer();
+  }
+});
+
+watch(controllerRegion, (nextRegion, previousRegion) => {
+  if (!isSideDrawerMode.value || !isControllerNavigationActive.value) {
+    return;
+  }
+
+  if (nextRegion === 'cards') {
+    openSideDrawer({ auto: true });
+    return;
+  }
+
+  if (previousRegion === 'cards' && sideDrawerAutoOpen.value) {
+    closeSideDrawer();
+  }
+});
+
+const syncWindowWidth = () => {
+  windowWidth.value = window.innerWidth;
+};
+
 onMounted(() => {
+  syncWindowWidth();
+  window.addEventListener('resize', syncWindowWidth);
   window.addEventListener('keydown', handleKeydown);
   startGameMusic({ restart: true });
 });
 
 onBeforeUnmount(() => {
+  window.removeEventListener('resize', syncWindowWidth);
   window.removeEventListener('keydown', handleKeydown);
   stopSoloTimer();
   stopGameMusic();
@@ -1475,6 +1546,7 @@ const resetAndGoHome = () => {
   isPaused.value = false;
   stopBotLoop();
   stopSoloTimer();
+  closeSideDrawer();
   showHistoryOverlay.value = false;
   window.clearTimeout(historyOverlayTimeoutId);
   isSoloTimerPausedByAttack.value = false;
@@ -1590,6 +1662,14 @@ body {
   filter: blur(4px) saturate(0.82);
   pointer-events: none;
   user-select: none;
+}
+
+.side-drawer-handle {
+  display: none;
+}
+
+.side-drawer-scrim {
+  display: none;
 }
 
 .side-stack {
@@ -2006,11 +2086,6 @@ body {
   .board-frame {
     grid-template-columns: 1fr;
   }
-
-  .side-stack {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
 }
 
 @media (max-width: 920px) {
@@ -2036,9 +2111,85 @@ body {
   .game-shell {
     padding: 16px;
   }
+}
 
-  .side-stack {
-    grid-template-columns: 1fr;
+@media (max-width: 1249px) {
+  .board-frame {
+    position: relative;
+  }
+
+  .side-drawer-handle {
+    position: fixed;
+    top: 50%;
+    left: 0;
+    z-index: 7;
+    transform: translateY(-50%);
+    border: 1px solid rgba(255, 238, 214, 0.16);
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 10px 10px 8px;
+    border-radius: 0 14px 14px 0;
+    background: rgba(55, 13, 31, 0.94);
+    color: rgba(255, 244, 228, 0.86);
+    font-family: inherit;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    box-shadow: 0 12px 28px rgba(30, 8, 22, 0.22);
+    transition: transform 180ms ease, background 180ms ease, color 180ms ease;
+  }
+
+  .side-drawer-handle.open {
+    left: min(340px, calc(100vw - 80px));
+  }
+
+  .side-drawer-handle-grip {
+    width: 3px;
+    height: 28px;
+    border-radius: 999px;
+    background: rgba(255, 214, 157, 0.82);
+    flex: 0 0 auto;
+  }
+
+  .side-drawer-handle-grip::before {
+    content: none;
+  }
+
+  .side-drawer-scrim {
+    position: fixed;
+    inset: 0;
+    display: block;
+    z-index: 5;
+    border: none;
+    background: rgba(18, 6, 17, 0.28);
+  }
+
+  .side-stack.side-stack-drawer {
+    position: fixed;
+    top: 18px;
+    left: 0;
+    bottom: 18px;
+    z-index: 6;
+    width: min(360px, calc(100vw - 52px));
+    max-width: none;
+    padding: 18px 16px 22px;
+    background: linear-gradient(180deg, rgba(80, 16, 42, 0.94), rgba(50, 10, 28, 0.96));
+    border-right: 2px solid rgba(255, 255, 255, 0.12);
+    box-shadow: 24px 0 42px rgba(18, 6, 17, 0.24);
+    overflow-y: auto;
+    transform: translateX(calc(-100% - 16px));
+    transition: transform 220ms ease;
+  }
+
+  .side-stack.side-stack-drawer.open {
+    transform: translateX(0);
+  }
+
+  .side-stack.side-stack-drawer .action-card {
+    max-width: none;
   }
 }
 </style>
