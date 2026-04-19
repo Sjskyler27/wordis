@@ -84,6 +84,24 @@ const keepTestingHand = (hand = [], cardId) => {
   return isTestingMode ? hand : hand.filter((entry) => entry.id !== cardId);
 };
 
+const createHistoryTiles = (tiles = []) => {
+  // Preserve the exact submitted tiles so post-game history matches what players actually used.
+  return tiles.map((tile) => ({
+    id: tile.id,
+    letter: tile.letter,
+    baseLetter: tile.baseLetter,
+    score: tile.score,
+    baseScore: tile.baseScore,
+    bonusScore: tile.bonusScore,
+    multiplier: tile.multiplier,
+    wordMultiplier: tile.wordMultiplier,
+    firstTileBonus: tile.firstTileBonus,
+    status: tile.status,
+    locked: tile.locked,
+    lockTurns: tile.lockTurns
+  }));
+};
+
 const getTurnCount = (state) => {
   return (state?.history?.host?.length || 0) + (state?.history?.opponent?.length || 0);
 };
@@ -469,7 +487,8 @@ const submitWord = async (roomCode, clientId, word, tileIds, languageCode = 'en'
   state.words[side] = resolvedWord;
   state.history[side].unshift({
     word: resolvedWord,
-    score: scoreDelta
+    score: scoreDelta,
+    tiles: createHistoryTiles(selectedTiles)
   });
   state.lastWordScores[side] = scoreDelta;
   state.scores[side] += scoreDelta;

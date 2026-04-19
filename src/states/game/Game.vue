@@ -133,7 +133,7 @@
         </div>
 
         <WordBuilder
-          v-if="(props.isMultiplayer ? gameStarted : true) && !effectiveGameEnded"
+          v-if="(props.isMultiplayer ? gameStarted : true)"
           :selected-tiles="selectedTilesForCurrentSide"
           :invalid-pulse="invalidWordPulse"
           :score-pop-pulse="scorePopPulse"
