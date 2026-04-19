@@ -10,13 +10,60 @@
       <div class="history-columns" :class="{ single: !rightLabel }">
         <section class="history-column">
           <span class="history-label">{{ leftLabel }}</span>
+          <div v-if="bestLeftEntry" class="history-best-word">
+            <span class="history-best-label">Best Word</span>
+            <div class="history-best-main">
+              <div class="history-word-tiles">
+                <div
+                  v-for="(tile, tileIndex) in bestLeftEntry.tiles"
+                  :key="`left-best-tile-${tile.id || tileIndex}`"
+                  class="history-tile"
+                  :style="getTileStyle(tile)"
+                >
+                  <span
+                    v-if="!getModifierUi(tile.status).hideBadge && tile.status !== 'normal'"
+                    class="history-tile-modifier"
+                    :style="getBadgeStyle(tile)"
+                  >
+                    {{ getModifierBadge(tile) }}
+                  </span>
+                  <span class="history-tile-score">{{ getTileScore(tile, tileIndex) }}</span>
+                  <span class="history-tile-letter">{{ tile.letter }}</span>
+                </div>
+              </div>
+              <div class="history-best-copy">
+                <strong>{{ bestLeftEntry.word }}</strong>
+                <span>+{{ bestLeftEntry.score }}</span>
+              </div>
+            </div>
+          </div>
           <ul class="history-list">
             <li
               v-for="(entry, index) in normalizedLeftHistory"
               :key="`left-history-${index}-${entry.word}-${entry.score}`"
               class="history-entry"
             >
-              <span class="history-word">{{ entry.word }}</span>
+              <div class="history-entry-main">
+                <div class="history-word-tiles">
+                  <div
+                    v-for="(tile, tileIndex) in entry.tiles"
+                    :key="`left-history-${index}-tile-${tile.id || tileIndex}`"
+                    class="history-tile"
+                    :style="getTileStyle(tile)"
+                  >
+                    <span
+                      v-if="!getModifierUi(tile.status).hideBadge && tile.status !== 'normal'"
+                      class="history-tile-modifier"
+                      :style="getBadgeStyle(tile)"
+                    >
+                      {{ getModifierBadge(tile) }}
+                    </span>
+                    <span class="history-tile-score">{{ getTileScore(tile, tileIndex) }}</span>
+                    <span class="history-tile-letter">{{ tile.letter }}</span>
+                  </div>
+                </div>
+                <span class="history-word">{{ entry.word }}</span>
+              </div>
               <span class="history-score">+{{ entry.score }}</span>
             </li>
             <li v-if="!normalizedLeftHistory.length" class="history-empty">No words played.</li>
@@ -25,13 +72,60 @@
 
         <section v-if="rightLabel" class="history-column">
           <span class="history-label">{{ rightLabel }}</span>
+          <div v-if="bestRightEntry" class="history-best-word">
+            <span class="history-best-label">Best Word</span>
+            <div class="history-best-main">
+              <div class="history-word-tiles">
+                <div
+                  v-for="(tile, tileIndex) in bestRightEntry.tiles"
+                  :key="`right-best-tile-${tile.id || tileIndex}`"
+                  class="history-tile"
+                  :style="getTileStyle(tile)"
+                >
+                  <span
+                    v-if="!getModifierUi(tile.status).hideBadge && tile.status !== 'normal'"
+                    class="history-tile-modifier"
+                    :style="getBadgeStyle(tile)"
+                  >
+                    {{ getModifierBadge(tile) }}
+                  </span>
+                  <span class="history-tile-score">{{ getTileScore(tile, tileIndex) }}</span>
+                  <span class="history-tile-letter">{{ tile.letter }}</span>
+                </div>
+              </div>
+              <div class="history-best-copy">
+                <strong>{{ bestRightEntry.word }}</strong>
+                <span>+{{ bestRightEntry.score }}</span>
+              </div>
+            </div>
+          </div>
           <ul class="history-list">
             <li
               v-for="(entry, index) in normalizedRightHistory"
               :key="`right-history-${index}-${entry.word}-${entry.score}`"
               class="history-entry"
             >
-              <span class="history-word">{{ entry.word }}</span>
+              <div class="history-entry-main">
+                <div class="history-word-tiles">
+                  <div
+                    v-for="(tile, tileIndex) in entry.tiles"
+                    :key="`right-history-${index}-tile-${tile.id || tileIndex}`"
+                    class="history-tile"
+                    :style="getTileStyle(tile)"
+                  >
+                    <span
+                      v-if="!getModifierUi(tile.status).hideBadge && tile.status !== 'normal'"
+                      class="history-tile-modifier"
+                      :style="getBadgeStyle(tile)"
+                    >
+                      {{ getModifierBadge(tile) }}
+                    </span>
+                    <span class="history-tile-score">{{ getTileScore(tile, tileIndex) }}</span>
+                    <span class="history-tile-letter">{{ tile.letter }}</span>
+                  </div>
+                </div>
+                <span class="history-word">{{ entry.word }}</span>
+              </div>
               <span class="history-score">+{{ entry.score }}</span>
             </li>
             <li v-if="!normalizedRightHistory.length" class="history-empty">No words played.</li>
@@ -56,6 +150,7 @@
 
 <script setup>
 import { computed, nextTick, onMounted, ref, watch } from 'vue';
+import { getModifierBadge, getModifierUi, tileScore } from '../tile-logic.js';
 
 const props = defineProps({
   summaryText: {
@@ -102,17 +197,88 @@ const playAgainButton = ref(null);
 
 const normalizeEntry = (entry) => {
   if (typeof entry === 'string') {
-    return { word: entry, score: 0 };
+    return {
+      word: entry,
+      score: 0,
+      tiles: entry.split('').map((letter, index) => ({
+        id: `legacy-${letter}-${index}`,
+        letter,
+        baseLetter: letter,
+        score: 0,
+        baseScore: 0,
+        bonusScore: 0,
+        multiplier: 1,
+        wordMultiplier: 1,
+        firstTileBonus: 0,
+        status: 'normal',
+        locked: false,
+        lockTurns: 0
+      }))
+    };
   }
 
   return {
     word: entry?.word || '',
-    score: entry?.score || 0
+    score: entry?.score || 0,
+    tiles: Array.isArray(entry?.tiles) && entry.tiles.length
+      ? entry.tiles
+      : (entry?.word || '').split('').map((letter, index) => ({
+        id: `fallback-${entry?.word || 'word'}-${index}`,
+        letter,
+        baseLetter: letter,
+        score: 0,
+        baseScore: 0,
+        bonusScore: 0,
+        multiplier: 1,
+        wordMultiplier: 1,
+        firstTileBonus: 0,
+        status: 'normal',
+        locked: false,
+        lockTurns: 0
+      }))
   };
 };
 
 const normalizedLeftHistory = computed(() => props.leftHistory.map(normalizeEntry));
 const normalizedRightHistory = computed(() => props.rightHistory.map(normalizeEntry));
+const getBestEntry = (entries = []) => {
+  if (!entries.length) {
+    return null;
+  }
+
+  return entries.reduce((bestEntry, entry) => {
+    if (!bestEntry || entry.score > bestEntry.score) {
+      return entry;
+    }
+
+    return bestEntry;
+  }, null);
+};
+const bestLeftEntry = computed(() => getBestEntry(normalizedLeftHistory.value));
+const bestRightEntry = computed(() => getBestEntry(normalizedRightHistory.value));
+
+const getTileStyle = (tile) => {
+  const ui = getModifierUi(tile.status);
+
+  return {
+    '--history-tile-bg': ui.tileBackground,
+    '--history-tile-shadow': ui.tileShadow,
+    '--history-tile-text-color': ui.textColor
+  };
+};
+
+const getBadgeStyle = (tile) => {
+  const ui = getModifierUi(tile.status);
+
+  return {
+    background: ui.badgeBackground,
+    color: ui.badgeColor
+  };
+};
+
+const getTileScore = (tile, index) => {
+  return tileScore(tile, { positionIndex: index });
+};
 
 const focusPlayAgainButton = () => {
   nextTick(() => {
@@ -246,6 +412,47 @@ watch(() => props.playAgainDisabled, (disabled, wasDisabled) => {
   border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
+.history-best-word {
+  margin-top: 14px;
+  padding: 14px;
+  border-radius: 16px;
+  background: linear-gradient(180deg, rgba(255, 210, 101, 0.12), rgba(255, 255, 255, 0.04));
+  border: 1px solid rgba(255, 210, 101, 0.18);
+}
+
+.history-best-label {
+  display: inline-block;
+  font-size: 0.64rem;
+  font-weight: 900;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #ffd265;
+}
+
+.history-best-main {
+  display: grid;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.history-best-copy {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.history-best-copy strong {
+  font-size: 1rem;
+  color: #fff3c0;
+}
+
+.history-best-copy span {
+  color: var(--teal, #6ff5dd);
+  font-weight: 800;
+  white-space: nowrap;
+}
+
 .history-list {
   list-style: none;
   margin: 14px 0 0;
@@ -266,10 +473,72 @@ watch(() => props.playAgainDisabled, (disabled, wasDisabled) => {
   background: rgba(255, 255, 255, 0.06);
 }
 
+.history-entry-main {
+  min-width: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.history-word-tiles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.history-tile {
+  min-width: 58px;
+  min-height: 58px;
+  padding: 10px;
+  border-radius: 16px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--history-tile-bg, linear-gradient(180deg, #fffef8 0%, #f2ebe0 70%, #d9cec0 100%));
+  color: var(--history-tile-text-color, #1c1930);
+  box-shadow: var(--history-tile-shadow, inset 0 -4px 0 rgba(0, 0, 0, 0.12), 0 10px 18px rgba(45, 10, 24, 0.16));
+  font-family: "Press Start 2P", cursive;
+  overflow: hidden;
+}
+
+.history-tile-letter {
+  font-size: 1.45rem;
+  line-height: 1;
+  font-weight: 900;
+}
+
+.history-tile-score {
+  position: absolute;
+  top: 7px;
+  right: 8px;
+  font-size: 0.58rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.history-tile-modifier {
+  position: absolute;
+  top: 7px;
+  left: 8px;
+  max-width: calc(100% - 16px);
+  min-width: 18px;
+  padding: 2px 5px;
+  border-radius: 999px;
+  font-size: 0.42rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  box-shadow: 0 4px 10px rgba(27, 11, 20, 0.18);
+}
+
 .history-word {
   font-size: 0.94rem;
   font-weight: 700;
   word-break: break-word;
+  opacity: 0.84;
 }
 
 .history-score {
@@ -324,6 +593,16 @@ watch(() => props.playAgainDisabled, (disabled, wasDisabled) => {
 
   .history-columns {
     grid-template-columns: 1fr;
+  }
+
+  .history-tile {
+    min-width: 50px;
+    min-height: 50px;
+    padding: 8px;
+  }
+
+  .history-tile-letter {
+    font-size: 1.2rem;
   }
 }
 </style>

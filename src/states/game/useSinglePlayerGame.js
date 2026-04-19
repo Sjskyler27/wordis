@@ -39,6 +39,23 @@ export const useSinglePlayerGame = ({
   onTimedSoloGainTime
 }) => {
   let botLoopId = null;
+  const createHistoryTiles = (tiles = []) => {
+    // Keep a frozen copy of played tiles so results can render the exact word later.
+    return tiles.map((tile) => ({
+      id: tile.id,
+      letter: tile.letter,
+      baseLetter: tile.baseLetter,
+      score: tile.score,
+      baseScore: tile.baseScore,
+      bonusScore: tile.bonusScore,
+      multiplier: tile.multiplier,
+      wordMultiplier: tile.wordMultiplier,
+      firstTileBonus: tile.firstTileBonus,
+      status: tile.status,
+      locked: tile.locked,
+      lockTurns: tile.lockTurns
+    }));
+  };
   const WINNING_SCORE = isTestingMode ? 40 : 250;
   const BOT_DELAYS = {
     easy: 12000,
@@ -234,7 +251,11 @@ export const useSinglePlayerGame = ({
 
     wordHistory.value = {
       host: wordHistory.value.host,
-      opponent: [{ word: normalizedBotWord, score: botScoreDelta }, ...wordHistory.value.opponent]
+      opponent: [{
+        word: normalizedBotWord,
+        score: botScoreDelta,
+        tiles: createHistoryTiles(selectedBotTiles)
+      }, ...wordHistory.value.opponent]
     };
 
     playerScores.value = {
@@ -317,7 +338,11 @@ export const useSinglePlayerGame = ({
     };
 
     wordHistory.value = {
-      host: [{ word, score: scoreDelta }, ...wordHistory.value.host],
+      host: [{
+        word,
+        score: scoreDelta,
+        tiles: createHistoryTiles(selectedTiles)
+      }, ...wordHistory.value.host],
       opponent: wordHistory.value.opponent
     };
 

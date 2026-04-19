@@ -33,6 +33,11 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
   const BOON_CARD_KEYS = ['boon_delete_tile', 'boon_isolate_tile', 'boon_clear_negative', 'boon_firsttile', 'boon_wild', 'boon_gold'];
   const ATTACK_CARD_KEYS = ['attack_zeroTile', 'attack_mustuse', 'attack_locked3', 'attack_ghostTile'];
   const TIMED_SOLO_ATTACK_CARD_KEYS = ['attack_pause_time', 'attack_gain_time'];
+  const EMPTY_TILE_ANIMATION_STATE = {
+    trigger: '',
+    name: '',
+    key: ''
+  };
   const MODIFIER_PROFILES = {
     duel: {
       goodModifiers: GOOD_MODIFIERS,
@@ -243,6 +248,9 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
       effects: { setScore: 1, idleScorePenalty: 3 },
       rarityWeight: 0.5,
       canApply: ({ baseScore }) => baseScore <= 4,
+      animations: {
+        onNewTurn: 'blaze'
+      },
       ui: {
         tileBackground: 'linear-gradient(180deg, #2f160d 0%, #6d2513 32%, #c44717 72%, #ffb347 100%)',
         tileShadow: 'inset 0 -4px 0 rgba(83, 23, 5, 0.32), 0 12px 20px rgba(85, 24, 6, 0.22), 0 0 0 1px rgba(255, 180, 94, 0.34)',
@@ -1070,14 +1078,43 @@ console.log(JSON.stringify({
     return remainingWord.length === 0;
   };
 
-  const applyModifierToTile = (tile, status = 'normal') => {
+  const createTileAnimationState = (tile, trigger = '') => {
+    const animationName = tile?.[trigger] || '';
+    if (!animationName) {
+      return EMPTY_TILE_ANIMATION_STATE;
+    }
+
+    return {
+      trigger,
+      name: animationName,
+      key: `${trigger}-${animationName}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`
+    };
+  };
+
+  const attachTileAnimationHooks = (tile, status = 'normal', trigger = '') => {
+    const definition = getModifierDefinition(status);
+    const animations = definition.animations || {};
+    const nextTile = {
+      ...tile,
+      onPull: animations.onPull || '',
+      onNewTurn: animations.onNewTurn || '',
+      onSubmit: animations.onSubmit || ''
+    };
+
+    return {
+      ...nextTile,
+      animationState: createTileAnimationState(nextTile, trigger)
+    };
+  };
+
+  const applyModifierToTile = (tile, status = 'normal', options = {}) => {
     const definition = getModifierDefinition(status);
     const baseScore = letterConfig[tile.letter]?.score || tile.baseScore || tile.score || 0;
     const tileLetter = definition.effects.wild ? '*' : (tile.baseLetter || tile.letter);
     const nextScore = definition.effects.setScore != null ? definition.effects.setScore : baseScore;
     const lockTurns = definition.effects.lockTurns || 0;
 
-    return {
+    return attachTileAnimationHooks({
       ...tile,
       letter: tileLetter,
       baseLetter: tile.baseLetter || tile.letter,
@@ -1090,7 +1127,7 @@ console.log(JSON.stringify({
       locked: lockTurns > 0,
       lockTurns,
       status
-    };
+    }, status, options.trigger || '');
   };
 
   const replaceTileWithModifier = (tiles, tileId, status) => {
@@ -1107,19 +1144,24 @@ console.log(JSON.stringify({
     return tiles.filter((tile) => tile.status === 'mustuse' && !tile.locked);
   };
 
-  const tickLockedTile = (tile) => {
+  const tickLockedTile = (tile, options = {}) => {
     if (!tile?.locked) {
-      return tile;
+      return {
+        ...tile,
+        animationState: createTileAnimationState(tile, options.trigger || '')
+      };
     }
 
     const nextLockTurns = Math.max(0, (tile.lockTurns || 0) - 1);
+    const nextStatus = nextLockTurns > 0 ? tile.status : 'normal';
 
-    return {
+    return applyModifierToTile({
       ...tile,
       lockTurns: nextLockTurns,
-      locked: nextLockTurns > 0,
-      status: nextLockTurns > 0 ? tile.status : 'normal'
-    };
+      locked: nextLockTurns > 0
+    }, nextStatus, {
+      trigger: options.trigger || ''
+    });
   };
 
   const isMissingRequiredTile = (rackTiles = [], selectedTiles = []) => {
@@ -1174,7 +1216,7 @@ console.log(JSON.stringify({
       const lockTurns = modifierDefinition.effects.lockTurns || 0;
       const tileLetter = modifierDefinition.effects.wild ? '*' : letter;
 
-      return {
+      return attachTileAnimationHooks({
         id: createTileId(),
         letter: tileLetter,
         baseLetter: letter,
@@ -1187,7 +1229,7 @@ console.log(JSON.stringify({
         locked: lockTurns > 0,
         lockTurns,
         status
-      };
+      }, status, 'onPull');
     };
 
     const buildFreshRack = (side = null, scores = {}, options = {}) => {
@@ -1314,7 +1356,8 @@ console.log(JSON.stringify({
           return tile;
         }
 
-        return tickLockedTile(tickIdleTile(tile));
+        // Surviving tiles can fire their modifier-specific new turn animation hooks here.
+        return tickLockedTile(tickIdleTile(tile), { trigger: 'onNewTurn' });
       });
 
       nextTiles.forEach((tile, index) => {
