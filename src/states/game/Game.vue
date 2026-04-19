@@ -2088,17 +2088,79 @@ body {
   }
 }
 
+@media (max-width: 1400px) {
+  .game-shell {
+    padding-top: 108px;
+  }
+
+  .score-ribbon {
+    position: fixed;
+    top: 18px;
+    left: 18px;
+    right: 18px;
+    display: block;
+    pointer-events: none;
+    z-index: 9;
+  }
+
+  .score-divider {
+    display: none;
+  }
+
+  .score-box {
+    position: absolute;
+    top: 0;
+    min-width: 220px;
+    max-width: min(32vw, 280px);
+    pointer-events: auto;
+  }
+
+  .score-box.host {
+    left: 0;
+  }
+
+  .score-box.opponent {
+    right: 0;
+  }
+}
+
 @media (max-width: 920px) {
   .arena {
     grid-template-columns: 1fr;
   }
 
+  .game-shell {
+    padding-top: 16px;
+  }
+
   .score-ribbon {
-    grid-template-columns: 1fr;
+    position: fixed;
+    top: 18px;
+    left: 18px;
+    right: 18px;
+    display: block;
+    pointer-events: none;
+    z-index: 9;
   }
 
   .score-divider {
-    text-align: center;
+    display: none;
+  }
+
+  .score-box {
+    position: absolute;
+    top: 0;
+    min-width: 220px;
+    max-width: min(32vw, 280px);
+    pointer-events: auto;
+  }
+
+  .score-box.host {
+    left: 0;
+  }
+
+  .score-box.opponent {
+    right: 0;
   }
 
   .bottom-bar {
