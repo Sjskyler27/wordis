@@ -400,7 +400,15 @@ const {
     isSoloTimerPausedByAttack.value = true;
   },
   onTimedSoloGainTime: (seconds) => {
+    const wasOutOfTime = timerRemainingSeconds.value <= 0;
     timerRemainingSeconds.value += seconds;
+    if (wasOutOfTime && timerRemainingSeconds.value > 0) {
+      // Recovering from the final-word window should restart the live timer immediately.
+      isSoloTimerPausedByAttack.value = false;
+      if (!isPaused.value) {
+        startSoloTimer();
+      }
+    }
   }
 });
 
