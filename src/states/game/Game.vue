@@ -403,9 +403,11 @@ const {
     const wasOutOfTime = timerRemainingSeconds.value <= 0;
     timerRemainingSeconds.value += seconds;
     if (wasOutOfTime && timerRemainingSeconds.value > 0) {
-      // Recovering from the final-word window should restart the live timer immediately.
+      // Recovering from timeout should fully return solo sprint to live play.
+      timedSoloFinalWordSpent.value = false;
       isSoloTimerPausedByAttack.value = false;
       if (!isPaused.value) {
+        startBotLoop();
         startSoloTimer();
       }
     }
