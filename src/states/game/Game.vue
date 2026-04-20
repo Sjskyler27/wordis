@@ -115,6 +115,7 @@
             :submitted-word="leftLane.submittedWord"
             :score="leftLane.score"
             :last-word-score="leftLane.lastWordScore"
+            :last-word-breakdown="leftLane.lastWordBreakdown"
             :tiles="leftLane.tiles"
             :is-active="leftLane.isActive"
             :selected-tile-ids="leftLane.selectedTileIds"
@@ -132,6 +133,7 @@
             :submitted-word="rightLane.submittedWord"
             :score="rightLane.score"
             :last-word-score="rightLane.lastWordScore"
+            :last-word-breakdown="rightLane.lastWordBreakdown"
             :tiles="rightLane.tiles"
             :is-active="rightLane.isActive"
             :selected-tile-ids="rightLane.selectedTileIds"
@@ -204,6 +206,7 @@ import {
   wordHistory,
   playerScores,
   lastWordScores,
+  lastWordBreakdowns,
   playAgainVotes,
   playerTiles,
   rackClears,
@@ -282,6 +285,11 @@ const mustAlertTileIds = ref({
   host: new Set(),
   opponent: new Set()
 });
+const createEmptyLastWordBreakdown = () => ({
+  wordScore: 0,
+  burnPenalty: 0,
+  netScore: 0
+});
 const isMultiplayerRef = computed(() => props.isMultiplayer);
 const isTimedSoloMode = computed(() => !props.isMultiplayer && props.playMode === 'timed_solo');
 const isBotMode = computed(() => !props.isMultiplayer && props.playMode === 'bot_match');
@@ -334,6 +342,7 @@ const buildLane = (side, label) => ({
   submittedWord: submittedWords.value[side],
   score: playerScores.value[side],
   lastWordScore: lastWordScores.value[side],
+  lastWordBreakdown: lastWordBreakdowns.value[side] || createEmptyLastWordBreakdown(),
   tiles: playerTiles.value[side],
   isActive: mySide.value === side,
   selectedTileIds: selectedTileIds.value[side],
@@ -392,6 +401,7 @@ const {
   playerTiles,
   playerScores,
   lastWordScores,
+  lastWordBreakdowns,
   rackClears,
   playerCards,
   submittedWords,

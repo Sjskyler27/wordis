@@ -139,6 +139,18 @@ const createInitialState = ({ hostId, players = [hostId], isPrivate = true, over
         host: 0,
         opponent: 0
       },
+      lastWordBreakdowns: {
+        host: {
+          wordScore: 0,
+          burnPenalty: 0,
+          netScore: 0
+        },
+        opponent: {
+          wordScore: 0,
+          burnPenalty: 0,
+          netScore: 0
+        }
+      },
       playAgainVotes: {
         host: false,
         opponent: false
@@ -176,6 +188,18 @@ const createInitialState = ({ hostId, players = [hostId], isPrivate = true, over
     lastWordScores: {
       host: 0,
       opponent: 0
+    },
+    lastWordBreakdowns: {
+      host: {
+        wordScore: 0,
+        burnPenalty: 0,
+        netScore: 0
+      },
+      opponent: {
+        wordScore: 0,
+        burnPenalty: 0,
+        netScore: 0
+      }
     },
     playAgainVotes: {
       host: false,
@@ -491,6 +515,11 @@ const submitWord = async (roomCode, clientId, word, tileIds, languageCode = 'en'
     tiles: createHistoryTiles(selectedTiles)
   });
   state.lastWordScores[side] = scoreDelta;
+  state.lastWordBreakdowns[side] = {
+    wordScore,
+    burnPenalty: idlePenalty,
+    netScore: scoreDelta
+  };
   state.scores[side] += scoreDelta;
   state.cards[side].boons.push(...drawCards('boon', grantedResources.boons));
   state.cards[side].attacks.push(...drawCards('attack', grantedResources.attacks));

@@ -11,7 +11,13 @@
     <div class="lane-header">
       <div>
         <p class="lane-label">{{ label }} </p>
-        <h2>{{ submittedWord || 'Waiting for a word...' }} <strong v-if="submittedWord">+ {{ lastWordScore }}</strong></h2>
+        <h2>
+          {{ submittedWord || 'Waiting for a word...' }}
+          <strong v-if="submittedWord">+ {{ displayWordScore }}</strong>
+        </h2>
+        <p v-if="submittedWord && displayBurnPenalty > 0" class="lane-burn-penalty">
+          - {{ displayBurnPenalty }} burn
+        </p>
       </div>
     </div>
 
@@ -49,7 +55,7 @@
 </template>
 
 <script setup>
-import { onBeforeUnmount, ref, watch } from 'vue';
+import { computed, onBeforeUnmount, ref, watch } from 'vue';
 import { getModifierBadge, getModifierUi, tileScore } from '../tile-logic.js';
 
 const props = defineProps({
@@ -93,6 +99,14 @@ const props = defineProps({
     type: Number,
     required: false
   },
+  lastWordBreakdown: {
+    type: Object,
+    default: () => ({
+      wordScore: 0,
+      burnPenalty: 0,
+      netScore: 0
+    })
+  },
   burstPulse: {
     type: Number,
     default: 0
@@ -104,6 +118,14 @@ const props = defineProps({
 });
 
 defineEmits(['tile-click']);
+
+const displayWordScore = computed(() => {
+  return props.lastWordBreakdown?.wordScore ?? props.lastWordScore ?? 0;
+});
+
+const displayBurnPenalty = computed(() => {
+  return props.lastWordBreakdown?.burnPenalty ?? 0;
+});
 
 const getTileStyle = (tile) => {
   const ui = getModifierUi(tile.status);
@@ -326,6 +348,14 @@ onBeforeUnmount(() => {
   font-size: clamp(1.45rem, 2.8vw, 2.4rem);
   line-height: 1;
   word-break: break-word;
+}
+
+.lane-burn-penalty {
+  margin: 6px 0 0;
+  font-size: 0.82rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(255, 167, 134, 0.95);
 }
 
 

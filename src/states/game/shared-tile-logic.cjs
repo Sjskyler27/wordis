@@ -247,7 +247,7 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
       noSinglePlayer: true,
       badge: 'BURN',
       effects: { setScore: 1, idleScorePenalty: 3 },
-      rarityWeight: 0.5,
+      rarityWeight: 10.5,
       canApply: ({ baseScore }) => baseScore <= 4,
       animations: {
         onNewTurn: 'blaze'

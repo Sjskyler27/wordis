@@ -20,6 +20,18 @@ export const lastWordScores = ref({
   host: 0,
   opponent: 0
 });
+export const lastWordBreakdowns = ref({
+  host: {
+    wordScore: 0,
+    burnPenalty: 0,
+    netScore: 0
+  },
+  opponent: {
+    wordScore: 0,
+    burnPenalty: 0,
+    netScore: 0
+  }
+});
 export const playAgainVotes = ref({
   host: false,
   opponent: false
@@ -62,6 +74,7 @@ const applyGameState = (data = {}) => {
   wordHistory.value = data.history || wordHistory.value;
   playerScores.value = data.scores || playerScores.value;
   lastWordScores.value = data.lastWordScores || lastWordScores.value;
+  lastWordBreakdowns.value = data.lastWordBreakdowns || lastWordBreakdowns.value;
   playAgainVotes.value = data.playAgainVotes || playAgainVotes.value;
   playerTiles.value = data.tiles || playerTiles.value;
   rackClears.value = data.rackClears || rackClears.value;
@@ -211,6 +224,18 @@ export const resetGame = () => {
   lastWordScores.value = {
     host: 0,
     opponent: 0
+  };
+  lastWordBreakdowns.value = {
+    host: {
+      wordScore: 0,
+      burnPenalty: 0,
+      netScore: 0
+    },
+    opponent: {
+      wordScore: 0,
+      burnPenalty: 0,
+      netScore: 0
+    }
   };
   playAgainVotes.value = {
     host: false,
