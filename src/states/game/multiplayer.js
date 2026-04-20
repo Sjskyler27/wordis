@@ -74,7 +74,18 @@ const applyGameState = (data = {}) => {
   wordHistory.value = data.history || wordHistory.value;
   playerScores.value = data.scores || playerScores.value;
   lastWordScores.value = data.lastWordScores || lastWordScores.value;
-  lastWordBreakdowns.value = data.lastWordBreakdowns || lastWordBreakdowns.value;
+  lastWordBreakdowns.value = data.lastWordBreakdowns || {
+    host: {
+      wordScore: data.lastWordScores?.host || 0,
+      burnPenalty: 0,
+      netScore: data.lastWordScores?.host || 0
+    },
+    opponent: {
+      wordScore: data.lastWordScores?.opponent || 0,
+      burnPenalty: 0,
+      netScore: data.lastWordScores?.opponent || 0
+    }
+  };
   playAgainVotes.value = data.playAgainVotes || playAgainVotes.value;
   playerTiles.value = data.tiles || playerTiles.value;
   rackClears.value = data.rackClears || rackClears.value;
