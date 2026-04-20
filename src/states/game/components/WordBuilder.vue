@@ -1,5 +1,5 @@
 <template>
-  <form class="word-console" :class="{ overtime: isOvertimeActive }" @submit.prevent="$emit('submit')">
+  <section class="word-console" :class="{ overtime: isOvertimeActive }">
     <div class="console-topline">
       <span class="console-label"><span v-if="currentWordScore < 10" style="visibility:hidden">_</span>{{ currentWordScore }} pts</span>
       <div v-if="isOvertimeActive" class="overtime-banner animated-pulse ">Final Word!</div>
@@ -116,15 +116,16 @@
         New Rack {{ clearCount }}
       </button>
       <button
-        type="submit"
+        type="button"
         class="submit-button"
         :class="{ 'console-action-controller-focus': controllerFocusedActionIndex === 4 }"
         data-controller-action="4"
+        @click="$emit('submit')"
       >
         Submit Word
       </button>
     </div>
-  </form>
+  </section>
 </template>
 
 <script setup>
