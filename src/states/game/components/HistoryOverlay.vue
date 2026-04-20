@@ -585,10 +585,14 @@ watch(() => props.playAgainDisabled, (disabled, wasDisabled) => {
 @media (max-width: 820px) {
   .history-overlay {
     inset: 10px;
+    align-items: stretch;
   }
 
   .history-panel {
     padding: 20px;
+    width: 100%;
+    max-height: 100%;
+    overflow-y: auto;
   }
 
   .history-columns {
@@ -603,6 +607,86 @@ watch(() => props.playAgainDisabled, (disabled, wasDisabled) => {
 
   .history-tile-letter {
     font-size: 1.2rem;
+  }
+}
+
+@media (max-width: 560px) {
+  .history-overlay {
+    inset: 0;
+  }
+
+  .history-scrim {
+    border-radius: 0;
+    max-height: none;
+  }
+
+  .history-panel {
+    border-radius: 0;
+    padding: 16px 14px 20px;
+    min-height: 100%;
+    width: 100%;
+  }
+
+  .history-title {
+    font-size: 1.2rem;
+  }
+
+  .history-copy {
+    font-size: 0.84rem;
+  }
+
+  .history-column {
+    padding: 14px;
+  }
+
+  .history-best-copy,
+  .history-entry {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .history-list {
+    max-height: none;
+  }
+
+  .history-score {
+    align-self: flex-end;
+  }
+
+  .history-word-tiles {
+    gap: 5px;
+  }
+
+  .history-tile {
+    min-width: 46px;
+    min-height: 46px;
+    padding: 7px;
+    border-radius: 13px;
+  }
+
+  .history-tile-letter {
+    font-size: 1rem;
+  }
+
+  .history-tile-score {
+    top: 5px;
+    right: 6px;
+    font-size: 0.5rem;
+  }
+
+  .history-tile-modifier {
+    top: 5px;
+    left: 6px;
+    max-width: calc(100% - 12px);
+    font-size: 0.35rem;
+  }
+
+  .history-actions {
+    margin-top: 18px;
+  }
+
+  .play-again-button {
+    width: 100%;
   }
 }
 </style>

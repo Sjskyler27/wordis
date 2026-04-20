@@ -31,6 +31,7 @@ export const useSinglePlayerGame = ({
   playerTiles,
   playerScores,
   lastWordScores,
+  lastWordBreakdowns,
   rackClears,
   playerCards,
   submittedWords,
@@ -266,6 +267,14 @@ export const useSinglePlayerGame = ({
       host: lastWordScores.value.host,
       opponent: botScoreDelta
     };
+    lastWordBreakdowns.value = {
+      host: lastWordBreakdowns.value.host,
+      opponent: {
+        wordScore: botScoreDetails.total,
+        burnPenalty: botIdlePenalty,
+        netScore: botScoreDelta
+      }
+    };
     playerCards.value = {
       host: playerCards.value.host,
       opponent: {
@@ -353,6 +362,14 @@ export const useSinglePlayerGame = ({
     lastWordScores.value = {
       host: scoreDelta,
       opponent: lastWordScores.value.opponent
+    };
+    lastWordBreakdowns.value = {
+      host: {
+        wordScore: scoreDetails.total,
+        burnPenalty: idlePenalty,
+        netScore: scoreDelta
+      },
+      opponent: lastWordBreakdowns.value.opponent
     };
     playerCards.value = {
       host: {

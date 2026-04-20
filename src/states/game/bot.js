@@ -1,5 +1,5 @@
 import { DICTIONARY_WORDS } from './dictionary.js';
-import { getTilesForWord } from './tile-logic.js';
+import { getModifierDefinition, getTilesForWord } from './tile-logic.js';
 
 const MIN_WORD_LENGTH = 4;
 const MAX_CANDIDATES_PER_POOL = 18;
@@ -27,11 +27,14 @@ const getRackProfile = (tiles = []) => {
   const letterCounts = Object.create(null);
   const requiredTileIds = new Set();
   let wildCount = 0;
+  let botPerformance = 0;
 
   for (const tile of tiles) {
     if (tile.locked) {
       continue;
     }
+
+    botPerformance += getModifierDefinition(tile.status).effects.botPerformanceDelta || 0;
 
     if (tile.status === 'mustuse') {
       requiredTileIds.add(tile.id);
@@ -50,7 +53,8 @@ const getRackProfile = (tiles = []) => {
   return {
     letterCounts,
     wildCount,
-    requiredTileIds
+    requiredTileIds,
+    botPerformance
   };
 };
 
@@ -82,7 +86,7 @@ const includesRequiredTiles = (matchedTiles = [], requiredTileIds = new Set()) =
   });
 };
 
-const chooseCandidate = (candidates = [], difficulty = 'normal') => {
+const chooseCandidate = (candidates = [], difficulty = 'normal', botPerformance = 0) => {
   if (!candidates.length) {
     return '';
   }
@@ -93,7 +97,9 @@ const chooseCandidate = (candidates = [], difficulty = 'normal') => {
     hard: Math.min(4, candidates.length)
   };
 
-  const topSliceLength = topSliceLengthByDifficulty[difficulty] || topSliceLengthByDifficulty.normal;
+  const baseSliceLength = topSliceLengthByDifficulty[difficulty] || topSliceLengthByDifficulty.normal;
+  const performanceAdjustedSliceLength = Math.round(baseSliceLength * (1 - (botPerformance * 0.55)));
+  const topSliceLength = Math.max(1, Math.min(candidates.length, performanceAdjustedSliceLength));
   const offset = Math.floor(Math.random() * topSliceLength);
   return candidates[offset];
 };
@@ -130,5 +136,12 @@ export const getBotWord = (tiles = [], recentWords = [], difficulty = 'normal') 
     }
   }
 
-  return chooseCandidate(freshCandidates, difficulty) || chooseCandidate(repeatCandidates, difficulty);
+  // Modifier-driven bot pressure can make the bot blank on a rack before it settles on a word.
+  const botBlankChance = Math.min(0.55, Math.max(0, -rackProfile.botPerformance) * 0.22);
+  if ((freshCandidates.length || repeatCandidates.length) && botBlankChance > 0 && Math.random() < botBlankChance) {
+    return '';
+  }
+
+  return chooseCandidate(freshCandidates, difficulty, rackProfile.botPerformance)
+    || chooseCandidate(repeatCandidates, difficulty, rackProfile.botPerformance);
 };

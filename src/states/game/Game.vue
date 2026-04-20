@@ -5,7 +5,7 @@
       <div class="shape-layer layer-near"></div>
     </div>
 
-    <main class="board-frame" :class="{ paused: isPaused }">
+    <main class="board-frame" :class="{ paused: isPaused }" :style="boardFrameStyle">
       <button
         v-if="isSideDrawerMode"
         type="button"
@@ -115,6 +115,7 @@
             :submitted-word="leftLane.submittedWord"
             :score="leftLane.score"
             :last-word-score="leftLane.lastWordScore"
+            :last-word-breakdown="leftLane.lastWordBreakdown"
             :tiles="leftLane.tiles"
             :is-active="leftLane.isActive"
             :selected-tile-ids="leftLane.selectedTileIds"
@@ -132,6 +133,7 @@
             :submitted-word="rightLane.submittedWord"
             :score="rightLane.score"
             :last-word-score="rightLane.lastWordScore"
+            :last-word-breakdown="rightLane.lastWordBreakdown"
             :tiles="rightLane.tiles"
             :is-active="rightLane.isActive"
             :selected-tile-ids="rightLane.selectedTileIds"
@@ -204,6 +206,7 @@ import {
   wordHistory,
   playerScores,
   lastWordScores,
+  lastWordBreakdowns,
   playAgainVotes,
   playerTiles,
   rackClears,
@@ -242,6 +245,10 @@ const props = defineProps({
   volume: Number,
   musicVolume: Number,
   effectsVolume: Number,
+  gameZoom: {
+    type: Number,
+    default: 1
+  },
   isControllerConnected: Boolean,
   settingsShowing: Boolean,
   overtimeEnabled: {
@@ -277,6 +284,11 @@ const laneBurstPulse = ref({
 const mustAlertTileIds = ref({
   host: new Set(),
   opponent: new Set()
+});
+const createEmptyLastWordBreakdown = () => ({
+  wordScore: 0,
+  burnPenalty: 0,
+  netScore: 0
 });
 const isMultiplayerRef = computed(() => props.isMultiplayer);
 const isTimedSoloMode = computed(() => !props.isMultiplayer && props.playMode === 'timed_solo');
@@ -330,6 +342,7 @@ const buildLane = (side, label) => ({
   submittedWord: submittedWords.value[side],
   score: playerScores.value[side],
   lastWordScore: lastWordScores.value[side],
+  lastWordBreakdown: lastWordBreakdowns.value[side] || createEmptyLastWordBreakdown(),
   tiles: playerTiles.value[side],
   isActive: mySide.value === side,
   selectedTileIds: selectedTileIds.value[side],
@@ -388,6 +401,7 @@ const {
   playerTiles,
   playerScores,
   lastWordScores,
+  lastWordBreakdowns,
   rackClears,
   playerCards,
   submittedWords,
@@ -396,7 +410,17 @@ const {
     isSoloTimerPausedByAttack.value = true;
   },
   onTimedSoloGainTime: (seconds) => {
+    const wasOutOfTime = timerRemainingSeconds.value <= 0;
     timerRemainingSeconds.value += seconds;
+    if (wasOutOfTime && timerRemainingSeconds.value > 0) {
+      // Recovering from timeout should fully return solo sprint to live play.
+      timedSoloFinalWordSpent.value = false;
+      isSoloTimerPausedByAttack.value = false;
+      if (!isPaused.value) {
+        startBotLoop();
+        startSoloTimer();
+      }
+    }
   }
 });
 
@@ -597,6 +621,9 @@ const statusHeadline = computed(() => {
 
   return 'Racks are live';
 });
+const boardFrameStyle = computed(() => ({
+  zoom: props.gameZoom || 1
+}));
 const scoreGap = computed(() => {
   if (!showOpponentLane.value) {
     return 0;
@@ -816,6 +843,37 @@ const triggerMustTileAlert = (side, tileIds) => {
   }, 1100);
 };
 
+const autoSwapMatchingMustTiles = () => {
+  const selectedTiles = [...selectedTilesForCurrentSide.value];
+  const selectedTileIdsSet = new Set(selectedTiles.map((tile) => tile.id));
+  const missingMustTiles = myTiles.value.filter((tile) => {
+    return tile.status === 'mustuse' && !tile.locked && !selectedTileIdsSet.has(tile.id);
+  });
+  let swappedAnyTile = false;
+
+  for (const mustTile of missingMustTiles) {
+    const mustLetter = mustTile.baseLetter || mustTile.letter;
+    const replacementTile = selectedTiles.find((tile) => {
+      return tile.status !== 'mustuse'
+        && !tile.locked
+        && (tile.baseLetter || tile.letter) === mustLetter;
+    });
+
+    if (!replacementTile) {
+      continue;
+    }
+
+    replaceSelectedTileId(mySide.value, replacementTile.id, mustTile.id);
+    const replacementIndex = selectedTiles.findIndex((tile) => tile.id === replacementTile.id);
+    if (replacementIndex !== -1) {
+      selectedTiles[replacementIndex] = mustTile;
+    }
+    swappedAnyTile = true;
+  }
+
+  return swappedAnyTile;
+};
+
 watch(myCards, () => {
   if (activeBoonCardId.value && !activeBoonCard.value) {
     resetActionMode();
@@ -850,6 +908,7 @@ const handleSubmit = async () => {
   }
 
   const normalizedWord = currentWordDisplay.value;
+  const swappedInMustTile = autoSwapMatchingMustTiles();
   const selectedTiles = selectedTilesForCurrentSide.value;
   if (!normalizedWord) {
     localMessage.value = 'Pick at least one tile first.';
@@ -874,6 +933,10 @@ const handleSubmit = async () => {
       .filter((tile) => tile.status === 'mustuse' && !tile.locked)
       .map((tile) => tile.id));
     return;
+  }
+
+  if (swappedInMustTile) {
+    localMessage.value = 'Swapped in your MUST tile automatically.';
   }
 
   localMessage.value = 'Checking word...';
@@ -1374,6 +1437,11 @@ watch(effectiveGameEnded, (ended) => {
   }
 }, { immediate: true });
 
+watch(() => props.settingsShowing, (showingSettings) => {
+  // Keep the solo timer and bot loop in sync with the visible pause/settings state.
+  setPauseState(showingSettings);
+}, { immediate: true });
+
 const handleKeydown = (event) => {
   if (props.settingsShowing) {
     return;
@@ -1484,7 +1552,6 @@ const handleKeydown = (event) => {
   }
 
   event.preventDefault();
-  togglePause();
 };
 
 watch([myTiles, mySide], () => {
