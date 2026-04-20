@@ -1,6 +1,8 @@
 import letterConfig from './letters.json';
 import wordBonuses from './word-bonuses.json';
 import milestoneRewards from './word-milestone-rewards.json';
+import './card-definitions.cjs';
+import './modifier-definitions.cjs';
 import './shared-tile-logic.cjs';
 
 const { createSharedTileLogic } = globalThis.__sharedTileLogic || {};
