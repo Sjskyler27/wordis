@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-04-20 0.0.17
+
+Start: 2026-04-20 07:33:00 EDT
+Stop: 2026-04-20 07:37:11 EDT
+
+- Paused solo matches properly when the settings/pause state opens by stopping both the bot loop and the countdown timer.
+- Reworked the history overlay to fit smaller devices with better scrolling, stacked layout, and smaller result tiles.
+- Renamed the old display control from `Dungeon Zoom` to `Game Zoom` and applied that zoom setting directly inside `Game.vue`.
+- Fixed timed solo so gaining time after the `Play your final word!` state restarts the timer once the clock is back above zero.
+- Added modifier-driven bot thinking pressure so `MUST` tiles heavily hurt bot performance while `wild` tiles improve it.
+- Auto-swapped matching `MUST` tiles into the built word on submit when the player had already used the same normal letter.
+
 ## 2026-04-18 0.0.16
 
 Start: 2026-04-18 19:51:31 EDT
