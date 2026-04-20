@@ -831,6 +831,37 @@ const triggerMustTileAlert = (side, tileIds) => {
   }, 1100);
 };
 
+const autoSwapMatchingMustTiles = () => {
+  const selectedTiles = [...selectedTilesForCurrentSide.value];
+  const selectedTileIdsSet = new Set(selectedTiles.map((tile) => tile.id));
+  const missingMustTiles = myTiles.value.filter((tile) => {
+    return tile.status === 'mustuse' && !tile.locked && !selectedTileIdsSet.has(tile.id);
+  });
+  let swappedAnyTile = false;
+
+  for (const mustTile of missingMustTiles) {
+    const mustLetter = mustTile.baseLetter || mustTile.letter;
+    const replacementTile = selectedTiles.find((tile) => {
+      return tile.status !== 'mustuse'
+        && !tile.locked
+        && (tile.baseLetter || tile.letter) === mustLetter;
+    });
+
+    if (!replacementTile) {
+      continue;
+    }
+
+    replaceSelectedTileId(mySide.value, replacementTile.id, mustTile.id);
+    const replacementIndex = selectedTiles.findIndex((tile) => tile.id === replacementTile.id);
+    if (replacementIndex !== -1) {
+      selectedTiles[replacementIndex] = mustTile;
+    }
+    swappedAnyTile = true;
+  }
+
+  return swappedAnyTile;
+};
+
 watch(myCards, () => {
   if (activeBoonCardId.value && !activeBoonCard.value) {
     resetActionMode();
@@ -865,6 +896,7 @@ const handleSubmit = async () => {
   }
 
   const normalizedWord = currentWordDisplay.value;
+  const swappedInMustTile = autoSwapMatchingMustTiles();
   const selectedTiles = selectedTilesForCurrentSide.value;
   if (!normalizedWord) {
     localMessage.value = 'Pick at least one tile first.';
@@ -889,6 +921,10 @@ const handleSubmit = async () => {
       .filter((tile) => tile.status === 'mustuse' && !tile.locked)
       .map((tile) => tile.id));
     return;
+  }
+
+  if (swappedInMustTile) {
+    localMessage.value = 'Swapped in your MUST tile automatically.';
   }
 
   localMessage.value = 'Checking word...';
