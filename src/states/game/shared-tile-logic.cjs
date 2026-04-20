@@ -121,7 +121,8 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
     wild: {
       effects: {
          wild: true,
-         setScore: -1
+         setScore: -1,
+         botPerformanceDelta: 0.28
         },
       rarityWeight: 0.45,
       ui: {
@@ -205,7 +206,7 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
     },
     mustuse: {
       badge: 'MUST',
-      effects: { required: true },
+      effects: { required: true, botPerformanceDelta: -0.9 },
       rarityWeight: 0.6,
       canApply: ({ baseScore }) => baseScore <= 3,
       ui: {
