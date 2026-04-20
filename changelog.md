@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-04-20 0.0.18
+# added
+- support for wavedash 
+
 ## 2026-04-20 0.0.17
 
 Start: 2026-04-20 07:33:00 EDT
