@@ -56,6 +56,7 @@ const createGameStatePayload = (state) => ({
   history: state.history,
   scores: state.scores,
   lastWordScores: state.lastWordScores,
+  lastWordBreakdowns: state.lastWordBreakdowns,
   playAgainVotes: state.playAgainVotes,
   rackClears: state.rackClears,
   cards: state.cards,
