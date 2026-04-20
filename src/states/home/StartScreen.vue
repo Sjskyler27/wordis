@@ -65,6 +65,7 @@
   
   <script setup>
   import { ref, defineEmits, defineProps, computed, onMounted, onBeforeUnmount, watch } from "vue";
+  import homeSoundUrl from '/public/audio/homeSound.mp3';
   import Feedback from "./Feedback.vue"
   import { onAuthStateChanged } from "firebase/auth";
   import PWA from "./PWA.vue";
@@ -96,7 +97,7 @@
   const languageLabel = ref(getPreferredLanguage().label)
   const isVisible = ref(true)
 
-  const startMusic = new Audio('audio/homeSound.mp3');
+  const startMusic = new Audio(homeSoundUrl);
   startMusic.currentTime = 0
   startMusic.volume = props.volume * props.musicVolume / 100
   startMusic.loop = true;
