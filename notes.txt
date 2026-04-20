@@ -123,6 +123,8 @@ burns not showing up?
 
 swap boon attack and add more 
 
-show tiles at history instead of the word 
+bot should priorities burns if they can 
 
-show best word 
+
+
+
