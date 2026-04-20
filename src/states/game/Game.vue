@@ -1374,6 +1374,11 @@ watch(effectiveGameEnded, (ended) => {
   }
 }, { immediate: true });
 
+watch(() => props.settingsShowing, (showingSettings) => {
+  // Keep the solo timer and bot loop in sync with the visible pause/settings state.
+  setPauseState(showingSettings);
+}, { immediate: true });
+
 const handleKeydown = (event) => {
   if (props.settingsShowing) {
     return;
