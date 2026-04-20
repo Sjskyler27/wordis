@@ -80,6 +80,12 @@ to create a dist folder that can be uploaded to itch.io run npm build make sure 
 note itch io does not like dynamic paths to public there are changes that need to be made to 
 Monster.vue to make sure that the images and the actions show up... the electrify logic should be able to work for it though.
 
+# wavedash
+brew install wvdsh/tap/wavedash 
+wavedash auth login 
+create wavedash.toml with game id 
+swap env to prod
+wavedash build push 
 # clean patches 
 keeping clean patches for the final build use 
 git rebase -i --root allows squashing commits

@@ -199,6 +199,12 @@
 
 <script setup>
 import { computed, defineProps, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
+import gameMusicUrl from '/public/audio/gameMusic.mp3';
+import tilePickupSoundUrl from '/public/audio/tile_pick_up.mp3';
+import tilePutBackSoundUrl from '/public/audio/tile_put_back.mp3';
+import scoreBuiltTileSoundUrl from '/public/audio/score_built_tile.mp3';
+import victorySoundUrl from '/public/audio/victory.mp3';
+import defeatSoundUrl from '/public/audio/defeat.mp3';
 import {
   roomCode,
   isHost,
@@ -306,13 +312,13 @@ const SOLO_TIMER_SECONDS = isTestingMode ? 25 : 180;
 const timerRemainingSeconds = ref(SOLO_TIMER_SECONDS);
 const isSoloTimerPausedByAttack = ref(false);
 const timedSoloFinalWordSpent = ref(false);
-const gameMusic = new Audio('/audio/gameMusic.mp3');
+const gameMusic = new Audio(gameMusicUrl);
 gameMusic.loop = true;
-const tilePickupSound = new Audio('/audio/tile_pick_up.mp3');
-const tilePutBackSound = new Audio('/audio/tile_put_back.mp3');
-const scoreBuiltTileSound = new Audio('/audio/score_built_tile.mp3');
-const victorySound = new Audio('/audio/victory.mp3');
-const defeatSound = new Audio('/audio/defeat.mp3');
+const tilePickupSound = new Audio(tilePickupSoundUrl);
+const tilePutBackSound = new Audio(tilePutBackSoundUrl);
+const scoreBuiltTileSound = new Audio(scoreBuiltTileSoundUrl);
+const victorySound = new Audio(victorySoundUrl);
+const defeatSound = new Audio(defeatSoundUrl);
 victorySound.loop = true;
 defeatSound.loop = true;
 let soloTimerId = null;

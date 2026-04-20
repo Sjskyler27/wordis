@@ -26,3 +26,4 @@ build/*.ico
 protected
 agent-rules.md
 dist.zip
+wavedash.toml

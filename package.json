@@ -2,7 +2,7 @@
   "name": "WORDIS",
   "productName": "WORDIS",
   "private": true,
-  "version": "0.0.17",
+  "version": "0.0.18",
   "type": "module",
   "main": "electron/main.cjs",
   "build": {
@@ -90,12 +90,15 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "build:wavedash": "npm run build",
     "build:app": "vite build && electron-builder",
     "preview": "vite preview",
     "electron": "electron .",
     "start": "concurrently \"vite\" \"npm:electron\"",
     "server": "node index.cjs",
-    "size": "find . -type f -exec du -h {} + | sort -hr | head -n 30"
+    "size": "find . -type f -exec du -h {} + | sort -hr | head -n 30",
+    "wavedash:dev": "npm run build:wavedash && wavedash dev",
+    "wavedash:push": "npm run build:wavedash && wavedash build push"
   },
   "dependencies": {
     "firebase": "^11.4.0",
