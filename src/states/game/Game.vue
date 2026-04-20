@@ -5,7 +5,7 @@
       <div class="shape-layer layer-near"></div>
     </div>
 
-    <main class="board-frame" :class="{ paused: isPaused }">
+    <main class="board-frame" :class="{ paused: isPaused }" :style="boardFrameStyle">
       <button
         v-if="isSideDrawerMode"
         type="button"
@@ -242,6 +242,10 @@ const props = defineProps({
   volume: Number,
   musicVolume: Number,
   effectsVolume: Number,
+  gameZoom: {
+    type: Number,
+    default: 1
+  },
   isControllerConnected: Boolean,
   settingsShowing: Boolean,
   overtimeEnabled: {
@@ -597,6 +601,9 @@ const statusHeadline = computed(() => {
 
   return 'Racks are live';
 });
+const boardFrameStyle = computed(() => ({
+  zoom: props.gameZoom || 1
+}));
 const scoreGap = computed(() => {
   if (!showOpponentLane.value) {
     return 0;

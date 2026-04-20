@@ -36,8 +36,8 @@
           <input id="zoom" type="range" min="0.5" max="1.5" step="0.01" :value="props.zoom" @input="onZoomInput" />
         </div>
         <div class="setting">
-          <label for="dungeonZoom">Dungeon Zoom: {{ Math.round(props.dungeonZoom * 100) }}%</label>
-          <input id="dungeonZoom" type="range" min="0.5" max="1.5" step="0.01" :value="props.dungeonZoom" @input="ondungeonZoomInput" />
+          <label for="gameZoom">Game Zoom: {{ Math.round(props.gameZoom * 100) }}%</label>
+          <input id="gameZoom" type="range" min="0.5" max="1.5" step="0.01" :value="props.gameZoom" @input="ongameZoomInput" />
         </div>
         <div class="setting">
           <label for="shopZoom">Shop Zoom: {{ Math.round(props.shopZoom * 100) }}%</label>
@@ -75,7 +75,7 @@ const props = defineProps({
   musicVolume: Number,
   effectsVolume: Number,
   zoom: Number,
-  dungeonZoom: Number,
+  gameZoom: Number,
   shopZoom: Number,
   nativeControllerSupport: Boolean,
 });
@@ -86,7 +86,7 @@ const emit = defineEmits([
   "musicVolumeChange",
   "effectsVolumeChange",
   "zoomChange",
-  "dungeonZoomChange",
+  "gameZoomChange",
   "shopZoomChange",
   "reset",
   "NativeControllerChange",
@@ -131,7 +131,7 @@ const onVolumeInput = (e) => emit("volumeChange", Number(e.target.value));
 const onmusicVolumeInput = (e) => emit("musicVolumeChange", Number(e.target.value));
 const oneffectsVolumeInput = (e) => emit("effectsVolumeChange", Number(e.target.value));
 const onZoomInput = (e) => emit("zoomChange", parseFloat(e.target.value));
-const ondungeonZoomInput = (e) => emit("dungeonZoomChange", parseFloat(e.target.value));
+const ongameZoomInput = (e) => emit("gameZoomChange", parseFloat(e.target.value));
 const onshopZoomInput = (e) => emit("shopZoomChange", parseFloat(e.target.value));
 </script>
 
