@@ -1540,7 +1540,6 @@ const handleKeydown = (event) => {
   }
 
   event.preventDefault();
-  togglePause();
 };
 
 watch([myTiles, mySide], () => {

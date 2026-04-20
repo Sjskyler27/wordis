@@ -111,6 +111,12 @@ onBeforeUnmount(() => {
 });
 
 const handleKeyDown = (e) => {
+  if (e.key === "Escape") {
+    e.preventDefault();
+    close();
+    return;
+  }
+
   const currentIndex = buttons.findIndex((btn) => btn.value === document.activeElement);
   if (e.key === "ArrowDown") {
     e.preventDefault();
