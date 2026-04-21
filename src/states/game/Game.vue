@@ -193,6 +193,11 @@
         :play-again-disabled="props.isMultiplayer && myReplayVote"
         @play-again="handlePlayAgain"
       />
+
+      <TutorialOverlay
+        v-if="showTutorialOverlay"
+        @close="handleCloseTutorial"
+      />
     </main>
   </div>
 </template>
@@ -236,6 +241,7 @@ import { validateWord } from './word-validator.js';
 import { isTestingMode } from './testing.js';
 import GameLane from './components/GameLane.vue';
 import HistoryOverlay from './components/HistoryOverlay.vue';
+import TutorialOverlay from './components/TutorialOverlay.vue';
 import WordBuilder from './components/WordBuilder.vue';
 
 const props = defineProps({
@@ -326,9 +332,11 @@ let scorePopTimeoutIds = [];
 let activeScorePopAudios = [];
 let historyOverlayTimeoutId = null;
 const showHistoryOverlay = ref(false);
+const showTutorialOverlay = ref(false);
 const windowWidth = ref(typeof window !== 'undefined' ? window.innerWidth : 1440);
 const isSideDrawerOpen = ref(false);
 const sideDrawerAutoOpen = ref(false);
+const GAME_TUTORIAL_STORAGE_KEY = 'hasSeenWordisGameTutorial';
 
 const mySide = computed(() => {
   if (props.isMultiplayer) {
@@ -613,6 +621,10 @@ const modeSubtitle = computed(() => {
   return `Fight the bot on ${props.botDifficulty} difficulty in the same live rack format.`;
 });
 const statusHeadline = computed(() => {
+  if (showTutorialOverlay.value) {
+    return 'Tutorial open';
+  }
+
   if (finalWordWindowActive.value) {
     return 'Final word ready';
   }
@@ -1330,6 +1342,33 @@ const setPauseState = (nextPaused) => {
   localMessage.value = 'Racks are live';
 };
 
+const syncTutorialPauseState = (visible) => {
+  if (props.isMultiplayer) {
+    return;
+  }
+
+  if (visible) {
+    stopBotLoop();
+    stopSoloTimer();
+    gameMusic.pause();
+    return;
+  }
+
+  if (!props.settingsShowing && !effectiveGameEnded.value) {
+    startBotLoop();
+    startSoloTimer();
+    startGameMusic();
+  }
+};
+
+const handleCloseTutorial = ({ dontShowAgain } = {}) => {
+  if (dontShowAgain) {
+    localStorage.setItem(GAME_TUTORIAL_STORAGE_KEY, 'true');
+  }
+
+  showTutorialOverlay.value = false;
+};
+
 const togglePause = () => {
   setPauseState(!isPaused.value);
 };
@@ -1447,6 +1486,10 @@ watch(() => props.settingsShowing, (showingSettings) => {
   // Keep the solo timer and bot loop in sync with the visible pause/settings state.
   setPauseState(showingSettings);
 }, { immediate: true });
+
+watch(showTutorialOverlay, (visible) => {
+  syncTutorialPauseState(visible);
+});
 
 const handleKeydown = (event) => {
   if (props.settingsShowing) {
@@ -1590,6 +1633,9 @@ const syncWindowWidth = () => {
 };
 
 onMounted(() => {
+  if (!localStorage.getItem(GAME_TUTORIAL_STORAGE_KEY)) {
+    showTutorialOverlay.value = true;
+  }
   syncWindowWidth();
   window.addEventListener('resize', syncWindowWidth);
   window.addEventListener('keydown', handleKeydown);
