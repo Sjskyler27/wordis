@@ -20,7 +20,7 @@
         </p>
       </div>
       <button
-        v-if="showMobileInspectToggle"
+        v-if="props.isMobile"
         type="button"
         class="mobile-inspect-toggle"
         :class="{ active: mobileInspectEnabled }"
@@ -70,18 +70,19 @@
       :visible="isTooltipVisible"
       :x="tooltipPosition.x"
       :y="tooltipPosition.y"
-      :dismissible="showMobileInspectToggle && mobileInspectEnabled"
+      :dismissible="props.isMobile && mobileInspectEnabled"
       @close="hideTooltip"
     />
   </section>
 </template>
 
 <script setup>
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
+import { computed, onBeforeUnmount, ref, watch } from 'vue';
 import { getModifierBadge, getModifierUi, tileScore } from '../tile-logic.js';
 import TileHoverTooltip from './TileHoverTooltip.vue';
 
 const props = defineProps({
+  isMobile: Boolean,
   side: {
     type: String,
     required: true
@@ -143,25 +144,10 @@ const props = defineProps({
 const hoveredTile = ref(null);
 const isTooltipVisible = ref(false);
 const tooltipPosition = ref({ x: 0, y: 0 });
-const isPhoneViewport = ref(false);
 const mobileInspectEnabled = ref(false);
 let tooltipTimeoutId = null;
-let phoneViewportMediaQuery = null;
 
 const emit = defineEmits(['tile-click']);
-
-const updatePhoneViewport = () => {
-  isPhoneViewport.value = Boolean(
-    window.matchMedia('(max-width: 767px)').matches &&
-    (window.matchMedia('(pointer: coarse)').matches || navigator.maxTouchPoints > 0)
-  );
-
-  if (!isPhoneViewport.value) {
-    mobileInspectEnabled.value = false;
-  }
-};
-
-const showMobileInspectToggle = computed(() => isPhoneViewport.value);
 
 const setTooltipPositionFromElement = (element) => {
   const rect = element.getBoundingClientRect();
@@ -176,7 +162,7 @@ const setTooltipPositionFromElement = (element) => {
 };
 
 const showTooltipLater = (tile, event) => {
-  if (showMobileInspectToggle.value) {
+  if (props.isMobile) {
     return;
   }
 
@@ -214,7 +200,7 @@ const toggleMobileInspect = () => {
 };
 
 const handleTileClick = (tile, event) => {
-  if (showMobileInspectToggle.value && mobileInspectEnabled.value) {
+  if (props.isMobile && mobileInspectEnabled.value) {
     setTooltipPositionFromElement(event.currentTarget);
     hoveredTile.value = tile;
     isTooltipVisible.value = true;
@@ -359,24 +345,20 @@ watch(() => props.tiles, (nextTiles) => {
   deep: true
 });
 
+watch(() => props.isMobile, (isMobile) => {
+  if (!isMobile) {
+    mobileInspectEnabled.value = false;
+    hideTooltip();
+  }
+});
+
 onBeforeUnmount(() => {
   window.clearTimeout(burstTimeoutId);
   window.clearTimeout(tooltipTimeoutId);
-  if (phoneViewportMediaQuery) {
-    phoneViewportMediaQuery.removeEventListener('change', updatePhoneViewport);
-  }
-  window.removeEventListener('resize', updatePhoneViewport);
   tileAnimationTimeoutIds.forEach((timeoutId) => {
     window.clearTimeout(timeoutId);
   });
   tileAnimationTimeoutIds.clear();
-});
-
-onMounted(() => {
-  phoneViewportMediaQuery = window.matchMedia('(max-width: 767px)');
-  updatePhoneViewport();
-  phoneViewportMediaQuery.addEventListener('change', updatePhoneViewport);
-  window.addEventListener('resize', updatePhoneViewport);
 });
 </script>
 

@@ -110,6 +110,7 @@
 
         <div v-if="props.isMultiplayer ? gameStarted : true" class="arena" :class="{ 'arena-solo': !showOpponentLane }">
           <GameLane
+            :isMobile="props.isMobile"
             :side="leftLane.side"
             :label="leftLane.label"
             :submitted-word="leftLane.submittedWord"
@@ -128,6 +129,7 @@
 
           <GameLane
             v-if="showOpponentLane"
+            :isMobile="props.isMobile"
             :side="rightLane.side"
             :label="rightLane.label"
             :submitted-word="rightLane.submittedWord"
@@ -245,6 +247,7 @@ import TutorialOverlay from './components/TutorialOverlay.vue';
 import WordBuilder from './components/WordBuilder.vue';
 
 const props = defineProps({
+  isMobile: Boolean,
   isMultiplayer: Boolean,
   playMode: {
     type: String,
