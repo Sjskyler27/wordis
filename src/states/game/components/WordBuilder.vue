@@ -60,6 +60,9 @@
               :style="getTileStyle(slot.tile, slot.index)"
               :data-controller-built="slot.index"
               @click="$emit('tile-click', slot.tile)"
+              @mouseenter="showTooltipLater(slot.tile, $event)"
+              @mousemove="updateTooltipPosition($event)"
+              @mouseleave="hideTooltip"
             >
               <span v-if="!getModifierUi(slot.tile.status).hideBadge && slot.tile.status !== 'normal'" class="tile-modifier" :style="getBadgeStyle(slot.tile)">
                 {{ getModifierBadge(slot.tile) }}
@@ -125,12 +128,19 @@
         Submit Word
       </button>
     </div>
+    <TileHoverTooltip
+      :tile="hoveredTile"
+      :visible="isTooltipVisible"
+      :x="tooltipPosition.x"
+      :y="tooltipPosition.y"
+    />
   </section>
 </template>
 
 <script setup>
-import { computed, ref, watch } from 'vue';
+import { computed, onBeforeUnmount, ref, watch } from 'vue';
 import { getModifierBadge, getModifierUi, tileScore } from '../tile-logic.js';
+import TileHoverTooltip from './TileHoverTooltip.vue';
 
 const props = defineProps({
   selectedTiles: {
@@ -204,6 +214,10 @@ const props = defineProps({
 });
 
 defineEmits(['undo', 'clear', 'submit', 'remove-specific', 'clear-rack', 'save-letters', 'tile-click']);
+const hoveredTile = ref(null);
+const isTooltipVisible = ref(false);
+const tooltipPosition = ref({ x: 0, y: 0 });
+let tooltipTimeoutId = null;
 
 const wordSlots = computed(() => {
   const slots = Array.from({ length: 9 }, (_, index) => {
@@ -255,6 +269,32 @@ watch(() => props.scorePopPulse, (nextPulse) => {
   }
 });
 
+const showTooltipLater = (tile, event) => {
+  tooltipPosition.value = {
+    x: event.clientX,
+    y: event.clientY
+  };
+  window.clearTimeout(tooltipTimeoutId);
+  isTooltipVisible.value = false;
+  tooltipTimeoutId = window.setTimeout(() => {
+    hoveredTile.value = tile;
+    isTooltipVisible.value = true;
+  }, 1000);
+};
+
+const updateTooltipPosition = (event) => {
+  tooltipPosition.value = {
+    x: event.clientX,
+    y: event.clientY
+  };
+};
+
+const hideTooltip = () => {
+  window.clearTimeout(tooltipTimeoutId);
+  isTooltipVisible.value = false;
+  hoveredTile.value = null;
+};
+
 const getTileStyle = (tile, index = 0) => {
   const ui = getModifierUi(tile.status);
 
@@ -296,6 +336,11 @@ const getPlaceholderStyle = (slot) => {
     '--milestone-gradient-position': `${(segmentIndex / Math.max(1, segmentCount - 1)) * 100}% 0%`
   };
 };
+
+onBeforeUnmount(() => {
+  window.clearTimeout(shakeTimeoutId);
+  window.clearTimeout(tooltipTimeoutId);
+});
 </script>
 
 <style scoped>

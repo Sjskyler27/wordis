@@ -1,0 +1,107 @@
+<template>
+  <div
+    v-if="visible && tile"
+    class="tile-hover-tooltip"
+    :style="tooltipStyle"
+  >
+    <span class="tile-hover-badge">{{ badgeLabel }}</span>
+    <strong>{{ title }}</strong>
+    <p>{{ description }}</p>
+  </div>
+</template>
+
+<script setup>
+import { computed } from 'vue';
+import { getModifierBadge, getModifierDefinition, getModifierDescription } from '../tile-logic.js';
+
+const props = defineProps({
+  tile: {
+    type: Object,
+    default: null
+  },
+  visible: {
+    type: Boolean,
+    default: false
+  },
+  x: {
+    type: Number,
+    default: 0
+  },
+  y: {
+    type: Number,
+    default: 0
+  }
+});
+
+const title = computed(() => {
+  if (!props.tile) {
+    return '';
+  }
+
+  return `${props.tile.letter} Tile`;
+});
+
+const badgeLabel = computed(() => {
+  if (!props.tile) {
+    return '';
+  }
+
+  return getModifierBadge(props.tile) || getModifierDefinition(props.tile.status).badge || 'INFO';
+});
+
+const description = computed(() => {
+  if (!props.tile) {
+    return '';
+  }
+
+  return getModifierDescription(props.tile.status);
+});
+
+const tooltipStyle = computed(() => ({
+  left: `${props.x}px`,
+  top: `${props.y}px`
+}));
+</script>
+
+<style scoped>
+.tile-hover-tooltip {
+  position: fixed;
+  z-index: 1200;
+  width: min(280px, calc(100vw - 24px));
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: rgba(25, 10, 21, 0.96);
+  border: 1px solid rgba(255, 214, 132, 0.25);
+  box-shadow: 0 16px 28px rgba(0, 0, 0, 0.28);
+  color: #f7efe1;
+  pointer-events: none;
+  transform: translate(14px, 14px);
+}
+
+.tile-hover-tooltip strong {
+  display: block;
+  margin-top: 6px;
+  font-size: 0.95rem;
+}
+
+.tile-hover-tooltip p {
+  margin: 8px 0 0;
+  font-size: 0.82rem;
+  line-height: 1.45;
+  color: rgba(247, 239, 225, 0.86);
+}
+
+.tile-hover-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 52px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: rgba(255, 202, 103, 0.16);
+  color: #ffca67;
+  font-size: 0.68rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+</style>

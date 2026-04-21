@@ -41,6 +41,9 @@
             :style="getTileStyle(tile)"
             :data-controller-tile="`${side}-${index}`"
             @click="$emit('tile-click', tile)"
+            @mouseenter="showTooltipLater(tile, $event)"
+            @mousemove="updateTooltipPosition($event)"
+            @mouseleave="hideTooltip"
           >
             <span v-if="!getModifierUi(tile.status).hideBadge && tile.status !== 'normal'" class="tile-modifier" :style="getBadgeStyle(tile)">
               {{ getModifierBadge(tile) }}
@@ -51,12 +54,19 @@
         </Transition>
       </div>
     </div>
+    <TileHoverTooltip
+      :tile="hoveredTile"
+      :visible="isTooltipVisible"
+      :x="tooltipPosition.x"
+      :y="tooltipPosition.y"
+    />
   </section>
 </template>
 
 <script setup>
 import { computed, onBeforeUnmount, ref, watch } from 'vue';
 import { getModifierBadge, getModifierUi, tileScore } from '../tile-logic.js';
+import TileHoverTooltip from './TileHoverTooltip.vue';
 
 const props = defineProps({
   side: {
@@ -118,6 +128,36 @@ const props = defineProps({
 });
 
 defineEmits(['tile-click']);
+const hoveredTile = ref(null);
+const isTooltipVisible = ref(false);
+const tooltipPosition = ref({ x: 0, y: 0 });
+let tooltipTimeoutId = null;
+
+const showTooltipLater = (tile, event) => {
+  tooltipPosition.value = {
+    x: event.clientX,
+    y: event.clientY
+  };
+  window.clearTimeout(tooltipTimeoutId);
+  isTooltipVisible.value = false;
+  tooltipTimeoutId = window.setTimeout(() => {
+    hoveredTile.value = tile;
+    isTooltipVisible.value = true;
+  }, 1000);
+};
+
+const updateTooltipPosition = (event) => {
+  tooltipPosition.value = {
+    x: event.clientX,
+    y: event.clientY
+  };
+};
+
+const hideTooltip = () => {
+  window.clearTimeout(tooltipTimeoutId);
+  isTooltipVisible.value = false;
+  hoveredTile.value = null;
+};
 
 const displayWordScore = computed(() => {
   return props.lastWordBreakdown?.wordScore ?? props.lastWordScore ?? 0;
@@ -256,6 +296,7 @@ watch(() => props.tiles, (nextTiles) => {
 
 onBeforeUnmount(() => {
   window.clearTimeout(burstTimeoutId);
+  window.clearTimeout(tooltipTimeoutId);
   tileAnimationTimeoutIds.forEach((timeoutId) => {
     window.clearTimeout(timeoutId);
   });
