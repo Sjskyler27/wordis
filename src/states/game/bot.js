@@ -1,5 +1,5 @@
 import { DICTIONARY_WORDS } from './dictionary.js';
-import { getModifierDefinition, getTilesForWord } from './tile-logic.js';
+import { getIdleScorePenalty, getModifierDefinition, getTilesForWord, getWordScoreDetails } from './tile-logic.js';
 
 const MIN_WORD_LENGTH = 4;
 const MAX_CANDIDATES_PER_POOL = 18;
@@ -86,9 +86,26 @@ const includesRequiredTiles = (matchedTiles = [], requiredTileIds = new Set()) =
   });
 };
 
+const compareCandidates = (left, right) => {
+  return right.burnPenaltyAvoided - left.burnPenaltyAvoided
+    || right.netScore - left.netScore
+    || right.wordScore - left.wordScore
+    || right.word.length - left.word.length
+    || left.word.localeCompare(right.word);
+};
+
+const pushCandidate = (pool = [], candidate) => {
+  pool.push(candidate);
+  pool.sort(compareCandidates);
+
+  if (pool.length > MAX_CANDIDATES_PER_POOL) {
+    pool.length = MAX_CANDIDATES_PER_POOL;
+  }
+};
+
 const chooseCandidate = (candidates = [], difficulty = 'normal', botPerformance = 0) => {
   if (!candidates.length) {
-    return '';
+    return null;
   }
 
   const topSliceLengthByDifficulty = {
@@ -123,17 +140,28 @@ export const getBotWord = (tiles = [], recentWords = [], difficulty = 'normal') 
       continue;
     }
 
+    const wordScoreDetails = getWordScoreDetails(matchedTiles, {
+      side: 'opponent',
+      scores: { host: 0, opponent: 0 }
+    });
+    const usedTileIds = matchedTiles.map((tile) => tile.id);
+    const totalIdlePenalty = getIdleScorePenalty(tiles, usedTileIds);
+    const burnPenaltyAvoided = matchedTiles.reduce((total, tile) => {
+      return total + (getModifierDefinition(tile.status).effects.idleScorePenalty || 0);
+    }, 0);
+    const candidate = {
+      word: wordEntry.word,
+      netScore: wordScoreDetails.total - totalIdlePenalty,
+      wordScore: wordScoreDetails.total,
+      burnPenaltyAvoided
+    };
+
     if (!recentWordSet.has(wordEntry.word)) {
-      freshCandidates.push(wordEntry.word);
-      if (freshCandidates.length >= MAX_CANDIDATES_PER_POOL) {
-        break;
-      }
+      pushCandidate(freshCandidates, candidate);
       continue;
     }
 
-    if (repeatCandidates.length < MAX_CANDIDATES_PER_POOL) {
-      repeatCandidates.push(wordEntry.word);
-    }
+    pushCandidate(repeatCandidates, candidate);
   }
 
   // Modifier-driven bot pressure can make the bot blank on a rack before it settles on a word.
@@ -142,6 +170,7 @@ export const getBotWord = (tiles = [], recentWords = [], difficulty = 'normal') 
     return '';
   }
 
-  return chooseCandidate(freshCandidates, difficulty, rackProfile.botPerformance)
-    || chooseCandidate(repeatCandidates, difficulty, rackProfile.botPerformance);
+  return chooseCandidate(freshCandidates, difficulty, rackProfile.botPerformance)?.word
+    || chooseCandidate(repeatCandidates, difficulty, rackProfile.botPerformance)?.word
+    || '';
 };
