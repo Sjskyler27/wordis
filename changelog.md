@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-04-20 0.0.23
+- updated yin yang color and display logic
+- added animations for gold lock and emerald
+- added delay animations between all
+- updated overtime label to show correct phrase
+- changed ghost tile to be a boon
+
+
 ## 2026-04-20 0.0.21
 - mobile description bug
 - focus burn tiles 
