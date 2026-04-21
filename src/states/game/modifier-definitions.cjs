@@ -104,6 +104,9 @@ const createModifierDefinitions = ({ bloodTilePositionValues }) => ({
       description: 'Scores 0 when used, but gains +1 bonus score each turn it stays unused.',
       effects: { setScore: 0, idleBonusScoreDelta: 1 },
       rarityWeight: 0.18,
+      animations: {
+        onNewTurn: 'emerald'
+      },
       ui: {
         tileBackground: 'linear-gradient(180deg, #d7ffe9 0%, #5ee2a8 42%, #0b9a6f 76%, #046647 100%)',
         tileShadow: 'inset 0 -4px 0 rgba(4, 82, 58, 0.34), 0 12px 22px rgba(4, 82, 58, 0.24), 0 0 0 1px rgba(175, 255, 213, 0.46)',
@@ -164,6 +167,9 @@ const createModifierDefinitions = ({ bloodTilePositionValues }) => ({
       description: 'Locked tile. It cannot be used until the lock wears off.',
       effects: { lockTurns: 1 },
       rarityWeight: 0.6,
+      animations: {
+        onNewTurn: 'unlock-dissolve'
+      },
       ui: {
         tileBackground: 'linear-gradient(180deg, #3b3343 0%, #211926 72%, #100b14 100%)',
         tileShadow: 'inset 0 -4px 0 rgba(0, 0, 0, 0.4), 0 12px 20px rgba(10, 5, 12, 0.34)',

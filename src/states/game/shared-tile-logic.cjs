@@ -812,14 +812,27 @@ console.log(JSON.stringify({
 
     const nextLockTurns = Math.max(0, (tile.lockTurns || 0) - 1);
     const nextStatus = nextLockTurns > 0 ? tile.status : 'normal';
-
-    return applyModifierToTile({
+    const unlockAnimationName = nextStatus === 'normal' ? tile.onNewTurn : '';
+    const nextTile = applyModifierToTile({
       ...tile,
       lockTurns: nextLockTurns,
       locked: nextLockTurns > 0
     }, nextStatus, {
       trigger: options.trigger || ''
     });
+
+    if (!unlockAnimationName || options.trigger !== 'onNewTurn') {
+      return nextTile;
+    }
+
+    return {
+      ...nextTile,
+      animationState: {
+        trigger: options.trigger,
+        name: unlockAnimationName,
+        key: `${options.trigger}-${unlockAnimationName}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`
+      }
+    };
   };
 
   const isMissingRequiredTile = (rackTiles = [], selectedTiles = []) => {

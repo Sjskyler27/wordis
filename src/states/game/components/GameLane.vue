@@ -34,7 +34,7 @@
 
     <div class="rack-grid">
       <div v-for="(tile, index) in tiles" :key="`${side}-slot-${index}`" class="rack-slot">
-        <Transition name="rack-tile" mode="out-in">
+        <Transition :name="getTileTransitionName(tile)" mode="out-in">
           <button
             :key="tile.id"
             type="button"
@@ -256,7 +256,9 @@ const activeTileAnimations = ref({});
 const seenTileAnimationKeys = ref({});
 const tileAnimationTimeoutIds = new Map();
 const TILE_ANIMATION_DURATIONS = {
-  blaze: 1080
+  blaze: 1080,
+  emerald: 1180,
+  'unlock-dissolve': 1320
 };
 
 const stopTileAnimation = (tileId) => {
@@ -306,6 +308,10 @@ const getTileAnimationClass = (tile) => {
   return activeTileAnimations.value[tile.id] === animationState.key
     ? `tile-anim-${animationState.name}`
     : '';
+};
+
+const getTileTransitionName = (tile) => {
+  return tile?.status === 'ghostTile' ? 'ghost-tile' : 'rack-tile';
 };
 
 const burstTier = ref('');
@@ -622,6 +628,41 @@ onBeforeUnmount(() => {
   animation: tile-blaze-flare 1080ms ease-out;
 }
 
+.tile-anim-emerald {
+  animation: tile-emerald 1180ms ease-out;
+}
+
+.tile-anim-emerald::after {
+  content: '';
+  position: absolute;
+  inset: -10px;
+  border-radius: 24px;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 50% 50%, rgba(215, 255, 230, 0.95) 0%, rgba(82, 239, 171, 0.58) 26%, rgba(0, 170, 118, 0.22) 52%, rgba(0, 170, 118, 0) 74%),
+    conic-gradient(from 20deg, rgba(214, 255, 228, 0), rgba(214, 255, 228, 0.82), rgba(41, 211, 148, 0), rgba(214, 255, 228, 0.64), rgba(214, 255, 228, 0));
+  mix-blend-mode: screen;
+  animation: tile-emerald-flare 1180ms ease-out;
+}
+
+.tile-anim-unlock-dissolve {
+  animation: tile-unlock-dissolve 1320ms ease-out;
+}
+
+.tile-anim-unlock-dissolve::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 16px;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 22% 20%, rgba(255, 255, 255, 0.16) 0 4%, transparent 5% 100%),
+    radial-gradient(circle at 72% 34%, rgba(255, 255, 255, 0.14) 0 5%, transparent 6% 100%),
+    radial-gradient(circle at 48% 76%, rgba(255, 255, 255, 0.13) 0 4%, transparent 5% 100%),
+    linear-gradient(180deg, rgba(17, 11, 21, 0.9), rgba(0, 0, 0, 0.74));
+  animation: tile-lock-overlay-dissolve 1320ms ease-out forwards;
+}
+
 @keyframes must-tile-flash {
   0%,
   100% {
@@ -666,6 +707,70 @@ onBeforeUnmount(() => {
   100% {
     opacity: 0;
     transform: translateY(-12px) scale(1.16);
+  }
+}
+
+@keyframes tile-emerald {
+  0%,
+  100% {
+    transform: translateY(0) scale(1);
+    filter: saturate(1) brightness(1);
+  }
+  26% {
+    transform: translateY(-2px) scale(1.035);
+    filter: saturate(1.35) brightness(1.16);
+  }
+  52% {
+    transform: translateY(0) scale(1.01);
+    filter: saturate(1.2) brightness(1.08);
+  }
+}
+
+@keyframes tile-emerald-flare {
+  0% {
+    opacity: 0;
+    transform: scale(0.78) rotate(0deg);
+  }
+  24% {
+    opacity: 1;
+    transform: scale(1.08) rotate(18deg);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.28) rotate(72deg);
+  }
+}
+
+@keyframes tile-unlock-dissolve {
+  0% {
+    filter: brightness(0.52) saturate(0.7);
+    box-shadow: inset 0 0 0 9999px rgba(10, 6, 14, 0.58), 0 12px 20px rgba(10, 5, 12, 0.34);
+  }
+  58% {
+    filter: brightness(0.9) saturate(0.94);
+    box-shadow: inset 0 0 0 9999px rgba(10, 6, 14, 0.14), var(--tile-shadow, inset 0 -4px 0 rgba(0, 0, 0, 0.12), 0 10px 18px rgba(45, 10, 24, 0.16));
+  }
+  100% {
+    filter: none;
+    box-shadow: var(--tile-shadow, inset 0 -4px 0 rgba(0, 0, 0, 0.12), 0 10px 18px rgba(45, 10, 24, 0.16));
+  }
+}
+
+@keyframes tile-lock-overlay-dissolve {
+  0% {
+    opacity: 1;
+    clip-path: circle(140% at 50% 50%);
+    filter: blur(0);
+  }
+  55% {
+    opacity: 0.48;
+    clip-path: circle(54% at 50% 52%);
+    filter: blur(1px);
+  }
+  100% {
+    opacity: 0;
+    clip-path: circle(0% at 50% 54%);
+    filter: blur(4px);
   }
 }
 
@@ -824,6 +929,16 @@ onBeforeUnmount(() => {
   pointer-events: none;
 }
 
+.ghost-tile-enter-active {
+  animation: rackTileIn 180ms cubic-bezier(0.2, 0.9, 0.3, 1.05);
+  animation-fill-mode: both;
+}
+
+.ghost-tile-leave-active {
+  animation: ghostTileFadeOut 680ms ease-in forwards;
+  pointer-events: none;
+}
+
 @keyframes rackTileIn {
   0% {
     opacity: 0;
@@ -850,6 +965,24 @@ onBeforeUnmount(() => {
     opacity: 0;
     transform: scale(0.82);
     filter: brightness(0.8);
+  }
+}
+
+@keyframes ghostTileFadeOut {
+  0% {
+    opacity: 1;
+    transform: scale(1);
+    filter: blur(0) saturate(1.05);
+  }
+  45% {
+    opacity: 0.58;
+    transform: translateY(-5px) scale(1.04);
+    filter: blur(1px) saturate(0.85);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-16px) scale(0.76);
+    filter: blur(7px) saturate(0.45);
   }
 }
 

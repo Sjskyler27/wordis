@@ -122,10 +122,3 @@ ghost boon not working
 burns not showing up? 
 
 swap boon attack and add more 
-
-bot should priorities burns if they can 
-
-
-
-
-add pause submisions attack prevents submisions untill you submit, cannot be played if a pause is already in play. 
