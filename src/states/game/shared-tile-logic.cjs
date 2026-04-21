@@ -130,12 +130,14 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
   const getModifierDefinition = (status = 'normal') => {
     return MODIFIER_DEFINITIONS[normalizeModifierStatus(status)] || MODIFIER_DEFINITIONS.normal;
   };
+  const getModifierDescription = (status = 'normal') => {
+    return getModifierDefinition(status).description || MODIFIER_DEFINITIONS.normal.description || '';
+  };
   const getAllowedModifiersForProfile = (modifiers = [], profileName = 'duel') => {
     return modifiers.filter((modifier) => {
       const definition = getModifierDefinition(modifier);
       // return all if logging
 
-      console.log('test mode is: '+ testing)
       if (testing) {
         return true;
       }
@@ -1147,6 +1149,7 @@ console.log(JSON.stringify({
     getModifierBadge,
     getModifierUi,
     getModifierDefinition,
+    getModifierDescription,
     MODIFIER_DEFINITIONS,
     createCardLogic,
     createTileLogic

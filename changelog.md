@@ -1,5 +1,8 @@
 # Changelog
 
+## 2026-04-20 0.0.19
+- added hover to tiles 
+
 ## 2026-04-20 0.0.18
 # added
 - support for wavedash 

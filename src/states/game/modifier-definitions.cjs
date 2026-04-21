@@ -1,6 +1,7 @@
 const createModifierDefinitions = ({ bloodTilePositionValues }) => ({
     normal: {
       badge: '',
+      description: 'Normal tile. Scores its face value with no extra effect.',
       effects: {},
       rarityWeight: 0,
       ui: {
@@ -14,6 +15,7 @@ const createModifierDefinitions = ({ bloodTilePositionValues }) => ({
     },
     gold: {
       badge: 'x2',
+      description: 'Doubles this tile as a word multiplier when used.',
       effects: { wordMultiplier: 2 },
       rarityWeight: 0.9,
       canApply: ({ baseScore }) => baseScore >= 3,
@@ -27,6 +29,7 @@ const createModifierDefinitions = ({ bloodTilePositionValues }) => ({
     },
     gainboon: {
       badge: 'BOON',
+      description: 'Grants 1 boon card when this tile is used.',
       effects: { grantBoon: 1 },
       rarityWeight: 0.28,
       ui: {
@@ -39,6 +42,7 @@ const createModifierDefinitions = ({ bloodTilePositionValues }) => ({
     },
     gainattack: {
       badge: 'ATK',
+      description: 'Grants 1 attack card when this tile is used.',
       effects: { grantAttack: 1 },
       rarityWeight: 0.28,
       ui: {
@@ -50,6 +54,7 @@ const createModifierDefinitions = ({ bloodTilePositionValues }) => ({
       }
     },
     wild: {
+      description: 'Acts as any letter, but its tile score becomes -1.',
       effects: {
          wild: true,
          setScore: -1,
@@ -67,6 +72,7 @@ const createModifierDefinitions = ({ bloodTilePositionValues }) => ({
     },
     firsttile: {
       badge: '1st',
+      description: 'Adds +10 if this tile is played in the first position.',
       effects: { firstTileBonus: 10 },
       rarityWeight: 0.22,
       ui: {
@@ -79,6 +85,7 @@ const createModifierDefinitions = ({ bloodTilePositionValues }) => ({
     },
     bloodTile: {
       badge: 'BLOOD',
+      description: 'Scores by position instead of face value. Later positions score higher.',
       effects: {
         setScore: 0,
         positionBonusByIndex: bloodTilePositionValues
@@ -94,6 +101,7 @@ const createModifierDefinitions = ({ bloodTilePositionValues }) => ({
     },
     bankTile: {
       badge: 'BANK',
+      description: 'Scores 0 when used, but gains +1 bonus score each turn it stays unused.',
       effects: { setScore: 0, idleBonusScoreDelta: 1 },
       rarityWeight: 0.18,
       ui: {
@@ -106,6 +114,7 @@ const createModifierDefinitions = ({ bloodTilePositionValues }) => ({
     },
     yinYang: {
       badge: 'YIN',
+      description: 'Changes value by the score gap: stronger when behind, weaker when ahead.',
       effects: {
         dynamicScoreByLead: {
           ahead: -3,
@@ -124,6 +133,7 @@ const createModifierDefinitions = ({ bloodTilePositionValues }) => ({
       }
     },
     zeroTile: {
+      description: 'This tile always scores 0.',
       effects: { setScore: 0 },
       rarityWeight: 0.95,
       canApply: ({ baseScore }) => baseScore <= 4,
@@ -137,6 +147,7 @@ const createModifierDefinitions = ({ bloodTilePositionValues }) => ({
     },
     mustuse: {
       badge: 'MUST',
+      description: 'You must include this tile in your submitted word.',
       effects: { required: true, botPerformanceDelta: -0.9 },
       rarityWeight: 0.6,
       canApply: ({ baseScore }) => baseScore <= 3,
@@ -150,6 +161,7 @@ const createModifierDefinitions = ({ bloodTilePositionValues }) => ({
     },
     locked3: {
       badge: '',
+      description: 'Locked tile. It cannot be used until the lock wears off.',
       effects: { lockTurns: 1 },
       rarityWeight: 0.6,
       ui: {
@@ -163,6 +175,7 @@ const createModifierDefinitions = ({ bloodTilePositionValues }) => ({
     },
     ghostTile: {
       badge: 'GHST',
+      description: 'Worth +3, but disappears if you leave it unused.',
       effects: { fadesIfUnused: true, bonusScore: 3 },
       rarityWeight: 0.52,
       canApply: ({ baseScore }) => baseScore <= 4,
@@ -177,6 +190,7 @@ const createModifierDefinitions = ({ bloodTilePositionValues }) => ({
     burningTile: {
       noSinglePlayer: true,
       badge: 'BURN',
+      description: 'Scores as 1 if used. If left unused, it burns you for -3.',
       effects: { setScore: 1, idleScorePenalty: 3 },
       rarityWeight: 10.5,
       canApply: ({ baseScore }) => baseScore <= 4,
