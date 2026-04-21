@@ -19,6 +19,9 @@ const createModifierDefinitions = ({ bloodTilePositionValues }) => ({
       effects: { wordMultiplier: 2 },
       rarityWeight: 0.9,
       canApply: ({ baseScore }) => baseScore >= 3,
+      animations: {
+        onPull: 'gold-shine'
+      },
       ui: {
         tileBackground: 'linear-gradient(180deg, #fff7d2 0%, #f4cf67 72%, #c68b1d 100%)',
         tileShadow: 'inset 0 -4px 0 rgba(122, 72, 8, 0.2), 0 12px 20px rgba(45, 10, 24, 0.2), 0 0 0 1px rgba(255, 223, 128, 0.5)',

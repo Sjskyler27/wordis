@@ -122,3 +122,6 @@ ghost boon not working
 burns not showing up? 
 
 swap boon attack and add more 
+
+logs are only showing chance for that given tile so you are not getting the full stats of a pull 
+

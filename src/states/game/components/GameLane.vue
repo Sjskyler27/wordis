@@ -264,6 +264,7 @@ const TILE_ANIMATION_STAGGER_MS = 50;
 const TILE_ANIMATION_DURATIONS = {
   blaze: 580,
   emerald: 580,
+  'gold-shine': 580,
   'unlock-dissolve': 530
 };
 
@@ -728,6 +729,23 @@ onBeforeUnmount(() => {
   animation: tile-emerald-flare var(--tile-animation-duration, 1180ms) ease-out;
 }
 
+.tile-anim-gold-shine {
+  animation: tile-gold-shine var(--tile-animation-duration, 680ms) ease-out;
+}
+
+.tile-anim-gold-shine::after {
+  content: '';
+  position: absolute;
+  inset: -6px;
+  border-radius: 22px;
+  pointer-events: none;
+  background:
+    linear-gradient(115deg, rgba(255, 255, 255, 0) 12%, rgba(255, 255, 255, 0.92) 34%, rgba(255, 220, 104, 0.52) 46%, rgba(255, 255, 255, 0) 66%),
+    radial-gradient(circle at 50% 50%, rgba(255, 230, 132, 0.52), rgba(255, 190, 45, 0) 70%);
+  mix-blend-mode: screen;
+  animation: tile-gold-shine-flare var(--tile-animation-duration, 680ms) ease-out forwards;
+}
+
 .tile-anim-unlock-dissolve {
   animation: tile-unlock-dissolve var(--tile-animation-duration, 1320ms) ease-out;
 }
@@ -818,6 +836,39 @@ onBeforeUnmount(() => {
   100% {
     opacity: 0;
     transform: scale(1.28) rotate(72deg);
+  }
+}
+
+@keyframes tile-gold-shine {
+  0% {
+    transform: translateY(5px) scale(0.94);
+    filter: saturate(1.04) brightness(0.94);
+  }
+  36% {
+    transform: translateY(-4px) scale(1.045);
+    filter: saturate(1.28) brightness(1.18);
+  }
+  68% {
+    transform: translateY(0) scale(1.01);
+    filter: saturate(1.14) brightness(1.08);
+  }
+  100% {
+    transform: translateY(0) scale(1);
+    filter: saturate(1) brightness(1);
+  }
+}
+
+@keyframes tile-gold-shine-flare {
+  0% {
+    opacity: 0;
+    transform: translateX(-42%) scale(0.9);
+  }
+  22% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(42%) scale(1.08);
   }
 }
 
