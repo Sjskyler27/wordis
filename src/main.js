@@ -3,11 +3,12 @@ import { createApp } from 'vue'
 import './style.css'
 import App from './App.vue'
 import { auth, db, firebaseApp } from './firebaseClient.js'
-import { initWavedash, updateWavedashLoadProgress } from './wavedash.js'
+import { cleanupWavedashServiceWorkers, initWavedash, updateWavedashLoadProgress } from './wavedash.js'
 
 const bootstrap = async () => {
   let mountError = null;
   console.log('[Wavedash] Bootstrap start');
+  await cleanupWavedashServiceWorkers();
   await updateWavedashLoadProgress(0.2);
   console.log('[Wavedash] Bootstrap progress 0.2 sent');
 
