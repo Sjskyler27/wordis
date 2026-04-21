@@ -240,7 +240,8 @@ const getTileStyle = (tile) => {
     '--tile-hover-shadow': ui.tileHoverShadows || ui.tileShadow,
     '--tile-focus-shadow': ui.tileFocusShadow || ui.tileShadow,
     '--tile-text-color': ui.textColor,
-    '--tile-enter-delay': `${tileEnterDelays.value[tile.id] || 0}ms`
+    '--tile-enter-delay': `${tileEnterDelays.value[tile.id] || 0}ms`,
+    '--tile-animation-duration': `${getTileAnimationDuration(tile)}ms`
   };
 };
 
