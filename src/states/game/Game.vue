@@ -172,6 +172,7 @@
           :controller-focused-built-tile-id="controllerRegion === 'builder' ? controllerFocusedBuiltTileId : ''"
           :controller-focused-action-index="controllerRegion === 'actions' ? controllerActionCursorIndex : -1"
           :is-overtime-active="isOvertimeActive"
+          :overtime-label="overtimeLabel"
           @undo="handleUndo"
           @clear="handleClearWord"
           @save-letters="handleSaveLetters"
@@ -463,6 +464,13 @@ const overtimeFinalWordSubmitted = computed(() => {
     : singlePlayerOvertimeFinalWordSubmitted.value;
 });
 const isOvertimeActive = computed(() => Boolean(overtimeTrailingSide.value) && !overtimeFinalWordSubmitted.value);
+const overtimeLabel = computed(() => {
+  if (!isOvertimeActive.value) {
+    return '';
+  }
+
+  return overtimeTrailingSide.value === mySide.value ? 'Final Word!' : 'Keep playing words!';
+});
 const submissionPauseOwner = computed(() => {
   return props.isMultiplayer
     ? multiplayerSubmissionPauseOwner.value

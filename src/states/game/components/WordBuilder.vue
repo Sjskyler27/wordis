@@ -2,7 +2,7 @@
   <section class="word-console" :class="{ overtime: isOvertimeActive }">
     <div class="console-topline">
       <span class="console-label"><span v-if="currentWordScore < 10" style="visibility:hidden">_</span>{{ currentWordScore }} pts</span>
-      <div v-if="isOvertimeActive" class="overtime-banner animated-pulse ">Final Word!</div>
+      <div v-if="isOvertimeActive" class="overtime-banner animated-pulse ">{{ overtimeLabel }}</div>
     </div>
     <div class="bonus-ladder">
     </div>
@@ -211,6 +211,10 @@ const props = defineProps({
   isOvertimeActive: {
     type: Boolean,
     default: false
+  },
+  overtimeLabel: {
+    type: String,
+    default: 'Final Word!'
   }
 });
 
