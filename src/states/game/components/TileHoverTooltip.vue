@@ -2,8 +2,18 @@
   <div
     v-if="visible && tile"
     class="tile-hover-tooltip"
+    :class="{ 'tile-hover-tooltip-interactive': dismissible }"
     :style="tooltipStyle"
   >
+    <button
+      v-if="dismissible"
+      type="button"
+      class="tile-hover-close"
+      aria-label="Close tile description"
+      @click="$emit('close')"
+    >
+      x
+    </button>
     <span class="tile-hover-badge">{{ badgeLabel }}</span>
     <strong>{{ title }}</strong>
     <p>{{ description }}</p>
@@ -13,6 +23,8 @@
 <script setup>
 import { computed } from 'vue';
 import { getModifierBadge, getModifierDefinition, getModifierDescription } from '../tile-logic.js';
+
+defineEmits(['close']);
 
 const props = defineProps({
   tile: {
@@ -30,6 +42,10 @@ const props = defineProps({
   y: {
     type: Number,
     default: 0
+  },
+  dismissible: {
+    type: Boolean,
+    default: false
   }
 });
 
@@ -76,6 +92,26 @@ const tooltipStyle = computed(() => ({
   color: #f7efe1;
   pointer-events: none;
   transform: translate(14px, 14px);
+}
+
+.tile-hover-tooltip-interactive {
+  pointer-events: auto;
+  transform: none;
+}
+
+.tile-hover-close {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.1);
+  color: #f7efe1;
+  cursor: pointer;
+  font-size: 0.9rem;
+  line-height: 1;
 }
 
 .tile-hover-tooltip strong {

@@ -19,6 +19,17 @@
           - {{ displayBurnPenalty }} burn
         </p>
       </div>
+      <button
+        v-if="showMobileInspectToggle"
+        type="button"
+        class="mobile-inspect-toggle"
+        :class="{ active: mobileInspectEnabled }"
+        :aria-pressed="mobileInspectEnabled"
+        :title="mobileInspectEnabled ? 'Disable tile descriptions' : 'Enable tile descriptions'"
+        @click="toggleMobileInspect"
+      >
+        <span aria-hidden="true">🔍</span>
+      </button>
     </div>
 
     <div class="rack-grid">
@@ -40,7 +51,7 @@
             }"
             :style="getTileStyle(tile)"
             :data-controller-tile="`${side}-${index}`"
-            @click="$emit('tile-click', tile)"
+            @click="handleTileClick(tile, $event)"
             @mouseenter="showTooltipLater(tile, $event)"
             @mousemove="updateTooltipPosition($event)"
             @mouseleave="hideTooltip"
@@ -59,12 +70,14 @@
       :visible="isTooltipVisible"
       :x="tooltipPosition.x"
       :y="tooltipPosition.y"
+      :dismissible="showMobileInspectToggle && mobileInspectEnabled"
+      @close="hideTooltip"
     />
   </section>
 </template>
 
 <script setup>
-import { computed, onBeforeUnmount, ref, watch } from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { getModifierBadge, getModifierUi, tileScore } from '../tile-logic.js';
 import TileHoverTooltip from './TileHoverTooltip.vue';
 
@@ -127,13 +140,46 @@ const props = defineProps({
   }
 });
 
-defineEmits(['tile-click']);
 const hoveredTile = ref(null);
 const isTooltipVisible = ref(false);
 const tooltipPosition = ref({ x: 0, y: 0 });
+const isPhoneViewport = ref(false);
+const mobileInspectEnabled = ref(false);
 let tooltipTimeoutId = null;
+let phoneViewportMediaQuery = null;
+
+const emit = defineEmits(['tile-click']);
+
+const updatePhoneViewport = () => {
+  isPhoneViewport.value = Boolean(
+    window.matchMedia('(max-width: 767px)').matches &&
+    (window.matchMedia('(pointer: coarse)').matches || navigator.maxTouchPoints > 0)
+  );
+
+  if (!isPhoneViewport.value) {
+    mobileInspectEnabled.value = false;
+  }
+};
+
+const showMobileInspectToggle = computed(() => isPhoneViewport.value);
+
+const setTooltipPositionFromElement = (element) => {
+  const rect = element.getBoundingClientRect();
+  const tooltipWidth = Math.min(280, window.innerWidth - 24);
+  const centeredX = rect.left + (rect.width / 2) - (tooltipWidth / 2);
+  const preferredY = rect.top - 16;
+
+  tooltipPosition.value = {
+    x: Math.max(12, Math.min(centeredX, window.innerWidth - tooltipWidth - 12)),
+    y: Math.max(12, preferredY)
+  };
+};
 
 const showTooltipLater = (tile, event) => {
+  if (showMobileInspectToggle.value) {
+    return;
+  }
+
   tooltipPosition.value = {
     x: event.clientX,
     y: event.clientY
@@ -157,6 +203,25 @@ const hideTooltip = () => {
   window.clearTimeout(tooltipTimeoutId);
   isTooltipVisible.value = false;
   hoveredTile.value = null;
+};
+
+const toggleMobileInspect = () => {
+  mobileInspectEnabled.value = !mobileInspectEnabled.value;
+
+  if (!mobileInspectEnabled.value) {
+    hideTooltip();
+  }
+};
+
+const handleTileClick = (tile, event) => {
+  if (showMobileInspectToggle.value && mobileInspectEnabled.value) {
+    setTooltipPositionFromElement(event.currentTarget);
+    hoveredTile.value = tile;
+    isTooltipVisible.value = true;
+    return;
+  }
+
+  emit('tile-click', tile);
 };
 
 const displayWordScore = computed(() => {
@@ -297,10 +362,21 @@ watch(() => props.tiles, (nextTiles) => {
 onBeforeUnmount(() => {
   window.clearTimeout(burstTimeoutId);
   window.clearTimeout(tooltipTimeoutId);
+  if (phoneViewportMediaQuery) {
+    phoneViewportMediaQuery.removeEventListener('change', updatePhoneViewport);
+  }
+  window.removeEventListener('resize', updatePhoneViewport);
   tileAnimationTimeoutIds.forEach((timeoutId) => {
     window.clearTimeout(timeoutId);
   });
   tileAnimationTimeoutIds.clear();
+});
+
+onMounted(() => {
+  phoneViewportMediaQuery = window.matchMedia('(max-width: 767px)');
+  updatePhoneViewport();
+  phoneViewportMediaQuery.addEventListener('change', updatePhoneViewport);
+  window.addEventListener('resize', updatePhoneViewport);
 });
 </script>
 
@@ -374,6 +450,24 @@ onBeforeUnmount(() => {
   justify-content: space-between;
   gap: 16px;
   align-items: flex-start;
+}
+
+.mobile-inspect-toggle {
+  flex-shrink: 0;
+  width: 46px;
+  height: 46px;
+  border: 1px solid rgba(255, 202, 103, 0.28);
+  border-radius: 14px;
+  background: rgba(34, 9, 24, 0.72);
+  color: #ffe0a5;
+  font-size: 1.1rem;
+  box-shadow: 0 10px 20px rgba(16, 4, 11, 0.22);
+}
+
+.mobile-inspect-toggle.active {
+  background: rgba(255, 202, 103, 0.18);
+  border-color: rgba(255, 202, 103, 0.65);
+  box-shadow: 0 0 0 3px rgba(255, 202, 103, 0.16);
 }
 
 .lane-label {
