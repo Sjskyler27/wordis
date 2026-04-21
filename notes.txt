@@ -123,6 +123,5 @@ burns not showing up?
 
 swap boon attack and add more 
 
-show tiles at history instead of the word 
+logs are only showing chance for that given tile so you are not getting the full stats of a pull 
 
-show best word 

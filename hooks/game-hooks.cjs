@@ -123,6 +123,7 @@ const createInitialState = ({ hostId, players = [hostId], isPrivate = true, over
       overtimeEnabled,
       overtimePendingSide: null,
       overtimeFinalWordSubmitted: false,
+      submissionPauseOwner: null,
       words: {
         host: '',
         opponent: ''
@@ -173,6 +174,7 @@ const createInitialState = ({ hostId, players = [hostId], isPrivate = true, over
     overtimeEnabled,
     overtimePendingSide: null,
     overtimeFinalWordSubmitted: false,
+    submissionPauseOwner: null,
     words: {
       host: '',
       opponent: ''
@@ -212,11 +214,17 @@ const createInitialState = ({ hostId, players = [hostId], isPrivate = true, over
     cards: {
       host: {
         boons: drawCards('boon', 1),
-        attacks: drawCards('attack', 1)
+        attacks: drawCards('attack', 1, {
+          side: 'host',
+          scores: { host: 0, opponent: 0 }
+        })
       },
       opponent: {
         boons: drawCards('boon', 1),
-        attacks: drawCards('attack', 1)
+        attacks: drawCards('attack', 1, {
+          side: 'opponent',
+          scores: { host: 0, opponent: 0 }
+        })
       }
     },
     tiles: createOpeningRackPair({ host: 0, opponent: 0 })
@@ -379,6 +387,16 @@ const useAttack = (roomCode, clientId, cardId) => {
     return { success: false, error: 'No attacks remaining' };
   }
 
+  if (card.effectType === 'pause_submissions') {
+    if (state.submissionPauseOwner) {
+      return { success: false, error: 'A submission pause is already active' };
+    }
+
+    state.cards[side].attacks = keepTestingHand(state.cards[side].attacks, cardId);
+    state.submissionPauseOwner = side;
+    return { success: true, state };
+  }
+
   if (card.modifier === 'mustuse' && state.tiles[opponentSide].some((tile) => tile.status === 'mustuse')) {
     return { success: false, error: 'That board already has a MUST tile' };
   }
@@ -469,6 +487,10 @@ const submitWord = async (roomCode, clientId, word, tileIds, languageCode = 'en'
     return { success: false, error: 'Player not in room' };
   }
 
+  if (state.submissionPauseOwner && state.submissionPauseOwner !== side) {
+    return { success: false, error: 'Your submissions are paused until your opponent submits' };
+  }
+
   if (!/^[A-Z*]+$/.test(normalizedWord)) {
     return { success: false, error: 'Words must use letters only' };
   }
@@ -522,11 +544,17 @@ const submitWord = async (roomCode, clientId, word, tileIds, languageCode = 'en'
   };
   state.scores[side] += scoreDelta;
   state.cards[side].boons.push(...drawCards('boon', grantedResources.boons));
-  state.cards[side].attacks.push(...drawCards('attack', grantedResources.attacks));
+  state.cards[side].attacks.push(...drawCards('attack', grantedResources.attacks, {
+    side,
+    scores: state.scores
+  }));
   state.tiles[side] = refillRack(state.tiles[side], tileIds, side, state.scores, {
     phase: 'submit',
     turnCount: getTurnCount(state)
   });
+  if (state.submissionPauseOwner === side) {
+    state.submissionPauseOwner = null;
+  }
   updateOvertimeStateAfterSubmit(state, side);
 
   return { success: true, state };

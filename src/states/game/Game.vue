@@ -115,6 +115,7 @@
             :label="leftLane.label"
             :submitted-word="leftLane.submittedWord"
             :score="leftLane.score"
+            :current-player-scores="playerScores"
             :last-word-score="leftLane.lastWordScore"
             :last-word-breakdown="leftLane.lastWordBreakdown"
             :tiles="leftLane.tiles"
@@ -134,6 +135,7 @@
             :label="rightLane.label"
             :submitted-word="rightLane.submittedWord"
             :score="rightLane.score"
+            :current-player-scores="playerScores"
             :last-word-score="rightLane.lastWordScore"
             :last-word-breakdown="rightLane.lastWordBreakdown"
             :tiles="rightLane.tiles"
@@ -172,6 +174,7 @@
           :controller-focused-built-tile-id="controllerRegion === 'builder' ? controllerFocusedBuiltTileId : ''"
           :controller-focused-action-index="controllerRegion === 'actions' ? controllerActionCursorIndex : -1"
           :is-overtime-active="isOvertimeActive"
+          :overtime-label="overtimeLabel"
           @undo="handleUndo"
           @clear="handleClearWord"
           @save-letters="handleSaveLetters"
@@ -234,7 +237,8 @@ import {
   resetGame as resetMultiplayer,
   multiplayerOvertimeEnabled,
   multiplayerOvertimePendingSide,
-  multiplayerOvertimeFinalWordSubmitted
+  multiplayerOvertimeFinalWordSubmitted,
+  multiplayerSubmissionPauseOwner
 } from './multiplayer.js';
 import { MIN_WORD_LENGTH, getWordScoreDetails, isMissingRequiredTile, selectedTilesMatchWord } from './tile-logic.js';
 import { getPreferredLanguage } from './language.js';
@@ -405,6 +409,7 @@ const {
   useSinglePlayerBoon,
   useSinglePlayerAttack,
   submitSinglePlayerWord,
+  submissionPauseOwner: singlePlayerSubmissionPauseOwner,
   overtimePendingSide: singlePlayerOvertimePendingSide,
   overtimeFinalWordSubmitted: singlePlayerOvertimeFinalWordSubmitted
 } = useSinglePlayerGame({
@@ -461,6 +466,20 @@ const overtimeFinalWordSubmitted = computed(() => {
     : singlePlayerOvertimeFinalWordSubmitted.value;
 });
 const isOvertimeActive = computed(() => Boolean(overtimeTrailingSide.value) && !overtimeFinalWordSubmitted.value);
+const overtimeLabel = computed(() => {
+  if (!isOvertimeActive.value) {
+    return '';
+  }
+
+  return overtimeTrailingSide.value === mySide.value ? 'Final Word!' : 'Keep playing words!';
+});
+const submissionPauseOwner = computed(() => {
+  return props.isMultiplayer
+    ? multiplayerSubmissionPauseOwner.value
+    : singlePlayerSubmissionPauseOwner.value;
+});
+const isMySubmissionPaused = computed(() => Boolean(submissionPauseOwner.value) && submissionPauseOwner.value !== mySide.value);
+const isSubmissionPauseActive = computed(() => Boolean(submissionPauseOwner.value));
 
 const myCards = computed(() => playerCards.value[mySide.value] || { boons: [], attacks: [] });
 const controllerCards = computed(() => {
@@ -929,6 +948,11 @@ const handleSubmit = async () => {
     return;
   }
 
+  if (isMySubmissionPaused.value) {
+    localMessage.value = 'Your submissions are paused until your opponent submits.';
+    return;
+  }
+
   const normalizedWord = currentWordDisplay.value;
   const swappedInMustTile = autoSwapMatchingMustTiles();
   const selectedTiles = selectedTilesForCurrentSide.value;
@@ -1036,9 +1060,16 @@ const useAttackCard = (card) => {
     return;
   }
 
+  if (card.effectType === 'pause_submissions' && isSubmissionPauseActive.value) {
+    localMessage.value = 'A submission pause is already active.';
+    return;
+  }
+
   if (props.isMultiplayer) {
     useMultiplayerAttack({ cardId: card.id });
-    localMessage.value = `Played ${card.label} on a random enemy tile.`;
+    localMessage.value = card.effectType === 'pause_submissions'
+      ? 'Paused enemy submissions until your next word.'
+      : `Played ${card.label} on a random enemy tile.`;
     resetActionMode();
     return;
   }

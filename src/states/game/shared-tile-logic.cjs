@@ -621,7 +621,19 @@ console.log(JSON.stringify({
         return TIMED_SOLO_ATTACK_CARD_KEYS;
       }
 
-      return ATTACK_CARD_KEYS;
+      return ATTACK_CARD_KEYS.filter((cardKey) => {
+        const definition = getCardDefinition(cardKey);
+        if (!definition?.requiresBehind) {
+          return true;
+        }
+
+        if (!options.side || !options.scores) {
+          return false;
+        }
+
+        const opponentSide = options.side === 'host' ? 'opponent' : 'host';
+        return (options.scores[options.side] || 0) < (options.scores[opponentSide] || 0);
+      });
     };
 
     const drawCard = (kind, options = {}) => {
@@ -800,14 +812,27 @@ console.log(JSON.stringify({
 
     const nextLockTurns = Math.max(0, (tile.lockTurns || 0) - 1);
     const nextStatus = nextLockTurns > 0 ? tile.status : 'normal';
-
-    return applyModifierToTile({
+    const unlockAnimationName = nextStatus === 'normal' ? tile.onNewTurn : '';
+    const nextTile = applyModifierToTile({
       ...tile,
       lockTurns: nextLockTurns,
       locked: nextLockTurns > 0
     }, nextStatus, {
       trigger: options.trigger || ''
     });
+
+    if (!unlockAnimationName || options.trigger !== 'onNewTurn') {
+      return nextTile;
+    }
+
+    return {
+      ...nextTile,
+      animationState: {
+        trigger: options.trigger,
+        name: unlockAnimationName,
+        key: `${options.trigger}-${unlockAnimationName}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`
+      }
+    };
   };
 
   const isMissingRequiredTile = (rackTiles = [], selectedTiles = []) => {

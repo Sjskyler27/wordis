@@ -131,12 +131,12 @@ const CARD_DEFINITIONS = {
       cardBadgeBackground: 'rgba(14, 10, 24, 0.46)'
     }
   },
-  attack_ghostTile: {
-    kind: 'attack',
+  boon_ghostTile: {
+    kind: 'boon',
     label: 'Ghost Tile',
     description: 'Give a random enemy tile the ghostTile modifier.',
     rarityWeight: 0.72,
-    effectType: 'random_attack',
+    effectType: 'apply_modifier',
     modifier: 'ghostTile',
     ui: {
       cardGlow: 'rgba(220, 240, 255, 0.24)',
@@ -144,6 +144,21 @@ const CARD_DEFINITIONS = {
       cardPattern: 'rgba(244, 250, 255, 0.12)',
       cardBackground: 'linear-gradient(180deg, rgba(161, 191, 219, 0.98), rgba(91, 119, 157, 0.96))',
       cardBadgeBackground: 'rgba(50, 70, 104, 0.42)'
+    }
+  },
+  attack_pause_submissions: {
+    kind: 'attack',
+    label: 'Pause Submissions',
+    description: 'Stop your opponent from submitting until you submit a word. Cannot be played while another pause is active.',
+    rarityWeight: 0.18,
+    effectType: 'pause_submissions',
+    requiresBehind: true,
+    ui: {
+      cardGlow: 'rgba(255, 216, 151, 0.24)',
+      cardEdge: 'rgba(255, 228, 179, 0.34)',
+      cardPattern: 'rgba(255, 244, 224, 0.1)',
+      cardBackground: 'linear-gradient(180deg, rgba(206, 126, 64, 0.98), rgba(122, 55, 37, 0.96))',
+      cardBadgeBackground: 'rgba(79, 34, 21, 0.42)'
     }
   },
   attack_pause_time: {
@@ -185,6 +200,7 @@ const BOON_CARD_KEYS = [
   'boon_clear_negative',
   'boon_firsttile',
   'boon_wild',
+  'boon_ghostTile',
   'boon_gold'
 ];
 
@@ -192,7 +208,7 @@ const ATTACK_CARD_KEYS = [
   'attack_zeroTile',
   'attack_mustuse',
   'attack_locked3',
-  'attack_ghostTile'
+  'attack_pause_submissions'
 ];
 
 const TIMED_SOLO_ATTACK_CARD_KEYS = ['attack_pause_time', 'attack_gain_time'];

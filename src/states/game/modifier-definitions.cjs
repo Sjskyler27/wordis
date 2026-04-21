@@ -19,6 +19,9 @@ const createModifierDefinitions = ({ bloodTilePositionValues }) => ({
       effects: { wordMultiplier: 2 },
       rarityWeight: 0.9,
       canApply: ({ baseScore }) => baseScore >= 3,
+      animations: {
+        onPull: 'gold-shine'
+      },
       ui: {
         tileBackground: 'linear-gradient(180deg, #fff7d2 0%, #f4cf67 72%, #c68b1d 100%)',
         tileShadow: 'inset 0 -4px 0 rgba(122, 72, 8, 0.2), 0 12px 20px rgba(45, 10, 24, 0.2), 0 0 0 1px rgba(255, 223, 128, 0.5)',
@@ -84,7 +87,7 @@ const createModifierDefinitions = ({ bloodTilePositionValues }) => ({
       }
     },
     bloodTile: {
-      badge: 'BLOOD',
+      badge: 'BLD',
       description: 'Scores by position instead of face value. Later positions score higher.',
       effects: {
         setScore: 0,
@@ -104,6 +107,9 @@ const createModifierDefinitions = ({ bloodTilePositionValues }) => ({
       description: 'Scores 0 when used, but gains +1 bonus score each turn it stays unused.',
       effects: { setScore: 0, idleBonusScoreDelta: 1 },
       rarityWeight: 0.18,
+      animations: {
+        onNewTurn: 'emerald'
+      },
       ui: {
         tileBackground: 'linear-gradient(180deg, #d7ffe9 0%, #5ee2a8 42%, #0b9a6f 76%, #046647 100%)',
         tileShadow: 'inset 0 -4px 0 rgba(4, 82, 58, 0.34), 0 12px 22px rgba(4, 82, 58, 0.24), 0 0 0 1px rgba(175, 255, 213, 0.46)',
@@ -125,7 +131,7 @@ const createModifierDefinitions = ({ bloodTilePositionValues }) => ({
       rarityWeight: 0.32,
       noSinglePlayer: true,
       ui: {
-        tileBackground: 'linear-gradient(225deg, #f6f0e4 0%, #f6f0e4 48%, #181217 49%, #181217 100%)',
+        tileBackground: 'linear-gradient(225deg, #f6f0e4 0%, #f6f0e4 48%, #6f6f6f 49%, #181217 100%)',
         tileShadow: 'inset 0 -4px 0 rgba(20, 14, 19, 0.28), 0 12px 22px rgba(20, 14, 19, 0.22), 0 0 0 1px rgba(255, 255, 255, 0.24)',
         textColor: '#8a2f2f',
         badgeBackground: 'rgba(255, 255, 255, 0.92)',
@@ -164,6 +170,9 @@ const createModifierDefinitions = ({ bloodTilePositionValues }) => ({
       description: 'Locked tile. It cannot be used until the lock wears off.',
       effects: { lockTurns: 1 },
       rarityWeight: 0.6,
+      animations: {
+        onNewTurn: 'unlock-dissolve'
+      },
       ui: {
         tileBackground: 'linear-gradient(180deg, #3b3343 0%, #211926 72%, #100b14 100%)',
         tileShadow: 'inset 0 -4px 0 rgba(0, 0, 0, 0.4), 0 12px 20px rgba(10, 5, 12, 0.34)',
@@ -192,7 +201,7 @@ const createModifierDefinitions = ({ bloodTilePositionValues }) => ({
       badge: 'BURN',
       description: 'Scores as 1 if used. If left unused, it burns you for -3.',
       effects: { setScore: 1, idleScorePenalty: 3 },
-      rarityWeight: 10.5,
+      rarityWeight: 0.5,
       canApply: ({ baseScore }) => baseScore <= 4,
       animations: {
         onNewTurn: 'blaze'

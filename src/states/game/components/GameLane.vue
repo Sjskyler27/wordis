@@ -34,7 +34,7 @@
 
     <div class="rack-grid">
       <div v-for="(tile, index) in tiles" :key="`${side}-slot-${index}`" class="rack-slot">
-        <Transition name="rack-tile" mode="out-in">
+        <Transition :name="getTileTransitionName(tile)" mode="out-in">
           <button
             :key="tile.id"
             type="button"
@@ -56,10 +56,10 @@
             @mousemove="updateTooltipPosition($event)"
             @mouseleave="hideTooltip"
           >
-            <span v-if="!getModifierUi(tile.status).hideBadge && tile.status !== 'normal'" class="tile-modifier" :style="getBadgeStyle(tile)">
-              {{ getModifierBadge(tile) }}
+            <span v-if="!getTileUi(tile).hideBadge && tile.status !== 'normal'" class="tile-modifier" :style="getBadgeStyle(tile)">
+              {{ getTileBadge(tile) }}
             </span>
-            <span class="tile-score">{{ tileScore(tile) }}</span>
+            <span class="tile-score">{{ getTileScore(tile) }}</span>
             <span class="tile-letter">{{ tile.letter }}</span>
           </button>
         </Transition>
@@ -98,6 +98,10 @@ const props = defineProps({
   score: {
     type: Number,
     required: true
+  },
+  currentPlayerScores: {
+    type: Object,
+    default: () => ({})
   },
   tiles: {
     type: Array,
@@ -231,20 +235,82 @@ const displayBurnPenalty = computed(() => {
   return props.lastWordBreakdown?.burnPenalty ?? 0;
 });
 
-const getTileStyle = (tile) => {
+const getYinYangState = (tile) => {
+  if (tile?.status !== 'yinYang') {
+    return '';
+  }
+
+  const opponentSide = props.side === 'host' ? 'opponent' : 'host';
+  const scoreDelta = (props.currentPlayerScores?.[props.side] || 0) - (props.currentPlayerScores?.[opponentSide] || 0);
+  if (scoreDelta < 0) {
+    return 'behind';
+  }
+  if (scoreDelta > 0) {
+    return 'ahead';
+  }
+  return 'tied';
+};
+
+const getTileUi = (tile) => {
   const ui = getModifierUi(tile.status);
+  const yinYangState = getYinYangState(tile);
+
+  if (yinYangState === 'behind') {
+    return {
+      ...ui,
+      tileBackground: 'linear-gradient(225deg, #181217 0%, #6f6f6f 48%, #f6f0e4 49%, #f6f0e4 100%)',
+      
+      badgeBackground: 'rgba(255, 255, 255, 0.92)',
+      badgeColor: '#181217'
+    };
+  }
+
+  if (yinYangState === 'ahead') {
+    return {
+      ...ui,
+      tileBackground: 'linear-gradient(225deg, #f6f0e4 0%, #f6f0e4 48%, #6f6f6f 49%, #181217 100%)',
+      badgeBackground: 'rgba(24, 18, 23, 0.92)',
+      badgeColor: '#f6f0e4'
+    };
+  }
+
+  return ui;
+};
+
+const getTileBadge = (tile) => {
+  const yinYangState = getYinYangState(tile);
+  if (yinYangState === 'behind') {
+    return 'YIN';
+  }
+  if (yinYangState === 'ahead') {
+    return 'YNG';
+  }
+
+  return getModifierBadge(tile);
+};
+
+const getTileScore = (tile) => tileScore(tile, {
+  side: props.side,
+  scores: props.currentPlayerScores
+});
+
+const getTileStyle = (tile) => {
+  const ui = getTileUi(tile);
 
   return {
     '--tile-bg': ui.tileBackground,
     '--tile-shadow': ui.tileShadow,
     '--tile-hover-shadow': ui.tileHoverShadows || ui.tileShadow,
     '--tile-focus-shadow': ui.tileFocusShadow || ui.tileShadow,
-    '--tile-text-color': ui.textColor
+    '--tile-text-color': ui.textColor,
+    '--tile-letter-stroke': tile.status === 'yinYang' ? '1px rgba(255, 255, 255, 0.92)' : '0 transparent',
+    '--tile-enter-delay': `${tileEnterDelays.value[tile.id] || 0}ms`,
+    '--tile-animation-duration': `${getTileAnimationDuration(tile)}ms`
   };
 };
 
 const getBadgeStyle = (tile) => {
-  const ui = getModifierUi(tile.status);
+  const ui = getTileUi(tile);
 
   return {
     background: ui.badgeBackground,
@@ -254,9 +320,21 @@ const getBadgeStyle = (tile) => {
 
 const activeTileAnimations = ref({});
 const seenTileAnimationKeys = ref({});
+const tileEnterDelays = ref({});
 const tileAnimationTimeoutIds = new Map();
+const tileAnimationDelayTimeoutIds = new Map();
+const tileEnterDelayTimeoutIds = new Map();
+const TILE_ANIMATION_STAGGER_MS = 50;
 const TILE_ANIMATION_DURATIONS = {
-  blaze: 1080
+  blaze: 580,
+  emerald: 580,
+  'gold-shine': 580,
+  'unlock-dissolve': 530
+};
+
+const getTileAnimationDuration = (tile) => {
+  const animationName = tile?.animationState?.name;
+  return TILE_ANIMATION_DURATIONS[animationName] || 900;
 };
 
 const stopTileAnimation = (tileId) => {
@@ -272,7 +350,34 @@ const stopTileAnimation = (tileId) => {
   activeTileAnimations.value = nextAnimations;
 };
 
-const startTileAnimation = (tile) => {
+const startTileAnimation = (tile, options = {}) => {
+  const animationState = tile?.animationState;
+  if (!tile?.id || !animationState?.name || !animationState?.key) {
+    return;
+  }
+
+  if (!options.alreadySeen && seenTileAnimationKeys.value[tile.id] === animationState.key) {
+    return;
+  }
+
+  if (!options.alreadySeen) {
+    seenTileAnimationKeys.value = {
+      ...seenTileAnimationKeys.value,
+      [tile.id]: animationState.key
+    };
+  }
+  activeTileAnimations.value = {
+    ...activeTileAnimations.value,
+    [tile.id]: animationState.key
+  };
+
+  window.clearTimeout(tileAnimationTimeoutIds.get(tile.id));
+  tileAnimationTimeoutIds.set(tile.id, window.setTimeout(() => {
+    stopTileAnimation(tile.id);
+  }, getTileAnimationDuration(tile)));
+};
+
+const scheduleTileAnimation = (tile, index = 0) => {
   const animationState = tile?.animationState;
   if (!tile?.id || !animationState?.name || !animationState?.key) {
     return;
@@ -286,15 +391,19 @@ const startTileAnimation = (tile) => {
     ...seenTileAnimationKeys.value,
     [tile.id]: animationState.key
   };
-  activeTileAnimations.value = {
-    ...activeTileAnimations.value,
-    [tile.id]: animationState.key
-  };
 
-  window.clearTimeout(tileAnimationTimeoutIds.get(tile.id));
-  tileAnimationTimeoutIds.set(tile.id, window.setTimeout(() => {
-    stopTileAnimation(tile.id);
-  }, TILE_ANIMATION_DURATIONS[animationState.name] || 900));
+  window.clearTimeout(tileAnimationDelayTimeoutIds.get(tile.id));
+
+  const delay = index * TILE_ANIMATION_STAGGER_MS;
+  if (!delay) {
+    startTileAnimation(tile, { alreadySeen: true });
+    return;
+  }
+
+  tileAnimationDelayTimeoutIds.set(tile.id, window.setTimeout(() => {
+    tileAnimationDelayTimeoutIds.delete(tile.id);
+    startTileAnimation(tile, { alreadySeen: true });
+  }, delay));
 };
 
 const getTileAnimationClass = (tile) => {
@@ -306,6 +415,34 @@ const getTileAnimationClass = (tile) => {
   return activeTileAnimations.value[tile.id] === animationState.key
     ? `tile-anim-${animationState.name}`
     : '';
+};
+
+const getTileTransitionName = (tile) => {
+  return tile?.status === 'ghostTile' ? 'ghost-tile' : 'rack-tile';
+};
+
+const scheduleTileEnterDelays = (nextTiles = [], previousTiles = []) => {
+  const previousIds = new Set(previousTiles.map((tile) => tile?.id).filter(Boolean));
+  const enteringTiles = nextTiles.filter((tile) => tile?.id && !previousIds.has(tile.id));
+
+  if (!enteringTiles.length) {
+    return;
+  }
+
+  const nextDelays = { ...tileEnterDelays.value };
+  enteringTiles.forEach((tile, enterIndex) => {
+    nextDelays[tile.id] = enterIndex * TILE_ANIMATION_STAGGER_MS;
+
+    window.clearTimeout(tileEnterDelayTimeoutIds.get(tile.id));
+    tileEnterDelayTimeoutIds.set(tile.id, window.setTimeout(() => {
+      tileEnterDelayTimeoutIds.delete(tile.id);
+      const delays = { ...tileEnterDelays.value };
+      delete delays[tile.id];
+      tileEnterDelays.value = delays;
+    }, nextDelays[tile.id] + 260));
+  });
+
+  tileEnterDelays.value = nextDelays;
 };
 
 const burstTier = ref('');
@@ -351,8 +488,17 @@ watch(() => [props.burstPulse, props.lastWordScore], ([nextPulse]) => {
   });
 });
 
-watch(() => props.tiles, (nextTiles) => {
-  nextTiles.forEach((tile) => startTileAnimation(tile));
+watch(() => props.tiles, (nextTiles, previousTiles = []) => {
+  scheduleTileEnterDelays(nextTiles, previousTiles);
+  nextTiles
+    .filter((tile) => {
+      const animationState = tile?.animationState;
+      return tile?.id
+        && animationState?.name
+        && animationState?.key
+        && seenTileAnimationKeys.value[tile.id] !== animationState.key;
+    })
+    .forEach((tile, animationIndex) => scheduleTileAnimation(tile, animationIndex));
 }, {
   immediate: true,
   deep: true
@@ -372,6 +518,14 @@ onBeforeUnmount(() => {
     window.clearTimeout(timeoutId);
   });
   tileAnimationTimeoutIds.clear();
+  tileAnimationDelayTimeoutIds.forEach((timeoutId) => {
+    window.clearTimeout(timeoutId);
+  });
+  tileAnimationDelayTimeoutIds.clear();
+  tileEnterDelayTimeoutIds.forEach((timeoutId) => {
+    window.clearTimeout(timeoutId);
+  });
+  tileEnterDelayTimeoutIds.clear();
 });
 </script>
 
@@ -607,7 +761,7 @@ onBeforeUnmount(() => {
 }
 
 .tile-anim-blaze {
-  animation: tile-blaze 1080ms ease-out;
+  animation: tile-blaze var(--tile-animation-duration, 1080ms) ease-out;
 }
 
 .tile-anim-blaze::after {
@@ -619,7 +773,56 @@ onBeforeUnmount(() => {
   background:
     radial-gradient(circle at 50% 86%, rgba(255, 218, 134, 0.95) 0%, rgba(255, 179, 64, 0.6) 16%, rgba(255, 101, 22, 0.52) 34%, rgba(255, 83, 34, 0.24) 52%, rgba(255, 83, 34, 0) 72%);
   mix-blend-mode: screen;
-  animation: tile-blaze-flare 1080ms ease-out;
+  animation: tile-blaze-flare var(--tile-animation-duration, 1080ms) ease-out;
+}
+
+.tile-anim-emerald {
+  animation: tile-emerald var(--tile-animation-duration, 1180ms) ease-out;
+}
+
+.tile-anim-emerald::after {
+  content: '';
+  position: absolute;
+  inset: -10px;
+  border-radius: 24px;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 50% 50%, rgba(215, 255, 230, 0.95) 0%, rgba(82, 239, 171, 0.58) 26%, rgba(0, 170, 118, 0.22) 52%, rgba(0, 170, 118, 0) 74%),
+    conic-gradient(from 20deg, rgba(214, 255, 228, 0), rgba(214, 255, 228, 0.82), rgba(41, 211, 148, 0), rgba(214, 255, 228, 0.64), rgba(214, 255, 228, 0));
+  mix-blend-mode: screen;
+  animation: tile-emerald-flare var(--tile-animation-duration, 1180ms) ease-out;
+}
+
+.tile-anim-gold-shine {
+  animation: tile-gold-shine var(--tile-animation-duration, 680ms) ease-out;
+}
+
+.tile-anim-gold-shine::after {
+  content: '';
+  position: absolute;
+  inset: -6px;
+  border-radius: 22px;
+  pointer-events: none;
+  background:
+    linear-gradient(115deg, rgba(255, 255, 255, 0) 12%, rgba(255, 255, 255, 0.92) 34%, rgba(255, 220, 104, 0.52) 46%, rgba(255, 255, 255, 0) 66%),
+    radial-gradient(circle at 50% 50%, rgba(255, 230, 132, 0.52), rgba(255, 190, 45, 0) 70%);
+  mix-blend-mode: screen;
+  animation: tile-gold-shine-flare var(--tile-animation-duration, 680ms) ease-out forwards;
+}
+
+.tile-anim-unlock-dissolve {
+  animation: tile-unlock-dissolve var(--tile-animation-duration, 1320ms) ease-out;
+}
+
+.tile-anim-unlock-dissolve::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 16px;
+  pointer-events: none;
+  background:
+    linear-gradient(180deg, rgba(17, 11, 21, 0.9), rgba(0, 0, 0, 0.74));
+  animation: tile-lock-overlay-dissolve var(--tile-animation-duration, 1320ms) ease-out forwards;
 }
 
 @keyframes must-tile-flash {
@@ -666,6 +869,100 @@ onBeforeUnmount(() => {
   100% {
     opacity: 0;
     transform: translateY(-12px) scale(1.16);
+  }
+}
+
+@keyframes tile-emerald {
+  0%,
+  100% {
+    transform: translateY(0) scale(1);
+    filter: saturate(1) brightness(1);
+  }
+  26% {
+    transform: translateY(-2px) scale(1.035);
+    filter: saturate(1.35) brightness(1.16);
+  }
+  52% {
+    transform: translateY(0) scale(1.01);
+    filter: saturate(1.2) brightness(1.08);
+  }
+}
+
+@keyframes tile-emerald-flare {
+  0% {
+    opacity: 0;
+    transform: scale(0.78) rotate(0deg);
+  }
+  24% {
+    opacity: 1;
+    transform: scale(1.08) rotate(18deg);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.28) rotate(72deg);
+  }
+}
+
+@keyframes tile-gold-shine {
+  0% {
+    transform: translateY(5px) scale(0.94);
+    filter: saturate(1.04) brightness(0.94);
+  }
+  36% {
+    transform: translateY(-4px) scale(1.045);
+    filter: saturate(1.28) brightness(1.18);
+  }
+  68% {
+    transform: translateY(0) scale(1.01);
+    filter: saturate(1.14) brightness(1.08);
+  }
+  100% {
+    transform: translateY(0) scale(1);
+    filter: saturate(1) brightness(1);
+  }
+}
+
+@keyframes tile-gold-shine-flare {
+  0% {
+    opacity: 0;
+    transform: translateX(-42%) scale(0.9);
+  }
+  22% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(42%) scale(1.08);
+  }
+}
+
+@keyframes tile-unlock-dissolve {
+  0% {
+    color: #f6efe1;
+    filter: brightness(0.52) saturate(0.7);
+  }
+  58% {
+    color: #8d817a;
+    filter: brightness(0.9) saturate(0.94);
+  }
+  100% {
+    color: #1c1930;
+    filter: none;
+  }
+}
+
+@keyframes tile-lock-overlay-dissolve {
+  0% {
+    opacity: 1;
+    filter: blur(0);
+  }
+  55% {
+    opacity: 0.48;
+    filter: blur(1px);
+  }
+  100% {
+    opacity: 0;
+    filter: blur(4px);
   }
 }
 
@@ -789,6 +1086,8 @@ onBeforeUnmount(() => {
   font-size: 2.4rem;
   font-weight: 900;
   line-height: 1;
+  -webkit-text-stroke: var(--tile-letter-stroke, 0 transparent);
+  paint-order: stroke fill;
 }
 
 .tile-score {
@@ -816,11 +1115,23 @@ onBeforeUnmount(() => {
 
 .rack-tile-enter-active {
   animation: rackTileIn 180ms cubic-bezier(0.2, 0.9, 0.3, 1.05);
+  animation-delay: var(--tile-enter-delay, 0ms);
   animation-fill-mode: both;
 }
 
 .rack-tile-leave-active {
   animation: rackTileOut 140ms ease-in forwards;
+  pointer-events: none;
+}
+
+.ghost-tile-enter-active {
+  animation: rackTileIn 180ms cubic-bezier(0.2, 0.9, 0.3, 1.05);
+  animation-delay: var(--tile-enter-delay, 0ms);
+  animation-fill-mode: both;
+}
+
+.ghost-tile-leave-active {
+  animation: ghostTileFadeOut 680ms ease-in forwards;
   pointer-events: none;
 }
 
@@ -850,6 +1161,24 @@ onBeforeUnmount(() => {
     opacity: 0;
     transform: scale(0.82);
     filter: brightness(0.8);
+  }
+}
+
+@keyframes ghostTileFadeOut {
+  0% {
+    opacity: 1;
+    transform: scale(1);
+    filter: blur(0) saturate(1.05);
+  }
+  45% {
+    opacity: 0.58;
+    transform: translateY(-5px) scale(1.04);
+    filter: blur(1px) saturate(0.85);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-16px) scale(0.76);
+    filter: blur(7px) saturate(0.45);
   }
 }
 

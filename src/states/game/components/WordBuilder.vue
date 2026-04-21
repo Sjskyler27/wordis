@@ -2,7 +2,7 @@
   <section class="word-console" :class="{ overtime: isOvertimeActive }">
     <div class="console-topline">
       <span class="console-label"><span v-if="currentWordScore < 10" style="visibility:hidden">_</span>{{ currentWordScore }} pts</span>
-      <div v-if="isOvertimeActive" class="overtime-banner animated-pulse ">Final Word!</div>
+      <div v-if="isOvertimeActive" class="overtime-banner animated-pulse ">{{ overtimeLabel }}</div>
     </div>
     <div class="bonus-ladder">
     </div>
@@ -17,8 +17,8 @@
             :style="{ gridColumn: index + 1 }"
           >
             <div class="built-tile scoring score-pop-clone" :style="getTileStyle(tile, index)">
-              <span v-if="!getModifierUi(tile.status).hideBadge && tile.status !== 'normal'" class="tile-modifier" :style="getBadgeStyle(tile)">
-                {{ getModifierBadge(tile) }}
+              <span v-if="!getTileUi(tile).hideBadge && tile.status !== 'normal'" class="tile-modifier" :style="getBadgeStyle(tile)">
+                {{ getTileBadge(tile) }}
               </span>
               <span class="tile-score">{{ getBuiltTileScore(tile, index) }}</span>
               <span class="tile-letter">{{ tile.letter }}</span>
@@ -64,8 +64,8 @@
               @mousemove="updateTooltipPosition($event)"
               @mouseleave="hideTooltip"
             >
-              <span v-if="!getModifierUi(slot.tile.status).hideBadge && slot.tile.status !== 'normal'" class="tile-modifier" :style="getBadgeStyle(slot.tile)">
-                {{ getModifierBadge(slot.tile) }}
+              <span v-if="!getTileUi(slot.tile).hideBadge && slot.tile.status !== 'normal'" class="tile-modifier" :style="getBadgeStyle(slot.tile)">
+                {{ getTileBadge(slot.tile) }}
               </span>
               <span class="tile-score">{{ getBuiltTileScore(slot.tile, slot.index) }}</span>
               <span class="tile-letter">{{ slot.tile.letter }}</span>
@@ -211,6 +211,10 @@ const props = defineProps({
   isOvertimeActive: {
     type: Boolean,
     default: false
+  },
+  overtimeLabel: {
+    type: String,
+    default: 'Final Word!'
   }
 });
 
@@ -313,19 +317,74 @@ watch(() => props.isMobile, (isMobile) => {
   }
 });
 
-const getTileStyle = (tile, index = 0) => {
+const getYinYangState = (tile) => {
+  if (tile?.status !== 'yinYang') {
+    return '';
+  }
+
+  const opponentSide = props.currentWordSide === 'host' ? 'opponent' : 'host';
+  const scoreDelta = (props.currentPlayerScores?.[props.currentWordSide] || 0) - (props.currentPlayerScores?.[opponentSide] || 0);
+  if (scoreDelta < 0) {
+    return 'behind';
+  }
+  if (scoreDelta > 0) {
+    return 'ahead';
+  }
+  return 'tied';
+};
+
+const getTileUi = (tile) => {
   const ui = getModifierUi(tile.status);
+  const yinYangState = getYinYangState(tile);
+
+  if (yinYangState === 'behind') {
+    return {
+      ...ui,
+      tileBackground: 'linear-gradient(225deg, #181217 0%, #6f6f6f 48%, #f6f0e4 49%, #f6f0e4 100%)',
+      
+      badgeBackground: 'rgba(255, 255, 255, 0.92)',
+      badgeColor: '#181217'
+    };
+  }
+
+  if (yinYangState === 'ahead') {
+    return {
+      ...ui,
+      tileBackground: 'linear-gradient(225deg, #f6f0e4 0%, #f6f0e4 48%, #6f6f6f 49%, #181217 100%)',
+      badgeBackground: 'rgba(24, 18, 23, 0.92)',
+      badgeColor: '#f6f0e4'
+    };
+  }
+
+  return ui;
+};
+
+const getTileBadge = (tile) => {
+  const yinYangState = getYinYangState(tile);
+  if (yinYangState === 'behind') {
+    return 'YIN';
+  }
+  if (yinYangState === 'ahead') {
+    return 'YANG';
+  }
+
+  return getModifierBadge(tile);
+};
+
+const getTileStyle = (tile, index = 0) => {
+  const ui = getTileUi(tile);
 
   return {
     '--built-tile-bg': ui.tileBackground,
     '--built-tile-shadow': ui.tileShadow,
     '--built-tile-text-color': ui.textColor,
+    '--built-tile-letter-stroke': tile.status === 'yinYang' ? '1px rgba(255, 255, 255, 0.92)' : '0 transparent',
     '--score-pop-delay': `${index * 110}ms`
   };
 };
 
 const getBadgeStyle = (tile) => {
-  const ui = getModifierUi(tile.status);
+  const ui = getTileUi(tile);
 
   return {
     background: ui.badgeBackground,
@@ -629,6 +688,8 @@ button:focus{
   font-size: 2.4rem;
   font-weight: 900;
   line-height: 1;
+  -webkit-text-stroke: var(--built-tile-letter-stroke, 0 transparent);
+  paint-order: stroke fill;
 }
 
 .tile-score {

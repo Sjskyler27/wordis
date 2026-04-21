@@ -64,7 +64,8 @@ const createGameStatePayload = (state) => ({
   isPrivate: state.isPrivate,
   overtimeEnabled: state.overtimeEnabled,
   overtimePendingSide: state.overtimePendingSide,
-  overtimeFinalWordSubmitted: state.overtimeFinalWordSubmitted
+  overtimeFinalWordSubmitted: state.overtimeFinalWordSubmitted,
+  submissionPauseOwner: state.submissionPauseOwner || null
 });
 
 const createLobbyListPayload = () => ({

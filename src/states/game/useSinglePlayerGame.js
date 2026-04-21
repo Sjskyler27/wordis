@@ -40,6 +40,7 @@ export const useSinglePlayerGame = ({
   onTimedSoloGainTime
 }) => {
   let botLoopId = null;
+  const submissionPauseOwner = ref(null);
   const createHistoryTiles = (tiles = []) => {
     // Keep a frozen copy of played tiles so results can render the exact word later.
     return tiles.map((tile) => ({
@@ -152,6 +153,8 @@ export const useSinglePlayerGame = ({
 
   const ensureSinglePlayerState = () => {
     if (!playerTiles.value.host.length && !playerTiles.value.opponent.length) {
+      submissionPauseOwner.value = null;
+
       if (isTestingMode) {
         playerTiles.value = createTestingOpeningRackPair(playerScores.value, {
           modifierProfile: modifierProfile(),
@@ -176,11 +179,19 @@ export const useSinglePlayerGame = ({
       playerCards.value = {
         host: {
           boons: drawCards('boon', 1),
-          attacks: shouldDrawAttacks() ? drawCards('attack', 1, { deck: attackDeck() }) : []
+          attacks: shouldDrawAttacks() ? drawCards('attack', 1, {
+            deck: attackDeck(),
+            side: 'host',
+            scores: playerScores.value
+          }) : []
         },
         opponent: {
           boons: drawCards('boon', 1),
-          attacks: botEnabled.value ? drawCards('attack', 1, { deck: attackDeck() }) : []
+          attacks: botEnabled.value ? drawCards('attack', 1, {
+            deck: attackDeck(),
+            side: 'opponent',
+            scores: playerScores.value
+          }) : []
         }
       };
     }
@@ -216,6 +227,10 @@ export const useSinglePlayerGame = ({
     }
 
     ensureSinglePlayerState();
+
+    if (submissionPauseOwner.value === 'host') {
+      return;
+    }
 
     const botTiles = playerTiles.value.opponent || [];
     const botWord = getBotWord(botTiles, [
@@ -284,7 +299,11 @@ export const useSinglePlayerGame = ({
         ],
         attacks: [
           ...playerCards.value.opponent.attacks,
-          ...drawCards('attack', grantedResources.attacks, { deck: attackDeck() })
+          ...drawCards('attack', grantedResources.attacks, {
+            deck: attackDeck(),
+            side: 'opponent',
+            scores: playerScores.value
+          })
         ]
       }
     };
@@ -297,6 +316,9 @@ export const useSinglePlayerGame = ({
         turnCount: getTurnCount()
       })
     };
+    if (submissionPauseOwner.value === 'opponent') {
+      submissionPauseOwner.value = null;
+    }
     updateOvertimeStateAfterSubmit('opponent');
   };
 
@@ -330,6 +352,11 @@ export const useSinglePlayerGame = ({
   const submitSinglePlayerWord = (word) => {
     //
     ensureSinglePlayerState();
+    if (submissionPauseOwner.value === 'opponent') {
+      localMessage.value = 'Your submissions are paused until your opponent submits.';
+      return false;
+    }
+
     const selectedTiles = selectedTilesForCurrentSide.value;
     const scoreDetails = getWordScoreDetails(selectedTiles, {
       side: 'host',
@@ -379,7 +406,11 @@ export const useSinglePlayerGame = ({
         ],
         attacks: [
           ...playerCards.value.host.attacks,
-          ...drawCards('attack', grantedResources.attacks, { deck: attackDeck() })
+          ...drawCards('attack', grantedResources.attacks, {
+            deck: attackDeck(),
+            side: 'host',
+            scores: playerScores.value
+          })
         ]
       },
       opponent: playerCards.value.opponent
@@ -396,10 +427,14 @@ export const useSinglePlayerGame = ({
     };
 
     clearSelectionForSide('host');
+    if (submissionPauseOwner.value === 'host') {
+      submissionPauseOwner.value = null;
+    }
     updateOvertimeStateAfterSubmit('host');
     localMessage.value = idlePenalty > 0
       ? `Submitted ${word} for ${scoreDelta} pts after a ${idlePenalty} pt burn penalty.`
       : `Submitted ${word} for ${scoreDelta} pts.`;
+    return true;
   };
 
   const clearSinglePlayerRack = (side = 'host') => {
@@ -537,6 +572,11 @@ export const useSinglePlayerGame = ({
       return false;
     }
 
+    if (card.effectType === 'pause_submissions' && submissionPauseOwner.value) {
+      localMessage.value = 'A submission pause is already active.';
+      return false;
+    }
+
     playerCards.value = {
       ...playerCards.value,
       [side]: {
@@ -558,6 +598,14 @@ export const useSinglePlayerGame = ({
       return {
         success: true,
         message: `Added ${card.amount || 10} seconds to the clock.`
+      };
+    }
+
+    if (card.effectType === 'pause_submissions') {
+      submissionPauseOwner.value = side;
+      return {
+        success: true,
+        message: 'Paused enemy submissions until your next word.'
       };
     }
 
@@ -624,6 +672,7 @@ export const useSinglePlayerGame = ({
     useSinglePlayerBoon,
     useSinglePlayerAttack,
     submitSinglePlayerWord,
+    submissionPauseOwner,
     overtimePendingSide,
     overtimeFinalWordSubmitted
   };
