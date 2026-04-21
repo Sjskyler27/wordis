@@ -87,7 +87,7 @@ const createModifierDefinitions = ({ bloodTilePositionValues }) => ({
       }
     },
     bloodTile: {
-      badge: 'BLOOD',
+      badge: 'BLD',
       description: 'Scores by position instead of face value. Later positions score higher.',
       effects: {
         setScore: 0,
