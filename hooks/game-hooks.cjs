@@ -123,6 +123,7 @@ const createInitialState = ({ hostId, players = [hostId], isPrivate = true, over
       overtimeEnabled,
       overtimePendingSide: null,
       overtimeFinalWordSubmitted: false,
+      submissionPauseOwner: null,
       words: {
         host: '',
         opponent: ''
@@ -173,6 +174,7 @@ const createInitialState = ({ hostId, players = [hostId], isPrivate = true, over
     overtimeEnabled,
     overtimePendingSide: null,
     overtimeFinalWordSubmitted: false,
+    submissionPauseOwner: null,
     words: {
       host: '',
       opponent: ''
@@ -379,6 +381,16 @@ const useAttack = (roomCode, clientId, cardId) => {
     return { success: false, error: 'No attacks remaining' };
   }
 
+  if (card.effectType === 'pause_submissions') {
+    if (state.submissionPauseOwner) {
+      return { success: false, error: 'A submission pause is already active' };
+    }
+
+    state.cards[side].attacks = keepTestingHand(state.cards[side].attacks, cardId);
+    state.submissionPauseOwner = side;
+    return { success: true, state };
+  }
+
   if (card.modifier === 'mustuse' && state.tiles[opponentSide].some((tile) => tile.status === 'mustuse')) {
     return { success: false, error: 'That board already has a MUST tile' };
   }
@@ -469,6 +481,10 @@ const submitWord = async (roomCode, clientId, word, tileIds, languageCode = 'en'
     return { success: false, error: 'Player not in room' };
   }
 
+  if (state.submissionPauseOwner && state.submissionPauseOwner !== side) {
+    return { success: false, error: 'Your submissions are paused until your opponent submits' };
+  }
+
   if (!/^[A-Z*]+$/.test(normalizedWord)) {
     return { success: false, error: 'Words must use letters only' };
   }
@@ -527,6 +543,9 @@ const submitWord = async (roomCode, clientId, word, tileIds, languageCode = 'en'
     phase: 'submit',
     turnCount: getTurnCount(state)
   });
+  if (state.submissionPauseOwner === side) {
+    state.submissionPauseOwner = null;
+  }
   updateOvertimeStateAfterSubmit(state, side);
 
   return { success: true, state };

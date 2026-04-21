@@ -58,6 +58,7 @@ export const isSocketConnected = computed(() => connectionStatus.value === 'conn
 export const multiplayerOvertimeEnabled = ref(true);
 export const multiplayerOvertimePendingSide = ref(null);
 export const multiplayerOvertimeFinalWordSubmitted = ref(false);
+export const multiplayerSubmissionPauseOwner = ref(null);
 
 export const hostGame = ({ isPrivate = true, overtimeEnabled = true } = {}) => {
   if (!isSocketConnected.value) {
@@ -94,6 +95,7 @@ const applyGameState = (data = {}) => {
   multiplayerOvertimeEnabled.value = data.overtimeEnabled ?? multiplayerOvertimeEnabled.value;
   multiplayerOvertimePendingSide.value = data.overtimePendingSide ?? null;
   multiplayerOvertimeFinalWordSubmitted.value = Boolean(data.overtimeFinalWordSubmitted);
+  multiplayerSubmissionPauseOwner.value = data.submissionPauseOwner ?? null;
 };
 
 export const joinGame = (code) => {
@@ -271,4 +273,5 @@ export const resetGame = () => {
   multiplayerOvertimeEnabled.value = true;
   multiplayerOvertimePendingSide.value = null;
   multiplayerOvertimeFinalWordSubmitted.value = false;
+  multiplayerSubmissionPauseOwner.value = null;
 };

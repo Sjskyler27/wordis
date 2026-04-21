@@ -146,6 +146,20 @@ const CARD_DEFINITIONS = {
       cardBadgeBackground: 'rgba(50, 70, 104, 0.42)'
     }
   },
+  attack_pause_submissions: {
+    kind: 'attack',
+    label: 'Pause Submissions',
+    description: 'Stop your opponent from submitting until you submit a word. Cannot be played while another pause is active.',
+    rarityWeight: 100.58,
+    effectType: 'pause_submissions',
+    ui: {
+      cardGlow: 'rgba(255, 216, 151, 0.24)',
+      cardEdge: 'rgba(255, 228, 179, 0.34)',
+      cardPattern: 'rgba(255, 244, 224, 0.1)',
+      cardBackground: 'linear-gradient(180deg, rgba(206, 126, 64, 0.98), rgba(122, 55, 37, 0.96))',
+      cardBadgeBackground: 'rgba(79, 34, 21, 0.42)'
+    }
+  },
   attack_pause_time: {
     kind: 'attack',
     label: 'Pause Time',
@@ -192,7 +206,8 @@ const ATTACK_CARD_KEYS = [
   'attack_zeroTile',
   'attack_mustuse',
   'attack_locked3',
-  'attack_ghostTile'
+  'attack_ghostTile',
+  'attack_pause_submissions'
 ];
 
 const TIMED_SOLO_ATTACK_CARD_KEYS = ['attack_pause_time', 'attack_gain_time'];
