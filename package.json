@@ -90,7 +90,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "build:wavedash": "npm run build",
+    "build:wavedash": "VITE_WAVEDASH=true vite build",
     "build:app": "vite build && electron-builder",
     "preview": "vite preview",
     "electron": "electron .",

@@ -2,53 +2,57 @@ import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import { VitePWA } from 'vite-plugin-pwa'
 
-export default defineConfig({
-  base: './', 
-  plugins: [
-    vue(),
-    VitePWA({
-      registerType: 'autoUpdate',
-      includeAssets: ['favicon.svg', 'robots.txt', 'pwa-192x192.png', 'pwa-512x512.png'],
-      manifest: {
-        name: 'WORDIS',
-        short_name: 'WORDIS',
-        start_url: '/',
-        display: 'fullscreen',
-        background_color: '#000000',
-        theme_color: '#000',
-        icons: [
-          {
-            src: 'pwa-192x192.png',
-            sizes: '192x192',
-            type: 'image/png'
-          },
-          {
-            src: 'pwa-512x512.png',
-            sizes: '512x512',
-            type: 'image/png'
-          }
-        ]
-      },
-      workbox: {
-        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
-        runtimeCaching: [
-          {
-            urlPattern: ({ request }) => request.destination === 'document',
-            handler: 'NetworkFirst',
-            options: {
-              cacheName: 'html-cache'
+export default defineConfig(() => {
+  const isWavedashBuild = process.env.VITE_WAVEDASH === 'true';
+
+  return {
+    base: './',
+    plugins: [
+      vue(),
+      !isWavedashBuild && VitePWA({
+        registerType: 'autoUpdate',
+        includeAssets: ['favicon.svg', 'robots.txt', 'pwa-192x192.png', 'pwa-512x512.png'],
+        manifest: {
+          name: 'WORDIS',
+          short_name: 'WORDIS',
+          start_url: '/',
+          display: 'fullscreen',
+          background_color: '#000000',
+          theme_color: '#000',
+          icons: [
+            {
+              src: 'pwa-192x192.png',
+              sizes: '192x192',
+              type: 'image/png'
+            },
+            {
+              src: 'pwa-512x512.png',
+              sizes: '512x512',
+              type: 'image/png'
             }
-          },
-          {
-            urlPattern: ({ request }) =>
-              ['style', 'script', 'image', 'font'].includes(request.destination),
-            handler: 'CacheFirst',
-            options: {
-              cacheName: 'assets-cache'
+          ]
+        },
+        workbox: {
+          globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
+          runtimeCaching: [
+            {
+              urlPattern: ({ request }) => request.destination === 'document',
+              handler: 'NetworkFirst',
+              options: {
+                cacheName: 'html-cache'
+              }
+            },
+            {
+              urlPattern: ({ request }) =>
+                ['style', 'script', 'image', 'font'].includes(request.destination),
+              handler: 'CacheFirst',
+              options: {
+                cacheName: 'assets-cache'
+              }
             }
-          }
-        ]
-      }
-    })
-  ]
+          ]
+        }
+      })
+    ].filter(Boolean)
+  };
 })

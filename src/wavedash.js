@@ -5,6 +5,29 @@ const clampProgress = (value) => {
   return Math.max(0, Math.min(1, Number.isFinite(value) ? value : 0));
 };
 
+export const cleanupWavedashServiceWorkers = async () => {
+  if (typeof window === 'undefined' || !/(^|\.)wavedash\.com$/i.test(window.location.hostname)) {
+    return;
+  }
+
+  if (!('serviceWorker' in navigator)) {
+    return;
+  }
+
+  try {
+    const registrations = await navigator.serviceWorker.getRegistrations();
+    if (!registrations.length) {
+      console.log('[Wavedash] No service workers to unregister');
+      return;
+    }
+
+    await Promise.all(registrations.map((registration) => registration.unregister()));
+    console.log('[Wavedash] Unregistered service workers for Wavedash host', registrations.length);
+  } catch (error) {
+    console.error('[Wavedash] Failed to unregister service workers', error);
+  }
+};
+
 const getWavedashPromise = () => {
   if (wavedashPromise !== null) {
     console.log('[Wavedash] Reusing cached SDK promise');
