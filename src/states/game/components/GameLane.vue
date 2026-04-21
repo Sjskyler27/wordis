@@ -67,7 +67,7 @@
     </div>
     <TileHoverTooltip
       :tile="hoveredTile"
-      :visible="isTooltipVisible"
+      :visible="canShowTooltip"
       :x="tooltipPosition.x"
       :y="tooltipPosition.y"
       :dismissible="props.isMobile && mobileInspectEnabled"
@@ -148,6 +148,7 @@ const mobileInspectEnabled = ref(false);
 let tooltipTimeoutId = null;
 
 const emit = defineEmits(['tile-click']);
+const canShowTooltip = computed(() => isTooltipVisible.value && (!props.isMobile || mobileInspectEnabled.value));
 
 const setTooltipPositionFromElement = (element) => {
   const rect = element.getBoundingClientRect();
@@ -163,6 +164,7 @@ const setTooltipPositionFromElement = (element) => {
 
 const showTooltipLater = (tile, event) => {
   if (props.isMobile) {
+    hideTooltip();
     return;
   }
 
@@ -179,6 +181,11 @@ const showTooltipLater = (tile, event) => {
 };
 
 const updateTooltipPosition = (event) => {
+  if (props.isMobile && !mobileInspectEnabled.value) {
+    hideTooltip();
+    return;
+  }
+
   tooltipPosition.value = {
     x: event.clientX,
     y: event.clientY
@@ -209,6 +216,12 @@ const handleTileClick = (tile, event) => {
 
   emit('tile-click', tile);
 };
+
+watch(() => mobileInspectEnabled.value, (isEnabled) => {
+  if (props.isMobile && !isEnabled) {
+    hideTooltip();
+  }
+});
 
 const displayWordScore = computed(() => {
   return props.lastWordBreakdown?.wordScore ?? props.lastWordScore ?? 0;

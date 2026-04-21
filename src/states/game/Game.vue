@@ -154,6 +154,7 @@
 
         <WordBuilder
           v-if="(props.isMultiplayer ? gameStarted : true)"
+          :isMobile="props.isMobile"
           :selected-tiles="selectedTilesForCurrentSide"
           :invalid-pulse="invalidWordPulse"
           :score-pop-pulse="scorePopPulse"

@@ -130,7 +130,7 @@
     </div>
     <TileHoverTooltip
       :tile="hoveredTile"
-      :visible="isTooltipVisible"
+      :visible="canShowTooltip"
       :x="tooltipPosition.x"
       :y="tooltipPosition.y"
     />
@@ -143,6 +143,7 @@ import { getModifierBadge, getModifierUi, tileScore } from '../tile-logic.js';
 import TileHoverTooltip from './TileHoverTooltip.vue';
 
 const props = defineProps({
+  isMobile: Boolean,
   selectedTiles: {
     type: Array,
     required: true
@@ -217,6 +218,7 @@ defineEmits(['undo', 'clear', 'submit', 'remove-specific', 'clear-rack', 'save-l
 const hoveredTile = ref(null);
 const isTooltipVisible = ref(false);
 const tooltipPosition = ref({ x: 0, y: 0 });
+const canShowTooltip = computed(() => isTooltipVisible.value && !props.isMobile);
 let tooltipTimeoutId = null;
 
 const wordSlots = computed(() => {
@@ -270,6 +272,11 @@ watch(() => props.scorePopPulse, (nextPulse) => {
 });
 
 const showTooltipLater = (tile, event) => {
+  if (props.isMobile) {
+    hideTooltip();
+    return;
+  }
+
   tooltipPosition.value = {
     x: event.clientX,
     y: event.clientY
@@ -283,6 +290,11 @@ const showTooltipLater = (tile, event) => {
 };
 
 const updateTooltipPosition = (event) => {
+  if (props.isMobile) {
+    hideTooltip();
+    return;
+  }
+
   tooltipPosition.value = {
     x: event.clientX,
     y: event.clientY
@@ -294,6 +306,12 @@ const hideTooltip = () => {
   isTooltipVisible.value = false;
   hoveredTile.value = null;
 };
+
+watch(() => props.isMobile, (isMobile) => {
+  if (isMobile) {
+    hideTooltip();
+  }
+});
 
 const getTileStyle = (tile, index = 0) => {
   const ui = getModifierUi(tile.status);
