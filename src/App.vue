@@ -526,6 +526,11 @@ const simulateTab = (reverse = false) => {
 
   onMounted( () => {
     checkGamepadInput();
+    if (isMobile.value && !localStorage.getItem('mobileZoomApplied')) {
+      zoom.value = 0.5
+      localStorage.setItem('zoom', 0.5)
+      localStorage.setItem('mobileZoomApplied', 'true')
+    }
     setZoom(zoom.value)
     setgameZoom(gameZoom.value)
 
