@@ -239,7 +239,8 @@ const getTileStyle = (tile) => {
     '--tile-shadow': ui.tileShadow,
     '--tile-hover-shadow': ui.tileHoverShadows || ui.tileShadow,
     '--tile-focus-shadow': ui.tileFocusShadow || ui.tileShadow,
-    '--tile-text-color': ui.textColor
+    '--tile-text-color': ui.textColor,
+    '--tile-enter-delay': `${tileEnterDelays.value[tile.id] || 0}ms`
   };
 };
 
@@ -254,13 +255,20 @@ const getBadgeStyle = (tile) => {
 
 const activeTileAnimations = ref({});
 const seenTileAnimationKeys = ref({});
+const tileEnterDelays = ref({});
 const tileAnimationTimeoutIds = new Map();
 const tileAnimationDelayTimeoutIds = new Map();
-const TILE_ANIMATION_STAGGER_MS = 90;
+const tileEnterDelayTimeoutIds = new Map();
+const TILE_ANIMATION_STAGGER_MS = 50;
 const TILE_ANIMATION_DURATIONS = {
-  blaze: 1080,
-  emerald: 1180,
-  'unlock-dissolve': 1320
+  blaze: 580,
+  emerald: 580,
+  'unlock-dissolve': 50030
+};
+
+const getTileAnimationDuration = (tile) => {
+  const animationName = tile?.animationState?.name;
+  return TILE_ANIMATION_DURATIONS[animationName] || 900;
 };
 
 const stopTileAnimation = (tileId) => {
@@ -300,7 +308,7 @@ const startTileAnimation = (tile, options = {}) => {
   window.clearTimeout(tileAnimationTimeoutIds.get(tile.id));
   tileAnimationTimeoutIds.set(tile.id, window.setTimeout(() => {
     stopTileAnimation(tile.id);
-  }, TILE_ANIMATION_DURATIONS[animationState.name] || 900));
+  }, getTileAnimationDuration(tile)));
 };
 
 const scheduleTileAnimation = (tile, index = 0) => {
@@ -338,6 +346,30 @@ const getTileAnimationClass = (tile) => {
 
 const getTileTransitionName = (tile) => {
   return tile?.status === 'ghostTile' ? 'ghost-tile' : 'rack-tile';
+};
+
+const scheduleTileEnterDelays = (nextTiles = [], previousTiles = []) => {
+  const previousIds = new Set(previousTiles.map((tile) => tile?.id).filter(Boolean));
+  const enteringTiles = nextTiles.filter((tile) => tile?.id && !previousIds.has(tile.id));
+
+  if (!enteringTiles.length) {
+    return;
+  }
+
+  const nextDelays = { ...tileEnterDelays.value };
+  enteringTiles.forEach((tile, enterIndex) => {
+    nextDelays[tile.id] = enterIndex * TILE_ANIMATION_STAGGER_MS;
+
+    window.clearTimeout(tileEnterDelayTimeoutIds.get(tile.id));
+    tileEnterDelayTimeoutIds.set(tile.id, window.setTimeout(() => {
+      tileEnterDelayTimeoutIds.delete(tile.id);
+      const delays = { ...tileEnterDelays.value };
+      delete delays[tile.id];
+      tileEnterDelays.value = delays;
+    }, nextDelays[tile.id] + 260));
+  });
+
+  tileEnterDelays.value = nextDelays;
 };
 
 const burstTier = ref('');
@@ -383,7 +415,8 @@ watch(() => [props.burstPulse, props.lastWordScore], ([nextPulse]) => {
   });
 });
 
-watch(() => props.tiles, (nextTiles) => {
+watch(() => props.tiles, (nextTiles, previousTiles = []) => {
+  scheduleTileEnterDelays(nextTiles, previousTiles);
   nextTiles
     .filter((tile) => {
       const animationState = tile?.animationState;
@@ -416,6 +449,10 @@ onBeforeUnmount(() => {
     window.clearTimeout(timeoutId);
   });
   tileAnimationDelayTimeoutIds.clear();
+  tileEnterDelayTimeoutIds.forEach((timeoutId) => {
+    window.clearTimeout(timeoutId);
+  });
+  tileEnterDelayTimeoutIds.clear();
 });
 </script>
 
@@ -651,7 +688,7 @@ onBeforeUnmount(() => {
 }
 
 .tile-anim-blaze {
-  animation: tile-blaze 1080ms ease-out;
+  animation: tile-blaze var(--tile-animation-duration, 1080ms) ease-out;
 }
 
 .tile-anim-blaze::after {
@@ -663,11 +700,11 @@ onBeforeUnmount(() => {
   background:
     radial-gradient(circle at 50% 86%, rgba(255, 218, 134, 0.95) 0%, rgba(255, 179, 64, 0.6) 16%, rgba(255, 101, 22, 0.52) 34%, rgba(255, 83, 34, 0.24) 52%, rgba(255, 83, 34, 0) 72%);
   mix-blend-mode: screen;
-  animation: tile-blaze-flare 1080ms ease-out;
+  animation: tile-blaze-flare var(--tile-animation-duration, 1080ms) ease-out;
 }
 
 .tile-anim-emerald {
-  animation: tile-emerald 1180ms ease-out;
+  animation: tile-emerald var(--tile-animation-duration, 1180ms) ease-out;
 }
 
 .tile-anim-emerald::after {
@@ -680,11 +717,11 @@ onBeforeUnmount(() => {
     radial-gradient(circle at 50% 50%, rgba(215, 255, 230, 0.95) 0%, rgba(82, 239, 171, 0.58) 26%, rgba(0, 170, 118, 0.22) 52%, rgba(0, 170, 118, 0) 74%),
     conic-gradient(from 20deg, rgba(214, 255, 228, 0), rgba(214, 255, 228, 0.82), rgba(41, 211, 148, 0), rgba(214, 255, 228, 0.64), rgba(214, 255, 228, 0));
   mix-blend-mode: screen;
-  animation: tile-emerald-flare 1180ms ease-out;
+  animation: tile-emerald-flare var(--tile-animation-duration, 1180ms) ease-out;
 }
 
 .tile-anim-unlock-dissolve {
-  animation: tile-unlock-dissolve 1320ms ease-out;
+  animation: tile-unlock-dissolve var(--tile-animation-duration, 1320ms) ease-out;
 }
 
 .tile-anim-unlock-dissolve::after {
@@ -698,7 +735,7 @@ onBeforeUnmount(() => {
     radial-gradient(circle at 72% 34%, rgba(255, 255, 255, 0.14) 0 5%, transparent 6% 100%),
     radial-gradient(circle at 48% 76%, rgba(255, 255, 255, 0.13) 0 4%, transparent 5% 100%),
     linear-gradient(180deg, rgba(17, 11, 21, 0.9), rgba(0, 0, 0, 0.74));
-  animation: tile-lock-overlay-dissolve 1320ms ease-out forwards;
+  animation: tile-lock-overlay-dissolve var(--tile-animation-duration, 1320ms) ease-out forwards;
 }
 
 @keyframes must-tile-flash {
@@ -959,6 +996,7 @@ onBeforeUnmount(() => {
 
 .rack-tile-enter-active {
   animation: rackTileIn 180ms cubic-bezier(0.2, 0.9, 0.3, 1.05);
+  animation-delay: var(--tile-enter-delay, 0ms);
   animation-fill-mode: both;
 }
 
@@ -969,6 +1007,7 @@ onBeforeUnmount(() => {
 
 .ghost-tile-enter-active {
   animation: rackTileIn 180ms cubic-bezier(0.2, 0.9, 0.3, 1.05);
+  animation-delay: var(--tile-enter-delay, 0ms);
   animation-fill-mode: both;
 }
 
