@@ -179,11 +179,19 @@ export const useSinglePlayerGame = ({
       playerCards.value = {
         host: {
           boons: drawCards('boon', 1),
-          attacks: shouldDrawAttacks() ? drawCards('attack', 1, { deck: attackDeck() }) : []
+          attacks: shouldDrawAttacks() ? drawCards('attack', 1, {
+            deck: attackDeck(),
+            side: 'host',
+            scores: playerScores.value
+          }) : []
         },
         opponent: {
           boons: drawCards('boon', 1),
-          attacks: botEnabled.value ? drawCards('attack', 1, { deck: attackDeck() }) : []
+          attacks: botEnabled.value ? drawCards('attack', 1, {
+            deck: attackDeck(),
+            side: 'opponent',
+            scores: playerScores.value
+          }) : []
         }
       };
     }
@@ -291,7 +299,11 @@ export const useSinglePlayerGame = ({
         ],
         attacks: [
           ...playerCards.value.opponent.attacks,
-          ...drawCards('attack', grantedResources.attacks, { deck: attackDeck() })
+          ...drawCards('attack', grantedResources.attacks, {
+            deck: attackDeck(),
+            side: 'opponent',
+            scores: playerScores.value
+          })
         ]
       }
     };
@@ -394,7 +406,11 @@ export const useSinglePlayerGame = ({
         ],
         attacks: [
           ...playerCards.value.host.attacks,
-          ...drawCards('attack', grantedResources.attacks, { deck: attackDeck() })
+          ...drawCards('attack', grantedResources.attacks, {
+            deck: attackDeck(),
+            side: 'host',
+            scores: playerScores.value
+          })
         ]
       },
       opponent: playerCards.value.opponent

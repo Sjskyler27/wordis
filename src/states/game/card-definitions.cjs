@@ -150,8 +150,9 @@ const CARD_DEFINITIONS = {
     kind: 'attack',
     label: 'Pause Submissions',
     description: 'Stop your opponent from submitting until you submit a word. Cannot be played while another pause is active.',
-    rarityWeight: 100.58,
+    rarityWeight: 0.18,
     effectType: 'pause_submissions',
+    requiresBehind: true,
     ui: {
       cardGlow: 'rgba(255, 216, 151, 0.24)',
       cardEdge: 'rgba(255, 228, 179, 0.34)',

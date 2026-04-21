@@ -621,7 +621,19 @@ console.log(JSON.stringify({
         return TIMED_SOLO_ATTACK_CARD_KEYS;
       }
 
-      return ATTACK_CARD_KEYS;
+      return ATTACK_CARD_KEYS.filter((cardKey) => {
+        const definition = getCardDefinition(cardKey);
+        if (!definition?.requiresBehind) {
+          return true;
+        }
+
+        if (!options.side || !options.scores) {
+          return false;
+        }
+
+        const opponentSide = options.side === 'host' ? 'opponent' : 'host';
+        return (options.scores[options.side] || 0) < (options.scores[opponentSide] || 0);
+      });
     };
 
     const drawCard = (kind, options = {}) => {
