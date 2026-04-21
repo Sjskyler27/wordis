@@ -1,6 +1,10 @@
 # Changelog
 
 ## 2026-04-20 0.0.21
+- mobile description bug
+- focus burn tiles 
+ 
+## 2026-04-20 0.0.21
 - mobile inspect toggle 
 
 ## 2026-04-20 0.0.20
