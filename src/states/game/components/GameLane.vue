@@ -264,7 +264,7 @@ const TILE_ANIMATION_STAGGER_MS = 50;
 const TILE_ANIMATION_DURATIONS = {
   blaze: 580,
   emerald: 580,
-  'unlock-dissolve': 50030
+  'unlock-dissolve': 530
 };
 
 const getTileAnimationDuration = (tile) => {
@@ -328,10 +328,17 @@ const scheduleTileAnimation = (tile, index = 0) => {
   };
 
   window.clearTimeout(tileAnimationDelayTimeoutIds.get(tile.id));
+
+  const delay = index * TILE_ANIMATION_STAGGER_MS;
+  if (!delay) {
+    startTileAnimation(tile, { alreadySeen: true });
+    return;
+  }
+
   tileAnimationDelayTimeoutIds.set(tile.id, window.setTimeout(() => {
     tileAnimationDelayTimeoutIds.delete(tile.id);
     startTileAnimation(tile, { alreadySeen: true });
-  }, index * TILE_ANIMATION_STAGGER_MS));
+  }, delay));
 };
 
 const getTileAnimationClass = (tile) => {
@@ -732,9 +739,6 @@ onBeforeUnmount(() => {
   border-radius: 16px;
   pointer-events: none;
   background:
-    radial-gradient(circle at 22% 20%, rgba(255, 255, 255, 0.16) 0 4%, transparent 5% 100%),
-    radial-gradient(circle at 72% 34%, rgba(255, 255, 255, 0.14) 0 5%, transparent 6% 100%),
-    radial-gradient(circle at 48% 76%, rgba(255, 255, 255, 0.13) 0 4%, transparent 5% 100%),
     linear-gradient(180deg, rgba(17, 11, 21, 0.9), rgba(0, 0, 0, 0.74));
   animation: tile-lock-overlay-dissolve var(--tile-animation-duration, 1320ms) ease-out forwards;
 }
@@ -819,33 +823,30 @@ onBeforeUnmount(() => {
 
 @keyframes tile-unlock-dissolve {
   0% {
+    color: #f6efe1;
     filter: brightness(0.52) saturate(0.7);
-    box-shadow: inset 0 0 0 9999px rgba(10, 6, 14, 0.58), 0 12px 20px rgba(10, 5, 12, 0.34);
   }
   58% {
+    color: #8d817a;
     filter: brightness(0.9) saturate(0.94);
-    box-shadow: inset 0 0 0 9999px rgba(10, 6, 14, 0.14), var(--tile-shadow, inset 0 -4px 0 rgba(0, 0, 0, 0.12), 0 10px 18px rgba(45, 10, 24, 0.16));
   }
   100% {
+    color: #1c1930;
     filter: none;
-    box-shadow: var(--tile-shadow, inset 0 -4px 0 rgba(0, 0, 0, 0.12), 0 10px 18px rgba(45, 10, 24, 0.16));
   }
 }
 
 @keyframes tile-lock-overlay-dissolve {
   0% {
     opacity: 1;
-    clip-path: circle(140% at 50% 50%);
     filter: blur(0);
   }
   55% {
     opacity: 0.48;
-    clip-path: circle(54% at 50% 52%);
     filter: blur(1px);
   }
   100% {
     opacity: 0;
-    clip-path: circle(0% at 50% 54%);
     filter: blur(4px);
   }
 }
