@@ -198,7 +198,7 @@ const createModifierDefinitions = ({ bloodTilePositionValues }) => ({
       badge: 'BURN',
       description: 'Scores as 1 if used. If left unused, it burns you for -3.',
       effects: { setScore: 1, idleScorePenalty: 3 },
-      rarityWeight: 10.5,
+      rarityWeight: 0.5,
       canApply: ({ baseScore }) => baseScore <= 4,
       animations: {
         onNewTurn: 'blaze'
