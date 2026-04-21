@@ -340,18 +340,19 @@ const getTileUi = (tile) => {
   if (yinYangState === 'behind') {
     return {
       ...ui,
-      tileBackground: 'linear-gradient(225deg, #181217 0%, #181217 48%, #f6f0e4 49%, #f6f0e4 100%)',
-      badgeBackground: 'rgba(24, 18, 23, 0.92)',
-      badgeColor: '#f6f0e4'
+      tileBackground: 'linear-gradient(225deg, #181217 0%, #6f6f6f 48%, #f6f0e4 49%, #f6f0e4 100%)',
+      
+      badgeBackground: 'rgba(255, 255, 255, 0.92)',
+      badgeColor: '#181217'
     };
   }
 
   if (yinYangState === 'ahead') {
     return {
       ...ui,
-      tileBackground: 'linear-gradient(225deg, #f6f0e4 0%, #f6f0e4 48%, #181217 49%, #181217 100%)',
-      badgeBackground: 'rgba(255, 255, 255, 0.92)',
-      badgeColor: '#181217'
+      tileBackground: 'linear-gradient(225deg, #f6f0e4 0%, #f6f0e4 48%, #6f6f6f 49%, #181217 100%)',
+      badgeBackground: 'rgba(24, 18, 23, 0.92)',
+      badgeColor: '#f6f0e4'
     };
   }
 
@@ -377,6 +378,7 @@ const getTileStyle = (tile, index = 0) => {
     '--built-tile-bg': ui.tileBackground,
     '--built-tile-shadow': ui.tileShadow,
     '--built-tile-text-color': ui.textColor,
+    '--built-tile-letter-stroke': tile.status === 'yinYang' ? '1px rgba(255, 255, 255, 0.92)' : '0 transparent',
     '--score-pop-delay': `${index * 110}ms`
   };
 };
@@ -686,6 +688,8 @@ button:focus{
   font-size: 2.4rem;
   font-weight: 900;
   line-height: 1;
+  -webkit-text-stroke: var(--built-tile-letter-stroke, 0 transparent);
+  paint-order: stroke fill;
 }
 
 .tile-score {

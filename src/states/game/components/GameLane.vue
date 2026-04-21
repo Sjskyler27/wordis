@@ -258,18 +258,19 @@ const getTileUi = (tile) => {
   if (yinYangState === 'behind') {
     return {
       ...ui,
-      tileBackground: 'linear-gradient(225deg, #181217 0%, #181217 48%, #f6f0e4 49%, #f6f0e4 100%)',
-      badgeBackground: 'rgba(24, 18, 23, 0.92)',
-      badgeColor: '#f6f0e4'
+      tileBackground: 'linear-gradient(225deg, #181217 0%, #6f6f6f 48%, #f6f0e4 49%, #f6f0e4 100%)',
+      
+      badgeBackground: 'rgba(255, 255, 255, 0.92)',
+      badgeColor: '#181217'
     };
   }
 
   if (yinYangState === 'ahead') {
     return {
       ...ui,
-      tileBackground: 'linear-gradient(225deg, #f6f0e4 0%, #f6f0e4 48%, #181217 49%, #181217 100%)',
-      badgeBackground: 'rgba(255, 255, 255, 0.92)',
-      badgeColor: '#181217'
+      tileBackground: 'linear-gradient(225deg, #f6f0e4 0%, #f6f0e4 48%, #6f6f6f 49%, #181217 100%)',
+      badgeBackground: 'rgba(24, 18, 23, 0.92)',
+      badgeColor: '#f6f0e4'
     };
   }
 
@@ -279,10 +280,10 @@ const getTileUi = (tile) => {
 const getTileBadge = (tile) => {
   const yinYangState = getYinYangState(tile);
   if (yinYangState === 'behind') {
-    return 'YANG';
+    return 'YIN';
   }
   if (yinYangState === 'ahead') {
-    return 'YIN';
+    return 'YNG';
   }
 
   return getModifierBadge(tile);
@@ -302,6 +303,7 @@ const getTileStyle = (tile) => {
     '--tile-hover-shadow': ui.tileHoverShadows || ui.tileShadow,
     '--tile-focus-shadow': ui.tileFocusShadow || ui.tileShadow,
     '--tile-text-color': ui.textColor,
+    '--tile-letter-stroke': tile.status === 'yinYang' ? '1px rgba(255, 255, 255, 0.92)' : '0 transparent',
     '--tile-enter-delay': `${tileEnterDelays.value[tile.id] || 0}ms`,
     '--tile-animation-duration': `${getTileAnimationDuration(tile)}ms`
   };
@@ -1084,6 +1086,8 @@ onBeforeUnmount(() => {
   font-size: 2.4rem;
   font-weight: 900;
   line-height: 1;
+  -webkit-text-stroke: var(--tile-letter-stroke, 0 transparent);
+  paint-order: stroke fill;
 }
 
 .tile-score {
