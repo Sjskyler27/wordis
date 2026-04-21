@@ -131,12 +131,12 @@ const CARD_DEFINITIONS = {
       cardBadgeBackground: 'rgba(14, 10, 24, 0.46)'
     }
   },
-  attack_ghostTile: {
-    kind: 'attack',
+  boon_ghostTile: {
+    kind: 'boon',
     label: 'Ghost Tile',
     description: 'Give a random enemy tile the ghostTile modifier.',
     rarityWeight: 0.72,
-    effectType: 'random_attack',
+    effectType: 'apply_modifier',
     modifier: 'ghostTile',
     ui: {
       cardGlow: 'rgba(220, 240, 255, 0.24)',
@@ -200,6 +200,7 @@ const BOON_CARD_KEYS = [
   'boon_clear_negative',
   'boon_firsttile',
   'boon_wild',
+  'boon_ghostTile',
   'boon_gold'
 ];
 
@@ -207,7 +208,6 @@ const ATTACK_CARD_KEYS = [
   'attack_zeroTile',
   'attack_mustuse',
   'attack_locked3',
-  'attack_ghostTile',
   'attack_pause_submissions'
 ];
 
