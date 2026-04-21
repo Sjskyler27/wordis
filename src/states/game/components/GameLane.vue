@@ -56,10 +56,10 @@
             @mousemove="updateTooltipPosition($event)"
             @mouseleave="hideTooltip"
           >
-            <span v-if="!getModifierUi(tile.status).hideBadge && tile.status !== 'normal'" class="tile-modifier" :style="getBadgeStyle(tile)">
-              {{ getModifierBadge(tile) }}
+            <span v-if="!getTileUi(tile).hideBadge && tile.status !== 'normal'" class="tile-modifier" :style="getBadgeStyle(tile)">
+              {{ getTileBadge(tile) }}
             </span>
-            <span class="tile-score">{{ tileScore(tile) }}</span>
+            <span class="tile-score">{{ getTileScore(tile) }}</span>
             <span class="tile-letter">{{ tile.letter }}</span>
           </button>
         </Transition>
@@ -98,6 +98,10 @@ const props = defineProps({
   score: {
     type: Number,
     required: true
+  },
+  currentPlayerScores: {
+    type: Object,
+    default: () => ({})
   },
   tiles: {
     type: Array,
@@ -231,8 +235,66 @@ const displayBurnPenalty = computed(() => {
   return props.lastWordBreakdown?.burnPenalty ?? 0;
 });
 
-const getTileStyle = (tile) => {
+const getYinYangState = (tile) => {
+  if (tile?.status !== 'yinYang') {
+    return '';
+  }
+
+  const opponentSide = props.side === 'host' ? 'opponent' : 'host';
+  const scoreDelta = (props.currentPlayerScores?.[props.side] || 0) - (props.currentPlayerScores?.[opponentSide] || 0);
+  if (scoreDelta < 0) {
+    return 'behind';
+  }
+  if (scoreDelta > 0) {
+    return 'ahead';
+  }
+  return 'tied';
+};
+
+const getTileUi = (tile) => {
   const ui = getModifierUi(tile.status);
+  const yinYangState = getYinYangState(tile);
+
+  if (yinYangState === 'behind') {
+    return {
+      ...ui,
+      tileBackground: 'linear-gradient(225deg, #181217 0%, #181217 48%, #f6f0e4 49%, #f6f0e4 100%)',
+      badgeBackground: 'rgba(24, 18, 23, 0.92)',
+      badgeColor: '#f6f0e4'
+    };
+  }
+
+  if (yinYangState === 'ahead') {
+    return {
+      ...ui,
+      tileBackground: 'linear-gradient(225deg, #f6f0e4 0%, #f6f0e4 48%, #181217 49%, #181217 100%)',
+      badgeBackground: 'rgba(255, 255, 255, 0.92)',
+      badgeColor: '#181217'
+    };
+  }
+
+  return ui;
+};
+
+const getTileBadge = (tile) => {
+  const yinYangState = getYinYangState(tile);
+  if (yinYangState === 'behind') {
+    return 'YANG';
+  }
+  if (yinYangState === 'ahead') {
+    return 'YIN';
+  }
+
+  return getModifierBadge(tile);
+};
+
+const getTileScore = (tile) => tileScore(tile, {
+  side: props.side,
+  scores: props.currentPlayerScores
+});
+
+const getTileStyle = (tile) => {
+  const ui = getTileUi(tile);
 
   return {
     '--tile-bg': ui.tileBackground,
@@ -246,7 +308,7 @@ const getTileStyle = (tile) => {
 };
 
 const getBadgeStyle = (tile) => {
-  const ui = getModifierUi(tile.status);
+  const ui = getTileUi(tile);
 
   return {
     background: ui.badgeBackground,
