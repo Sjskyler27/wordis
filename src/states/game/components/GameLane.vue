@@ -255,6 +255,8 @@ const getBadgeStyle = (tile) => {
 const activeTileAnimations = ref({});
 const seenTileAnimationKeys = ref({});
 const tileAnimationTimeoutIds = new Map();
+const tileAnimationDelayTimeoutIds = new Map();
+const TILE_ANIMATION_STAGGER_MS = 90;
 const TILE_ANIMATION_DURATIONS = {
   blaze: 1080,
   emerald: 1180,
@@ -274,7 +276,34 @@ const stopTileAnimation = (tileId) => {
   activeTileAnimations.value = nextAnimations;
 };
 
-const startTileAnimation = (tile) => {
+const startTileAnimation = (tile, options = {}) => {
+  const animationState = tile?.animationState;
+  if (!tile?.id || !animationState?.name || !animationState?.key) {
+    return;
+  }
+
+  if (!options.alreadySeen && seenTileAnimationKeys.value[tile.id] === animationState.key) {
+    return;
+  }
+
+  if (!options.alreadySeen) {
+    seenTileAnimationKeys.value = {
+      ...seenTileAnimationKeys.value,
+      [tile.id]: animationState.key
+    };
+  }
+  activeTileAnimations.value = {
+    ...activeTileAnimations.value,
+    [tile.id]: animationState.key
+  };
+
+  window.clearTimeout(tileAnimationTimeoutIds.get(tile.id));
+  tileAnimationTimeoutIds.set(tile.id, window.setTimeout(() => {
+    stopTileAnimation(tile.id);
+  }, TILE_ANIMATION_DURATIONS[animationState.name] || 900));
+};
+
+const scheduleTileAnimation = (tile, index = 0) => {
   const animationState = tile?.animationState;
   if (!tile?.id || !animationState?.name || !animationState?.key) {
     return;
@@ -288,15 +317,12 @@ const startTileAnimation = (tile) => {
     ...seenTileAnimationKeys.value,
     [tile.id]: animationState.key
   };
-  activeTileAnimations.value = {
-    ...activeTileAnimations.value,
-    [tile.id]: animationState.key
-  };
 
-  window.clearTimeout(tileAnimationTimeoutIds.get(tile.id));
-  tileAnimationTimeoutIds.set(tile.id, window.setTimeout(() => {
-    stopTileAnimation(tile.id);
-  }, TILE_ANIMATION_DURATIONS[animationState.name] || 900));
+  window.clearTimeout(tileAnimationDelayTimeoutIds.get(tile.id));
+  tileAnimationDelayTimeoutIds.set(tile.id, window.setTimeout(() => {
+    tileAnimationDelayTimeoutIds.delete(tile.id);
+    startTileAnimation(tile, { alreadySeen: true });
+  }, index * TILE_ANIMATION_STAGGER_MS));
 };
 
 const getTileAnimationClass = (tile) => {
@@ -358,7 +384,15 @@ watch(() => [props.burstPulse, props.lastWordScore], ([nextPulse]) => {
 });
 
 watch(() => props.tiles, (nextTiles) => {
-  nextTiles.forEach((tile) => startTileAnimation(tile));
+  nextTiles
+    .filter((tile) => {
+      const animationState = tile?.animationState;
+      return tile?.id
+        && animationState?.name
+        && animationState?.key
+        && seenTileAnimationKeys.value[tile.id] !== animationState.key;
+    })
+    .forEach((tile, animationIndex) => scheduleTileAnimation(tile, animationIndex));
 }, {
   immediate: true,
   deep: true
@@ -378,6 +412,10 @@ onBeforeUnmount(() => {
     window.clearTimeout(timeoutId);
   });
   tileAnimationTimeoutIds.clear();
+  tileAnimationDelayTimeoutIds.forEach((timeoutId) => {
+    window.clearTimeout(timeoutId);
+  });
+  tileAnimationDelayTimeoutIds.clear();
 });
 </script>
 
