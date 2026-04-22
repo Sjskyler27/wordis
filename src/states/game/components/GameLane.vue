@@ -139,6 +139,10 @@ const props = defineProps({
     type: Number,
     default: 0
   },
+  clearPulse: {
+    type: Number,
+    default: 0
+  },
   controllerFocusedTileId: {
     type: String,
     default: ''
@@ -321,10 +325,13 @@ const getBadgeStyle = (tile) => {
 const activeTileAnimations = ref({});
 const seenTileAnimationKeys = ref({});
 const tileEnterDelays = ref({});
+const isRackClearAnimating = ref(false);
 const tileAnimationTimeoutIds = new Map();
 const tileAnimationDelayTimeoutIds = new Map();
 const tileEnterDelayTimeoutIds = new Map();
+let rackClearAnimationTimeoutId = null;
 const TILE_ANIMATION_STAGGER_MS = 50;
+const RACK_CLEAR_STAGGER_MS = 16;
 const TILE_ANIMATION_DURATIONS = {
   blaze: 580,
   emerald: 580,
@@ -394,7 +401,8 @@ const scheduleTileAnimation = (tile, index = 0) => {
 
   window.clearTimeout(tileAnimationDelayTimeoutIds.get(tile.id));
 
-  const delay = index * TILE_ANIMATION_STAGGER_MS;
+  const staggerMs = isRackClearAnimating.value ? RACK_CLEAR_STAGGER_MS : TILE_ANIMATION_STAGGER_MS;
+  const delay = index * staggerMs;
   if (!delay) {
     startTileAnimation(tile, { alreadySeen: true });
     return;
@@ -418,6 +426,10 @@ const getTileAnimationClass = (tile) => {
 };
 
 const getTileTransitionName = (tile) => {
+  if (isRackClearAnimating.value) {
+    return 'rack-clear-tile';
+  }
+
   return tile?.status === 'ghostTile' ? 'ghost-tile' : 'rack-tile';
 };
 
@@ -430,8 +442,11 @@ const scheduleTileEnterDelays = (nextTiles = [], previousTiles = []) => {
   }
 
   const nextDelays = { ...tileEnterDelays.value };
+  const staggerMs = isRackClearAnimating.value ? RACK_CLEAR_STAGGER_MS : TILE_ANIMATION_STAGGER_MS;
+  const enterDurationMs = isRackClearAnimating.value ? 150 : 260;
+
   enteringTiles.forEach((tile, enterIndex) => {
-    nextDelays[tile.id] = enterIndex * TILE_ANIMATION_STAGGER_MS;
+    nextDelays[tile.id] = enterIndex * staggerMs;
 
     window.clearTimeout(tileEnterDelayTimeoutIds.get(tile.id));
     tileEnterDelayTimeoutIds.set(tile.id, window.setTimeout(() => {
@@ -439,7 +454,7 @@ const scheduleTileEnterDelays = (nextTiles = [], previousTiles = []) => {
       const delays = { ...tileEnterDelays.value };
       delete delays[tile.id];
       tileEnterDelays.value = delays;
-    }, nextDelays[tile.id] + 260));
+    }, nextDelays[tile.id] + enterDurationMs));
   });
 
   tileEnterDelays.value = nextDelays;
@@ -488,6 +503,18 @@ watch(() => [props.burstPulse, props.lastWordScore], ([nextPulse]) => {
   });
 });
 
+watch(() => props.clearPulse, (nextPulse) => {
+  if (!nextPulse) {
+    return;
+  }
+
+  window.clearTimeout(rackClearAnimationTimeoutId);
+  isRackClearAnimating.value = true;
+  rackClearAnimationTimeoutId = window.setTimeout(() => {
+    isRackClearAnimating.value = false;
+  }, 2500);
+});
+
 watch(() => props.tiles, (nextTiles, previousTiles = []) => {
   scheduleTileEnterDelays(nextTiles, previousTiles);
   nextTiles
@@ -514,6 +541,7 @@ watch(() => props.isMobile, (isMobile) => {
 onBeforeUnmount(() => {
   window.clearTimeout(burstTimeoutId);
   window.clearTimeout(tooltipTimeoutId);
+  window.clearTimeout(rackClearAnimationTimeoutId);
   tileAnimationTimeoutIds.forEach((timeoutId) => {
     window.clearTimeout(timeoutId);
   });
@@ -1122,6 +1150,16 @@ onBeforeUnmount(() => {
 .rack-tile-leave-active {
   animation: rackTileOut 140ms ease-in forwards;
   pointer-events: none;
+}
+
+.rack-clear-tile-enter-active {
+  animation: rackTileIn 130ms cubic-bezier(0.2, 0.9, 0.3, 1.05);
+  animation-delay: var(--tile-enter-delay, 0ms);
+  animation-fill-mode: both;
+}
+
+.rack-clear-tile-leave-active {
+  display: none;
 }
 
 .ghost-tile-enter-active {
