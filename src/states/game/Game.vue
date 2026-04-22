@@ -124,6 +124,7 @@
             :saved-tile-ids="leftLane.savedTileIds"
             :must-alert-ids="leftLane.mustAlertIds"
             :burst-pulse="laneBurstPulse[leftLane.side]"
+            :clear-pulse="rackClearPulse[leftLane.side]"
             :controller-focused-tile-id="leftLane.side === mySide ? controllerFocusedTileId : ''"
             @tile-click="handleTileClickWithCards($event, leftLane.side)"
           />
@@ -144,6 +145,7 @@
             :saved-tile-ids="rightLane.savedTileIds"
             :must-alert-ids="rightLane.mustAlertIds"
             :burst-pulse="laneBurstPulse[rightLane.side]"
+            :clear-pulse="rackClearPulse[rightLane.side]"
             :controller-focused-tile-id="rightLane.side === mySide ? controllerFocusedTileId : ''"
             @tile-click="handleTileClickWithCards($event, rightLane.side)"
           />
@@ -298,6 +300,10 @@ const controllerBuilderCursorIndex = ref(0);
 const controllerActionCursorIndex = ref(0);
 const isControllerNavigationActive = ref(false);
 const laneBurstPulse = ref({
+  host: 0,
+  opponent: 0
+});
+const rackClearPulse = ref({
   host: 0,
   opponent: 0
 });
@@ -866,6 +872,13 @@ const triggerLaneBurst = (side, score) => {
   };
 };
 
+const triggerRackClearAnimation = (side) => {
+  rackClearPulse.value = {
+    ...rackClearPulse.value,
+    [side]: rackClearPulse.value[side] + 1
+  };
+};
+
 const triggerMustTileAlert = (side, tileIds) => {
   if (!tileIds?.length) {
     return;
@@ -1094,13 +1107,20 @@ const handleClearRack = () => {
     }
 
     clearMultiplayerRack();
+    triggerRackClearAnimation(mySide.value);
     clearSelectionForSide(mySide.value);
     resetActionMode();
     localMessage.value = `Clearing rack... ${rackClears.value[mySide.value] - 1} clears left after this one.`;
     return;
   }
 
+  if ((rackClears.value[mySide.value] || 0) <= 0) {
+    localMessage.value = 'No rack clears remaining.';
+    return;
+  }
+
   resetActionMode();
+  triggerRackClearAnimation(mySide.value);
   clearSinglePlayerRack(mySide.value);
 };
 
