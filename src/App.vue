@@ -110,6 +110,7 @@ const streamerCode = params.get('streamerCode');
 const showStreamerModal = ref(false);
 const loadingAuth = ref(true);
 const showAuthModal = ref(false);
+const AUTH_PROMPT_SEEN_KEY = "userAgreed";
 
 if (streamerCode) {
   showStreamerModal.value = true;
@@ -309,6 +310,15 @@ const showFeedback = ref(false)
       return;
     
   };
+
+  const showFirstRunAuthPrompt = () => {
+    if (!firebaseEnabled || streamerCode || localStorage.getItem(AUTH_PROMPT_SEEN_KEY)) {
+      return;
+    }
+
+    showAuthModal.value = true;
+  };
+
   const userLoggedIn = () => {
     showAuthModal.value = false
     setTimeout(() => {
@@ -525,6 +535,8 @@ const simulateTab = (reverse = false) => {
 
 
   onMounted( () => {
+    console.log('isfirebase enabled'+ firebaseEnabled)
+    showFirstRunAuthPrompt();
     checkGamepadInput();
     if (isMobile.value && !localStorage.getItem('mobileZoomApplied')) {
       zoom.value = 0.5
