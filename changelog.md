@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-04-23 0.0.25
+
+Start: 2026-04-23 22:14:42 EDT
+Stop: 2026-04-23 22:18:39 EDT
+
+- Added the multi-round countdown, final-word window, round completion, round failure, score reset, and next-round starting score bonus flow.
+- Added a host rack reset helper for multi-round round transitions.
+- Added the MultiRoundProgress component with circles for normal rounds, diamonds for challenge rounds, animated progress, and challenge modifier tooltips.
+- Extended the results overlay with multi-round run summary data, including completed rounds, failed round score, and personal modifier summary.
+- Added a temporary round-complete/advance sound cue using the existing tile replacement audio.
+- Verified the Parent Task 2 changes with `npm run build`.
+
 ## 2026-04-23 0.0.24
 
 Start: 2026-04-23 22:08:24 EDT
