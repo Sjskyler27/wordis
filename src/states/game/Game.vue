@@ -256,7 +256,7 @@ import { computed, defineProps, nextTick, onBeforeUnmount, onMounted, ref, watch
 import gameMusicUrl from '/public/audio/gameMusic.mp3';
 import tilePickupSoundUrl from '/public/audio/tile_pick_up.mp3';
 import tilePutBackSoundUrl from '/public/audio/tile_put_back.mp3';
-import tileReplaceSoundUrl from '/public/audio/tile_replace.mp3';
+import tileReplaceSoundUrl from '/public/audio/blank.mp3';
 import scoreBuiltTileSoundUrl from '/public/audio/score_built_tile.mp3';
 import victorySoundUrl from '/public/audio/victory.mp3';
 import defeatSoundUrl from '/public/audio/defeat.mp3';
@@ -1849,6 +1849,8 @@ watch(effectiveGameEnded, async (ended, wasEnded) => {
   stopResultAudio();
 
   try {
+    // dont play victory sound if multiround 
+    if(multiRoundRun && historyResultState.value === 'victory' ) return
     await audio.play();
   } catch (error) {
     // Ignore autoplay failures; the overlay state still updates correctly.
