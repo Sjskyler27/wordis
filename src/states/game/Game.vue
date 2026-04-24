@@ -41,6 +41,7 @@
           <strong>{{ localMessage || statusHeadline }}</strong>
           <p v-if="props.isMultiplayer && !gameStarted">Waiting for opponent to connect</p>
           <p v-else-if="isTimedSoloMode">Timer ends the run, so play fast and bank points.</p>
+          <p v-else-if="isMultiRoundMode">Clear the current target to advance the run.</p>
           <p v-else>Only used letters are replaced</p>
         </div>
         <div class="bonus-card accent-purple">
@@ -246,6 +247,7 @@ import { MIN_WORD_LENGTH, getWordScoreDetails, isMissingRequiredTile, selectedTi
 import { getPreferredLanguage } from './language.js';
 import { useWordBuilder } from './useWordBuilder.js';
 import { useSinglePlayerGame } from './useSinglePlayerGame.js';
+import { useMultiRoundRun } from './multiround/useMultiRoundRun.js';
 import { validateWord } from './word-validator.js';
 import { isTestingMode } from './testing.js';
 import GameLane from './components/GameLane.vue';
@@ -318,6 +320,7 @@ const createEmptyLastWordBreakdown = () => ({
 });
 const isMultiplayerRef = computed(() => props.isMultiplayer);
 const isTimedSoloMode = computed(() => !props.isMultiplayer && props.playMode === 'timed_solo');
+const isMultiRoundMode = computed(() => !props.isMultiplayer && props.playMode === 'multi_round');
 const isBotMode = computed(() => !props.isMultiplayer && props.playMode === 'bot_match');
 const matchOvertimeEnabled = computed(() => {
   return props.isMultiplayer ? multiplayerOvertimeEnabled.value : props.overtimeEnabled;
@@ -351,6 +354,7 @@ const windowWidth = ref(typeof window !== 'undefined' ? window.innerWidth : 1440
 const isSideDrawerOpen = ref(false);
 const sideDrawerAutoOpen = ref(false);
 const GAME_TUTORIAL_STORAGE_KEY = 'hasSeenWordisGameTutorial';
+const multiRoundRun = useMultiRoundRun();
 
 const mySide = computed(() => {
   if (props.isMultiplayer) {
@@ -422,6 +426,7 @@ const {
   isMultiplayer: isMultiplayerRef,
   botEnabled: isBotMode,
   isTimedSoloMode,
+  isMultiRoundMode,
   overtimeEnabled: matchOvertimeEnabled,
   botDifficulty: computed(() => props.botDifficulty),
   localMessage,
@@ -554,6 +559,10 @@ const winningSide = computed(() => {
   return null;
 });
 const gameEnded = computed(() => {
+  if (isMultiRoundMode.value) {
+    return multiRoundRun.runEnded.value;
+  }
+
   if (isTimedSoloMode.value) {
     return Boolean(winningSide.value);
   }
@@ -636,11 +645,19 @@ const modeTitle = computed(() => {
     return 'Real Time Duel';
   }
 
+  if (isMultiRoundMode.value) {
+    return `Multi-Round · ${multiRoundRun.currentRound.value?.label || 'Round 1'}`;
+  }
+
   return isTimedSoloMode.value ? 'Solo Sprint' : `Bot Pressure · ${props.botDifficulty}`;
 });
 const modeSubtitle = computed(() => {
   if (props.isMultiplayer) {
     return 'Build on your board and race the other board in real time.';
+  }
+
+  if (isMultiRoundMode.value) {
+    return `Reach ${multiRoundRun.currentTargetScore.value} points before the round clock runs out.`;
   }
 
   if (isTimedSoloMode.value) {
@@ -664,6 +681,10 @@ const statusHeadline = computed(() => {
 
   if (isTimedSoloMode.value) {
     return `${formattedTimeRemaining.value} remaining`;
+  }
+
+  if (isMultiRoundMode.value) {
+    return `Round ${multiRoundRun.currentRoundNumber.value}/${multiRoundRun.totalRounds.value} · ${multiRoundRun.currentTargetScore.value} point target`;
   }
 
   return 'Racks are live';
@@ -723,6 +744,10 @@ const mixHexColor = (start, end, amount) => {
 const backgroundProgress = computed(() => {
   if (isTimedSoloMode.value) {
     return clamp01(1 - (timerRemainingSeconds.value / SOLO_TIMER_SECONDS));
+  }
+
+  if (isMultiRoundMode.value) {
+    return clamp01((playerScores.value.host || 0) / Math.max(1, multiRoundRun.currentTargetScore.value));
   }
 
   const highestScore = Math.max(playerScores.value.host || 0, playerScores.value.opponent || 0);
@@ -1442,6 +1467,10 @@ const handlePlayAgain = () => {
     return;
   }
 
+  if (isMultiRoundMode.value) {
+    multiRoundRun.resetRun();
+  }
+
   stopBotLoop();
   stopSoloTimer();
   stopResultAudio();
@@ -1513,6 +1542,10 @@ const startSoloTimer = () => {
 };
 
 watch(() => props.playMode, (nextMode) => {
+  if (nextMode === 'multi_round') {
+    multiRoundRun.resetRun();
+  }
+
   timerRemainingSeconds.value = nextMode === 'timed_solo' ? SOLO_TIMER_SECONDS : 0;
   isSoloTimerPausedByAttack.value = false;
   timedSoloFinalWordSpent.value = false;
@@ -1725,6 +1758,7 @@ const resetAndGoHome = () => {
   window.clearTimeout(historyOverlayTimeoutId);
   isSoloTimerPausedByAttack.value = false;
   timedSoloFinalWordSpent.value = false;
+  multiRoundRun.resetRun();
   stopGameMusic();
   stopResultAudio();
   resetMultiplayer();

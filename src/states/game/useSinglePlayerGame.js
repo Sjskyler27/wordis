@@ -5,6 +5,7 @@ import {
   MIN_WORD_LENGTH,
   createCards,
   createOpeningRackPair,
+  createTestingRack,
   createTestingOpeningRackPair,
   createRack,
   drawCards,
@@ -23,6 +24,7 @@ export const useSinglePlayerGame = ({
   isMultiplayer,
   botEnabled,
   isTimedSoloMode,
+  isMultiRoundMode,
   overtimeEnabled,
   botDifficulty,
   localMessage,
@@ -64,7 +66,7 @@ export const useSinglePlayerGame = ({
     normal: 9000,
     hard: 6500
   };
-  const modifierProfile = () => isTimedSoloMode.value ? 'solo' : 'bot';
+  const modifierProfile = () => (isTimedSoloMode.value || isMultiRoundMode?.value) ? 'solo' : 'bot';
   const attackDeck = () => isTimedSoloMode.value ? 'timed_solo' : 'duel';
   const shouldDrawAttacks = () => isTimedSoloMode.value || botEnabled.value;
   const keepTestingHand = (hand = [], cardId) => {
@@ -156,6 +158,28 @@ export const useSinglePlayerGame = ({
       submissionPauseOwner.value = null;
 
       if (isTestingMode) {
+        if (isMultiRoundMode?.value) {
+          playerTiles.value = {
+            host: createTestingRack('host', playerScores.value, {
+              modifierProfile: modifierProfile(),
+              includeAllModifiers: true
+            }),
+            opponent: []
+          };
+          rackClears.value = {
+            host: 100,
+            opponent: 0
+          };
+          playerCards.value = {
+            host: createTestingHands().host,
+            opponent: {
+              boons: [],
+              attacks: []
+            }
+          };
+          return;
+        }
+
         playerTiles.value = createTestingOpeningRackPair(playerScores.value, {
           modifierProfile: modifierProfile(),
           includeAllModifiers: true
@@ -165,6 +189,31 @@ export const useSinglePlayerGame = ({
           opponent: 100
         };
         playerCards.value = createTestingHands();
+        return;
+      }
+
+      if (isMultiRoundMode?.value) {
+        playerTiles.value = {
+          host: createRack('host', playerScores.value, {
+            modifierProfile: modifierProfile(),
+            turnCount: getTurnCount()
+          }),
+          opponent: []
+        };
+        rackClears.value = {
+          host: 2,
+          opponent: 0
+        };
+        playerCards.value = {
+          host: {
+            boons: drawCards('boon', 1),
+            attacks: []
+          },
+          opponent: {
+            boons: [],
+            attacks: []
+          }
+        };
         return;
       }
 
