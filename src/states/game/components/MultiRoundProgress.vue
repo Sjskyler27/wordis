@@ -117,11 +117,17 @@ const getRoundLabel = (round) => {
 }
 
 .round-marker {
+  appearance: none;
   width: 38px;
   height: 38px;
+  padding: 0;
   border: 1px solid rgba(255, 255, 255, 0.36);
   border-radius: 50%;
   color: #fff7e8;
+  display: grid;
+  place-items: center;
+  font: inherit;
+  line-height: 1;
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.24), rgba(92, 74, 89, 0.64));
   box-shadow: inset 0 2px 8px rgba(255, 255, 255, 0.14), 0 8px 18px rgba(37, 8, 24, 0.28);
   cursor: default;
@@ -135,7 +141,6 @@ const getRoundLabel = (round) => {
 }
 
 .round-step.challenge .round-number {
-  display: inline-block;
   transform: rotate(-45deg);
 }
 
@@ -150,8 +155,12 @@ const getRoundLabel = (round) => {
 }
 
 .round-number {
+  display: block;
+  width: 100%;
   font-size: 0.8rem;
   font-weight: 900;
+  line-height: 1;
+  text-align: center;
 }
 
 .round-tooltip {
