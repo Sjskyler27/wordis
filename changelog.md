@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-04-23 0.0.24
+
+Start: 2026-04-23 22:08:24 EDT
+Stop: 2026-04-23 22:11:31 EDT
+
+- Added the `multi_round` play mode constant and a TypeScreen entry that starts the mode.
+- Added fixed starter round data and an isolated multi-round run state composable.
+- Wired Game.vue to recognize multi-round mode, reset multi-round run state, and show basic multi-round mode/status copy.
+- Updated single-player initialization so multi-round starts with a host-only solo rack and no bot lane.
+- Verified the Parent Task 1 changes with `npm run build`.
+
 ## 2026-04-20 0.0.23
 - updated yin yang color and display logic
 - added animations for gold lock and emerald
