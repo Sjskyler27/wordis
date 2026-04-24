@@ -197,6 +197,11 @@
 
       </section>
 
+      <PersonalModifiersDrawer
+        v-if="isMultiRoundMode"
+        :modifiers="personalModifiersForDrawer"
+      />
+
       <HistoryOverlay
         v-if="showHistoryOverlay"
         :result-title="historyResultTitle"
@@ -263,6 +268,7 @@ import { isTestingMode } from './testing.js';
 import GameLane from './components/GameLane.vue';
 import HistoryOverlay from './components/HistoryOverlay.vue';
 import MultiRoundProgress from './components/MultiRoundProgress.vue';
+import PersonalModifiersDrawer from './components/PersonalModifiersDrawer.vue';
 import TutorialOverlay from './components/TutorialOverlay.vue';
 import WordBuilder from './components/WordBuilder.vue';
 
@@ -431,6 +437,7 @@ const rightLane = computed(() => buildLane(opponentSide.value, isBotMode.value ?
 const leftLaneHistory = computed(() => wordHistory.value[mySide.value] || []);
 const rightLaneHistory = computed(() => wordHistory.value[opponentSide.value] || []);
 const multiRoundProgressRounds = computed(() => multiRoundRun.visibleProgressRounds.value);
+const personalModifiersForDrawer = computed(() => multiRoundRun.personalModifiers.value);
 
 const {
   startBotLoop,
