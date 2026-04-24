@@ -214,11 +214,11 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
     return definition.canApply(context);
   };
 
-  const chooseWeightedModifier = (modifiers = []) => {
+  const chooseWeightedModifier = (modifiers = [], weightBonuses = {}) => {
     const weightedModifiers = modifiers
       .map((modifier) => ({
         modifier,
-        weight: Math.max(0, getModifierDefinition(modifier).rarityWeight ?? 1)
+        weight: Math.max(0, (getModifierDefinition(modifier).rarityWeight ?? 1) + (weightBonuses[modifier] || 0))
       }))
       .filter((entry) => entry.weight > 0);
 
@@ -378,21 +378,28 @@ console.log(JSON.stringify({
 
   const rollTileModifier = (side, scores = {}, context = {}, chanceOverrides = {}) => {
     const modifierProfile = chanceOverrides.modifierProfile || 'duel';
+    const personalModifierEffects = chanceOverrides.personalModifierEffects || {};
     if(devLogging)console.log(modifierProfile)
     const profile = getModifierProfile(modifierProfile);
     const baseChances = getModifierChances(side, scores, modifierProfile, chanceOverrides.turnCount || 0);
+    const openingGoodChanceBonus = chanceOverrides.phase === 'opening'
+      ? (personalModifierEffects.openingGoodChanceBonus || 0)
+      : 0;
+    const modifierOddsBonus = personalModifierEffects.modifierOddsBonus || {};
+    const goodChanceBonus = Object.values(modifierOddsBonus).reduce((total, bonus) => total + (bonus || 0), 0);
+    const badChanceMultiplier = Math.max(0, personalModifierEffects.badChanceMultiplier ?? 1);
     const goodChance = Math.max(
       0,
       Math.min(
         0.9,
-        chanceOverrides.goodChance ?? (baseChances.goodChance * (chanceOverrides.goodChanceMultiplier ?? 1))
+        chanceOverrides.goodChance ?? ((baseChances.goodChance * (chanceOverrides.goodChanceMultiplier ?? 1)) + openingGoodChanceBonus + goodChanceBonus)
       )
     );
     const badChance = Math.max(
       0,
       Math.min(
         0.9 - goodChance,
-        chanceOverrides.badChance ?? (baseChances.badChance * (chanceOverrides.badChanceMultiplier ?? 1))
+        chanceOverrides.badChance ?? (baseChances.badChance * (chanceOverrides.badChanceMultiplier ?? 1) * badChanceMultiplier)
       )
     );
     const neutralChance = Math.max(
@@ -409,15 +416,15 @@ console.log(JSON.stringify({
     const eligibleNeutralModifiers = (profile.neutralModifiers || []).filter((modifier) => canApplyModifier(modifier, context));
 
     if (roll < goodChance) {
-      return eligibleGoodModifiers.length ? chooseWeightedModifier(eligibleGoodModifiers) : 'normal';
+      return eligibleGoodModifiers.length ? chooseWeightedModifier(eligibleGoodModifiers, modifierOddsBonus) : 'normal';
     }
 
     if (roll < goodChance + badChance) {
-      return eligibleBadModifiers.length ? chooseWeightedModifier(eligibleBadModifiers) : 'normal';
+      return eligibleBadModifiers.length ? chooseWeightedModifier(eligibleBadModifiers, modifierOddsBonus) : 'normal';
     }
 
     if (roll < goodChance + badChance + neutralChance) {
-      return eligibleNeutralModifiers.length ? chooseWeightedModifier(eligibleNeutralModifiers) : 'normal';
+      return eligibleNeutralModifiers.length ? chooseWeightedModifier(eligibleNeutralModifiers, modifierOddsBonus) : 'normal';
     }
 
     return 'normal';
@@ -491,13 +498,27 @@ console.log(JSON.stringify({
     const positionBonusByIndex = getModifierDefinition(tile?.status).effects.positionBonusByIndex || {};
     return positionBonusByIndex[positionKey] || 0;
   };
-  const tileScore = (tile, options = {}) => (
-    (
+  const isVowelLetter = (letter = '') => ['A', 'E', 'I', 'O', 'U'].includes((letter || '').toUpperCase());
+  const getPersonalTileScore = (tile, options = {}) => {
+    const personalModifierEffects = options.personalModifierEffects || options.personalModifiers || {};
+    const modifierScoreBonus = personalModifierEffects.modifierScoreBonus || {};
+    let score = (
       (tile?.score || 0)
       + (tile?.bonusScore || 0)
       + getLeadAwareModifierScore(tile, options)
       + getPositionAwareModifierScore(tile, options)
-    ) * (tile?.multiplier || 1)
+      + (modifierScoreBonus[tile?.status] || 0)
+    );
+
+    if (isVowelLetter(tile?.baseLetter || tile?.letter)) {
+      score += personalModifierEffects.vowelScoreBonus || 0;
+      score *= personalModifierEffects.vowelScoreMultiplier || 1;
+    }
+
+    return score;
+  };
+  const tileScore = (tile, options = {}) => (
+    getPersonalTileScore(tile, options) * (tile?.multiplier || 1)
   );
   const tickIdleTile = (tile) => {
     const definition = getModifierDefinition(tile?.status);
@@ -909,6 +930,8 @@ console.log(JSON.stringify({
         rack.push(createTile(drawLetter(rack), side, scores, options.forcedStatus || null, {
           ...(options.chanceOverrides || {}),
           rackTiles: rack,
+          personalModifierEffects: options.personalModifierEffects || options.chanceOverrides?.personalModifierEffects || {},
+          phase: options.phase || options.chanceOverrides?.phase || 'opening',
           turnCount: options.turnCount || 0
         }));
       }
@@ -1043,6 +1066,8 @@ console.log(JSON.stringify({
         nextTiles[index] = createTile(drawLetter(remainingTiles), side, scores, null, {
           rackTiles: remainingTiles,
           modifierProfile: options.modifierProfile || 'duel',
+          personalModifierEffects: options.personalModifierEffects || {},
+          phase: options.phase || 'submit',
           turnCount: options.turnCount || 0
         });
         logSubmittedTilePull(nextTiles[index], side, scores, {
@@ -1066,6 +1091,8 @@ console.log(JSON.stringify({
       nextTiles[targetIndex] = createTile(drawLetter(remainingTiles), side, scores, null, {
         rackTiles: remainingTiles,
         modifierProfile: options.modifierProfile || 'duel',
+        personalModifierEffects: options.personalModifierEffects || {},
+        phase: options.phase || 'replace',
         turnCount: options.turnCount || 0
       });
 
@@ -1095,6 +1122,8 @@ console.log(JSON.stringify({
         nextTiles[index] = createTile(drawLetter(remainingTiles), side, scores, null, {
           rackTiles: remainingTiles,
           modifierProfile: options.modifierProfile || 'duel',
+          personalModifierEffects: options.personalModifierEffects || {},
+          phase: options.phase || 'reroll',
           turnCount: options.turnCount || 0
         });
       });
