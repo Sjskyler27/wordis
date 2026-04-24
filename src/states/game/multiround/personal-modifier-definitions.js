@@ -51,6 +51,19 @@ export const PERSONAL_MODIFIER_DEFINITIONS = {
       }
     }
   },
+  neutral_current: {
+    key: 'neutral_current',
+    label: 'Neutral Current',
+    description: 'Neutral tile modifiers appear more often.',
+    rarity: 0.6,
+    tier: PERSONAL_MODIFIER_TIERS.RARE,
+    tags: ['tile-odds', 'neutral'],
+    maxStacks: 3,
+    start_with: 0,
+    effects: {
+      neutralChanceBonus: 0.04
+    }
+  },
   cleaner_rack: {
     key: 'cleaner_rack',
     label: 'Cleaner Rack',

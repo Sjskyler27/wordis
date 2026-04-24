@@ -391,7 +391,7 @@ console.log(JSON.stringify({
     };
     const goodChanceBonus = getPoolChanceBonus(profile.goodModifiers);
     const badChanceBonus = getPoolChanceBonus(profile.badModifiers);
-    const neutralChanceBonus = getPoolChanceBonus(profile.neutralModifiers || []);
+    const neutralChanceBonus = getPoolChanceBonus(profile.neutralModifiers || []) + (personalModifierEffects.neutralChanceBonus || 0);
     const badChanceMultiplier = Math.max(0, personalModifierEffects.badChanceMultiplier ?? 1);
     const goodChance = Math.max(
       0,
