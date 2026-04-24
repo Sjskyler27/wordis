@@ -546,19 +546,15 @@ export const useSinglePlayerGame = ({
       [side]: 2,
       ...(isMultiRoundMode?.value ? { opponent: 0 } : {})
     };
-    playerCards.value = {
-      ...playerCards.value,
-      [side]: {
-        boons: drawCards('boon', 1),
-        attacks: []
-      },
-      ...(isMultiRoundMode?.value ? {
-        opponent: {
-          boons: [],
+    if (!isMultiRoundMode?.value) {
+      playerCards.value = {
+        ...playerCards.value,
+        [side]: {
+          boons: drawCards('boon', 1),
           attacks: []
         }
-      } : {})
-    };
+      };
+    }
     return true;
   };
 
