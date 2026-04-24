@@ -166,35 +166,100 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
     };
   };
 
-  const getModifierChances = (side, scores = {}, profileName = 'duel', turnCount = 0) => {
+  const getModifierChances = (side, scores = {}, profileName = 'duel', turnCount = 0, options = {}) => {
     // base tiles off profile 
     const profile = getModifierProfile(profileName);
-    if(devLogging){
-      console.log('current profile' + profileName)
-      console.log('allowed Tiles!')
-      console.log(profile)
-    }
     const turnBonus = Math.min(MAX_TURN_MODIFIER_BONUS, Math.max(0, turnCount) * TURN_MODIFIER_CHANCE_STEP);
 
-    if (!side || !profile.useScoreSwing) {
+    const baseChances = (() => {
+      if (!side || !profile.useScoreSwing) {
+        return {
+          goodChance: Math.min(0.45, profile.baseGoodChance + turnBonus),
+          badChance: Math.min(0.4, profile.baseBadChance + turnBonus),
+          neutralChance: profile.baseNeutralChance || 0
+        };
+      }
+
+      const opponentSide = side === 'host' ? 'opponent' : 'host';
+      const scoreDelta = (scores[side] || 0) - (scores[opponentSide] || 0);
+      const catchupBonus = Math.min(MAX_GOOD_MODIFIER_BONUS, Math.max(0, -scoreDelta) / MODIFIER_SWING_DIVISOR);
+      const pressureBonus = Math.min(MAX_BAD_MODIFIER_BONUS, Math.max(0, scoreDelta) / MODIFIER_SWING_DIVISOR);
+
       return {
-        goodChance: Math.min(0.45, profile.baseGoodChance + turnBonus),
-        badChance: Math.min(0.4, profile.baseBadChance + turnBonus),
-        neutralChance: profile.baseNeutralChance || 0
+        goodChance: Math.min(0.45, profile.baseGoodChance + catchupBonus + turnBonus),
+        badChance: Math.min(0.4, profile.baseBadChance + pressureBonus + turnBonus),
+        neutralChance: Math.min(0.2, profile.baseNeutralChance || 0)
       };
+    })();
+    const personalModifierEffects = options.personalModifierEffects || {};
+    const modifierOddsBonus = personalModifierEffects.modifierOddsBonus || {};
+    const getPoolChanceBonus = (modifiers = []) => {
+      return modifiers.reduce((total, modifier) => total + (modifierOddsBonus[modifier] || 0), 0);
+    };
+    const openingGoodChanceBonus = options.phase === 'opening'
+      ? (personalModifierEffects.openingGoodChanceBonus || 0)
+      : 0;
+    const goodChanceBonus = getPoolChanceBonus(profile.goodModifiers);
+    const badChanceBonus = getPoolChanceBonus(profile.badModifiers);
+    const neutralChanceBonus = getPoolChanceBonus(profile.neutralModifiers || []) + (personalModifierEffects.neutralChanceBonus || 0);
+    const badChanceMultiplier = Math.max(0, personalModifierEffects.badChanceMultiplier ?? 1);
+    const goodChance = Math.max(
+      0,
+      Math.min(
+        0.9,
+        options.goodChance ?? ((baseChances.goodChance * (options.goodChanceMultiplier ?? 1)) + openingGoodChanceBonus + goodChanceBonus)
+      )
+    );
+    const badChance = Math.max(
+      0,
+      Math.min(
+        0.9 - goodChance,
+        options.badChance ?? ((baseChances.badChance * (options.badChanceMultiplier ?? 1) * badChanceMultiplier) + badChanceBonus)
+      )
+    );
+    const neutralChance = Math.max(
+      0,
+      Math.min(
+        0.9 - goodChance - badChance,
+        options.neutralChance ?? ((baseChances.neutralChance * (options.neutralChanceMultiplier ?? 1)) + neutralChanceBonus)
+      )
+    );
+    const chanceBonuses = {
+      goodChanceBonus,
+      badChanceBonus,
+      neutralChanceBonus,
+      openingGoodChanceBonus
+    };
+
+    if(devLogging){
+      // update logs for actual chances
+      console.log('[modifier-chances]', {
+        profileName,
+        allowedModifiers: {
+          good: profile.goodModifiers,
+          bad: profile.badModifiers,
+          neutral: profile.neutralModifiers || []
+        },
+        baseChances: formatChanceGroup(baseChances),
+        chanceBonuses: formatChanceGroup(chanceBonuses),
+        finalChances: {
+          good: formatChancePercent(goodChance),
+          bad: formatChancePercent(badChance),
+          neutral: formatChancePercent(neutralChance)
+        }
+      });
     }
 
-    const opponentSide = side === 'host' ? 'opponent' : 'host';
-    const scoreDelta = (scores[side] || 0) - (scores[opponentSide] || 0);
-    const catchupBonus = Math.min(MAX_GOOD_MODIFIER_BONUS, Math.max(0, -scoreDelta) / MODIFIER_SWING_DIVISOR);
-    const pressureBonus = Math.min(MAX_BAD_MODIFIER_BONUS, Math.max(0, scoreDelta) / MODIFIER_SWING_DIVISOR);
-
     return {
-      goodChance: Math.min(0.45, profile.baseGoodChance + catchupBonus + turnBonus),
-      badChance: Math.min(0.4, profile.baseBadChance + pressureBonus + turnBonus),
-      neutralChance: Math.min(0.2, profile.baseNeutralChance || 0)
+      ...baseChances,
+      baseChances,
+      goodChance,
+      badChance,
+      neutralChance,
+      chanceBonuses
     };
   };
+
   const hasModifierInRack = (rackTiles = [], status = 'normal') => {
     return rackTiles.some((tile) => tile.status === status);
   };
@@ -239,11 +304,11 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
     return weightedModifiers[weightedModifiers.length - 1].modifier;
   };
 
-  const getWeightedModifierOdds = (modifiers = [], poolChance = 0) => {
+  const getWeightedModifierOdds = (modifiers = [], poolChance = 0, weightBonuses = {}) => {
     const weightedModifiers = modifiers
       .map((modifier) => ({
         modifier,
-        weight: Math.max(0, getModifierDefinition(modifier).rarityWeight ?? 1)
+        weight: Math.max(0, (getModifierDefinition(modifier).rarityWeight ?? 1) + (weightBonuses[modifier] || 0))
       }))
       .filter((entry) => entry.weight > 0);
 
@@ -266,6 +331,7 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
     goodChance,
     badChance,
     neutralChance,
+    modifierOddsBonus = {},
     eligibleGoodModifiers = [],
     eligibleBadModifiers = [],
     eligibleNeutralModifiers = []
@@ -276,18 +342,18 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
     }
 
     const modifierOdds = {
-      ...getWeightedModifierOdds(eligibleGoodModifiers, goodChance),
-      ...getWeightedModifierOdds(eligibleBadModifiers, badChance),
-      ...getWeightedModifierOdds(eligibleNeutralModifiers, neutralChance)
+      ...getWeightedModifierOdds(eligibleGoodModifiers, goodChance, modifierOddsBonus),
+      ...getWeightedModifierOdds(eligibleBadModifiers, badChance, modifierOddsBonus),
+      ...getWeightedModifierOdds(eligibleNeutralModifiers, neutralChance, modifierOddsBonus)
     };
     const normalChance = Math.max(
       0,
       1 - Object.values(modifierOdds).reduce((sum, chance) => sum + chance, 0)
     );
     return {
-      goodModifierOdds: getWeightedModifierOdds(eligibleGoodModifiers, goodChance),
-      badModifierOdds: getWeightedModifierOdds(eligibleBadModifiers, badChance),
-      neutralModifierOdds: getWeightedModifierOdds(eligibleNeutralModifiers, neutralChance),
+      goodModifierOdds: getWeightedModifierOdds(eligibleGoodModifiers, goodChance, modifierOddsBonus),
+      badModifierOdds: getWeightedModifierOdds(eligibleBadModifiers, badChance, modifierOddsBonus),
+      neutralModifierOdds: getWeightedModifierOdds(eligibleNeutralModifiers, neutralChance, modifierOddsBonus),
       modifierOdds,
       normalChance
     };
@@ -307,6 +373,9 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
     goodChance,
     badChance,
     neutralChance,
+    baseChances = null,
+    chanceBonuses = null,
+    modifierOddsBonus = {},
     eligibleGoodModifiers = [],
     eligibleBadModifiers = [],
     eligibleNeutralModifiers = [],
@@ -325,17 +394,11 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
       goodChance,
       badChance,
       neutralChance,
+      modifierOddsBonus,
       eligibleGoodModifiers,
       eligibleBadModifiers,
       eligibleNeutralModifiers
     });
-
-console.log(JSON.stringify({
-  goodTiles: formatChanceGroup(goodModifierOdds),
-  badTiles: formatChanceGroup(badModifierOdds),
-  neutralTiles: formatChanceGroup(neutralModifierOdds),
-  normal: formatChancePercent(normalChance)
-}, null, 2))
 
     console.log('[modifier-roll]', {
       actualModifier: selectedModifier,
@@ -345,9 +408,23 @@ console.log(JSON.stringify({
       letter: context.letter || null,
       baseScore: context.baseScore ?? null,
       roll: roll == null ? null : Number(roll.toFixed(4)),
-      goodChance: formatChancePercent(goodChance),
-      badChance: formatChancePercent(badChance),
-      neutralChance: formatChancePercent(neutralChance || 0),
+      poolChances: {
+        good: formatChancePercent(goodChance),
+        bad: formatChancePercent(badChance),
+        neutral: formatChancePercent(neutralChance || 0),
+        normal: formatChancePercent(normalChance)
+      },
+      baseChances: baseChances ? {
+        good: formatChancePercent(baseChances.goodChance),
+        bad: formatChancePercent(baseChances.badChance),
+        neutral: formatChancePercent(baseChances.neutralChance || 0)
+      } : null,
+      chanceBonuses: chanceBonuses ? formatChanceGroup(chanceBonuses) : null,
+      modifierOdds: {
+        good: formatChanceGroup(goodModifierOdds),
+        bad: formatChanceGroup(badModifierOdds),
+        neutral: formatChanceGroup(neutralModifierOdds)
+      }
     });
   };
 
@@ -381,64 +458,51 @@ console.log(JSON.stringify({
     const personalModifierEffects = chanceOverrides.personalModifierEffects || {};
     if(devLogging)console.log(modifierProfile)
     const profile = getModifierProfile(modifierProfile);
-    const baseChances = getModifierChances(side, scores, modifierProfile, chanceOverrides.turnCount || 0);
-    const openingGoodChanceBonus = chanceOverrides.phase === 'opening'
-      ? (personalModifierEffects.openingGoodChanceBonus || 0)
-      : 0;
     const modifierOddsBonus = personalModifierEffects.modifierOddsBonus || {};
-    const getPoolChanceBonus = (modifiers = []) => {
-      return modifiers.reduce((total, modifier) => total + (modifierOddsBonus[modifier] || 0), 0);
-    };
-    const goodChanceBonus = getPoolChanceBonus(profile.goodModifiers);
-    const badChanceBonus = getPoolChanceBonus(profile.badModifiers);
-    const neutralChanceBonus = getPoolChanceBonus(profile.neutralModifiers || []) + (personalModifierEffects.neutralChanceBonus || 0);
-    const badChanceMultiplier = Math.max(0, personalModifierEffects.badChanceMultiplier ?? 1);
-    const goodChance = Math.max(
-      0,
-      Math.min(
-        0.9,
-        chanceOverrides.goodChance ?? ((baseChances.goodChance * (chanceOverrides.goodChanceMultiplier ?? 1)) + openingGoodChanceBonus + goodChanceBonus)
-      )
-    );
-    const badChance = Math.max(
-      0,
-      Math.min(
-        0.9 - goodChance,
-        chanceOverrides.badChance ?? ((baseChances.badChance * (chanceOverrides.badChanceMultiplier ?? 1) * badChanceMultiplier) + badChanceBonus)
-      )
-    );
-    const neutralChance = Math.max(
-      0,
-      Math.min(
-        0.9 - goodChance - badChance,
-        chanceOverrides.neutralChance ?? ((baseChances.neutralChance * (chanceOverrides.neutralChanceMultiplier ?? 1)) + neutralChanceBonus)
-      )
-    );
+    const {
+      goodChance,
+      badChance,
+      neutralChance,
+      baseChances,
+      chanceBonuses
+    } = getModifierChances(side, scores, modifierProfile, chanceOverrides.turnCount || 0, chanceOverrides);
     const roll = Math.random();
 
     const eligibleGoodModifiers = profile.goodModifiers.filter((modifier) => canApplyModifier(modifier, context));
     const eligibleBadModifiers = profile.badModifiers.filter((modifier) => canApplyModifier(modifier, context));
     const eligibleNeutralModifiers = (profile.neutralModifiers || []).filter((modifier) => canApplyModifier(modifier, context));
 
+    let selectedModifier = 'normal';
     if (roll < goodChance) {
-      return eligibleGoodModifiers.length ? chooseWeightedModifier(eligibleGoodModifiers, modifierOddsBonus) : 'normal';
+      selectedModifier = eligibleGoodModifiers.length ? chooseWeightedModifier(eligibleGoodModifiers, modifierOddsBonus) : 'normal';
+    } else if (roll < goodChance + badChance) {
+      selectedModifier = eligibleBadModifiers.length ? chooseWeightedModifier(eligibleBadModifiers, modifierOddsBonus) : 'normal';
+    } else if (roll < goodChance + badChance + neutralChance) {
+      selectedModifier = eligibleNeutralModifiers.length ? chooseWeightedModifier(eligibleNeutralModifiers, modifierOddsBonus) : 'normal';
     }
 
-    if (roll < goodChance + badChance) {
-      return eligibleBadModifiers.length ? chooseWeightedModifier(eligibleBadModifiers, modifierOddsBonus) : 'normal';
-    }
+    logModifierRoll({
+      context,
+      roll,
+      goodChance,
+      badChance,
+      neutralChance,
+      baseChances,
+      chanceBonuses,
+      modifierOddsBonus,
+      eligibleGoodModifiers,
+      eligibleBadModifiers,
+      eligibleNeutralModifiers,
+      selectedModifier
+    });
 
-    if (roll < goodChance + badChance + neutralChance) {
-      return eligibleNeutralModifiers.length ? chooseWeightedModifier(eligibleNeutralModifiers, modifierOddsBonus) : 'normal';
-    }
-
-    return 'normal';
+    return selectedModifier;
   };
 
   const rollSharedOpeningModifier = (scores = {}, contexts = [], options = {}) => {
     const modifierProfile = options.modifierProfile || 'duel';
     const profile = getModifierProfile(modifierProfile);
-    const { goodChance, badChance, neutralChance } = getModifierChances(null, scores, modifierProfile, options.turnCount || 0);
+    const { goodChance, badChance, neutralChance } = getModifierChances(null, scores, modifierProfile, options.turnCount || 0, options);
     const roll = Math.random();
 
     const eligibleGoodModifiers = profile.goodModifiers.filter((modifier) => {
@@ -903,37 +967,6 @@ console.log(JSON.stringify({
   };
 
   const createTileLogic = ({ createTileId }) => {
-    const logSubmittedTilePull = (tile, side, scores = {}, options = {}) => {
-      if (!devLogging || options.phase !== 'submit') {
-        return;
-      }
-
-      const modifierProfile = options.modifierProfile || 'duel';
-      const profile = getModifierProfile(modifierProfile);
-      const { goodChance, badChance, neutralChance } = getModifierChances(side, scores, modifierProfile, options.turnCount || 0);
-      const context = {
-        letter: tile.baseLetter || tile.letter,
-        baseScore: tile.baseScore || letterConfig[tile.baseLetter || tile.letter]?.score || 0,
-        rackTiles: options.rackTiles || []
-      };
-      const eligibleGoodModifiers = profile.goodModifiers.filter((modifier) => canApplyModifier(modifier, context));
-      const eligibleBadModifiers = profile.badModifiers.filter((modifier) => canApplyModifier(modifier, context));
-      const eligibleNeutralModifiers = (profile.neutralModifiers || []).filter((modifier) => canApplyModifier(modifier, context));
-
-      logModifierRoll({
-        side,
-        phase: 'submit',
-        context,
-        goodChance,
-        badChance,
-        neutralChance,
-        eligibleGoodModifiers,
-        eligibleBadModifiers,
-        eligibleNeutralModifiers,
-        selectedModifier: tile.status
-      });
-    };
-
     const createTile = (letter = drawLetter(), side = null, scores = {}, forcedStatus = null, chanceOverrides = null) => {
       const baseScore = letterConfig[letter]?.score || 0;
       // in charge of getting the modifier for tiles 
@@ -1109,10 +1142,6 @@ console.log(JSON.stringify({
           roundModifierEffects: options.roundModifierEffects || {},
           phase: options.phase || 'submit',
           turnCount: options.turnCount || 0
-        });
-        logSubmittedTilePull(nextTiles[index], side, scores, {
-          ...options,
-          rackTiles: remainingTiles
         });
       });
       if(devLogging) console.log(nextTiles) // logs something callled status so modifier is determined by this point 
