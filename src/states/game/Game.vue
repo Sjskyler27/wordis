@@ -204,6 +204,12 @@
         :modifiers="personalModifiersForDrawer"
       />
 
+      <MultiRoundRewardChoice
+        v-if="isMultiRoundMode && isMultiRoundRewardChoiceOpen"
+        :rewards="multiRoundRewardChoices"
+        @choose="handleMultiRoundRewardChoice"
+      />
+
       <HistoryOverlay
         v-if="showHistoryOverlay"
         :result-title="historyResultTitle"
@@ -260,7 +266,7 @@ import {
   multiplayerOvertimeFinalWordSubmitted,
   multiplayerSubmissionPauseOwner
 } from './multiplayer.js';
-import { MIN_WORD_LENGTH, getWordScoreDetails, isMissingRequiredTile, selectedTilesMatchWord } from './tile-logic.js';
+import { MIN_WORD_LENGTH, drawCards, getWordScoreDetails, isMissingRequiredTile, selectedTilesMatchWord } from './tile-logic.js';
 import { getPreferredLanguage } from './language.js';
 import { useWordBuilder } from './useWordBuilder.js';
 import { useSinglePlayerGame } from './useSinglePlayerGame.js';
@@ -270,6 +276,7 @@ import { isTestingMode } from './testing.js';
 import GameLane from './components/GameLane.vue';
 import HistoryOverlay from './components/HistoryOverlay.vue';
 import MultiRoundProgress from './components/MultiRoundProgress.vue';
+import MultiRoundRewardChoice from './components/MultiRoundRewardChoice.vue';
 import PersonalModifiersDrawer from './components/PersonalModifiersDrawer.vue';
 import TutorialOverlay from './components/TutorialOverlay.vue';
 import WordBuilder from './components/WordBuilder.vue';
@@ -355,6 +362,7 @@ const timerRemainingSeconds = ref(SOLO_TIMER_SECONDS);
 const isSoloTimerPausedByAttack = ref(false);
 const timedSoloFinalWordSpent = ref(false);
 const multiRoundFinalWordSpent = ref(false);
+const pendingMultiRoundStartingScore = ref(0);
 const gameMusic = new Audio(gameMusicUrl);
 gameMusic.loop = true;
 const tilePickupSound = new Audio(tilePickupSoundUrl);
@@ -470,6 +478,8 @@ const leftLaneHistory = computed(() => wordHistory.value[mySide.value] || []);
 const rightLaneHistory = computed(() => wordHistory.value[opponentSide.value] || []);
 const multiRoundProgressRounds = computed(() => multiRoundRun.visibleProgressRounds.value);
 const personalModifiersForDrawer = computed(() => multiRoundRun.personalModifiers.value);
+const multiRoundRewardChoices = computed(() => multiRoundRun.rewardChoices.value);
+const isMultiRoundRewardChoiceOpen = computed(() => multiRoundRun.rewardChoiceOpen.value);
 
 const {
   startBotLoop,
@@ -1114,19 +1124,25 @@ const completeMultiRoundRound = () => {
     selectedRewardKey: null
   });
 
-  const advanced = multiRoundRun.goToNextRound({ startingScore });
-  if (!advanced) {
-    playUiSound(tileReplaceSound);
-    localMessage.value = 'Run complete!';
+  pendingMultiRoundStartingScore.value = startingScore;
+  playUiSound(tileReplaceSound);
+  const rewardChoices = multiRoundRun.generateRewardChoices();
+  if (!rewardChoices.length) {
+    const advanced = multiRoundRun.goToNextRound({ startingScore });
+    pendingMultiRoundStartingScore.value = 0;
+    if (!advanced) {
+      localMessage.value = 'Run complete!';
+      return;
+    }
+
+    resetMultiRoundBoardForNextRound(startingScore);
+    localMessage.value = `Next round starts with ${startingScore} points from saved time.`;
+    if (!isPaused.value && !props.settingsShowing) {
+      startMultiRoundTimer();
+    }
     return;
   }
-
-  playUiSound(tileReplaceSound);
-  resetMultiRoundBoardForNextRound(startingScore);
-  localMessage.value = `Next round starts with ${startingScore} points from saved time.`;
-  if (!isPaused.value && !props.settingsShowing) {
-    startMultiRoundTimer();
-  }
+  localMessage.value = 'Choose a modifier.';
 };
 
 const failMultiRoundRun = () => {
@@ -1136,6 +1152,48 @@ const failMultiRoundRun = () => {
     secondsRemaining: Math.max(0, multiRoundRun.timerRemainingSeconds.value)
   });
   localMessage.value = 'Run failed.';
+};
+
+const applyImmediatePersonalModifierEffects = (modifier) => {
+  const immediateBoons = modifier?.effects?.immediateBoons || 0;
+  if (!immediateBoons) {
+    return;
+  }
+
+  playerCards.value = {
+    ...playerCards.value,
+    host: {
+      ...playerCards.value.host,
+      boons: [
+        ...(playerCards.value.host?.boons || []),
+        ...drawCards('boon', immediateBoons)
+      ]
+    }
+  };
+};
+
+const handleMultiRoundRewardChoice = (rewardKey) => {
+  const selectedModifier = multiRoundRun.selectRewardChoice(rewardKey);
+  if (!selectedModifier) {
+    return;
+  }
+
+  applyImmediatePersonalModifierEffects(selectedModifier);
+  const startingScore = pendingMultiRoundStartingScore.value;
+  const advanced = multiRoundRun.goToNextRound({ startingScore });
+  pendingMultiRoundStartingScore.value = 0;
+
+  if (!advanced) {
+    playUiSound(tileReplaceSound);
+    localMessage.value = 'Run complete!';
+    return;
+  }
+
+  resetMultiRoundBoardForNextRound(startingScore);
+  localMessage.value = `Next round starts with ${startingScore} points from saved time.`;
+  if (!isPaused.value && !props.settingsShowing) {
+    startMultiRoundTimer();
+  }
 };
 
 const validateActiveRoundModifiers = (selectedTiles = []) => {
@@ -1704,6 +1762,7 @@ const handlePlayAgain = () => {
   clearSelectionForSide(mySide.value);
   isSoloTimerPausedByAttack.value = false;
   timedSoloFinalWordSpent.value = false;
+  pendingMultiRoundStartingScore.value = 0;
 
   if (props.isMultiplayer) {
     playMultiplayerAgain();
@@ -1813,6 +1872,7 @@ watch(() => props.playMode, (nextMode) => {
   if (nextMode === 'multi_round') {
     multiRoundRun.resetRun();
     multiRoundFinalWordSpent.value = false;
+    pendingMultiRoundStartingScore.value = 0;
     startMultiRoundTimer();
   } else {
     stopMultiRoundTimer();
@@ -2038,6 +2098,7 @@ const resetAndGoHome = () => {
   window.clearTimeout(historyOverlayTimeoutId);
   isSoloTimerPausedByAttack.value = false;
   timedSoloFinalWordSpent.value = false;
+  pendingMultiRoundStartingScore.value = 0;
   multiRoundRun.resetRun();
   stopGameMusic();
   stopResultAudio();
