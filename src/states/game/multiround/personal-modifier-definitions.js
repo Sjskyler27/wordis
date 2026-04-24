@@ -30,7 +30,7 @@ export const PERSONAL_MODIFIER_DEFINITIONS = {
         ghostTile: 6
       },
       modifierOddsBonus: {
-        ghostTile: 0.025
+        ghostTile: 0.25
       }
     }
   },
@@ -44,7 +44,7 @@ export const PERSONAL_MODIFIER_DEFINITIONS = {
     maxStacks: 3,
     effects: {
       modifierOddsBonus: {
-        gold: 0.035
+        gold: 0.35
       }
     }
   },
