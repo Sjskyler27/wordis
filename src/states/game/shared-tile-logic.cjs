@@ -191,6 +191,10 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
         neutralChance: Math.min(0.2, profile.baseNeutralChance || 0)
       };
     })();
+    baseChances.normalChance = Math.max(
+      0,
+      1 - baseChances.goodChance - baseChances.badChance - baseChances.neutralChance
+    );
     const personalModifierEffects = options.personalModifierEffects || {};
     const modifierOddsBonus = personalModifierEffects.modifierOddsBonus || {};
     const getPoolChanceBonus = (modifiers = []) => {
@@ -224,6 +228,7 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
         options.neutralChance ?? ((baseChances.neutralChance * (options.neutralChanceMultiplier ?? 1)) + neutralChanceBonus)
       )
     );
+    const normalChance = Math.max(0, 1 - goodChance - badChance - neutralChance);
     const chanceBonuses = {
       goodChanceBonus,
       badChanceBonus,
@@ -245,7 +250,8 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
         finalChances: {
           good: formatChancePercent(goodChance),
           bad: formatChancePercent(badChance),
-          neutral: formatChancePercent(neutralChance)
+          neutral: formatChancePercent(neutralChance),
+          normal: formatChancePercent(normalChance)
         }
       });
     }
