@@ -40,7 +40,8 @@ export const useSinglePlayerGame = ({
   wordHistory,
   onTimedSoloPauseTime,
   onTimedSoloGainTime,
-  personalModifierEffects
+  personalModifierEffects,
+  roundModifierEffects
 }) => {
   let botLoopId = null;
   const submissionPauseOwner = ref(null);
@@ -77,6 +78,7 @@ export const useSinglePlayerGame = ({
     return (wordHistory.value.host?.length || 0) + (wordHistory.value.opponent?.length || 0);
   };
   const getPersonalModifierEffects = () => personalModifierEffects?.value || {};
+  const getRoundModifierEffects = () => roundModifierEffects?.value || {};
   const createTestingHands = () => {
     const boonKeys = Object.entries(CARD_DEFINITIONS)
       .filter(([, definition]) => definition.kind === 'boon')
@@ -415,9 +417,12 @@ export const useSinglePlayerGame = ({
     const scoreDetails = getWordScoreDetails(selectedTiles, {
       side: 'host',
       scores: playerScores.value,
-      personalModifierEffects: getPersonalModifierEffects()
+      personalModifierEffects: getPersonalModifierEffects(),
+      roundModifierEffects: getRoundModifierEffects()
     });
-    const idlePenalty = getIdleScorePenalty(playerTiles.value.host, selectedTiles.map((tile) => tile.id));
+    const idlePenalty = getIdleScorePenalty(playerTiles.value.host, selectedTiles.map((tile) => tile.id), {
+      roundModifierEffects: getRoundModifierEffects()
+    });
     const scoreDelta = scoreDetails.total - idlePenalty;
     const grantedResources = getResourceGrants(selectedTiles, {
       includeAttacks: shouldDrawAttacks()

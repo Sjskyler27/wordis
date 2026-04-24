@@ -534,8 +534,9 @@ console.log(JSON.stringify({
     };
   };
 
-  const getIdleScorePenalty = (tiles = [], usedTileIds = []) => {
+  const getIdleScorePenalty = (tiles = [], usedTileIds = [], options = {}) => {
     const usedIds = new Set(usedTileIds);
+    const idlePenaltyMultiplier = options.roundModifierEffects?.idlePenaltyMultiplier || 1;
 
     return tiles.reduce((total, tile) => {
       if (usedIds.has(tile?.id)) {
@@ -543,7 +544,7 @@ console.log(JSON.stringify({
       }
 
       const definition = getModifierDefinition(tile?.status);
-      return total + (definition.effects.idleScorePenalty || 0);
+      return total + ((definition.effects.idleScorePenalty || 0) * idlePenaltyMultiplier);
     }, 0);
   };
 
@@ -575,9 +576,41 @@ console.log(JSON.stringify({
   };
 
   const getTilesScore = (tiles, options = {}) => tiles.reduce((total, tile) => total + tileScore(tile, options), 0);
+  const isConsonantLetter = (letter = '') => {
+    const normalizedLetter = (letter || '').toUpperCase();
+    return /^[A-Z]$/.test(normalizedLetter) && !isVowelLetter(normalizedLetter);
+  };
+
+  const getZeroedRoundModifierIndexes = (tiles = [], options = {}) => {
+    if (!options.roundModifierEffects?.zeroHighestConsonant) {
+      return new Set();
+    }
+
+    const highestEntry = tiles.reduce((highest, tile, index) => {
+      if (!isConsonantLetter(tile?.baseLetter || tile?.letter)) {
+        return highest;
+      }
+
+      const score = tileScore(tile, options);
+      if (!highest || score > highest.score) {
+        return { index, score };
+      }
+
+      return highest;
+    }, null);
+
+    return highestEntry ? new Set([highestEntry.index]) : new Set();
+  };
 
   const getWordScoreDetails = (tiles, options = {}) => {
-    const baseLetterTotal = getTilesScore(tiles, options);
+    const zeroedIndexes = getZeroedRoundModifierIndexes(tiles, options);
+    const baseLetterTotal = tiles.reduce((total, tile, index) => {
+      if (zeroedIndexes.has(index)) {
+        return total;
+      }
+
+      return total + tileScore(tile, options);
+    }, 0);
     const positionBonus = tiles.reduce((total, tile, index) => {
       const definition = getModifierDefinition(tile?.status);
       const positionKey = `pos${index + 1}`;

@@ -65,6 +65,7 @@
                 armed: activeBoonCardId === card.id,
                 'action-card-controller-focus': controllerRegion === 'cards' && controllerCardCursorIndex === index
               }"
+              :disabled="cardControlsDisabled"
               :data-controller-card="index"
               @click="selectBoonCard(card)"
             >
@@ -82,6 +83,7 @@
               :class="{
                 'action-card-controller-focus': controllerRegion === 'cards' && controllerCardCursorIndex === myCards.boons.length + attackIndex
               }"
+              :disabled="cardControlsDisabled"
               :data-controller-card="myCards.boons.length + attackIndex"
               @click="useAttackCard(card)"
             >
@@ -389,8 +391,35 @@ const controllerFocusedTileId = computed(() => myTiles.value[controllerTileCurso
 const controllerFocusedBuiltTileId = computed(() => selectedTilesForCurrentSide.value[controllerBuilderCursorIndex.value]?.id || '');
 const opponentSide = computed(() => (mySide.value === 'host' ? 'opponent' : 'host'));
 const personalModifierEffects = computed(() => isMultiRoundMode.value ? multiRoundRun.activePersonalModifierEffects.value : {});
+const activeRoundModifiers = computed(() => isMultiRoundMode.value ? multiRoundRun.activeRoundModifiers.value : []);
+const roundModifierEffects = computed(() => {
+  return activeRoundModifiers.value.reduce((effects, modifier) => {
+    const rules = modifier.rules || {};
+    const scoreEffects = modifier.scoreEffects || {};
+    const cardRules = modifier.cardRules || {};
+
+    effects.minimumWordLength = Math.max(effects.minimumWordLength, rules.minimumWordLength || 0);
+    effects.bannedLetters = [
+      ...new Set([
+        ...effects.bannedLetters,
+        ...(rules.bannedLetters || [])
+      ])
+    ];
+    effects.zeroHighestConsonant = effects.zeroHighestConsonant || Boolean(scoreEffects.zeroHighestConsonant);
+    effects.idlePenaltyMultiplier = Math.max(effects.idlePenaltyMultiplier, scoreEffects.idlePenaltyMultiplier || 1);
+    effects.cardsDisabled = effects.cardsDisabled || Boolean(cardRules.cardsDisabled);
+    return effects;
+  }, {
+    minimumWordLength: 0,
+    bannedLetters: [],
+    zeroHighestConsonant: false,
+    idlePenaltyMultiplier: 1,
+    cardsDisabled: false
+  });
+});
 const multiRoundScoreOptions = computed(() => ({
-  personalModifierEffects: personalModifierEffects.value
+  personalModifierEffects: personalModifierEffects.value,
+  roundModifierEffects: roundModifierEffects.value
 }));
 const buildLane = (side, label) => ({
   side,
@@ -484,7 +513,8 @@ const {
       }
     }
   },
-  personalModifierEffects
+  personalModifierEffects,
+  roundModifierEffects
 });
 
 const overtimeTrailingSide = computed(() => {
@@ -532,6 +562,7 @@ const activeBoonCard = computed(() => {
   return myCards.value.boons.find((card) => card.id === activeBoonCardId.value) || null;
 });
 const visibleAttackCount = computed(() => attacksEnabled.value ? myCards.value.attacks.length : 0);
+const cardControlsDisabled = computed(() => isMultiRoundMode.value && roundModifierEffects.value.cardsDisabled);
 const myReplayVote = computed(() => playAgainVotes.value[mySide.value]);
 const replayVoteCount = computed(() => Object.values(playAgainVotes.value).filter(Boolean).length);
 const playAgainButtonText = computed(() => {
@@ -544,6 +575,10 @@ const playAgainButtonText = computed(() => {
     : `Vote to Play Again ${replayVoteCount.value}/2`;
 });
 const cardSummary = computed(() => {
+  if (cardControlsDisabled.value) {
+    return 'Cards blocked';
+  }
+
   return attacksEnabled.value
     ? `${myCards.value.boons.length} Boon · ${visibleAttackCount.value} Attack`
     : `${myCards.value.boons.length} Boon`;
@@ -1100,6 +1135,31 @@ const failMultiRoundRun = () => {
   localMessage.value = 'Run failed.';
 };
 
+const validateActiveRoundModifiers = (selectedTiles = []) => {
+  if (!isMultiRoundMode.value) {
+    return { valid: true };
+  }
+
+  const minimumWordLength = roundModifierEffects.value.minimumWordLength || 0;
+  if (minimumWordLength && selectedTiles.length < minimumWordLength) {
+    return {
+      valid: false,
+      message: `This round requires at least ${minimumWordLength} tiles.`
+    };
+  }
+
+  const bannedLetters = new Set(roundModifierEffects.value.bannedLetters || []);
+  const bannedTile = selectedTiles.find((tile) => bannedLetters.has((tile.baseLetter || tile.letter || '').toUpperCase()));
+  if (bannedTile) {
+    return {
+      valid: false,
+      message: `This round blocks ${bannedTile.baseLetter || bannedTile.letter}.`
+    };
+  }
+
+  return { valid: true };
+};
+
 watch(myCards, () => {
   if (activeBoonCardId.value && !activeBoonCard.value) {
     resetActionMode();
@@ -1148,6 +1208,13 @@ const handleSubmit = async () => {
 
   if (selectedTiles.length < MIN_WORD_LENGTH) {
     localMessage.value = `Words must use at least ${MIN_WORD_LENGTH} tiles.`;
+    triggerInvalidWordShake();
+    return;
+  }
+
+  const roundModifierValidation = validateActiveRoundModifiers(selectedTiles);
+  if (!roundModifierValidation.valid) {
+    localMessage.value = roundModifierValidation.message;
     triggerInvalidWordShake();
     return;
   }
@@ -1227,6 +1294,11 @@ const resetActionMode = () => {
 };
 
 const selectBoonCard = (card) => {
+  if (cardControlsDisabled.value) {
+    localMessage.value = 'Cards cannot be played this round.';
+    return;
+  }
+
   if (card.effectType === 'clear_negative_modifiers') {
     if (props.isMultiplayer) {
       useMultiplayerBoon({ cardId: card.id, tileId: null });
@@ -1255,6 +1327,11 @@ const selectBoonCard = (card) => {
 };
 
 const useAttackCard = (card) => {
+  if (cardControlsDisabled.value) {
+    localMessage.value = 'Cards cannot be played this round.';
+    return;
+  }
+
   if (!attacksEnabled.value) {
     localMessage.value = isOvertimeActive.value ? 'Overtime only allows boons.' : 'Solo sprint does not use attacks.';
     return;
@@ -2230,6 +2307,17 @@ body {
     inset 0 -3px 0 rgba(39, 11, 25, 0.32),
     0 14px 22px rgba(30, 8, 34, 0.24);
   border-color: rgba(255, 236, 187, 0.38);
+}
+
+.action-card:disabled {
+  cursor: default;
+  opacity: 0.52;
+  filter: saturate(0.65);
+}
+
+.action-card:disabled:hover {
+  transform: none;
+  border-color: var(--card-edge);
 }
 
 .action-card:focus,
