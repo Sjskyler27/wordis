@@ -514,6 +514,39 @@ export const useSinglePlayerGame = ({
     return true;
   };
 
+  const resetSinglePlayerRound = (side = 'host') => {
+    submissionPauseOwner.value = null;
+    const nextRack = createRack(side, playerScores.value, {
+      modifierProfile: modifierProfile(),
+      turnCount: getTurnCount()
+    });
+
+    playerTiles.value = {
+      ...playerTiles.value,
+      [side]: nextRack,
+      ...(isMultiRoundMode?.value ? { opponent: [] } : {})
+    };
+    rackClears.value = {
+      ...rackClears.value,
+      [side]: 2,
+      ...(isMultiRoundMode?.value ? { opponent: 0 } : {})
+    };
+    playerCards.value = {
+      ...playerCards.value,
+      [side]: {
+        boons: drawCards('boon', 1),
+        attacks: []
+      },
+      ...(isMultiRoundMode?.value ? {
+        opponent: {
+          boons: [],
+          attacks: []
+        }
+      } : {})
+    };
+    return true;
+  };
+
   const useSinglePlayerBoon = (side, cardId, tileId) => {
     const hand = playerCards.value[side]?.boons || [];
     const card = hand.find((entry) => entry.id === cardId);
@@ -718,6 +751,7 @@ export const useSinglePlayerGame = ({
     startBotLoop,
     stopBotLoop,
     clearSinglePlayerRack,
+    resetSinglePlayerRound,
     useSinglePlayerBoon,
     useSinglePlayerAttack,
     submitSinglePlayerWord,

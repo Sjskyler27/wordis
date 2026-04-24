@@ -103,9 +103,9 @@
             <strong>{{ leftLane.score }}</strong>
           </div>
           <div class="score-divider">VS</div>
-          <div class="score-box opponent" :class="[{ timer: isTimedSoloMode }, scoreBoxClass('opponent')]">
-            <span>{{ isTimedSoloMode ? 'Time Left' : 'Their Board' }}</span>
-            <strong>{{ isTimedSoloMode ? timedSoloScoreRibbonLabel : rightLane.score }}</strong>
+          <div class="score-box opponent" :class="[{ timer: isTimedSoloMode || isMultiRoundMode }, scoreBoxClass('opponent')]">
+            <span>{{ isTimedSoloMode || isMultiRoundMode ? 'Time Left' : 'Their Board' }}</span>
+            <strong>{{ isTimedSoloMode || isMultiRoundMode ? clockScoreRibbonLabel : rightLane.score }}</strong>
           </div>
         </div>
 
@@ -335,6 +335,7 @@ const SOLO_TIMER_SECONDS = isTestingMode ? 25 : 180;
 const timerRemainingSeconds = ref(SOLO_TIMER_SECONDS);
 const isSoloTimerPausedByAttack = ref(false);
 const timedSoloFinalWordSpent = ref(false);
+const multiRoundFinalWordSpent = ref(false);
 const gameMusic = new Audio(gameMusicUrl);
 gameMusic.loop = true;
 const tilePickupSound = new Audio(tilePickupSoundUrl);
@@ -345,6 +346,7 @@ const defeatSound = new Audio(defeatSoundUrl);
 victorySound.loop = true;
 defeatSound.loop = true;
 let soloTimerId = null;
+let multiRoundTimerId = null;
 let scorePopTimeoutIds = [];
 let activeScorePopAudios = [];
 let historyOverlayTimeoutId = null;
@@ -416,6 +418,7 @@ const {
   startBotLoop,
   stopBotLoop,
   clearSinglePlayerRack,
+  resetSinglePlayerRound,
   useSinglePlayerBoon,
   useSinglePlayerAttack,
   submitSinglePlayerWord,
@@ -573,9 +576,20 @@ const gameEnded = computed(() => {
 
   return Boolean(winningSide.value);
 });
-const timeExpired = computed(() => isTimedSoloMode.value && timerRemainingSeconds.value <= 0);
-const finalWordWindowActive = computed(() => isTimedSoloMode.value && timeExpired.value && !timedSoloFinalWordSpent.value);
-const effectiveGameEnded = computed(() => gameEnded.value || (timeExpired.value && timedSoloFinalWordSpent.value));
+const timedSoloTimeExpired = computed(() => isTimedSoloMode.value && timerRemainingSeconds.value <= 0);
+const multiRoundTimeExpired = computed(() => isMultiRoundMode.value && multiRoundRun.timerRemainingSeconds.value <= 0);
+const timeExpired = computed(() => timedSoloTimeExpired.value || multiRoundTimeExpired.value);
+const finalWordWindowActive = computed(() => (
+  (isTimedSoloMode.value && timedSoloTimeExpired.value && !timedSoloFinalWordSpent.value)
+  || (isMultiRoundMode.value && multiRoundTimeExpired.value && !multiRoundFinalWordSpent.value)
+));
+const effectiveGameEnded = computed(() => {
+  if (isMultiRoundMode.value) {
+    return gameEnded.value;
+  }
+
+  return gameEnded.value || (timedSoloTimeExpired.value && timedSoloFinalWordSpent.value);
+});
 const winningScore = computed(() => {
   if (timeExpired.value) {
     return playerScores.value.host;
@@ -633,9 +647,19 @@ const formattedTimeRemaining = computed(() => {
   const seconds = safeSeconds % 60;
   return `${minutes}:${String(seconds).padStart(2, '0')}`;
 });
-const timedSoloScoreRibbonLabel = computed(() => {
+const formattedMultiRoundTimeRemaining = computed(() => {
+  const safeSeconds = Math.max(0, multiRoundRun.timerRemainingSeconds.value);
+  const minutes = Math.floor(safeSeconds / 60);
+  const seconds = safeSeconds % 60;
+  return `${minutes}:${String(seconds).padStart(2, '0')}`;
+});
+const clockScoreRibbonLabel = computed(() => {
   if (finalWordWindowActive.value) {
     return 'Play your last word!';
+  }
+
+  if (isMultiRoundMode.value) {
+    return formattedMultiRoundTimeRemaining.value;
   }
 
   return formattedTimeRemaining.value;
@@ -684,7 +708,7 @@ const statusHeadline = computed(() => {
   }
 
   if (isMultiRoundMode.value) {
-    return `Round ${multiRoundRun.currentRoundNumber.value}/${multiRoundRun.totalRounds.value} · ${multiRoundRun.currentTargetScore.value} point target`;
+    return `Round ${multiRoundRun.currentRoundNumber.value}/${multiRoundRun.totalRounds.value} · ${formattedMultiRoundTimeRemaining.value} · ${multiRoundRun.currentTargetScore.value} point target`;
   }
 
   return 'Racks are live';
@@ -953,6 +977,68 @@ const autoSwapMatchingMustTiles = () => {
   return swappedAnyTile;
 };
 
+const getMultiRoundStartingScoreBonus = () => {
+  const multiplier = multiRoundRun.currentRound.value?.startingScoreBonusMultiplier ?? 0.5;
+  return Math.max(0, Math.floor(multiRoundRun.timerRemainingSeconds.value * multiplier));
+};
+
+const resetMultiRoundBoardForNextRound = (startingScore = 0) => {
+  playerScores.value = {
+    host: startingScore,
+    opponent: 0
+  };
+  submittedWords.value = {
+    host: '',
+    opponent: ''
+  };
+  lastWordScores.value = {
+    host: 0,
+    opponent: 0
+  };
+  lastWordBreakdowns.value = {
+    host: createEmptyLastWordBreakdown(),
+    opponent: createEmptyLastWordBreakdown()
+  };
+  clearSelectionForSide('host');
+  resetActionMode();
+  resetSinglePlayerRound('host');
+  multiRoundFinalWordSpent.value = false;
+};
+
+const completeMultiRoundRound = () => {
+  stopMultiRoundTimer();
+  const score = playerScores.value.host || 0;
+  const secondsRemaining = Math.max(0, multiRoundRun.timerRemainingSeconds.value);
+  const startingScore = getMultiRoundStartingScoreBonus();
+
+  multiRoundRun.recordCompletedRound({
+    score,
+    secondsRemaining,
+    selectedRewardKey: null
+  });
+
+  const advanced = multiRoundRun.goToNextRound({ startingScore });
+  if (!advanced) {
+    localMessage.value = 'Run complete!';
+    return;
+  }
+
+  resetMultiRoundBoardForNextRound(startingScore);
+  localMessage.value = `Next round starts with ${startingScore} points from saved time.`;
+  if (!isPaused.value && !props.settingsShowing) {
+    startMultiRoundTimer();
+  }
+};
+
+const failMultiRoundRun = () => {
+  multiRoundFinalWordSpent.value = true;
+  multiRoundRun.endRun({
+    score: playerScores.value.host || 0,
+    secondsRemaining: Math.max(0, multiRoundRun.timerRemainingSeconds.value)
+  });
+  localMessage.value = 'Run failed.';
+};
+
 watch(myCards, () => {
   if (activeBoonCardId.value && !activeBoonCard.value) {
     resetActionMode();
@@ -1053,7 +1139,22 @@ const handleSubmit = async () => {
     isSoloTimerPausedByAttack.value = false;
   }
 
-  submitSinglePlayerWord(resolvedWord);
+  const submitted = submitSinglePlayerWord(resolvedWord);
+  if (!submitted) {
+    return;
+  }
+
+  if (isMultiRoundMode.value) {
+    if (playerScores.value.host >= multiRoundRun.currentTargetScore.value) {
+      completeMultiRoundRound();
+      return;
+    }
+
+    if (finalWordWindowActive.value) {
+      failMultiRoundRun();
+    }
+    return;
+  }
 
   if (finalWordWindowActive.value) {
     timedSoloFinalWordSpent.value = true;
@@ -1411,6 +1512,7 @@ const setPauseState = (nextPaused) => {
   if (nextPaused) {
     stopBotLoop();
     stopSoloTimer();
+    stopMultiRoundTimer();
     gameMusic.pause();
     localMessage.value = 'Game paused.';
     return;
@@ -1418,6 +1520,7 @@ const setPauseState = (nextPaused) => {
 
   startBotLoop();
   startSoloTimer();
+  startMultiRoundTimer();
   startGameMusic();
   localMessage.value = 'Racks are live';
 };
@@ -1430,6 +1533,7 @@ const syncTutorialPauseState = (visible) => {
   if (visible) {
     stopBotLoop();
     stopSoloTimer();
+    stopMultiRoundTimer();
     gameMusic.pause();
     return;
   }
@@ -1437,6 +1541,7 @@ const syncTutorialPauseState = (visible) => {
   if (!props.settingsShowing && !effectiveGameEnded.value) {
     startBotLoop();
     startSoloTimer();
+    startMultiRoundTimer();
     startGameMusic();
   }
 };
@@ -1473,6 +1578,7 @@ const handlePlayAgain = () => {
 
   stopBotLoop();
   stopSoloTimer();
+  stopMultiRoundTimer();
   stopResultAudio();
   emit('playAgain');
 };
@@ -1521,6 +1627,11 @@ const stopSoloTimer = () => {
   soloTimerId = null;
 };
 
+const stopMultiRoundTimer = () => {
+  window.clearInterval(multiRoundTimerId);
+  multiRoundTimerId = null;
+};
+
 const startSoloTimer = () => {
   if (!isTimedSoloMode.value || effectiveGameEnded.value) {
     stopSoloTimer();
@@ -1541,9 +1652,29 @@ const startSoloTimer = () => {
   }, 1000);
 };
 
+const startMultiRoundTimer = () => {
+  if (!isMultiRoundMode.value || effectiveGameEnded.value || multiRoundRun.rewardChoiceOpen.value) {
+    stopMultiRoundTimer();
+    return;
+  }
+
+  window.clearInterval(multiRoundTimerId);
+  multiRoundTimerId = window.setInterval(() => {
+    multiRoundRun.setTimerRemainingSeconds(multiRoundRun.timerRemainingSeconds.value - 1);
+    if (multiRoundRun.timerRemainingSeconds.value <= 0) {
+      stopMultiRoundTimer();
+      localMessage.value = 'Final word ready';
+    }
+  }, 1000);
+};
+
 watch(() => props.playMode, (nextMode) => {
   if (nextMode === 'multi_round') {
     multiRoundRun.resetRun();
+    multiRoundFinalWordSpent.value = false;
+    startMultiRoundTimer();
+  } else {
+    stopMultiRoundTimer();
   }
 
   timerRemainingSeconds.value = nextMode === 'timed_solo' ? SOLO_TIMER_SECONDS : 0;
@@ -1562,11 +1693,16 @@ watch(effectiveGameEnded, (ended) => {
   if (ended) {
     stopBotLoop();
     stopSoloTimer();
+    stopMultiRoundTimer();
     return;
   }
 
   if (isTimedSoloMode.value) {
     startSoloTimer();
+  }
+
+  if (isMultiRoundMode.value) {
+    startMultiRoundTimer();
   }
 }, { immediate: true });
 
@@ -1734,6 +1870,7 @@ onBeforeUnmount(() => {
   window.removeEventListener('resize', syncWindowWidth);
   window.removeEventListener('keydown', handleKeydown);
   stopSoloTimer();
+  stopMultiRoundTimer();
   stopGameMusic();
   window.clearTimeout(historyOverlayTimeoutId);
   tilePickupSound.pause();
@@ -1753,6 +1890,7 @@ const resetAndGoHome = () => {
   isPaused.value = false;
   stopBotLoop();
   stopSoloTimer();
+  stopMultiRoundTimer();
   closeSideDrawer();
   showHistoryOverlay.value = false;
   window.clearTimeout(historyOverlayTimeoutId);
