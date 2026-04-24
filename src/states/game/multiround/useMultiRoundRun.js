@@ -1,22 +1,10 @@
 import { computed, ref } from 'vue';
 import { MULTI_ROUND_ROUNDS } from './multi-round-rounds.js';
 import { getPersonalModifierDefinition } from './personal-modifier-definitions.js';
-
-const ROUND_MODIFIER_POOLS = {
-  easy: [
-    'min_word_5',
-    'no_s'
-  ],
-  medium: [
-    'highest_consonant_zero',
-    'no_cards'
-  ],
-  hard: [
-    'min_word_6',
-    'double_burns',
-    'fleeting_tiles'
-  ]
-};
+import {
+  ROUND_MODIFIER_KEYS_BY_DIFFICULTY,
+  getRoundModifierDefinition
+} from './round-modifier-definitions.js';
 
 const normalizeBudgetCount = (count) => Math.max(0, Number(count) || 0);
 
@@ -32,7 +20,7 @@ const resolveModifierBudget = (modifierBudget = {}) => {
   const resolvedKeys = [];
 
   Object.entries(modifierBudget).forEach(([difficulty, count]) => {
-    const pool = ROUND_MODIFIER_POOLS[difficulty] || [];
+    const pool = ROUND_MODIFIER_KEYS_BY_DIFFICULTY[difficulty] || [];
     const availableKeys = [...pool];
 
     for (let index = 0; index < normalizeBudgetCount(count); index += 1) {
@@ -79,6 +67,9 @@ export const useMultiRoundRun = ({ rounds = MULTI_ROUND_ROUNDS } = {}) => {
   const currentTargetScore = computed(() => currentRound.value?.targetScore || 0);
   const currentRoundTimeLimit = computed(() => currentRound.value?.timeSeconds || 0);
   const activeRoundModifierKeys = computed(() => currentRound.value?.resolvedModifierKeys || []);
+  const activeRoundModifiers = computed(() => activeRoundModifierKeys.value
+    .map((modifierKey) => getRoundModifierDefinition(modifierKey))
+    .filter(Boolean));
   const rewardTiers = computed(() => currentRound.value?.rewardTiers || []);
   const rewardChoiceOpen = computed(() => rewardChoices.value.length > 0);
   const runWon = computed(() => runEnded.value && !failureSummary.value);
@@ -235,6 +226,7 @@ export const useMultiRoundRun = ({ rounds = MULTI_ROUND_ROUNDS } = {}) => {
     personalModifiers,
     activePersonalModifierEffects,
     activeRoundModifierKeys,
+    activeRoundModifiers,
     rewardTiers,
     rewardChoices,
     rewardChoiceOpen,
