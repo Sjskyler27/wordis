@@ -40,6 +40,18 @@
           <p>Race the clock and stack the highest score you can.</p>
         </div>
       </div>
+
+      <div tabindex="-1" class="menu-option" ref="button5"
+        @click="emit('singleplayer', { mode: 'multi_round' })"
+        @keydown.space.prevent="emit('singleplayer', { mode: 'multi_round' })"
+        @keydown.enter.prevent="emit('singleplayer', { mode: 'multi_round' })"
+        >
+        <img src="/src/assets/images/playTypes/image.png" alt="Expedition" class="menu-img" />
+        <div class="menu-text">
+          <h3>Multi-Round</h3>
+          <p>Clear escalating timed rounds and build a run of lasting upgrades.</p>
+        </div>
+      </div>
     
       <div tabindex="-1" :class="['menu-option']" ref="button3" 
         @click="emit('multiplayerScreen')"

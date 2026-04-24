@@ -3,6 +3,7 @@ import { ref } from 'vue';
 export const PLAY_MODES = {
   TIMED_SOLO: 'timed_solo',
   BOT_MATCH: 'bot_match',
+  MULTI_ROUND: 'multi_round',
   MULTIPLAYER: 'multiplayer'
 };
 
