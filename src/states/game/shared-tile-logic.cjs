@@ -386,7 +386,12 @@ console.log(JSON.stringify({
       ? (personalModifierEffects.openingGoodChanceBonus || 0)
       : 0;
     const modifierOddsBonus = personalModifierEffects.modifierOddsBonus || {};
-    const goodChanceBonus = Object.values(modifierOddsBonus).reduce((total, bonus) => total + (bonus || 0), 0);
+    const getPoolChanceBonus = (modifiers = []) => {
+      return modifiers.reduce((total, modifier) => total + (modifierOddsBonus[modifier] || 0), 0);
+    };
+    const goodChanceBonus = getPoolChanceBonus(profile.goodModifiers);
+    const badChanceBonus = getPoolChanceBonus(profile.badModifiers);
+    const neutralChanceBonus = getPoolChanceBonus(profile.neutralModifiers || []);
     const badChanceMultiplier = Math.max(0, personalModifierEffects.badChanceMultiplier ?? 1);
     const goodChance = Math.max(
       0,
@@ -399,14 +404,14 @@ console.log(JSON.stringify({
       0,
       Math.min(
         0.9 - goodChance,
-        chanceOverrides.badChance ?? (baseChances.badChance * (chanceOverrides.badChanceMultiplier ?? 1) * badChanceMultiplier)
+        chanceOverrides.badChance ?? ((baseChances.badChance * (chanceOverrides.badChanceMultiplier ?? 1) * badChanceMultiplier) + badChanceBonus)
       )
     );
     const neutralChance = Math.max(
       0,
       Math.min(
         0.9 - goodChance - badChance,
-        chanceOverrides.neutralChance ?? (baseChances.neutralChance * (chanceOverrides.neutralChanceMultiplier ?? 1))
+        chanceOverrides.neutralChance ?? ((baseChances.neutralChance * (chanceOverrides.neutralChanceMultiplier ?? 1)) + neutralChanceBonus)
       )
     );
     const roll = Math.random();

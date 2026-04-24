@@ -20,7 +20,7 @@ export const PERSONAL_MODIFIER_DEFINITIONS = {
   ghost_charge: {
     key: 'ghost_charge',
     label: 'Ghost Charge',
-    description: 'Ghost tiles give +2 more bonus score.',
+    description: 'Ghost tiles give +2 more bonus score and appear more often.',
     rarity: 0.75,
     tier: PERSONAL_MODIFIER_TIERS.COMMON,
     tags: ['score', 'ghostTile'],
@@ -28,6 +28,9 @@ export const PERSONAL_MODIFIER_DEFINITIONS = {
     effects: {
       modifierScoreBonus: {
         ghostTile: 2
+      },
+      modifierOddsBonus: {
+        ghostTile: 0.025
       }
     }
   },
