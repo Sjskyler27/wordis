@@ -109,7 +109,7 @@ export const useSinglePlayerGame = ({
     const hostAtGoal = playerScores.value.host >= WINNING_SCORE;
     const opponentAtGoal = playerScores.value.opponent >= WINNING_SCORE;
 
-    if (!overtimeEnabled.value || isTimedSoloMode.value || overtimeFinalWordSubmitted.value) {
+    if (!overtimeEnabled.value || isTimedSoloMode.value || isMultiRoundMode?.value || overtimeFinalWordSubmitted.value) {
       return null;
     }
 
@@ -125,7 +125,7 @@ export const useSinglePlayerGame = ({
   };
 
   const updateOvertimeStateAfterSubmit = (side) => {
-    if (!overtimeEnabled.value || isTimedSoloMode.value || overtimeFinalWordSubmitted.value) {
+    if (!overtimeEnabled.value || isTimedSoloMode.value || isMultiRoundMode?.value || overtimeFinalWordSubmitted.value) {
       return;
     }
 
@@ -146,7 +146,7 @@ export const useSinglePlayerGame = ({
   };
 
   const gameEnded = () => {
-    if (isTimedSoloMode.value) {
+    if (isTimedSoloMode.value || isMultiRoundMode?.value) {
       return playerScores.value.host >= WINNING_SCORE || playerScores.value.opponent >= WINNING_SCORE;
     }
 

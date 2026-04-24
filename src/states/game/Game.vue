@@ -551,7 +551,7 @@ const {
 });
 
 const overtimeTrailingSide = computed(() => {
-  if (isTimedSoloMode.value || !matchOvertimeEnabled.value) {
+  if (isTimedSoloMode.value || isMultiRoundMode.value || !matchOvertimeEnabled.value) {
     return null;
   }
 
@@ -560,7 +560,7 @@ const overtimeTrailingSide = computed(() => {
     : singlePlayerOvertimePendingSide.value;
 });
 const overtimeFinalWordSubmitted = computed(() => {
-  if (isTimedSoloMode.value || !matchOvertimeEnabled.value) {
+  if (isTimedSoloMode.value || isMultiRoundMode.value || !matchOvertimeEnabled.value) {
     return false;
   }
 
