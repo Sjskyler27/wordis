@@ -97,6 +97,11 @@
       </aside>
 
       <section class="arena-shell">
+        <MultiRoundProgress
+          v-if="isMultiRoundMode"
+          :rounds="multiRoundProgressRounds"
+        />
+
         <div class="score-ribbon">
           <div class="score-box host" :class="scoreBoxClass('host')">
             <span>Your Board</span>
@@ -252,6 +257,7 @@ import { validateWord } from './word-validator.js';
 import { isTestingMode } from './testing.js';
 import GameLane from './components/GameLane.vue';
 import HistoryOverlay from './components/HistoryOverlay.vue';
+import MultiRoundProgress from './components/MultiRoundProgress.vue';
 import TutorialOverlay from './components/TutorialOverlay.vue';
 import WordBuilder from './components/WordBuilder.vue';
 
@@ -413,6 +419,7 @@ const leftLane = computed(() => buildLane(mySide.value, 'Your Board'));
 const rightLane = computed(() => buildLane(opponentSide.value, isBotMode.value ? 'Bot Board' : 'Their Board'));
 const leftLaneHistory = computed(() => wordHistory.value[mySide.value] || []);
 const rightLaneHistory = computed(() => wordHistory.value[opponentSide.value] || []);
+const multiRoundProgressRounds = computed(() => multiRoundRun.visibleProgressRounds.value);
 
 const {
   startBotLoop,
