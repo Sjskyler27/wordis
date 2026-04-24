@@ -202,6 +202,7 @@ export const useSinglePlayerGame = ({
           host: createRack('host', playerScores.value, {
             modifierProfile: modifierProfile(),
             personalModifierEffects: getPersonalModifierEffects(),
+            phase: 'opening',
             turnCount: getTurnCount()
           }),
           opponent: []

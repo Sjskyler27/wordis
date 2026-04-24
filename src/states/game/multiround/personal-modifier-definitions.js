@@ -64,6 +64,19 @@ export const PERSONAL_MODIFIER_DEFINITIONS = {
       neutralChanceBonus: 0.04
     }
   },
+  better_odds: {
+    key: 'better_odds',
+    label: 'Better Odds',
+    description: 'Good tile modifiers appear more often.',
+    rarity: 0.6,
+    tier: PERSONAL_MODIFIER_TIERS.RARE,
+    tags: ['tile-odds', 'good'],
+    maxStacks: 3,
+    start_with: 0,
+    effects: {
+      goodChanceBonus: 0.04
+    }
+  },
   cleaner_rack: {
     key: 'cleaner_rack',
     label: 'Cleaner Rack',

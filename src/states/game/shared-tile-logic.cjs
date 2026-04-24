@@ -203,7 +203,8 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
     const openingGoodChanceBonus = options.phase === 'opening'
       ? (personalModifierEffects.openingGoodChanceBonus || 0)
       : 0;
-    const goodChanceBonus = getPoolChanceBonus(profile.goodModifiers);
+    const specificGoodChanceBonus = getPoolChanceBonus(profile.goodModifiers);
+    const goodChanceBonus = specificGoodChanceBonus + (personalModifierEffects.goodChanceBonus || 0);
     const badChanceBonus = getPoolChanceBonus(profile.badModifiers);
     const neutralChanceBonus = getPoolChanceBonus(profile.neutralModifiers || []) + (personalModifierEffects.neutralChanceBonus || 0);
     const badChanceMultiplier = Math.max(0, personalModifierEffects.badChanceMultiplier ?? 1);
@@ -231,6 +232,7 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
     const normalChance = Math.max(0, 1 - goodChance - badChance - neutralChance);
     const chanceBonuses = {
       goodChanceBonus,
+      specificGoodChanceBonus,
       badChanceBonus,
       neutralChanceBonus,
       openingGoodChanceBonus
@@ -1008,7 +1010,7 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
           ...(options.chanceOverrides || {}),
           rackTiles: rack,
           personalModifierEffects: options.personalModifierEffects || options.chanceOverrides?.personalModifierEffects || {},
-          phase: options.phase || options.chanceOverrides?.phase || 'opening',
+          phase: options.phase || options.chanceOverrides?.phase || 'normal',
           turnCount: options.turnCount || 0
         }));
       }
