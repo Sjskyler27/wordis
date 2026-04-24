@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-04-23 0.0.26
+
+Start: 2026-04-23 22:19:30 EDT
+Stop: 2026-04-23 22:24:42 EDT
+
+- Added separate multi-round personal modifier definitions with tiers, rarity weights, stack caps, and effect data.
+- Added personal modifier stack tracking and computed effect summaries to the multi-round run state.
+- Added shared scoring and tile-roll hooks for personal modifier effects while preserving existing defaults for other modes.
+- Routed personal modifier score context through submit scoring, rack generation, WordBuilder previews, and GameLane tile values.
+- Added a responsive PersonalModifiersDrawer that appears only in multi-round mode.
+- Verified the Parent Task 3 changes with `npm run build`.
+
 ## 2026-04-23 0.0.25
 
 Start: 2026-04-23 22:14:42 EDT
