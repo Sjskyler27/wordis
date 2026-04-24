@@ -334,6 +334,69 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
       return odds;
     }, {});
   };
+  const addWeightedOdds = (target = {}, odds = {}, multiplier = 1) => {
+    Object.entries(odds).forEach(([key, chance]) => {
+      target[key] = (target[key] || 0) + (chance * multiplier);
+    });
+  };
+  const getLetterPullOdds = (rackTiles = []) => {
+    const weightedPool = getWeightedLetterPool(rackTiles);
+    const totalWeight = weightedPool.reduce((total, entry) => total + entry.weight, 0);
+
+    if (!totalWeight) {
+      return {};
+    }
+
+    return weightedPool.reduce((odds, entry) => {
+      odds[entry.letter] = (odds[entry.letter] || 0) + (entry.weight / totalWeight);
+      return odds;
+    }, {});
+  };
+  const getModifierPullOddsSnapshot = ({
+    rackTiles = [],
+    profile = {},
+    goodChance = 0,
+    badChance = 0,
+    neutralChance = 0,
+    modifierOddsBonus = {}
+  }) => {
+    const groupedOdds = {
+      good: {},
+      bad: {},
+      neutral: {},
+      normal: {}
+    };
+    const letterOdds = getLetterPullOdds(rackTiles);
+
+    Object.entries(letterOdds).forEach(([letter, letterChance]) => {
+      const context = {
+        letter,
+        baseScore: letterConfig[letter]?.score || 0,
+        rackTiles
+      };
+      const eligibleGoodModifiers = (profile.goodModifiers || []).filter((modifier) => canApplyModifier(modifier, context));
+      const eligibleBadModifiers = (profile.badModifiers || []).filter((modifier) => canApplyModifier(modifier, context));
+      const eligibleNeutralModifiers = (profile.neutralModifiers || []).filter((modifier) => canApplyModifier(modifier, context));
+      const goodOdds = getWeightedModifierOdds(eligibleGoodModifiers, goodChance, modifierOddsBonus);
+      const badOdds = getWeightedModifierOdds(eligibleBadModifiers, badChance, modifierOddsBonus);
+      const neutralOdds = getWeightedModifierOdds(eligibleNeutralModifiers, neutralChance, modifierOddsBonus);
+      const letterModifierChance = [
+        ...Object.values(goodOdds),
+        ...Object.values(badOdds),
+        ...Object.values(neutralOdds)
+      ].reduce((total, chance) => total + chance, 0);
+
+      addWeightedOdds(groupedOdds.good, goodOdds, letterChance);
+      addWeightedOdds(groupedOdds.bad, badOdds, letterChance);
+      addWeightedOdds(groupedOdds.neutral, neutralOdds, letterChance);
+      groupedOdds.normal.normal = (groupedOdds.normal.normal || 0) + (Math.max(0, 1 - letterModifierChance) * letterChance);
+    });
+
+    return {
+      groupedOdds,
+      letterOdds
+    };
+  };
 
   const getModifierOddsSnapshot = ({
     goodChance,
@@ -384,6 +447,7 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
     baseChances = null,
     chanceBonuses = null,
     modifierOddsBonus = {},
+    profile = {},
     eligibleGoodModifiers = [],
     eligibleBadModifiers = [],
     eligibleNeutralModifiers = [],
@@ -407,8 +471,29 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
       eligibleBadModifiers,
       eligibleNeutralModifiers
     });
+    const pullOdds = getModifierPullOddsSnapshot({
+      rackTiles: context.rackTiles || [],
+      profile,
+      goodChance,
+      badChance,
+      neutralChance,
+      modifierOddsBonus
+    });
 
-    console.log('[modifier-roll]', {
+    console.log('[tile and letter odds]', {
+      pullOdds: {
+        good: formatChanceGroup(pullOdds.groupedOdds.good),
+        bad: formatChanceGroup(pullOdds.groupedOdds.bad),
+        neutral: formatChanceGroup(pullOdds.groupedOdds.neutral),
+        normal: formatChanceGroup(pullOdds.groupedOdds.normal)
+      },
+      letterOdds: {
+        count: Object.keys(pullOdds.letterOdds).length,
+        chances: formatChanceGroup(pullOdds.letterOdds)
+      }
+    });
+
+    console.log('[modifier-odds]', {
       actualModifier: selectedModifier,
       actualChance: formatChancePercent(selectedModifier === 'normal'
         ? normalChance
@@ -498,6 +583,7 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
       baseChances,
       chanceBonuses,
       modifierOddsBonus,
+      profile,
       eligibleGoodModifiers,
       eligibleBadModifiers,
       eligibleNeutralModifiers,
