@@ -33,6 +33,18 @@
             · {{ isHost ? 'Host lane' : 'Opponent lane' }}
           </p>
           <p>{{ modeSubtitle }}</p>
+          <div v-if="isMultiRoundMode" class="round-modifier-list">
+            <template v-if="activeRoundModifiers.length">
+              <span
+                v-for="modifier in activeRoundModifiers"
+                :key="modifier.key"
+                class="round-modifier-chip"
+              >
+                {{ modifier.label }}
+              </span>
+            </template>
+            <span v-else class="round-modifier-empty">No round modifiers</span>
+          </div>
         </div>
 
 
@@ -2292,6 +2304,33 @@ body {
 .bonus-card p {
   margin: 10px 0 0;
   opacity: 0.85;
+}
+
+.round-modifier-list {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.round-modifier-chip,
+.round-modifier-empty {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 6px 9px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  line-height: 1;
+  background: rgba(255, 255, 255, 0.14);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  color: rgba(255, 248, 236, 0.92);
+}
+
+.round-modifier-empty {
+  opacity: 0.72;
 }
 
 .room-code-button {
