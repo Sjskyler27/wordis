@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-04-23 0.0.28
+
+Start: 2026-04-23 22:30:02 EDT
+Stop: 2026-04-23 22:32:17 EDT
+
+- Added reward generation from each round's allowed reward tiers, with challenge rounds pulling only from the highest allowed tier.
+- Added reward choice selection, personal modifier stacking, and selected reward recording on completed round records.
+- Added the MultiRoundRewardChoice overlay for choosing one of three persistent modifiers.
+- Changed round completion to pause for reward selection before advancing to the next round.
+- Applied immediate boon rewards once when selected.
+- Verified the Parent Task 5 changes with `npm run build`.
+
 ## 2026-04-23 0.0.27
 
 Start: 2026-04-23 22:26:12 EDT
