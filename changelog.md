@@ -1,5 +1,18 @@
 # Changelog
 
+## 2026-04-23 0.0.27
+
+Start: 2026-04-23 22:26:12 EDT
+Stop: 2026-04-23 22:28:48 EDT
+
+- Added separate round modifier definitions with difficulty pools, validation rules, score effects, card rules, and tile lifecycle effects.
+- Resolved active round modifier definitions through the multi-round run state.
+- Added multi-round word validation for minimum word length and banned-letter round modifiers.
+- Added score hooks for highest-consonant-zero and doubled burn penalties.
+- Blocked boon/attack card controls during no-card rounds.
+- Applied the fleeting round modifier by replacing unused special tiles after submit.
+- Verified the Parent Task 4 changes with `npm run build`.
+
 ## 2026-04-23 0.0.26
 
 Start: 2026-04-23 22:19:30 EDT
