@@ -7,6 +7,32 @@
       <strong class="history-title">{{ summaryText }}</strong>
       <p class="history-copy">Every scored word from the match lives here.</p>
 
+      <section v-if="multiRoundSummary" class="multi-round-summary">
+        <div class="multi-round-summary-head">
+          <span>Rounds Cleared</span>
+          <strong>{{ multiRoundSummary.completedRounds.length }}</strong>
+        </div>
+        <ul class="multi-round-rounds">
+          <li
+            v-for="round in multiRoundSummary.completedRounds"
+            :key="`multi-round-complete-${round.roundId}-${round.roundNumber}`"
+          >
+            <span>{{ round.roundLabel }}</span>
+            <strong>{{ round.score }}/{{ round.targetScore }}</strong>
+            <small>{{ formatTime(round.secondsRemaining) }} left</small>
+          </li>
+          <li v-if="multiRoundSummary.failedRound" class="failed">
+            <span>{{ multiRoundSummary.failedRound.roundLabel }}</span>
+            <strong>{{ multiRoundSummary.failedRound.score }}/{{ multiRoundSummary.failedRound.targetScore }}</strong>
+            <small>failed</small>
+          </li>
+        </ul>
+        <div class="multi-round-modifiers">
+          <span>Personal Modifiers</span>
+          <strong>{{ personalModifierSummary }}</strong>
+        </div>
+      </section>
+
       <div class="history-columns" :class="{ single: !rightLabel }">
         <section class="history-column">
           <span class="history-label">{{ leftLabel }}</span>
@@ -181,6 +207,10 @@ const props = defineProps({
     type: Array,
     default: () => []
   },
+  multiRoundSummary: {
+    type: Object,
+    default: null
+  },
   playAgainText: {
     type: String,
     default: 'Play Again'
@@ -241,6 +271,14 @@ const normalizeEntry = (entry) => {
 
 const normalizedLeftHistory = computed(() => props.leftHistory.map(normalizeEntry));
 const normalizedRightHistory = computed(() => props.rightHistory.map(normalizeEntry));
+const personalModifierSummary = computed(() => {
+  const modifiers = props.multiRoundSummary?.personalModifiers || [];
+  if (!modifiers.length) {
+    return 'None yet';
+  }
+
+  return modifiers.map((modifier) => modifier.label || modifier.key || modifier).join(', ');
+});
 const getBestEntry = (entries = []) => {
   if (!entries.length) {
     return null;
@@ -278,6 +316,12 @@ const getBadgeStyle = (tile) => {
 
 const getTileScore = (tile, index) => {
   return tileScore(tile, { positionIndex: index });
+};
+const formatTime = (seconds = 0) => {
+  const safeSeconds = Math.max(0, Number(seconds) || 0);
+  const minutes = Math.floor(safeSeconds / 60);
+  const remainingSeconds = safeSeconds % 60;
+  return `${minutes}:${String(remainingSeconds).padStart(2, '0')}`;
 };
 
 const focusPlayAgainButton = () => {
@@ -392,6 +436,61 @@ watch(() => props.playAgainDisabled, (disabled, wasDisabled) => {
 .history-copy {
   margin: 10px 0 0;
   opacity: 0.82;
+}
+
+.multi-round-summary {
+  margin-top: 18px;
+  padding: 16px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.multi-round-summary-head,
+.multi-round-modifiers {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.multi-round-summary-head span,
+.multi-round-modifiers span {
+  font-size: 0.68rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  opacity: 0.76;
+}
+
+.multi-round-summary-head strong,
+.multi-round-modifiers strong {
+  color: var(--gold, #ffd265);
+}
+
+.multi-round-rounds {
+  list-style: none;
+  display: grid;
+  gap: 8px;
+  margin: 14px 0;
+  padding: 0;
+}
+
+.multi-round-rounds li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: 10px;
+  align-items: center;
+  padding: 9px 10px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.multi-round-rounds li.failed {
+  background: rgba(219, 79, 94, 0.18);
+}
+
+.multi-round-rounds small {
+  opacity: 0.72;
 }
 
 .history-columns {

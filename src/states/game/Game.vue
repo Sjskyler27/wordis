@@ -203,6 +203,7 @@
         :right-label="showOpponentLane ? 'Their History' : ''"
         :left-history="leftLaneHistory"
         :right-history="showOpponentLane ? rightLaneHistory : []"
+        :multi-round-summary="multiRoundHistorySummary"
         :play-again-text="playAgainButtonText"
         :play-again-disabled="props.isMultiplayer && myReplayVote"
         @play-again="handlePlayAgain"
@@ -530,6 +531,17 @@ const cardSummary = computed(() => {
     : `${myCards.value.boons.length} Boon`;
 });
 const hasCardsInHand = computed(() => myCards.value.boons.length > 0 || visibleAttackCount.value > 0);
+const multiRoundHistorySummary = computed(() => {
+  if (!isMultiRoundMode.value) {
+    return null;
+  }
+
+  return {
+    completedRounds: multiRoundRun.completedRounds.value,
+    failedRound: multiRoundRun.failureSummary.value,
+    personalModifiers: multiRoundRun.personalModifiers.value
+  };
+});
 const getCardStyle = (card) => {
   const ui = card?.ui || {};
   return {
@@ -620,6 +632,19 @@ const winnerLabel = computed(() => {
   return 'No one';
 });
 const historySummaryText = computed(() => {
+  if (isMultiRoundMode.value) {
+    if (multiRoundRun.runWon.value) {
+      return `Run complete. Cleared ${multiRoundRun.completedRounds.value.length} rounds.`;
+    }
+
+    const failedRound = multiRoundRun.failureSummary.value;
+    if (failedRound) {
+      return `${failedRound.roundLabel} ended at ${failedRound.score}/${failedRound.targetScore} points.`;
+    }
+
+    return `Round ${multiRoundRun.currentRoundNumber.value} ended at ${playerScores.value.host}/${multiRoundRun.currentTargetScore.value} points.`;
+  }
+
   if (timeExpired.value) {
     return `Time is up. Final score: ${playerScores.value.host}.`;
   }
@@ -631,6 +656,10 @@ const historySummaryText = computed(() => {
   return `${winnerLabel.value} wins at ${winningScore.value} points. Final score: ${playerScores.value.host}.`;
 });
 const historyResultState = computed(() => {
+  if (isMultiRoundMode.value) {
+    return multiRoundRun.runWon.value ? 'victory' : 'defeat';
+  }
+
   if (timeExpired.value) {
     return 'timeout';
   }
@@ -642,6 +671,10 @@ const historyResultState = computed(() => {
   return 'victory';
 });
 const historyResultTitle = computed(() => {
+  if (isMultiRoundMode.value) {
+    return multiRoundRun.runWon.value ? 'Run Complete' : 'Run Failed';
+  }
+
   if (timeExpired.value) {
     return 'Time Up';
   }
