@@ -1,5 +1,6 @@
 import { computed, ref } from 'vue';
 import { MULTI_ROUND_ROUNDS } from './multi-round-rounds.js';
+import { getPersonalModifierDefinition } from './personal-modifier-definitions.js';
 
 const ROUND_MODIFIER_POOLS = {
   easy: [
@@ -81,6 +82,34 @@ export const useMultiRoundRun = ({ rounds = MULTI_ROUND_ROUNDS } = {}) => {
   const rewardTiers = computed(() => currentRound.value?.rewardTiers || []);
   const rewardChoiceOpen = computed(() => rewardChoices.value.length > 0);
   const runWon = computed(() => runEnded.value && !failureSummary.value);
+  const activePersonalModifierEffects = computed(() => {
+    return personalModifiers.value.reduce((effects, modifier) => {
+      const stacks = Math.max(1, modifier.stacks || 1);
+      const definitionEffects = modifier.effects || {};
+
+      effects.vowelScoreBonus += (definitionEffects.vowelScoreBonus || 0) * stacks;
+      effects.vowelScoreMultiplier = Math.max(
+        effects.vowelScoreMultiplier,
+        definitionEffects.vowelScoreMultiplier || 1
+      );
+      effects.badChanceMultiplier += (definitionEffects.badChanceMultiplierDelta || 0) * stacks;
+      effects.openingGoodChanceBonus += (definitionEffects.openingGoodChanceBonus || 0) * stacks;
+      Object.entries(definitionEffects.modifierScoreBonus || {}).forEach(([key, bonus]) => {
+        effects.modifierScoreBonus[key] = (effects.modifierScoreBonus[key] || 0) + (bonus * stacks);
+      });
+      Object.entries(definitionEffects.modifierOddsBonus || {}).forEach(([key, bonus]) => {
+        effects.modifierOddsBonus[key] = (effects.modifierOddsBonus[key] || 0) + (bonus * stacks);
+      });
+      return effects;
+    }, {
+      vowelScoreBonus: 0,
+      vowelScoreMultiplier: 1,
+      modifierScoreBonus: {},
+      modifierOddsBonus: {},
+      badChanceMultiplier: 1,
+      openingGoodChanceBonus: 0
+    });
+  });
   const visibleProgressRounds = computed(() => {
     return resolvedRounds.value.map((round, index) => ({
       ...round,
@@ -109,6 +138,42 @@ export const useMultiRoundRun = ({ rounds = MULTI_ROUND_ROUNDS } = {}) => {
 
   const setStartingScoreBonus = (score) => {
     startingScoreBonus.value = Math.max(0, Math.floor(Number(score) || 0));
+  };
+
+  const addPersonalModifier = (modifierKey) => {
+    const definition = getPersonalModifierDefinition(modifierKey);
+    if (!definition) {
+      return null;
+    }
+
+    const existingModifier = personalModifiers.value.find((modifier) => modifier.key === modifierKey);
+    if (existingModifier) {
+      const nextStacks = Math.min(definition.maxStacks || 1, (existingModifier.stacks || 1) + 1);
+      personalModifiers.value = personalModifiers.value.map((modifier) => {
+        if (modifier.key !== modifierKey) {
+          return modifier;
+        }
+
+        return {
+          ...modifier,
+          stacks: nextStacks
+        };
+      });
+      return {
+        ...existingModifier,
+        stacks: nextStacks
+      };
+    }
+
+    const nextModifier = {
+      ...definition,
+      stacks: 1
+    };
+    personalModifiers.value = [
+      ...personalModifiers.value,
+      nextModifier
+    ];
+    return nextModifier;
   };
 
   const recordCompletedRound = (roundRecord = {}) => {
@@ -168,6 +233,7 @@ export const useMultiRoundRun = ({ rounds = MULTI_ROUND_ROUNDS } = {}) => {
     startingScoreBonus,
     completedRounds,
     personalModifiers,
+    activePersonalModifierEffects,
     activeRoundModifierKeys,
     rewardTiers,
     rewardChoices,
@@ -178,6 +244,7 @@ export const useMultiRoundRun = ({ rounds = MULTI_ROUND_ROUNDS } = {}) => {
     resetRun,
     setTimerRemainingSeconds,
     setStartingScoreBonus,
+    addPersonalModifier,
     recordCompletedRound,
     goToNextRound,
     endRun
