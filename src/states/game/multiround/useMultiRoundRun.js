@@ -82,13 +82,33 @@ const chooseWeightedReward = (definitions = []) => {
   return definitions[definitions.length - 1] || null;
 };
 
+const createStartingPersonalModifiers = () => {
+  return Object.values(PERSONAL_MODIFIER_DEFINITIONS)
+    .map((definition) => {
+      const stacks = Math.min(
+        definition.maxStacks || 1,
+        Math.max(0, Math.floor(Number(definition.start_with) || 0))
+      );
+
+      if (!stacks) {
+        return null;
+      }
+
+      return {
+        ...definition,
+        stacks
+      };
+    })
+    .filter(Boolean);
+};
+
 export const useMultiRoundRun = ({ rounds = MULTI_ROUND_ROUNDS } = {}) => {
   const resolvedRounds = ref(resolveRounds(rounds));
   const currentRoundIndex = ref(0);
   const startingScoreBonus = ref(0);
   const timerRemainingSeconds = ref(resolvedRounds.value[0]?.timeSeconds || 0);
   const completedRounds = ref([]);
-  const personalModifiers = ref([]);
+  const personalModifiers = ref(createStartingPersonalModifiers());
   const rewardChoices = ref([]);
   const runEnded = ref(false);
   const failureSummary = ref(null);
@@ -149,7 +169,7 @@ export const useMultiRoundRun = ({ rounds = MULTI_ROUND_ROUNDS } = {}) => {
     startingScoreBonus.value = 0;
     timerRemainingSeconds.value = resolvedRounds.value[0]?.timeSeconds || 0;
     completedRounds.value = [];
-    personalModifiers.value = [];
+    personalModifiers.value = createStartingPersonalModifiers();
     rewardChoices.value = [];
     runEnded.value = false;
     failureSummary.value = null;

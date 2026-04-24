@@ -13,6 +13,7 @@ export const PERSONAL_MODIFIER_DEFINITIONS = {
     tier: PERSONAL_MODIFIER_TIERS.EPIC,
     tags: ['score', 'vowels'],
     maxStacks: 3,
+    start_with: 0,
     effects: {
       vowelScoreBonus: 1
     }
@@ -25,6 +26,7 @@ export const PERSONAL_MODIFIER_DEFINITIONS = {
     tier: PERSONAL_MODIFIER_TIERS.COMMON,
     tags: ['score', 'ghostTile'],
     maxStacks: 3,
+    start_with: 0,
     effects: {
       modifierScoreBonus: {
         ghostTile: 6
@@ -42,6 +44,7 @@ export const PERSONAL_MODIFIER_DEFINITIONS = {
     tier: PERSONAL_MODIFIER_TIERS.RARE,
     tags: ['tile-odds', 'gold'],
     maxStacks: 3,
+    start_with: 0,
     effects: {
       modifierOddsBonus: {
         gold: 0.35
@@ -56,6 +59,7 @@ export const PERSONAL_MODIFIER_DEFINITIONS = {
     tier: PERSONAL_MODIFIER_TIERS.RARE,
     tags: ['tile-odds', 'bad-cap'],
     maxStacks: 2,
+    start_with: 0,
     effects: {
       badChanceMultiplierDelta: -0.18
     }
@@ -68,6 +72,7 @@ export const PERSONAL_MODIFIER_DEFINITIONS = {
     tier: PERSONAL_MODIFIER_TIERS.RARE,
     tags: ['opening-rack', 'good-cap'],
     maxStacks: 2,
+    start_with: 0,
     effects: {
       openingGoodChanceBonus: 0.04
     }
@@ -80,6 +85,7 @@ export const PERSONAL_MODIFIER_DEFINITIONS = {
     tier: PERSONAL_MODIFIER_TIERS.EPIC,
     tags: ['boons', 'immediate'],
     maxStacks: 1,
+    start_with: 0,
     effects: {
       immediateBoons: 3
     }
@@ -92,6 +98,7 @@ export const PERSONAL_MODIFIER_DEFINITIONS = {
     tier: PERSONAL_MODIFIER_TIERS.EPIC,
     tags: ['score', 'vowels'],
     maxStacks: 1,
+    start_with: 0,
     effects: {
       vowelScoreMultiplier: 2
     }
