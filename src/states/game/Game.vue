@@ -378,6 +378,7 @@ let multiRoundTimerId = null;
 let scorePopTimeoutIds = [];
 let activeScorePopAudios = [];
 let historyOverlayTimeoutId = null;
+let multiRoundRewardTimeoutId = null;
 const showHistoryOverlay = ref(false);
 const showTutorialOverlay = ref(false);
 const windowWidth = ref(typeof window !== 'undefined' ? window.innerWidth : 1440);
@@ -1097,6 +1098,7 @@ const getMultiRoundStartingScoreBonus = () => {
 };
 
 const resetMultiRoundBoardForNextRound = (startingScore = 0) => {
+  window.clearTimeout(multiRoundRewardTimeoutId);
   playerScores.value = {
     host: startingScore,
     opponent: 0
@@ -1133,23 +1135,28 @@ const completeMultiRoundRound = () => {
 
   pendingMultiRoundStartingScore.value = startingScore;
   playUiSound(tileReplaceSound);
-  const rewardChoices = multiRoundRun.generateRewardChoices();
-  if (!rewardChoices.length) {
-    const advanced = multiRoundRun.goToNextRound({ startingScore });
-    pendingMultiRoundStartingScore.value = 0;
-    if (!advanced) {
-      localMessage.value = 'Run complete!';
+  localMessage.value = 'Round complete.';
+  window.clearTimeout(multiRoundRewardTimeoutId);
+  multiRoundRewardTimeoutId = window.setTimeout(() => {
+    const rewardChoices = multiRoundRun.generateRewardChoices();
+    if (!rewardChoices.length) {
+      const advanced = multiRoundRun.goToNextRound({ startingScore });
+      pendingMultiRoundStartingScore.value = 0;
+      if (!advanced) {
+        localMessage.value = 'Run complete!';
+        return;
+      }
+
+      resetMultiRoundBoardForNextRound(startingScore);
+      localMessage.value = `Next round starts with ${startingScore} points from saved time.`;
+      if (!isPaused.value && !props.settingsShowing) {
+        startMultiRoundTimer();
+      }
       return;
     }
 
-    resetMultiRoundBoardForNextRound(startingScore);
-    localMessage.value = `Next round starts with ${startingScore} points from saved time.`;
-    if (!isPaused.value && !props.settingsShowing) {
-      startMultiRoundTimer();
-    }
-    return;
-  }
-  localMessage.value = 'Choose a modifier.';
+    localMessage.value = 'Choose a modifier.';
+  }, 1000);
 };
 
 const failMultiRoundRun = () => {
@@ -1770,6 +1777,7 @@ const handlePlayAgain = () => {
   isSoloTimerPausedByAttack.value = false;
   timedSoloFinalWordSpent.value = false;
   pendingMultiRoundStartingScore.value = 0;
+  window.clearTimeout(multiRoundRewardTimeoutId);
 
   if (props.isMultiplayer) {
     playMultiplayerAgain();
@@ -1880,9 +1888,11 @@ watch(() => props.playMode, (nextMode) => {
     multiRoundRun.resetRun();
     multiRoundFinalWordSpent.value = false;
     pendingMultiRoundStartingScore.value = 0;
+    window.clearTimeout(multiRoundRewardTimeoutId);
     startMultiRoundTimer();
   } else {
     stopMultiRoundTimer();
+    window.clearTimeout(multiRoundRewardTimeoutId);
   }
 
   timerRemainingSeconds.value = nextMode === 'timed_solo' ? SOLO_TIMER_SECONDS : 0;
@@ -2081,6 +2091,7 @@ onBeforeUnmount(() => {
   stopMultiRoundTimer();
   stopGameMusic();
   window.clearTimeout(historyOverlayTimeoutId);
+  window.clearTimeout(multiRoundRewardTimeoutId);
   tilePickupSound.pause();
   tilePutBackSound.pause();
   tileReplaceSound.pause();
@@ -2106,6 +2117,7 @@ const resetAndGoHome = () => {
   isSoloTimerPausedByAttack.value = false;
   timedSoloFinalWordSpent.value = false;
   pendingMultiRoundStartingScore.value = 0;
+  window.clearTimeout(multiRoundRewardTimeoutId);
   multiRoundRun.resetRun();
   stopGameMusic();
   stopResultAudio();
