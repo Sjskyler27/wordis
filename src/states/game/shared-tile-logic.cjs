@@ -196,17 +196,11 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
       1 - baseChances.goodChance - baseChances.badChance - baseChances.neutralChance
     );
     const personalModifierEffects = options.personalModifierEffects || {};
-    const modifierOddsBonus = personalModifierEffects.modifierOddsBonus || {};
-    const getPoolChanceBonus = (modifiers = []) => {
-      return modifiers.reduce((total, modifier) => total + (modifierOddsBonus[modifier] || 0), 0);
-    };
     const openingGoodChanceBonus = options.phase === 'opening'
       ? (personalModifierEffects.openingGoodChanceBonus || 0)
       : 0;
-    const specificGoodChanceBonus = getPoolChanceBonus(profile.goodModifiers);
-    const goodChanceBonus = specificGoodChanceBonus + (personalModifierEffects.goodChanceBonus || 0);
-    const badChanceBonus = getPoolChanceBonus(profile.badModifiers);
-    const neutralChanceBonus = getPoolChanceBonus(profile.neutralModifiers || []) + (personalModifierEffects.neutralChanceBonus || 0);
+    const goodChanceBonus = personalModifierEffects.goodChanceBonus || 0;
+    const neutralChanceBonus = personalModifierEffects.neutralChanceBonus || 0;
     const badChanceMultiplier = Math.max(0, personalModifierEffects.badChanceMultiplier ?? 1);
     const goodChance = Math.max(
       0,
@@ -219,7 +213,7 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
       0,
       Math.min(
         0.9 - goodChance,
-        options.badChance ?? ((baseChances.badChance * (options.badChanceMultiplier ?? 1) * badChanceMultiplier) + badChanceBonus)
+        options.badChance ?? (baseChances.badChance * (options.badChanceMultiplier ?? 1) * badChanceMultiplier)
       )
     );
     const neutralChance = Math.max(
@@ -232,8 +226,6 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
     const normalChance = Math.max(0, 1 - goodChance - badChance - neutralChance);
     const chanceBonuses = {
       goodChanceBonus,
-      specificGoodChanceBonus,
-      badChanceBonus,
       neutralChanceBonus,
       openingGoodChanceBonus
     };
