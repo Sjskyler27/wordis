@@ -222,6 +222,7 @@ import { computed, defineProps, nextTick, onBeforeUnmount, onMounted, ref, watch
 import gameMusicUrl from '/public/audio/gameMusic.mp3';
 import tilePickupSoundUrl from '/public/audio/tile_pick_up.mp3';
 import tilePutBackSoundUrl from '/public/audio/tile_put_back.mp3';
+import tileReplaceSoundUrl from '/public/audio/tile_replace.mp3';
 import scoreBuiltTileSoundUrl from '/public/audio/score_built_tile.mp3';
 import victorySoundUrl from '/public/audio/victory.mp3';
 import defeatSoundUrl from '/public/audio/defeat.mp3';
@@ -347,6 +348,7 @@ const gameMusic = new Audio(gameMusicUrl);
 gameMusic.loop = true;
 const tilePickupSound = new Audio(tilePickupSoundUrl);
 const tilePutBackSound = new Audio(tilePutBackSoundUrl);
+const tileReplaceSound = new Audio(tileReplaceSoundUrl);
 const scoreBuiltTileSound = new Audio(scoreBuiltTileSoundUrl);
 const victorySound = new Audio(victorySoundUrl);
 const defeatSound = new Audio(defeatSoundUrl);
@@ -874,6 +876,7 @@ const syncAudioLevels = () => {
   gameMusic.volume = musicLevel;
   tilePickupSound.volume = effectsLevel;
   tilePutBackSound.volume = effectsLevel;
+  tileReplaceSound.volume = effectsLevel;
   scoreBuiltTileSound.volume = effectsLevel;
   victorySound.volume = effectsLevel;
   defeatSound.volume = effectsLevel;
@@ -1059,10 +1062,12 @@ const completeMultiRoundRound = () => {
 
   const advanced = multiRoundRun.goToNextRound({ startingScore });
   if (!advanced) {
+    playUiSound(tileReplaceSound);
     localMessage.value = 'Run complete!';
     return;
   }
 
+  playUiSound(tileReplaceSound);
   resetMultiRoundBoardForNextRound(startingScore);
   localMessage.value = `Next round starts with ${startingScore} points from saved time.`;
   if (!isPaused.value && !props.settingsShowing) {
@@ -1915,6 +1920,7 @@ onBeforeUnmount(() => {
   window.clearTimeout(historyOverlayTimeoutId);
   tilePickupSound.pause();
   tilePutBackSound.pause();
+  tileReplaceSound.pause();
   scoreBuiltTileSound.pause();
   scorePopTimeoutIds.forEach((timeoutId) => window.clearTimeout(timeoutId));
   activeScorePopAudios.forEach((audio) => {
