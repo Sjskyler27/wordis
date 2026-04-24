@@ -481,6 +481,7 @@ export const useSinglePlayerGame = ({
       host: refillTiles(playerTiles.value.host, selectedTiles.map((tile) => tile.id), 'host', playerScores.value, {
         modifierProfile: modifierProfile(),
         personalModifierEffects: getPersonalModifierEffects(),
+        roundModifierEffects: getRoundModifierEffects(),
         phase: 'submit',
         turnCount: getTurnCount()
       }),

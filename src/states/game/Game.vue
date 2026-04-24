@@ -396,6 +396,7 @@ const roundModifierEffects = computed(() => {
   return activeRoundModifiers.value.reduce((effects, modifier) => {
     const rules = modifier.rules || {};
     const scoreEffects = modifier.scoreEffects || {};
+    const tileEffects = modifier.tileEffects || {};
     const cardRules = modifier.cardRules || {};
 
     effects.minimumWordLength = Math.max(effects.minimumWordLength, rules.minimumWordLength || 0);
@@ -407,6 +408,7 @@ const roundModifierEffects = computed(() => {
     ];
     effects.zeroHighestConsonant = effects.zeroHighestConsonant || Boolean(scoreEffects.zeroHighestConsonant);
     effects.idlePenaltyMultiplier = Math.max(effects.idlePenaltyMultiplier, scoreEffects.idlePenaltyMultiplier || 1);
+    effects.fleetingAllTiles = effects.fleetingAllTiles || Boolean(tileEffects.fleetingAllTiles);
     effects.cardsDisabled = effects.cardsDisabled || Boolean(cardRules.cardsDisabled);
     return effects;
   }, {
@@ -414,6 +416,7 @@ const roundModifierEffects = computed(() => {
     bannedLetters: [],
     zeroHighestConsonant: false,
     idlePenaltyMultiplier: 1,
+    fleetingAllTiles: false,
     cardsDisabled: false
   });
 });

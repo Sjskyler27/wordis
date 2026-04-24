@@ -1072,9 +1072,10 @@ console.log(JSON.stringify({
     const refillTiles = (tiles, usedTileIds, side = null, scores = {}, options = {}) => {
       const usedIds = new Set(usedTileIds);
       // remove existing ghost tiles 
+      const fleetingAllTiles = Boolean(options.roundModifierEffects?.fleetingAllTiles);
       const ghostIds = new Set(
         tiles
-          .filter((tile) => tile.status === 'ghostTile' && !usedIds.has(tile.id))
+          .filter((tile) => (tile.status === 'ghostTile' || (fleetingAllTiles && tile.status !== 'normal')) && !usedIds.has(tile.id))
           .map((tile) => tile.id)
       );
       const replacedIds = new Set([...usedIds, ...ghostIds]);
@@ -1100,6 +1101,7 @@ console.log(JSON.stringify({
           rackTiles: remainingTiles,
           modifierProfile: options.modifierProfile || 'duel',
           personalModifierEffects: options.personalModifierEffects || {},
+          roundModifierEffects: options.roundModifierEffects || {},
           phase: options.phase || 'submit',
           turnCount: options.turnCount || 0
         });
