@@ -107,7 +107,7 @@
         <div class="score-ribbon">
           <div class="score-box host" :class="scoreBoxClass('host')">
             <span>Your Board</span>
-            <strong>{{ leftLane.score }}</strong>
+            <strong>{{ scoreRibbonScoreLabel }}</strong>
           </div>
           <div class="score-divider">VS</div>
           <div class="score-box opponent" :class="[{ timer: isTimedSoloMode || isMultiRoundMode }, scoreBoxClass('opponent')]">
@@ -480,6 +480,13 @@ const multiRoundProgressRounds = computed(() => multiRoundRun.visibleProgressRou
 const personalModifiersForDrawer = computed(() => multiRoundRun.personalModifiers.value);
 const multiRoundRewardChoices = computed(() => multiRoundRun.rewardChoices.value);
 const isMultiRoundRewardChoiceOpen = computed(() => multiRoundRun.rewardChoiceOpen.value);
+const scoreRibbonScoreLabel = computed(() => {
+  if (isMultiRoundMode.value) {
+    return `${leftLane.value.score} / ${multiRoundRun.currentTargetScore.value}`;
+  }
+
+  return leftLane.value.score;
+});
 
 const {
   startBotLoop,
