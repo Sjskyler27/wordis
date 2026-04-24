@@ -19,7 +19,7 @@ export const ROUND_MODIFIER_DEFINITIONS = {
     key: 'no_s',
     label: 'No S',
     description: 'Words cannot use S.',
-    difficulty: ROUND_MODIFIER_DIFFICULTIES.EASY,
+    difficulty: ROUND_MODIFIER_DIFFICULTIES.MEDIUM,
     tags: ['letter-ban'],
     rules: {
       bannedLetters: ['S']
@@ -59,7 +59,7 @@ export const ROUND_MODIFIER_DEFINITIONS = {
     key: 'double_burns',
     label: 'Hot Rack',
     description: 'Burn penalties are doubled.',
-    difficulty: ROUND_MODIFIER_DIFFICULTIES.HARD,
+    difficulty: ROUND_MODIFIER_DIFFICULTIES.EASY,
     tags: ['burns'],
     scoreEffects: {
       idlePenaltyMultiplier: 2
@@ -68,7 +68,7 @@ export const ROUND_MODIFIER_DEFINITIONS = {
   fleeting_tiles: {
     key: 'fleeting_tiles',
     label: 'Fleeting Rack',
-    description: 'Unused special tiles are more punishing this round.',
+    description: 'All tiles are cleared after submitting a word',
     difficulty: ROUND_MODIFIER_DIFFICULTIES.HARD,
     tags: ['tile-lifecycle'],
     tileEffects: {

@@ -9,8 +9,8 @@ export const PERSONAL_MODIFIER_DEFINITIONS = {
     key: 'vowel_value',
     label: 'Vowel Value',
     description: 'Vowels gain +1 tile score.',
-    rarity: 1,
-    tier: PERSONAL_MODIFIER_TIERS.COMMON,
+    rarity: .26,
+    tier: PERSONAL_MODIFIER_TIERS.EPIC,
     tags: ['score', 'vowels'],
     maxStacks: 3,
     effects: {
@@ -20,14 +20,14 @@ export const PERSONAL_MODIFIER_DEFINITIONS = {
   ghost_charge: {
     key: 'ghost_charge',
     label: 'Ghost Charge',
-    description: 'Ghost tiles give +2 more bonus score and appear more often.',
+    description: 'Ghost tiles give +6 more bonus score and appear more often.',
     rarity: 0.75,
     tier: PERSONAL_MODIFIER_TIERS.COMMON,
     tags: ['score', 'ghostTile'],
     maxStacks: 3,
     effects: {
       modifierScoreBonus: {
-        ghostTile: 2
+        ghostTile: 6
       },
       modifierOddsBonus: {
         ghostTile: 0.025
