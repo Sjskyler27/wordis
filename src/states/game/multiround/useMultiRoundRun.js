@@ -5,6 +5,7 @@ import {
   getPersonalModifierDefinition
 } from './personal-modifier-definitions.js';
 import {
+  FORCE_TEST_ROUND_MODIFIER_KEYS,
   ROUND_MODIFIER_KEYS_BY_DIFFICULTY,
   getRoundModifierDefinition
 } from './round-modifier-definitions.js';
@@ -45,10 +46,11 @@ const resolveRounds = (rounds = MULTI_ROUND_ROUNDS) => {
     const generatedModifierKeys = resolveModifierBudget(round.modifierBudget || {});
     return {
       ...round,
-      resolvedModifierKeys: [
+      resolvedModifierKeys: [...new Set([
         ...(round.roundModifierKeys || []),
-        ...generatedModifierKeys
-      ]
+        ...generatedModifierKeys,
+        ...FORCE_TEST_ROUND_MODIFIER_KEYS
+      ])]
     };
   });
 };

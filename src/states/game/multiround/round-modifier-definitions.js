@@ -10,6 +10,7 @@ export const ROUND_MODIFIER_DEFINITIONS = {
     label: 'Five Up',
     description: 'Words must use at least 5 tiles.',
     difficulty: ROUND_MODIFIER_DIFFICULTIES.EASY,
+    force_test: false,
     tags: ['word-length'],
     rules: {
       minimumWordLength: 5
@@ -20,6 +21,7 @@ export const ROUND_MODIFIER_DEFINITIONS = {
     label: 'No S',
     description: 'Words cannot use S.',
     difficulty: ROUND_MODIFIER_DIFFICULTIES.MEDIUM,
+    force_test: false,
     tags: ['letter-ban'],
     rules: {
       bannedLetters: ['S']
@@ -30,6 +32,7 @@ export const ROUND_MODIFIER_DEFINITIONS = {
     label: 'Muted Consonant',
     description: 'The highest-scoring consonant in each word scores 0.',
     difficulty: ROUND_MODIFIER_DIFFICULTIES.MEDIUM,
+    force_test: false,
     tags: ['score-transform'],
     scoreEffects: {
       zeroHighestConsonant: true
@@ -40,6 +43,7 @@ export const ROUND_MODIFIER_DEFINITIONS = {
     label: 'No Cards',
     description: 'Boons and attacks cannot be played this round.',
     difficulty: ROUND_MODIFIER_DIFFICULTIES.MEDIUM,
+    force_test: false,
     tags: ['cards'],
     cardRules: {
       cardsDisabled: true
@@ -50,6 +54,7 @@ export const ROUND_MODIFIER_DEFINITIONS = {
     label: 'Six Up',
     description: 'Words must use at least 6 tiles.',
     difficulty: ROUND_MODIFIER_DIFFICULTIES.HARD,
+    force_test: false,
     tags: ['word-length'],
     rules: {
       minimumWordLength: 6
@@ -60,6 +65,7 @@ export const ROUND_MODIFIER_DEFINITIONS = {
     label: 'Hot Rack',
     description: 'Burn penalties are doubled.',
     difficulty: ROUND_MODIFIER_DIFFICULTIES.EASY,
+    force_test: false,
     tags: ['burns'],
     scoreEffects: {
       idlePenaltyMultiplier: 2
@@ -70,6 +76,7 @@ export const ROUND_MODIFIER_DEFINITIONS = {
     label: 'Fleeting Rack',
     description: 'All tiles are cleared after submitting a word',
     difficulty: ROUND_MODIFIER_DIFFICULTIES.HARD,
+    force_test: false,
     tags: ['tile-lifecycle'],
     tileEffects: {
       fleetingAllTiles: true
@@ -77,7 +84,15 @@ export const ROUND_MODIFIER_DEFINITIONS = {
   }
 };
 
+export const FORCE_TEST_ROUND_MODIFIER_KEYS = Object.values(ROUND_MODIFIER_DEFINITIONS)
+  .filter((modifier) => modifier.force_test)
+  .map((modifier) => modifier.key);
+
 export const ROUND_MODIFIER_KEYS_BY_DIFFICULTY = Object.values(ROUND_MODIFIER_DEFINITIONS).reduce((pools, modifier) => {
+  if (modifier.force_test) {
+    return pools;
+  }
+
   pools[modifier.difficulty] = [
     ...(pools[modifier.difficulty] || []),
     modifier.key
