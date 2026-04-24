@@ -103,6 +103,10 @@ const props = defineProps({
     type: Object,
     default: () => ({})
   },
+  scoreOptions: {
+    type: Object,
+    default: () => ({})
+  },
   tiles: {
     type: Array,
     required: true
@@ -295,7 +299,8 @@ const getTileBadge = (tile) => {
 
 const getTileScore = (tile) => tileScore(tile, {
   side: props.side,
-  scores: props.currentPlayerScores
+  scores: props.currentPlayerScores,
+  ...props.scoreOptions
 });
 
 const getTileStyle = (tile) => {

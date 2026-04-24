@@ -192,6 +192,10 @@ const props = defineProps({
     type: Object,
     default: () => ({ host: 0, opponent: 0 })
   },
+  scoreOptions: {
+    type: Object,
+    default: () => ({})
+  },
   clearCount: {
     type: Number,
     required: true
@@ -396,7 +400,8 @@ const getBuiltTileScore = (tile, index) => {
   return tileScore(tile, {
     side: props.currentWordSide,
     scores: props.currentPlayerScores,
-    positionIndex: index
+    positionIndex: index,
+    ...props.scoreOptions
   });
 };
 

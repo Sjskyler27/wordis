@@ -39,7 +39,8 @@ export const useSinglePlayerGame = ({
   submittedWords,
   wordHistory,
   onTimedSoloPauseTime,
-  onTimedSoloGainTime
+  onTimedSoloGainTime,
+  personalModifierEffects
 }) => {
   let botLoopId = null;
   const submissionPauseOwner = ref(null);
@@ -75,6 +76,7 @@ export const useSinglePlayerGame = ({
   const getTurnCount = () => {
     return (wordHistory.value.host?.length || 0) + (wordHistory.value.opponent?.length || 0);
   };
+  const getPersonalModifierEffects = () => personalModifierEffects?.value || {};
   const createTestingHands = () => {
     const boonKeys = Object.entries(CARD_DEFINITIONS)
       .filter(([, definition]) => definition.kind === 'boon')
@@ -162,7 +164,8 @@ export const useSinglePlayerGame = ({
           playerTiles.value = {
             host: createTestingRack('host', playerScores.value, {
               modifierProfile: modifierProfile(),
-              includeAllModifiers: true
+              includeAllModifiers: true,
+              personalModifierEffects: getPersonalModifierEffects()
             }),
             opponent: []
           };
@@ -196,6 +199,7 @@ export const useSinglePlayerGame = ({
         playerTiles.value = {
           host: createRack('host', playerScores.value, {
             modifierProfile: modifierProfile(),
+            personalModifierEffects: getPersonalModifierEffects(),
             turnCount: getTurnCount()
           }),
           opponent: []
@@ -262,6 +266,7 @@ export const useSinglePlayerGame = ({
         mode: 'clear',
         currentTiles: botTiles,
         modifierProfile: modifierProfile(),
+        personalModifierEffects: getPersonalModifierEffects(),
         turnCount: getTurnCount()
       })
     };
@@ -409,7 +414,8 @@ export const useSinglePlayerGame = ({
     const selectedTiles = selectedTilesForCurrentSide.value;
     const scoreDetails = getWordScoreDetails(selectedTiles, {
       side: 'host',
-      scores: playerScores.value
+      scores: playerScores.value,
+      personalModifierEffects: getPersonalModifierEffects()
     });
     const idlePenalty = getIdleScorePenalty(playerTiles.value.host, selectedTiles.map((tile) => tile.id));
     const scoreDelta = scoreDetails.total - idlePenalty;
@@ -469,6 +475,7 @@ export const useSinglePlayerGame = ({
       
       host: refillTiles(playerTiles.value.host, selectedTiles.map((tile) => tile.id), 'host', playerScores.value, {
         modifierProfile: modifierProfile(),
+        personalModifierEffects: getPersonalModifierEffects(),
         phase: 'submit',
         turnCount: getTurnCount()
       }),
@@ -505,6 +512,7 @@ export const useSinglePlayerGame = ({
         mode: 'clear',
         currentTiles: playerTiles.value[side],
         modifierProfile: modifierProfile(),
+        personalModifierEffects: getPersonalModifierEffects(),
         turnCount: getTurnCount()
       })
     };
@@ -518,6 +526,7 @@ export const useSinglePlayerGame = ({
     submissionPauseOwner.value = null;
     const nextRack = createRack(side, playerScores.value, {
       modifierProfile: modifierProfile(),
+      personalModifierEffects: getPersonalModifierEffects(),
       turnCount: getTurnCount()
     });
 
@@ -594,6 +603,7 @@ export const useSinglePlayerGame = ({
       };
       const nextTiles = replaceSingleTile(playerTiles.value[side], tileId, side, playerScores.value, {
         modifierProfile: modifierProfile(),
+        personalModifierEffects: getPersonalModifierEffects(),
         turnCount: getTurnCount()
       });
       const replacementTile = nextTiles.find((entry) => entry.id !== tileId && !playerTiles.value[side].some((tile) => tile.id === entry.id));
@@ -625,6 +635,7 @@ export const useSinglePlayerGame = ({
         ...playerTiles.value,
         [side]: rerollRackExceptTile(playerTiles.value[side], tileId, side, playerScores.value, {
           modifierProfile: modifierProfile(),
+          personalModifierEffects: getPersonalModifierEffects(),
           turnCount: getTurnCount()
         })
       };

@@ -122,6 +122,7 @@
             :submitted-word="leftLane.submittedWord"
             :score="leftLane.score"
             :current-player-scores="playerScores"
+            :score-options="multiRoundScoreOptions"
             :last-word-score="leftLane.lastWordScore"
             :last-word-breakdown="leftLane.lastWordBreakdown"
             :tiles="leftLane.tiles"
@@ -143,6 +144,7 @@
             :submitted-word="rightLane.submittedWord"
             :score="rightLane.score"
             :current-player-scores="playerScores"
+            :score-options="multiRoundScoreOptions"
             :last-word-score="rightLane.lastWordScore"
             :last-word-breakdown="rightLane.lastWordBreakdown"
             :tiles="rightLane.tiles"
@@ -177,6 +179,7 @@
           :current-word-multiplier="currentWordMultiplier"
           :current-word-side="mySide"
           :current-player-scores="playerScores"
+          :score-options="multiRoundScoreOptions"
           :clear-count="rackClears[mySide]"
           :length-bonus-steps="lengthBonusSteps"
           :controller-focused-built-tile-id="controllerRegion === 'builder' ? controllerFocusedBuiltTileId : ''"
@@ -379,6 +382,10 @@ const myTiles = computed(() => playerTiles.value[mySide.value] || []);
 const controllerFocusedTileId = computed(() => myTiles.value[controllerTileCursorIndex.value]?.id || '');
 const controllerFocusedBuiltTileId = computed(() => selectedTilesForCurrentSide.value[controllerBuilderCursorIndex.value]?.id || '');
 const opponentSide = computed(() => (mySide.value === 'host' ? 'opponent' : 'host'));
+const personalModifierEffects = computed(() => isMultiRoundMode.value ? multiRoundRun.activePersonalModifierEffects.value : {});
+const multiRoundScoreOptions = computed(() => ({
+  personalModifierEffects: personalModifierEffects.value
+}));
 const buildLane = (side, label) => ({
   side,
   label,
@@ -415,7 +422,8 @@ const {
 } = useWordBuilder({
   mySide,
   myTiles,
-  playerScores
+  playerScores,
+  scoreOptions: multiRoundScoreOptions
 });
 
 const leftLane = computed(() => buildLane(mySide.value, 'Your Board'));
@@ -468,7 +476,8 @@ const {
         startSoloTimer();
       }
     }
-  }
+  },
+  personalModifierEffects
 });
 
 const overtimeTrailingSide = computed(() => {
