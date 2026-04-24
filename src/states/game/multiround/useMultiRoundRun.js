@@ -1,6 +1,9 @@
 import { computed, ref } from 'vue';
 import { MULTI_ROUND_ROUNDS } from './multi-round-rounds.js';
-import { getPersonalModifierDefinition } from './personal-modifier-definitions.js';
+import {
+  PERSONAL_MODIFIER_DEFINITIONS,
+  getPersonalModifierDefinition
+} from './personal-modifier-definitions.js';
 import {
   ROUND_MODIFIER_KEYS_BY_DIFFICULTY,
   getRoundModifierDefinition
@@ -48,6 +51,33 @@ const resolveRounds = (rounds = MULTI_ROUND_ROUNDS) => {
       ]
     };
   });
+};
+
+const getHighestTier = (tiers = []) => {
+  const tierRank = {
+    common: 1,
+    rare: 2,
+    epic: 3
+  };
+
+  return [...tiers].sort((first, second) => (tierRank[second] || 0) - (tierRank[first] || 0))[0] || 'common';
+};
+
+const chooseWeightedReward = (definitions = []) => {
+  const totalWeight = definitions.reduce((total, definition) => total + Math.max(0, definition.rarity || 0), 0);
+  if (!totalWeight) {
+    return definitions[0] || null;
+  }
+
+  let roll = Math.random() * totalWeight;
+  for (const definition of definitions) {
+    roll -= Math.max(0, definition.rarity || 0);
+    if (roll <= 0) {
+      return definition;
+    }
+  }
+
+  return definitions[definitions.length - 1] || null;
 };
 
 export const useMultiRoundRun = ({ rounds = MULTI_ROUND_ROUNDS } = {}) => {
@@ -167,6 +197,59 @@ export const useMultiRoundRun = ({ rounds = MULTI_ROUND_ROUNDS } = {}) => {
     return nextModifier;
   };
 
+  const generateRewardChoices = () => {
+    const allowedTiers = currentRound.value?.isChallenge
+      ? [getHighestTier(rewardTiers.value)]
+      : rewardTiers.value;
+    const currentStacks = personalModifiers.value.reduce((stacks, modifier) => {
+      stacks[modifier.key] = modifier.stacks || 1;
+      return stacks;
+    }, {});
+    const eligibleDefinitions = Object.values(PERSONAL_MODIFIER_DEFINITIONS).filter((definition) => {
+      return allowedTiers.includes(definition.tier)
+        && (currentStacks[definition.key] || 0) < (definition.maxStacks || 1);
+    });
+    const choices = [];
+    const availableDefinitions = [...eligibleDefinitions];
+
+    while (choices.length < 3 && availableDefinitions.length) {
+      const choice = chooseWeightedReward(availableDefinitions);
+      if (!choice) {
+        break;
+      }
+
+      choices.push(choice);
+      availableDefinitions.splice(availableDefinitions.findIndex((definition) => definition.key === choice.key), 1);
+    }
+
+    rewardChoices.value = choices;
+    return choices;
+  };
+
+  const selectRewardChoice = (modifierKey) => {
+    const selectedModifier = addPersonalModifier(modifierKey);
+    if (!selectedModifier) {
+      return null;
+    }
+
+    const lastRoundIndex = completedRounds.value.length - 1;
+    if (lastRoundIndex >= 0) {
+      completedRounds.value = completedRounds.value.map((round, index) => {
+        if (index !== lastRoundIndex) {
+          return round;
+        }
+
+        return {
+          ...round,
+          selectedRewardKey: selectedModifier.key,
+          selectedRewardLabel: selectedModifier.label
+        };
+      });
+    }
+    rewardChoices.value = [];
+    return selectedModifier;
+  };
+
   const recordCompletedRound = (roundRecord = {}) => {
     completedRounds.value = [
       ...completedRounds.value,
@@ -237,6 +320,8 @@ export const useMultiRoundRun = ({ rounds = MULTI_ROUND_ROUNDS } = {}) => {
     setTimerRemainingSeconds,
     setStartingScoreBonus,
     addPersonalModifier,
+    generateRewardChoices,
+    selectRewardChoice,
     recordCompletedRound,
     goToNextRound,
     endRun
