@@ -33,17 +33,23 @@
             · {{ isHost ? 'Host lane' : 'Opponent lane' }}
           </p>
           <p>{{ modeSubtitle }}</p>
-          <div v-if="isMultiRoundMode" class="round-modifier-list">
+          <div v-if="isMultiRoundMode" class="round-modifier-panel">
+            <span class="round-modifier-heading">Round Modifiers</span>
+            <div class="round-modifier-list">
             <template v-if="activeRoundModifiers.length">
-              <span
+              <button
                 v-for="modifier in activeRoundModifiers"
                 :key="modifier.key"
+                type="button"
                 class="round-modifier-chip"
+                :aria-label="`${modifier.label}: ${modifier.description}`"
               >
-                {{ modifier.label }}
-              </span>
+                <span>{{ modifier.label }}</span>
+                <small>{{ modifier.description }}</small>
+              </button>
             </template>
             <span v-else class="round-modifier-empty">No round modifiers</span>
+            </div>
           </div>
         </div>
 
@@ -2306,30 +2312,82 @@ body {
   opacity: 0.85;
 }
 
-.round-modifier-list {
+.round-modifier-panel {
   position: relative;
   z-index: 1;
+  margin-top: 16px;
+  padding: 12px;
+  border-radius: 16px;
+  background: rgba(28, 8, 28, 0.22);
+  border: 1px solid rgba(255, 236, 187, 0.22);
+}
+
+.round-modifier-heading {
+  display: block;
+  margin-bottom: 10px;
+  font-size: 0.68rem;
+  line-height: 1;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(255, 244, 218, 0.78);
+}
+
+.round-modifier-list {
   display: flex;
+  align-items: flex-start;
   flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 14px;
+  gap: 10px;
 }
 
 .round-modifier-chip,
 .round-modifier-empty {
+  appearance: none;
+  position: relative;
   display: inline-flex;
   align-items: center;
-  min-height: 28px;
-  padding: 6px 9px;
+  min-height: 34px;
+  padding: 8px 11px;
   border-radius: 999px;
-  font-size: 0.72rem;
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 900;
   line-height: 1;
-  background: rgba(255, 255, 255, 0.14);
-  border: 1px solid rgba(255, 255, 255, 0.16);
+  cursor: help;
+  background: linear-gradient(180deg, rgba(255, 210, 112, 0.28), rgba(164, 48, 68, 0.26));
+  border: 1px solid rgba(255, 236, 187, 0.38);
+  color: #fff4d4;
+  box-shadow: 0 8px 16px rgba(34, 8, 26, 0.18);
+}
+
+.round-modifier-chip small {
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 8px);
+  width: min(220px, 72vw);
+  padding: 9px 10px;
+  border-radius: 10px;
+  background: rgba(35, 10, 31, 0.96);
+  border: 1px solid rgba(255, 236, 187, 0.24);
   color: rgba(255, 248, 236, 0.92);
+  font-size: 0.72rem;
+  font-weight: 600;
+  line-height: 1.35;
+  text-align: left;
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(-50%, 4px);
+  transition: opacity 150ms ease, transform 150ms ease;
+  box-shadow: 0 14px 28px rgba(20, 6, 14, 0.28);
+}
+
+.round-modifier-chip:hover small,
+.round-modifier-chip:focus-visible small {
+  opacity: 1;
+  transform: translate(-50%, 0);
 }
 
 .round-modifier-empty {
+  cursor: default;
   opacity: 0.72;
 }
 
