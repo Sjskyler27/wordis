@@ -176,7 +176,7 @@ const toggleDrawer = () => {
     position: fixed;
     top: 25%;
     right: 0;
-    z-index: 7;
+    z-index: 31;
     transform: translateY(-50%);
     border: 1px solid rgba(255, 238, 214, 0.16);
     cursor: pointer;
@@ -217,7 +217,7 @@ const toggleDrawer = () => {
     position: fixed;
     inset: 0;
     display: block;
-    z-index: 5;
+    z-index: 29;
     border: none;
     background: rgba(18, 6, 17, 0.28);
   }
@@ -227,7 +227,7 @@ const toggleDrawer = () => {
     top: 18px;
     right: 0;
     bottom: 18px;
-    z-index: 6;
+    z-index: 30;
     width: min(320px, calc(100vw - 52px));
     max-width: none;
     padding: 18px 16px 22px;
