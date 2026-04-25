@@ -1242,6 +1242,27 @@ const applyImmediatePersonalModifierEffects = (modifier) => {
   };
 };
 
+const applyMultiRoundWordTimeBonus = (tileCount = 0) => {
+  if (!isMultiRoundMode.value) {
+    return 0;
+  }
+
+  const timeBonusByLength = personalModifierEffects.value.lengthTimeBonus || {};
+  const seconds = timeBonusByLength[tileCount] || timeBonusByLength[String(tileCount)] || 0;
+  if (!seconds) {
+    return 0;
+  }
+
+  const wasOutOfTime = multiRoundRun.timerRemainingSeconds.value <= 0;
+  multiRoundRun.setTimerRemainingSeconds(multiRoundRun.timerRemainingSeconds.value + seconds);
+  if (wasOutOfTime && multiRoundRun.timerRemainingSeconds.value > 0) {
+    multiRoundFinalWordSpent.value = false;
+    startMultiRoundTimer();
+  }
+
+  return seconds;
+};
+
 const handleMultiRoundRewardChoice = (rewardKey) => {
   const selectedModifier = multiRoundRun.selectRewardChoice(rewardKey);
   if (!selectedModifier) {
@@ -1412,6 +1433,10 @@ const handleSubmit = async () => {
   const submitted = submitSinglePlayerWord(resolvedWord);
   if (!submitted) {
     return;
+  }
+  const secondsRestored = applyMultiRoundWordTimeBonus(selectedTiles.length);
+  if (secondsRestored) {
+    localMessage.value = `${localMessage.value} Restored ${secondsRestored} seconds.`;
   }
   startTimedModeTimerAfterFirstWord();
 

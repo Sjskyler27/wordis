@@ -190,6 +190,9 @@ export const useMultiRoundRun = ({ rounds = MULTI_ROUND_ROUNDS } = {}) => {
           multiplier || 1
         );
       });
+      Object.entries(definitionEffects.lengthTimeBonus || {}).forEach(([length, seconds]) => {
+        effects.lengthTimeBonus[length] = (effects.lengthTimeBonus[length] || 0) + (seconds * stacks);
+      });
       Object.entries(definitionEffects.modifierOddsBonus || {}).forEach(([key, bonus]) => {
         effects.modifierOddsBonus[key] = (effects.modifierOddsBonus[key] || 0) + (bonus * stacks);
       });
@@ -207,6 +210,7 @@ export const useMultiRoundRun = ({ rounds = MULTI_ROUND_ROUNDS } = {}) => {
       idleBonusScoreDeltaBonus: {},
       lengthScoreBonus: {},
       lengthScoreMultiplier: {},
+      lengthTimeBonus: {},
       modifierOddsBonus: {},
       blockedModifiers: [],
       badChanceMultiplier: 1,
