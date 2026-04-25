@@ -24,8 +24,8 @@ const createRound = ({
 }) => ({
   id,
   label,
-  targetScore: isTestingMode ? 4 : targetScore,
-  timeSeconds: isTestingMode ? 10 : timeSeconds,
+  targetScore: isTestingMode ? 15 : targetScore,
+  timeSeconds: isTestingMode ? 20 : timeSeconds,
   isChallenge,
   modifierBudget,
   rewardTiers,

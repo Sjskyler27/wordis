@@ -24,17 +24,25 @@ export const PERSONAL_MODIFIER_DEFINITIONS = {
     description: 'Ghost tiles give +6 more bonus score and appear more often.',
     rarity: 0.75,
     tier: PERSONAL_MODIFIER_TIERS.COMMON,
-    tags: ['score', 'ghostTile'],
-    maxStacks: 3,
-    start_with: 0,
+    tags: ['score', 'tile-odds', 'ghostTile'],
+    maxStacks: 30,
+    start_with: 1,
     effects: {
       modifierScoreBonus: {
         ghostTile: 6
       },
+      // increases chance of pulling ghost tile 
+      // this in theory would decrease chance of pulling other tiles 
       modifierOddsBonus: {
-        ghostTile: 0.25
+        ghostTile: 0.20
+      },
+      // increase base chance of pulling neutral tiles to offset that imbalence 
+      neutralChanceBonus: 0.005,
+      neutralChanceCapDelta: 0.005
+      // current value changes:
+      // bloodTil:"0.6%"ghostTile:"0.8%"yinYan: "0.6%" with none then up to .5 1 .5 see how the others decrease withought bonus and cap
+      // bloodTile: "0.6%"ghostTile: "1.2%"yinYang: "0.7%"    when we increase the buonus and cap by .005
       }
-    }
   },
   golden_draft: {
     key: 'golden_draft',
@@ -43,12 +51,15 @@ export const PERSONAL_MODIFIER_DEFINITIONS = {
     rarity: 0.55,
     tier: PERSONAL_MODIFIER_TIERS.RARE,
     tags: ['tile-odds', 'gold'],
-    maxStacks: 3,
+    maxStacks: 300,
     start_with: 0,
     effects: {
       modifierOddsBonus: {
         gold: 0.35
-      }
+      },
+      // offset other pulls
+      goodChanceBonus: 0.001,
+      goodChanceCapDelta: 0.001
     }
   },
   neutral_current: {
@@ -61,7 +72,8 @@ export const PERSONAL_MODIFIER_DEFINITIONS = {
     maxStacks: 3,
     start_with: 0,
     effects: {
-      neutralChanceBonus: 0.04
+      neutralChanceBonus: 0.02,
+      neutralChanceCapDelta: 0.03
     }
   },
   better_odds: {
@@ -71,23 +83,24 @@ export const PERSONAL_MODIFIER_DEFINITIONS = {
     rarity: 0.6,
     tier: PERSONAL_MODIFIER_TIERS.RARE,
     tags: ['tile-odds', 'good'],
-    maxStacks: 3,
+    maxStacks: 33,
     start_with: 0,
     effects: {
-      goodChanceBonus: 0.04
+      goodChanceBonus: 0.006,
+      goodChanceCapDelta: 0.01
     }
   },
-  cleaner_rack: {
+   cleaner_rack: {
     key: 'cleaner_rack',
     label: 'Cleaner Rack',
     description: 'Bad tile modifiers are less likely to appear.',
     rarity: 0.65,
     tier: PERSONAL_MODIFIER_TIERS.RARE,
     tags: ['tile-odds', 'bad-cap'],
-    maxStacks: 2,
+    maxStacks: 22,
     start_with: 0,
     effects: {
-      badChanceMultiplierDelta: -0.18
+      badChanceBonus: -0.004
     }
   },
   strong_start: {
@@ -97,12 +110,51 @@ export const PERSONAL_MODIFIER_DEFINITIONS = {
     rarity: 0.5,
     tier: PERSONAL_MODIFIER_TIERS.RARE,
     tags: ['opening-rack', 'good-cap'],
-    maxStacks: 2,
+    maxStacks: 20,
     start_with: 0,
     effects: {
       openingGoodChanceBonus: 0.04
     }
   },
+  // good_ceiling: {
+  //   key: 'good_ceiling',
+  //   label: 'Good Ceiling',
+  //   description: 'Good modifier chance cap is raised.',
+  //   rarity: 0.0,
+  //   tier: PERSONAL_MODIFIER_TIERS.RARE,
+  //   tags: ['tile-odds', 'good-cap'],
+  //   maxStacks: 3,
+  //   start_with: 0,
+  //   effects: {
+  //     goodChanceCapDelta: 0.05
+  //   }
+  // },
+  // safety_ceiling: {
+  //   key: 'safety_ceiling',
+  //   label: 'Safety Ceiling',
+  //   description: 'Bad modifier chance cap is lowered.',
+  //   rarity: 0.0,
+  //   tier: PERSONAL_MODIFIER_TIERS.RARE,
+  //   tags: ['tile-odds', 'bad-cap'],
+  //   maxStacks: 3,
+  //   start_with: 0,
+  //   effects: {
+  //     badChanceCapDelta: -0.04
+  //   }
+  // },
+  // neutral_ceiling: {
+  //   key: 'neutral_ceiling',
+  //   label: 'Neutral Ceiling',
+  //   description: 'Neutral modifier chance cap is raised.',
+  //   rarity: 0.0,
+  //   tier: PERSONAL_MODIFIER_TIERS.RARE,
+  //   tags: ['tile-odds', 'neutral-cap'],
+  //   maxStacks: 3,
+  //   start_with: 0,
+  //   effects: {
+  //     neutralChanceCapDelta: 0.04
+  //   }
+  // },
   boon_cache: {
     key: 'boon_cache',
     label: 'Boon Cache',

@@ -138,7 +138,11 @@ export const useMultiRoundRun = ({ rounds = MULTI_ROUND_ROUNDS } = {}) => {
       effects.badChanceMultiplier += (definitionEffects.badChanceMultiplierDelta || 0) * stacks;
       effects.openingGoodChanceBonus += (definitionEffects.openingGoodChanceBonus || 0) * stacks;
       effects.goodChanceBonus += (definitionEffects.goodChanceBonus || 0) * stacks;
+      effects.badChanceBonus += (definitionEffects.badChanceBonus || 0) * stacks;
       effects.neutralChanceBonus += (definitionEffects.neutralChanceBonus || 0) * stacks;
+      effects.goodChanceCapDelta += (definitionEffects.goodChanceCapDelta || 0) * stacks;
+      effects.badChanceCapDelta += (definitionEffects.badChanceCapDelta || 0) * stacks;
+      effects.neutralChanceCapDelta += (definitionEffects.neutralChanceCapDelta || 0) * stacks;
       Object.entries(definitionEffects.modifierScoreBonus || {}).forEach(([key, bonus]) => {
         effects.modifierScoreBonus[key] = (effects.modifierScoreBonus[key] || 0) + (bonus * stacks);
       });
@@ -154,7 +158,11 @@ export const useMultiRoundRun = ({ rounds = MULTI_ROUND_ROUNDS } = {}) => {
       badChanceMultiplier: 1,
       openingGoodChanceBonus: 0,
       goodChanceBonus: 0,
-      neutralChanceBonus: 0
+      badChanceBonus: 0,
+      neutralChanceBonus: 0,
+      goodChanceCapDelta: 0,
+      badChanceCapDelta: 0,
+      neutralChanceCapDelta: 0
     });
   });
   const visibleProgressRounds = computed(() => {

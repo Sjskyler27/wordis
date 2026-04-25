@@ -17,6 +17,8 @@ game.vue is the meat of the gameplay functionality but things should be broken i
 
 # Coding
 
+do not do commit things unless it is a multitask problem stated by me
+
 whenever you write code lets add minimal comments so my searches for certain code snippets show up better
 do not delete comments that you do see 
 larger tasks should be broken down into multiple commits 

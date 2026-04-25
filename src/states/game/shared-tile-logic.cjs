@@ -29,6 +29,10 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
   const BASE_GOOD_MODIFIER_CHANCE = 0.08;
   const BASE_BAD_MODIFIER_CHANCE = 0.03;
   const BASE_NEUTRAL_MODIFIER_CHANCE = 0.02;
+  const BASE_GOOD_MODIFIER_CAP = 0.45;
+  const BASE_BAD_MODIFIER_CAP = 0.4;
+  const BASE_NEUTRAL_MODIFIER_CAP = 0.2;
+  const TOTAL_MODIFIER_CHANCE_CAP = 0.9;
   const MODIFIER_SWING_DIVISOR = 90;
   const MAX_GOOD_MODIFIER_BONUS = 0.3;
   const MAX_BAD_MODIFIER_BONUS = 0.22;
@@ -200,32 +204,46 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
       ? (personalModifierEffects.openingGoodChanceBonus || 0)
       : 0;
     const goodChanceBonus = personalModifierEffects.goodChanceBonus || 0;
+    const badChanceBonus = personalModifierEffects.badChanceBonus || 0;
     const neutralChanceBonus = personalModifierEffects.neutralChanceBonus || 0;
     const badChanceMultiplier = Math.max(0, personalModifierEffects.badChanceMultiplier ?? 1);
+    const goodChanceCap = Math.max(0, Math.min(TOTAL_MODIFIER_CHANCE_CAP, BASE_GOOD_MODIFIER_CAP + (personalModifierEffects.goodChanceCapDelta || 0)));
+    const badChanceCap = Math.max(0, Math.min(TOTAL_MODIFIER_CHANCE_CAP, BASE_BAD_MODIFIER_CAP + (personalModifierEffects.badChanceCapDelta || 0)));
+    const neutralChanceCap = Math.max(0, Math.min(TOTAL_MODIFIER_CHANCE_CAP, BASE_NEUTRAL_MODIFIER_CAP + (personalModifierEffects.neutralChanceCapDelta || 0)));
+    const chanceCaps = {
+      goodChanceCap,
+      badChanceCap,
+      neutralChanceCap,
+      totalChanceCap: TOTAL_MODIFIER_CHANCE_CAP
+    };
     const goodChance = Math.max(
       0,
       Math.min(
-        0.9,
+        TOTAL_MODIFIER_CHANCE_CAP,
+        goodChanceCap,
         options.goodChance ?? ((baseChances.goodChance * (options.goodChanceMultiplier ?? 1)) + openingGoodChanceBonus + goodChanceBonus)
       )
     );
     const badChance = Math.max(
       0,
       Math.min(
-        0.9 - goodChance,
-        options.badChance ?? (baseChances.badChance * (options.badChanceMultiplier ?? 1) * badChanceMultiplier)
+        TOTAL_MODIFIER_CHANCE_CAP - goodChance,
+        badChanceCap,
+        options.badChance ?? ((baseChances.badChance * (options.badChanceMultiplier ?? 1) * badChanceMultiplier) + badChanceBonus)
       )
     );
     const neutralChance = Math.max(
       0,
       Math.min(
-        0.9 - goodChance - badChance,
+        TOTAL_MODIFIER_CHANCE_CAP - goodChance - badChance,
+        neutralChanceCap,
         options.neutralChance ?? ((baseChances.neutralChance * (options.neutralChanceMultiplier ?? 1)) + neutralChanceBonus)
       )
     );
     const normalChance = Math.max(0, 1 - goodChance - badChance - neutralChance);
     const chanceBonuses = {
       goodChanceBonus,
+      badChanceBonus,
       neutralChanceBonus,
       openingGoodChanceBonus
     };
@@ -241,6 +259,7 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
         },
         baseChances: formatChanceGroup(baseChances),
         chanceBonuses: formatChanceGroup(chanceBonuses),
+        chanceCaps: formatChanceGroup(chanceCaps),
         finalChances: {
           good: formatChancePercent(goodChance),
           bad: formatChancePercent(badChance),
@@ -256,7 +275,8 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
       goodChance,
       badChance,
       neutralChance,
-      chanceBonuses
+      chanceBonuses,
+      chanceCaps
     };
   };
 
@@ -438,6 +458,7 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
     neutralChance,
     baseChances = null,
     chanceBonuses = null,
+    chanceCaps = null,
     modifierOddsBonus = {},
     profile = {},
     eligibleGoodModifiers = [],
@@ -505,6 +526,7 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
         neutral: formatChancePercent(baseChances.neutralChance || 0)
       } : null,
       chanceBonuses: chanceBonuses ? formatChanceGroup(chanceBonuses) : null,
+      chanceCaps: chanceCaps ? formatChanceGroup(chanceCaps) : null,
       modifierOdds: {
         good: formatChanceGroup(goodModifierOdds),
         bad: formatChanceGroup(badModifierOdds),
@@ -549,7 +571,8 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
       badChance,
       neutralChance,
       baseChances,
-      chanceBonuses
+      chanceBonuses,
+      chanceCaps
     } = getModifierChances(side, scores, modifierProfile, chanceOverrides.turnCount || 0, chanceOverrides);
     const roll = Math.random();
 
@@ -574,6 +597,7 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
       neutralChance,
       baseChances,
       chanceBonuses,
+      chanceCaps,
       modifierOddsBonus,
       profile,
       eligibleGoodModifiers,
