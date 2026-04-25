@@ -81,6 +81,7 @@ const toggleDrawer = () => {
 }
 
 .personal-modifiers-drawer-content {
+  max-height: 1000px;
   height: 100%;
   padding: 18px;
   border-radius: 24px;
@@ -241,6 +242,7 @@ const toggleDrawer = () => {
   }
 
   .personal-modifiers-drawer-content {
+    max-height: 1000px;
     padding: 0;
     border: none;
     border-radius: 0;
