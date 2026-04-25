@@ -142,7 +142,7 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
     return modifiers.filter((modifier) => {
       const definition = getModifierDefinition(modifier);
       // return all if logging
-      console.log('PROFILE' + profileName)
+      // console.log('PROFILE' + profileName)
       if (testing) {
         return true;
       }
