@@ -557,6 +557,11 @@ const simulateTab = (reverse = false) => {
   onMounted( () => {
     console.log('isfirebase enabled'+ firebaseEnabled)
     showFirstRunAuthPrompt();
+    if(!localStorage.getItem('nativeControllerSupport')){ 
+      localStorage.setItem('nativeControllerSupport', true)
+      nativeControllerSupport.value = true;
+    }
+
     checkGamepadInput();
     if (isMobile.value && !localStorage.getItem('mobileZoomApplied')) {
       zoom.value = 0.5
@@ -579,7 +584,6 @@ const simulateTab = (reverse = false) => {
     if(!localStorage.getItem('unlockSystem')) localStorage.setItem('unlockSystem',"hard")
     if(!localStorage.getItem('unlockedMonsters')) localStorage.setItem('unlockedMonsters','[1,2,3]')
     if(!localStorage.getItem('defaultHints')) localStorage.setItem('defaultHints', JSON.stringify(defaultHints.value))
-    if(!localStorage.getItem('nativeControllerSupport')) localStorage.setItem('nativeControllerSupport', true)
     else{
       // Load saved user hints (may be partial or missing new keys)
       let seenHints = JSON.parse(localStorage.getItem('defaultHints')) || {};
