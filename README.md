@@ -64,6 +64,7 @@ to create mac exe
   npm run build:app
 it will build two apps, one for intel macs and one for apple silicon macs. intel is game-0.5.0.dmg apple is game-0.5.0-arm64.dmg
 run it to install 
+command option i to open debug in electron app
 
 # steam upload
 when first seting up steam you need a branch for both the windos and mac version
