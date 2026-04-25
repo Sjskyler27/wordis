@@ -39,10 +39,10 @@
           <label for="gameZoom">Game Zoom: {{ Math.round(props.gameZoom * 100) }}%</label>
           <input id="gameZoom" type="range" min="0.5" max="1.5" step="0.01" :value="props.gameZoom" @input="ongameZoomInput" />
         </div>
-        <div class="setting">
+        <!-- <div class="setting">
           <label for="shopZoom">Shop Zoom: {{ Math.round(props.shopZoom * 100) }}%</label>
           <input id="shopZoom" type="range" min="0.5" max="1.5" step="0.01" :value="props.shopZoom" @input="onshopZoomInput" />
-        </div>
+        </div> -->
       </section>
 
       <!-- Game -->

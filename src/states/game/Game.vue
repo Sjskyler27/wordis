@@ -55,12 +55,12 @@
 
 
         <div class="bonus-card accent-red">
-          <span class="bonus-kicker">Status</span>
+          <span class="bonus-kicker">Info</span>
           <strong>{{ localMessage || statusHeadline }}</strong>
           <p v-if="props.isMultiplayer && !gameStarted">Waiting for opponent to connect</p>
           <p v-else-if="isTimedSoloMode">Timer ends the run, so play fast and bank points.</p>
           <p v-else-if="isMultiRoundMode">Clear the current target to advance the run.</p>
-          <p v-else>Only used letters are replaced</p>
+          <p v-else>Words must be 4 letters, larger words score bonus points and may gain cards. Only used letters are replaced.</p>
         </div>
         <div class="bonus-card accent-purple">
           <span class="bonus-kicker">Cards</span>
@@ -805,7 +805,7 @@ const modeTitle = computed(() => {
     return `Multi-Round · ${multiRoundRun.currentRound.value?.label || 'Round 1'}`;
   }
 
-  return isTimedSoloMode.value ? 'Solo Sprint' : `Bot Pressure · ${props.botDifficulty}`;
+  return isTimedSoloMode.value ? 'Solo Sprint' : `Machine Learning · ${props.botDifficulty}`;
 });
 const modeSubtitle = computed(() => {
   if (props.isMultiplayer) {
@@ -820,7 +820,7 @@ const modeSubtitle = computed(() => {
     return 'Play alone against the clock and squeeze out the highest score before time expires.';
   }
 
-  return `Fight the bot on ${props.botDifficulty} difficulty in the same live rack format.`;
+  return `Beat the Machine by spelling words fast and using different tiles to get high scoring words. The first to 250 wins. Use your attacks to slow the Machine down and your boons to give yourself an advantage!`;
 });
 const statusHeadline = computed(() => {
   if (showTutorialOverlay.value) {
@@ -843,7 +843,7 @@ const statusHeadline = computed(() => {
     return `Round ${multiRoundRun.currentRoundNumber.value}/${multiRoundRun.totalRounds.value} · ${formattedMultiRoundTimeRemaining.value} · ${multiRoundRun.currentTargetScore.value} point target`;
   }
 
-  return 'Racks are live';
+  return 'Start Playing Words';
 });
 const boardFrameStyle = computed(() => ({
   zoom: props.gameZoom || 1
@@ -1762,7 +1762,7 @@ const setPauseState = (nextPaused) => {
   startSoloTimer();
   startMultiRoundTimer();
   startGameMusic();
-  localMessage.value = 'Racks are live';
+  localMessage.value = 'Start Playing Words';
 };
 
 const syncTutorialPauseState = (visible) => {

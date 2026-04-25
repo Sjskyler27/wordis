@@ -37,6 +37,8 @@
         <!-- <img src="/src/assets/images/playTypes/image.png" alt="Bot Duel" class="menu-img" /> -->
         <div class="menu-text">
           <h3>Machine Learning</h3>
+          <br>
+
           <p>Play against a machine that gets better the more you play!</p>
         </div>
       </div>
@@ -50,6 +52,8 @@
         <!-- <img src="/src/assets/images/playTypes/image.png" alt="Expedition" class="menu-img" /> -->
         <div class="menu-text">
           <h3>Multi-Round</h3>
+          <br>
+
           <p>Clear escalating timed rounds and build a run of lasting upgrades.</p>
         </div>
       </div>
@@ -63,8 +67,9 @@
         <!-- <img src="/src/assets/images/playTypes/image.png" alt="Archmage" class="menu-img" /> -->
         <div class="menu-text">
           <h3>MultiPlayer</h3>
-          <p v-if="!freePlayLocked">Draft freely with no limits!</p>
-          <p v-else>Unlock 12 characters to play free play!</p>
+          <br>
+
+          <p>Play head to head against your Friends</p>
         </div>
       </div>
 
@@ -76,6 +81,7 @@
         <!-- <img src="/src/assets/images/playTypes/image.png" alt="Knight" class="menu-img" /> -->
         <div class="menu-text">
           <h3>Quick Practice</h3>
+          <br>
           <p>Race the clock and stack the highest score you can.</p>
         </div>
       </div>
