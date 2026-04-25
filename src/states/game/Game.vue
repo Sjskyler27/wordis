@@ -2856,6 +2856,9 @@ body {
 }
 
 @media (max-width: 1000px) {
+  .arena-shell {
+    gap: 3px;
+  }
   .accent-blue {
     height: 100px;
   }

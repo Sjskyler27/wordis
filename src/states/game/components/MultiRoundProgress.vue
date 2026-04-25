@@ -192,9 +192,11 @@ const getRoundLabel = (round) => {
   transform: translate(-50%, 0);
 }
 
-@media (max-width: 700px) {
+@media (max-width: 1000px) {
   .multi-round-progress {
     padding-inline: 0;
+    margin: 0 auto;
+    
   }
 
   .round-track {

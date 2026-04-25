@@ -843,6 +843,7 @@ button:focus{
   .word-console {
     flex-direction: column;
     align-items: stretch;
+    gap: 0px;
   }
 
   .console-topline {
