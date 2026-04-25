@@ -81,6 +81,7 @@ const toggleDrawer = () => {
 }
 
 .personal-modifiers-drawer-content {
+
   max-height: 1000px;
   height: 100%;
   padding: 18px;
@@ -171,8 +172,9 @@ const toggleDrawer = () => {
 
 @media (max-width: 1249px) {
   .personal-modifiers-handle {
+    height: 70px;
     position: fixed;
-    top: 50%;
+    top: 25%;
     right: 0;
     z-index: 7;
     transform: translateY(-50%);
@@ -204,8 +206,8 @@ const toggleDrawer = () => {
   }
 
   .personal-modifiers-handle-grip {
-    width: 3px;
-    height: 28px;
+    width: 11px;
+    height: 35px;
     border-radius: 999px;
     background: rgba(111, 245, 221, 0.82);
     flex: 0 0 auto;

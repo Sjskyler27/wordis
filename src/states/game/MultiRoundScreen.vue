@@ -74,9 +74,27 @@
       <section class="reference-section">
         <div class="reference-header">
           <span class="kicker">Reference</span>
-          <h2>Possible Personal Modifiers</h2>
+          <h2>{{ selectedReferenceType === 'personal' ? 'Possible Upgrades' : 'Possible Round Modifiers' }}</h2>
         </div>
-        <div class="filter-row">
+        <div class="reference-toggle">
+          <button
+            type="button"
+            class="reference-toggle-button"
+            :class="{ active: selectedReferenceType === 'personal' }"
+            @click="selectedReferenceType = 'personal'"
+          >
+            Upgrades
+          </button>
+          <button
+            type="button"
+            class="reference-toggle-button"
+            :class="{ active: selectedReferenceType === 'round' }"
+            @click="selectedReferenceType = 'round'"
+          >
+            Round Modifiers
+          </button>
+        </div>
+        <div v-if="selectedReferenceType === 'personal'" class="filter-row">
           <button
             v-for="group in personalModifierGroups"
             :key="group.tier"
@@ -88,7 +106,7 @@
             {{ group.label }}
           </button>
         </div>
-        <div class="tier-group">
+        <div v-if="selectedReferenceType === 'personal'" class="tier-group">
           <div class="tier-heading" :class="`tier-${activePersonalModifierGroup.tier}`">
             <strong>{{ activePersonalModifierGroup.label }}</strong>
             <span>{{ activePersonalModifierGroup.modifiers.length }} modifiers</span>
@@ -109,14 +127,7 @@
             </article>
           </div>
         </div>
-      </section>
-
-      <section class="reference-section">
-        <div class="reference-header">
-          <span class="kicker">Reference</span>
-          <h2>Possible Round Modifiers</h2>
-        </div>
-        <div class="filter-row">
+        <div v-if="selectedReferenceType === 'round'" class="filter-row">
           <button
             v-for="group in roundModifierGroups"
             :key="group.difficulty"
@@ -128,7 +139,7 @@
             {{ group.label }}
           </button>
         </div>
-        <div class="tier-group">
+        <div v-if="selectedReferenceType === 'round'" class="tier-group">
           <div class="tier-heading" :class="`difficulty-${activeRoundModifierGroup.difficulty}`">
             <strong>{{ activeRoundModifierGroup.label }}</strong>
             <span>{{ activeRoundModifierGroup.modifiers.length }} modifiers</span>
@@ -162,6 +173,7 @@ import { ROUND_MODIFIER_DEFINITIONS } from './multiround/round-modifier-definiti
 
 const emit = defineEmits(['singleplayer', 'type']);
 const selectedDifficulty = ref(localStorage.getItem('multiRoundDifficulty') || 'normal');
+const selectedReferenceType = ref('personal');
 const selectedPersonalTier = ref('common');
 const selectedRoundDifficulty = ref('easy');
 const difficulties = [
@@ -374,6 +386,32 @@ const startMultiRound = () => {
   justify-content: space-between;
   gap: 16px;
   flex-wrap: wrap;
+}
+
+.reference-toggle {
+  margin-top: 18px;
+  display: inline-flex;
+  padding: 5px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.reference-toggle-button {
+  cursor: pointer;
+  border-radius: 999px;
+  padding: 10px 14px;
+  background: transparent;
+  color: rgba(247, 239, 225, 0.68);
+  font-family: inherit;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+
+.reference-toggle-button.active {
+  background: linear-gradient(180deg, rgba(93, 230, 203, 0.24), rgba(46, 179, 151, 0.38));
+  color: var(--cream);
 }
 
 .modifier-grid {

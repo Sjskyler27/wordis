@@ -226,14 +226,16 @@ watch(connectionStatus, (status) => {
   --bg-corner: #f39a54;
   --cream: #f7efe1;
   min-height: 100vh;
-  position: relative;
-  overflow: hidden;
+  position: fixed;
+  inset: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
   padding: 28px;
   color: var(--cream);
 }
 
 #background-layer {
-  position: absolute;
+  position: fixed;
   inset: 0;
   z-index: -2;
   background:

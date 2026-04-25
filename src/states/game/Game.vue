@@ -24,8 +24,8 @@
       ></button>
       <aside class="side-stack" :class="{ 'side-stack-drawer': isSideDrawerMode, open: isSideDrawerOpen }">
         <div class="bonus-card accent-blue">
-          <span class="bonus-kicker">Game mode</span>
-          <strong>{{ modeTitle }}</strong>
+          <span class="bonus-kicker" v-if="!isMobile">Game mode</span>
+          <strong v-if="!isMobile">{{ modeTitle }}</strong>
           <p v-if="props.isMultiplayer">
             <button type="button" class="room-code-button" @click="copyRoomCode">
               Room {{ roomCode }}
@@ -2873,7 +2873,7 @@ body {
     position: fixed;
     top: 25%;
     left: 0;
-    z-index: 7;
+    z-index: 21;
     transform: translateY(-50%);
     border: 1px solid rgba(255, 238, 214, 0.16);
     cursor: pointer;
@@ -2894,7 +2894,7 @@ body {
   }
 
   .side-drawer-handle.open {
-    left: min(340px, calc(100vw - 80px));
+    left: min(340px, calc(100vw - 220px));
   }
 
   .side-drawer-handle-grip {
@@ -2923,7 +2923,7 @@ body {
     top: 18px;
     left: 0;
     bottom: 18px;
-    z-index: 6;
+    z-index: 19;
     width: min(360px, calc(100vw - 52px));
     max-width: none;
     padding: 18px 16px 22px;
