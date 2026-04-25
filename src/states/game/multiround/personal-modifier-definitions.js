@@ -62,6 +62,94 @@ export const PERSONAL_MODIFIER_DEFINITIONS = {
       goodChanceCapDelta: 0.001
     }
   },
+  first_focus: {
+    key: 'first_focus',
+    label: 'First Focus',
+    description: 'First-position tiles gain +5 more score and appear more often.',
+    rarity: 0.72,
+    tier: PERSONAL_MODIFIER_TIERS.COMMON,
+    tags: ['score', 'tile-odds', 'firsttile'],
+    maxStacks: 5,
+    start_with: 0,
+    effects: {
+      firstTileBonusByModifier: {
+        firsttile: 5
+      },
+      modifierOddsBonus: {
+        firsttile: 0.16
+      },
+      goodChanceBonus: 0.002,
+      goodChanceCapDelta: 0.004
+    }
+  },
+  wild_spark: {
+    key: 'wild_spark',
+    label: 'Wild Spark',
+    description: 'Wild tiles gain +1 score and appear more often.',
+    rarity: 0.72,
+    tier: PERSONAL_MODIFIER_TIERS.COMMON,
+    tags: ['score', 'tile-odds', 'wild'],
+    maxStacks: 5,
+    start_with: 0,
+    effects: {
+      modifierScoreBonus: {
+        wild: 1
+      },
+      modifierOddsBonus: {
+        wild: 0.16
+      },
+      goodChanceBonus: 0.002,
+      goodChanceCapDelta: 0.004
+    }
+  },
+  cool_embers: {
+    key: 'cool_embers',
+    label: 'Cool Embers',
+    description: 'Burn tiles appear less often.',
+    rarity: 0.72,
+    tier: PERSONAL_MODIFIER_TIERS.COMMON,
+    tags: ['tile-odds', 'burningTile'],
+    maxStacks: 5,
+    start_with: 0,
+    effects: {
+      modifierOddsBonus: {
+        burningTile: -0.08
+      }
+    }
+  },
+  crowded_bag: {
+    key: 'crowded_bag',
+    label: 'Crowded Bag',
+    description: 'All modifier groups appear more often.',
+    rarity: 0.64,
+    tier: PERSONAL_MODIFIER_TIERS.COMMON,
+    tags: ['tile-odds', 'good', 'bad', 'neutral'],
+    maxStacks: 5,
+    start_with: 0,
+    effects: {
+      goodChanceBonus: 0.006,
+      badChanceBonus: 0.004,
+      neutralChanceBonus: 0.003,
+      goodChanceCapDelta: 0.012,
+      badChanceCapDelta: 0.01,
+      neutralChanceCapDelta: 0.008
+    }
+  },
+  five_letter_form: {
+    key: 'five_letter_form',
+    label: 'Five Letter Form',
+    description: 'Five-letter words score +5.',
+    rarity: 0.68,
+    tier: PERSONAL_MODIFIER_TIERS.COMMON,
+    tags: ['score', 'word-length'],
+    maxStacks: 3,
+    start_with: 0,
+    effects: {
+      lengthScoreBonus: {
+        5: 5
+      }
+    }
+  },
   neutral_current: {
     key: 'neutral_current',
     label: 'Neutral Current',
@@ -90,7 +178,7 @@ export const PERSONAL_MODIFIER_DEFINITIONS = {
       goodChanceCapDelta: 0.01
     }
   },
-   cleaner_rack: {
+  cleaner_rack: {
     key: 'cleaner_rack',
     label: 'Cleaner Rack',
     description: 'Bad tile modifiers are less likely to appear.',
@@ -101,6 +189,36 @@ export const PERSONAL_MODIFIER_DEFINITIONS = {
     start_with: 0,
     effects: {
       badChanceBonus: -0.004
+    }
+  },
+  bank_interest: {
+    key: 'bank_interest',
+    label: 'Bank Interest',
+    description: 'Bank tiles gain +1 more score each turn.',
+    rarity: 0.48,
+    tier: PERSONAL_MODIFIER_TIERS.RARE,
+    tags: ['score', 'bankTile'],
+    maxStacks: 3,
+    start_with: 0,
+    effects: {
+      idleBonusScoreDeltaBonus: {
+        bankTile: 1
+      }
+    }
+  },
+  short_word_sharpener: {
+    key: 'short_word_sharpener',
+    label: 'Short Word Sharpener',
+    description: 'Four-letter words score +7.',
+    rarity: 0.48,
+    tier: PERSONAL_MODIFIER_TIERS.RARE,
+    tags: ['score', 'word-length'],
+    maxStacks: 3,
+    start_with: 0,
+    effects: {
+      lengthScoreBonus: {
+        4: 7
+      }
     }
   },
   strong_start: {
@@ -179,6 +297,21 @@ export const PERSONAL_MODIFIER_DEFINITIONS = {
     start_with: 0,
     effects: {
       vowelScoreMultiplier: 2
+    }
+  },
+  compact_double: {
+    key: 'compact_double',
+    label: 'Compact Double',
+    description: 'Four-letter word scores are doubled after all other points.',
+    rarity: 0.2,
+    tier: PERSONAL_MODIFIER_TIERS.EPIC,
+    tags: ['score', 'word-length'],
+    maxStacks: 1,
+    start_with: 0,
+    effects: {
+      lengthScoreMultiplier: {
+        4: 2
+      }
     }
   }
 };

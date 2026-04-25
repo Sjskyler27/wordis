@@ -138,11 +138,11 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
   const getModifierDescription = (status = 'normal') => {
     return getModifierDefinition(status).description || MODIFIER_DEFINITIONS.normal.description || '';
   };
-  const getAllowedModifiersForProfile = (modifiers = [], profileName = 'duel') => {
+  const getAllowedModifiersForProfile = (modifiers = [], profileName = 'solo') => {
     return modifiers.filter((modifier) => {
       const definition = getModifierDefinition(modifier);
       // return all if logging
-
+      console.log('PROFILE' + profileName)
       if (testing) {
         return true;
       }
@@ -160,7 +160,7 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
     });
   };
   const getCardDefinition = (cardKey) => CARD_DEFINITIONS[normalizeCardKey(cardKey)];
-  const getModifierProfile = (profileName = 'duel') => {
+  const getModifierProfile = (profileName = 'solo') => {
     const profile = MODIFIER_PROFILES[profileName] || MODIFIER_PROFILES.duel;
 
     return {
@@ -176,7 +176,7 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
     return Math.min(maxBonus, liveDelta / MODIFIER_SWING_DIVISOR);
   };
 
-  const getModifierChances = (side, scores = {}, profileName = 'duel', turnCount = 0, options = {}) => {
+  const getModifierChances = (side, scores = {}, profileName = 'solo', turnCount = 0, options = {}) => {
     // base tiles off profile 
     const profile = getModifierProfile(profileName);
     const turnBonus = Math.min(MAX_TURN_MODIFIER_BONUS, Math.max(0, turnCount) * TURN_MODIFIER_CHANCE_STEP);
@@ -706,9 +706,11 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
   const tileScore = (tile, options = {}) => (
     getPersonalTileScore(tile, options) * (tile?.multiplier || 1)
   );
-  const tickIdleTile = (tile) => {
+  const tickIdleTile = (tile, options = {}) => {
     const definition = getModifierDefinition(tile?.status);
-    const idleBonusScoreDelta = definition.effects.idleBonusScoreDelta || 0;
+    const personalModifierEffects = options.personalModifierEffects || options.personalModifiers || {};
+    const idleBonusScoreDeltaBonus = personalModifierEffects.idleBonusScoreDeltaBonus || {};
+    const idleBonusScoreDelta = (definition.effects.idleBonusScoreDelta || 0) + (idleBonusScoreDeltaBonus[tile?.status] || 0);
 
     if (!idleBonusScoreDelta) {
       return tile;
@@ -789,6 +791,9 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
   };
 
   const getWordScoreDetails = (tiles, options = {}) => {
+    const personalModifierEffects = options.personalModifierEffects || options.personalModifiers || {};
+    const lengthScoreBonus = personalModifierEffects.lengthScoreBonus || {};
+    const lengthScoreMultiplier = personalModifierEffects.lengthScoreMultiplier || {};
     const zeroedIndexes = getZeroedRoundModifierIndexes(tiles, options);
     const baseLetterTotal = tiles.reduce((total, tile, index) => {
       if (zeroedIndexes.has(index)) {
@@ -808,11 +813,15 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
         return total;
       }
 
-      return total + tile?.firstTileBonus;
+      const firstTileBonusByModifier = personalModifierEffects.firstTileBonusByModifier || {};
+      return total + tile?.firstTileBonus + (firstTileBonusByModifier[tile?.status] || 0);
     }, 0);
     const letterTotal = baseLetterTotal + firstTileBonus + positionBonus;
-    const lengthBonus = getLengthBonus(tiles.length);
+    const personalLengthBonus = lengthScoreBonus[tiles.length] || lengthScoreBonus[String(tiles.length)] || 0;
+    const lengthBonus = getLengthBonus(tiles.length) + personalLengthBonus;
     const wordMultiplier = tiles.reduce((total, tile) => total * (tile?.wordMultiplier || 1), 1);
+    const personalLengthMultiplier = lengthScoreMultiplier[tiles.length] || lengthScoreMultiplier[String(tiles.length)] || 1;
+    const total = (letterTotal + lengthBonus) * wordMultiplier * personalLengthMultiplier;
 
     return {
       baseLetterTotal,
@@ -821,7 +830,7 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
       letterTotal,
       lengthBonus,
       wordMultiplier,
-      total: (letterTotal + lengthBonus) * wordMultiplier
+      total
     };
   };
 
@@ -1240,7 +1249,9 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
         }
 
         // Surviving tiles can fire their modifier-specific new turn animation hooks here.
-        return tickLockedTile(tickIdleTile(tile), { trigger: 'onNewTurn' });
+        return tickLockedTile(tickIdleTile(tile, {
+          personalModifierEffects: options.personalModifierEffects || {}
+        }), { trigger: 'onNewTurn' });
       });
 
       nextTiles.forEach((tile, index) => {

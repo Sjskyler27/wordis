@@ -146,6 +146,21 @@ export const useMultiRoundRun = ({ rounds = MULTI_ROUND_ROUNDS } = {}) => {
       Object.entries(definitionEffects.modifierScoreBonus || {}).forEach(([key, bonus]) => {
         effects.modifierScoreBonus[key] = (effects.modifierScoreBonus[key] || 0) + (bonus * stacks);
       });
+      Object.entries(definitionEffects.firstTileBonusByModifier || {}).forEach(([key, bonus]) => {
+        effects.firstTileBonusByModifier[key] = (effects.firstTileBonusByModifier[key] || 0) + (bonus * stacks);
+      });
+      Object.entries(definitionEffects.idleBonusScoreDeltaBonus || {}).forEach(([key, bonus]) => {
+        effects.idleBonusScoreDeltaBonus[key] = (effects.idleBonusScoreDeltaBonus[key] || 0) + (bonus * stacks);
+      });
+      Object.entries(definitionEffects.lengthScoreBonus || {}).forEach(([length, bonus]) => {
+        effects.lengthScoreBonus[length] = (effects.lengthScoreBonus[length] || 0) + (bonus * stacks);
+      });
+      Object.entries(definitionEffects.lengthScoreMultiplier || {}).forEach(([length, multiplier]) => {
+        effects.lengthScoreMultiplier[length] = Math.max(
+          effects.lengthScoreMultiplier[length] || 1,
+          multiplier || 1
+        );
+      });
       Object.entries(definitionEffects.modifierOddsBonus || {}).forEach(([key, bonus]) => {
         effects.modifierOddsBonus[key] = (effects.modifierOddsBonus[key] || 0) + (bonus * stacks);
       });
@@ -154,6 +169,10 @@ export const useMultiRoundRun = ({ rounds = MULTI_ROUND_ROUNDS } = {}) => {
       vowelScoreBonus: 0,
       vowelScoreMultiplier: 1,
       modifierScoreBonus: {},
+      firstTileBonusByModifier: {},
+      idleBonusScoreDeltaBonus: {},
+      lengthScoreBonus: {},
+      lengthScoreMultiplier: {},
       modifierOddsBonus: {},
       badChanceMultiplier: 1,
       openingGoodChanceBonus: 0,
