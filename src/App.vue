@@ -269,7 +269,27 @@ const showFeedback = ref(false)
   }
 
 
-  const zoom = ref(parseFloat(localStorage.getItem('zoom') ?? 1))
+  const getAutoUiZoom = () => {
+    const width = window.innerWidth || window.screen?.width || 1920;
+    const stops = [
+      { width: 860, zoom: 0.5 },
+      { width: 1280, zoom: 0.65 },
+      { width: 1700, zoom: 0.8 },
+      { width: 1920, zoom: 0.96 }
+    ];
+
+    if (width <= stops[0].width) return stops[0].zoom;
+    if (width >= stops[stops.length - 1].width) return stops[stops.length - 1].zoom;
+
+    const upperIndex = stops.findIndex((stop) => width <= stop.width);
+    const lower = stops[upperIndex - 1];
+    const upper = stops[upperIndex];
+    const progress = (width - lower.width) / (upper.width - lower.width);
+    const tempZoom = Number((lower.zoom + ((upper.zoom - lower.zoom) * progress)).toFixed(2));
+    localStorage.setItem('zoom', tempZoom)
+    return tempZoom;
+  };
+  const zoom = ref(parseFloat(localStorage.getItem('zoom') ?? getAutoUiZoom()))
   const gameZoom = ref(parseFloat(localStorage.getItem('gameZoom') ?? 1))
   const shopZoom = ref(parseFloat(localStorage.getItem('shopZoom') ?? 1))
   
