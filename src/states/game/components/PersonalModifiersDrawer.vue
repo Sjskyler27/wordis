@@ -67,6 +67,11 @@ const closeDrawer = () => {
 const toggleDrawer = () => {
   isOpen.value = !isOpen.value;
 };
+
+defineExpose({
+  closeDrawer,
+  toggleDrawer
+});
 </script>
 
 <style scoped>

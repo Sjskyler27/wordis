@@ -206,16 +206,17 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
       1 - baseChances.goodChance - baseChances.badChance - baseChances.neutralChance
     );
     const personalModifierEffects = options.personalModifierEffects || {};
+    const roundModifierEffects = options.roundModifierEffects || {};
     const openingGoodChanceBonus = options.phase === 'opening'
       ? (personalModifierEffects.openingGoodChanceBonus || 0)
       : 0;
-    const goodChanceBonus = personalModifierEffects.goodChanceBonus || 0;
-    const badChanceBonus = personalModifierEffects.badChanceBonus || 0;
-    const neutralChanceBonus = personalModifierEffects.neutralChanceBonus || 0;
+    const goodChanceBonus = (personalModifierEffects.goodChanceBonus || 0) + (roundModifierEffects.goodChanceBonus || 0);
+    const badChanceBonus = (personalModifierEffects.badChanceBonus || 0) + (roundModifierEffects.badChanceBonus || 0);
+    const neutralChanceBonus = (personalModifierEffects.neutralChanceBonus || 0) + (roundModifierEffects.neutralChanceBonus || 0);
     const badChanceMultiplier = Math.max(0, personalModifierEffects.badChanceMultiplier ?? 1);
-    const goodChanceCap = Math.max(0, Math.min(TOTAL_MODIFIER_CHANCE_CAP, BASE_GOOD_MODIFIER_CAP + (personalModifierEffects.goodChanceCapDelta || 0)));
-    const badChanceCap = Math.max(0, Math.min(TOTAL_MODIFIER_CHANCE_CAP, BASE_BAD_MODIFIER_CAP + (personalModifierEffects.badChanceCapDelta || 0)));
-    const neutralChanceCap = Math.max(0, Math.min(TOTAL_MODIFIER_CHANCE_CAP, BASE_NEUTRAL_MODIFIER_CAP + (personalModifierEffects.neutralChanceCapDelta || 0)));
+    const goodChanceCap = Math.max(0, Math.min(TOTAL_MODIFIER_CHANCE_CAP, BASE_GOOD_MODIFIER_CAP + (personalModifierEffects.goodChanceCapDelta || 0) + (roundModifierEffects.goodChanceCapDelta || 0)));
+    const badChanceCap = Math.max(0, Math.min(TOTAL_MODIFIER_CHANCE_CAP, BASE_BAD_MODIFIER_CAP + (personalModifierEffects.badChanceCapDelta || 0) + (roundModifierEffects.badChanceCapDelta || 0)));
+    const neutralChanceCap = Math.max(0, Math.min(TOTAL_MODIFIER_CHANCE_CAP, BASE_NEUTRAL_MODIFIER_CAP + (personalModifierEffects.neutralChanceCapDelta || 0) + (roundModifierEffects.neutralChanceCapDelta || 0)));
     const chanceCaps = {
       goodChanceCap,
       badChanceCap,
@@ -709,8 +710,11 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
   const tickIdleTile = (tile, options = {}) => {
     const definition = getModifierDefinition(tile?.status);
     const personalModifierEffects = options.personalModifierEffects || options.personalModifiers || {};
+    const roundModifierEffects = options.roundModifierEffects || {};
     const idleBonusScoreDeltaBonus = personalModifierEffects.idleBonusScoreDeltaBonus || {};
-    const idleBonusScoreDelta = (definition.effects.idleBonusScoreDelta || 0) + (idleBonusScoreDeltaBonus[tile?.status] || 0);
+    const idleBonusScoreDelta = (definition.effects.idleBonusScoreDelta || 0)
+      + (idleBonusScoreDeltaBonus[tile?.status] || 0)
+      + (roundModifierEffects.idleScoreDelta || 0);
 
     if (!idleBonusScoreDelta) {
       return tile;
@@ -718,7 +722,7 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
 
     return {
       ...tile,
-      bonusScore: (tile?.bonusScore || 0) + idleBonusScoreDelta
+      bonusScore: Math.max(-(tile?.score || 0), (tile?.bonusScore || 0) + idleBonusScoreDelta)
     };
   };
 
@@ -1128,6 +1132,7 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
           ...(options.chanceOverrides || {}),
           rackTiles: rack,
           personalModifierEffects: options.personalModifierEffects || options.chanceOverrides?.personalModifierEffects || {},
+          roundModifierEffects: options.roundModifierEffects || options.chanceOverrides?.roundModifierEffects || {},
           phase: options.phase || options.chanceOverrides?.phase || 'normal',
           turnCount: options.turnCount || 0
         }));
@@ -1208,6 +1213,48 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
       return buildFreshRack(side, scores, options);
     };
 
+    const shuffleTiles = (tiles = []) => {
+      const shuffledTiles = [...tiles];
+      for (let index = shuffledTiles.length - 1; index > 0; index -= 1) {
+        const swapIndex = Math.floor(Math.random() * (index + 1));
+        [shuffledTiles[index], shuffledTiles[swapIndex]] = [shuffledTiles[swapIndex], shuffledTiles[index]];
+      }
+
+      return shuffledTiles;
+    };
+
+    const applyRotatingLockColumn = (tiles = [], turnCount = 1) => {
+      const columnCount = 5;
+      const lockedColumnIndex = Math.max(0, (turnCount - 1) % columnCount);
+
+      return tiles.map((tile, index) => {
+        if (index % columnCount !== lockedColumnIndex) {
+          return tile;
+        }
+
+        return applyModifierToTile(tile, 'locked3', { trigger: 'onPull' });
+      });
+    };
+
+    const applyTurnMustTile = (tiles = []) => {
+      if (tiles.some((tile) => tile.status === 'mustuse' && !tile.locked)) {
+        return tiles;
+      }
+
+      const candidates = tiles
+        .map((tile, index) => ({ tile, index }))
+        .filter(({ tile }) => !tile.locked && tile.status !== 'mustuse');
+
+      if (!candidates.length) {
+        return tiles;
+      }
+
+      const target = candidates[Math.floor(Math.random() * candidates.length)];
+      return tiles.map((tile, index) => {
+        return index === target.index ? applyModifierToTile(tile, 'mustuse', { trigger: 'onPull' }) : tile;
+      });
+    };
+
     const createOpeningRackPair = (scores = {}, options = {}) => {
       const hostRack = [];
       const opponentRack = [];
@@ -1236,6 +1283,7 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
     const refillTiles = (tiles, usedTileIds, side = null, scores = {}, options = {}) => {
       const usedIds = new Set(usedTileIds);
       // remove existing ghost tiles 
+      const roundModifierEffects = options.roundModifierEffects || {};
       const fleetingAllTiles = Boolean(options.roundModifierEffects?.fleetingAllTiles);
       const ghostIds = new Set(
         tiles
@@ -1250,7 +1298,8 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
 
         // Surviving tiles can fire their modifier-specific new turn animation hooks here.
         return tickLockedTile(tickIdleTile(tile, {
-          personalModifierEffects: options.personalModifierEffects || {}
+          personalModifierEffects: options.personalModifierEffects || {},
+          roundModifierEffects
         }), { trigger: 'onNewTurn' });
       });
 
@@ -1267,14 +1316,25 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
           rackTiles: remainingTiles,
           modifierProfile: options.modifierProfile || 'duel',
           personalModifierEffects: options.personalModifierEffects || {},
-          roundModifierEffects: options.roundModifierEffects || {},
+          roundModifierEffects,
           phase: options.phase || 'submit',
           turnCount: options.turnCount || 0
         });
       });
       if(devLogging) console.log(nextTiles) // logs something callled status so modifier is determined by this point 
 
-      return nextTiles;
+      let resolvedTiles = nextTiles;
+      if (roundModifierEffects.mustTileEachTurn) {
+        resolvedTiles = applyTurnMustTile(resolvedTiles);
+      }
+      if (roundModifierEffects.lockNextColumn) {
+        resolvedTiles = applyRotatingLockColumn(resolvedTiles, options.turnCount || 1);
+      }
+      if (roundModifierEffects.shuffleOnSubmit) {
+        resolvedTiles = shuffleTiles(resolvedTiles);
+      }
+
+      return resolvedTiles;
     };
 
     const replaceSingleTile = (tiles, replacedTileId, side = null, scores = {}, options = {}) => {

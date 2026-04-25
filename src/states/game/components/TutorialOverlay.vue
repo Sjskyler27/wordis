@@ -5,7 +5,7 @@
       <span class="tutorial-kicker">First Match Guide</span>
       <h2>How Wordis Works</h2>
       <p class="tutorial-copy">
-        Build words from your rack, score efficiently, and outpace the other board or the clock.
+        Build words from your tiles, tiles can have special effects that increase or decrease your score.
       </p>
 
       <div class="tutorial-sections">
@@ -15,13 +15,13 @@
         </article>
 
         <article class="tutorial-card">
-          <strong>Building</strong>
-          <p>Click tiles to build a word, then press <span class="tutorial-inline">Submit Word</span>. Only the tiles you used get replaced.</p>
+          <strong>Cards</strong>
+          <p>Cards can be played to give you tile modifiers or special abilities. They can even effect your opponents board or the time.<span class="tutorial-inline"></span></p>
         </article>
 
         <article class="tutorial-card">
           <strong>Word Value</strong>
-          <p>Your word score comes from tile values, position bonuses, and modifiers. Some tiles help immediately, some reward waiting, and some punish you if ignored.</p>
+          <p>Your word score comes from tile values, extra points for longer words,and modifiers.</p>
         </article>
       </div>
 
@@ -69,7 +69,7 @@ import { getModifierBadge, getModifierDescription, getModifierUi, tileScore } fr
 
 const emit = defineEmits(['close']);
 
-const dontShowAgain = ref(true);
+const dontShowAgain = ref(false);
 const tutorialTiles = [
   { status: 'normal', letter: 'A', score: 1, title: 'Normal Tile' },
   { status: 'gold', letter: 'M', score: 3, title: 'Gold Tile' },
@@ -85,9 +85,12 @@ const getTileStyle = (tile) => {
   const ui = getModifierUi(tile.status);
 
   return {
-    '--tutorial-tile-bg': ui.tileBackground,
-    '--tutorial-tile-shadow': ui.tileShadow,
-    '--tutorial-tile-text-color': ui.textColor
+    '--tile-bg': ui.tileBackground,
+    '--tile-shadow': ui.tileShadow,
+    '--tile-hover-shadow': ui.tileHoverShadows || ui.tileShadow,
+    '--tile-focus-shadow': ui.tileFocusShadow || ui.tileShadow,
+    '--tile-text-color': ui.textColor,
+    '--tile-letter-stroke': tile.status === 'yinYang' ? '1px rgba(255, 255, 255, 0.92)' : '0 transparent'
   };
 };
 
@@ -208,39 +211,56 @@ const finishTutorial = () => {
 }
 
 .tutorial-tile {
-  flex: 0 0 92px;
-  min-height: 92px;
+  font-family: 'Press Start 2P', cursive;
+  flex: 0 0 94px;
+  appearance: none;
+  border: none;
+  min-height: 94px;
+  min-width: 94px;
+  max-width: 106px;
+  width: 100%;
   border-radius: 16px;
-  background: var(--tutorial-tile-bg, linear-gradient(180deg, #fffef8 0%, #f2ebe0 70%, #d9cec0 100%));
-  color: var(--tutorial-tile-text-color, #1c1930);
-  box-shadow: var(--tutorial-tile-shadow, inset 0 -4px 0 rgba(0, 0, 0, 0.12), 0 10px 18px rgba(45, 10, 24, 0.16));
+  background: var(--tile-bg, linear-gradient(180deg, #fffef8 0%, #f2ebe0 70%, #d9cec0 100%));
+  color: var(--tile-text-color, #1c1930);
+  box-shadow: var(--tile-shadow, inset 0 -4px 0 rgba(0, 0, 0, 0.12), 0 10px 18px rgba(45, 10, 24, 0.16));
   position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
+  padding: 15px;
+  transition: transform 140ms ease, box-shadow 140ms ease;
+  will-change: transform, opacity;
 }
 
 .tutorial-tile-letter {
   font-size: 2.4rem;
+  font-weight: 900;
   line-height: 1;
+  -webkit-text-stroke: var(--tile-letter-stroke, 0 transparent);
+  paint-order: stroke fill;
 }
 
 .tutorial-tile-score {
   position: absolute;
   top: 8px;
   right: 10px;
-  font-size: 0.9rem;
+  font-size: 0.95rem;
+  font-weight: 800;
 }
 
 .tutorial-tile-modifier {
   position: absolute;
   top: 8px;
-  left: 8px;
-  padding: 2px 7px;
+  left: 10px;
+  min-width: 30px;
+  padding: 3px 7px;
   border-radius: 999px;
-  font-size: 0.62rem;
+  font-size: 0.68rem;
+  font-weight: 900;
   letter-spacing: 0.08em;
   text-transform: uppercase;
+  text-align: center;
+  box-shadow: 0 4px 10px rgba(27, 11, 20, 0.18);
 }
 
 .tutorial-tile-copy strong {

@@ -5,19 +5,21 @@
     </div>
     <ol class="round-list">
       <li
-        v-for="round in rounds"
+        v-for="(round, index) in rounds"
         :key="round.id"
         class="round-step"
         :class="{
           complete: round.isComplete,
           current: round.isCurrent,
-          challenge: round.isChallenge
+          challenge: round.isChallenge,
+          'controller-focused': controllerFocusedRoundIndex === index
         }"
       >
         <button
           type="button"
           class="round-marker"
           :aria-label="getRoundLabel(round)"
+          :data-controller-round="index"
         >
           <span class="round-number">{{ round.number }}</span>
         </button>
@@ -42,6 +44,10 @@ const props = defineProps({
   rounds: {
     type: Array,
     default: () => []
+  },
+  controllerFocusedRoundIndex: {
+    type: Number,
+    default: -1
   }
 });
 
@@ -149,7 +155,8 @@ const getRoundLabel = (round) => {
   background: linear-gradient(180deg, rgba(255, 210, 110, 0.9), rgba(203, 99, 57, 0.86));
 }
 
-.round-step.current .round-marker {
+.round-step.current .round-marker,
+.round-step.controller-focused .round-marker {
   border-color: rgba(255, 255, 255, 0.82);
   box-shadow: inset 0 2px 8px rgba(255, 255, 255, 0.18), 0 0 0 4px rgba(255, 126, 84, 0.22), 0 10px 20px rgba(37, 8, 24, 0.32);
 }

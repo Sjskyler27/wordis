@@ -68,10 +68,6 @@
           <p v-if="activeBoonCard">
             {{ activeBoonCard.label }} is ready. Click one of your tiles to use it.
           </p>
-          <p v-else-if="hasCardsInHand">
-            Drawn cards sit here until you spend them.
-          </p>
-          <p v-else>No cards in hand right now.</p>
           <div class="card-hand">
             <button
               v-for="(card, index) in myCards.boons"
@@ -120,6 +116,7 @@
         <MultiRoundProgress
           v-if="isMultiRoundMode"
           :rounds="multiRoundProgressRounds"
+          :controller-focused-round-index="controllerRegion === 'rounds' ? controllerRoundCursorIndex : -1"
         />
 
         <div class="score-ribbon">
@@ -219,6 +216,7 @@
 
       <PersonalModifiersDrawer
         v-if="isMultiRoundMode"
+        ref="personalModifiersDrawerRef"
         :modifiers="personalModifiersForDrawer"
       />
 
@@ -349,6 +347,7 @@ const controllerTileCursorIndex = ref(0);
 const controllerCardCursorIndex = ref(0);
 const controllerBuilderCursorIndex = ref(0);
 const controllerActionCursorIndex = ref(0);
+const controllerRoundCursorIndex = ref(0);
 const isControllerNavigationActive = ref(false);
 const laneBurstPulse = ref({
   host: 0,
@@ -383,6 +382,7 @@ const preferredLanguage = getPreferredLanguage();
 const SOLO_TIMER_SECONDS = isTestingMode ? 25 : 180;
 const timerRemainingSeconds = ref(SOLO_TIMER_SECONDS);
 const isSoloTimerPausedByAttack = ref(false);
+const timedModeTimerStarted = ref(false);
 const timedSoloFinalWordSpent = ref(false);
 const multiRoundFinalWordSpent = ref(false);
 const pendingMultiRoundStartingScore = ref(0);
@@ -407,6 +407,7 @@ const showTutorialOverlay = ref(false);
 const windowWidth = ref(typeof window !== 'undefined' ? window.innerWidth : 1440);
 const isSideDrawerOpen = ref(false);
 const sideDrawerAutoOpen = ref(false);
+const personalModifiersDrawerRef = ref(null);
 const GAME_TUTORIAL_STORAGE_KEY = 'hasSeenWordisGameTutorial';
 const multiRoundRun = useMultiRoundRun({
   rounds: getMultiRoundRounds(props.multiRoundDifficulty)
@@ -431,6 +432,7 @@ const roundModifierEffects = computed(() => {
     const rules = modifier.rules || {};
     const scoreEffects = modifier.scoreEffects || {};
     const tileEffects = modifier.tileEffects || {};
+    const chanceEffects = modifier.chanceEffects || {};
     const cardRules = modifier.cardRules || {};
 
     effects.minimumWordLength = Math.max(effects.minimumWordLength, rules.minimumWordLength || 0);
@@ -442,15 +444,37 @@ const roundModifierEffects = computed(() => {
     ];
     effects.zeroHighestConsonant = effects.zeroHighestConsonant || Boolean(scoreEffects.zeroHighestConsonant);
     effects.idlePenaltyMultiplier = Math.max(effects.idlePenaltyMultiplier, scoreEffects.idlePenaltyMultiplier || 1);
+    effects.minimumVowels = Math.max(effects.minimumVowels, rules.minimumVowels || 0);
+    effects.idleScoreDelta += tileEffects.idleScoreDelta || 0;
     effects.fleetingAllTiles = effects.fleetingAllTiles || Boolean(tileEffects.fleetingAllTiles);
+    effects.shuffleOnSubmit = effects.shuffleOnSubmit || Boolean(tileEffects.shuffleOnSubmit);
+    effects.lockNextColumn = effects.lockNextColumn || Boolean(tileEffects.lockNextColumn);
+    effects.mustTileEachTurn = effects.mustTileEachTurn || Boolean(tileEffects.mustTileEachTurn);
+    effects.goodChanceBonus += chanceEffects.goodChanceBonus || 0;
+    effects.badChanceBonus += chanceEffects.badChanceBonus || 0;
+    effects.neutralChanceBonus += chanceEffects.neutralChanceBonus || 0;
+    effects.goodChanceCapDelta += chanceEffects.goodChanceCapDelta || 0;
+    effects.badChanceCapDelta += chanceEffects.badChanceCapDelta || 0;
+    effects.neutralChanceCapDelta += chanceEffects.neutralChanceCapDelta || 0;
     effects.cardsDisabled = effects.cardsDisabled || Boolean(cardRules.cardsDisabled);
     return effects;
   }, {
     minimumWordLength: 0,
+    minimumVowels: 0,
     bannedLetters: [],
     zeroHighestConsonant: false,
     idlePenaltyMultiplier: 1,
+    idleScoreDelta: 0,
     fleetingAllTiles: false,
+    shuffleOnSubmit: false,
+    lockNextColumn: false,
+    mustTileEachTurn: false,
+    goodChanceBonus: 0,
+    badChanceBonus: 0,
+    neutralChanceBonus: 0,
+    goodChanceCapDelta: 0,
+    badChanceCapDelta: 0,
+    neutralChanceCapDelta: 0,
     cardsDisabled: false
   });
 });
@@ -1143,6 +1167,7 @@ const resetMultiRoundBoardForNextRound = (startingScore = 0) => {
   clearSelectionForSide('host');
   resetActionMode();
   resetSinglePlayerRound('host');
+  timedModeTimerStarted.value = false;
   multiRoundFinalWordSpent.value = false;
 };
 
@@ -1174,9 +1199,6 @@ const completeMultiRoundRound = () => {
 
       resetMultiRoundBoardForNextRound(startingScore);
       localMessage.value = `Next round starts with ${startingScore} points from saved time.`;
-      if (!isPaused.value && !props.settingsShowing) {
-        startMultiRoundTimer();
-      }
       return;
     }
 
@@ -1239,9 +1261,6 @@ const handleMultiRoundRewardChoice = (rewardKey) => {
 
   resetMultiRoundBoardForNextRound(startingScore);
   localMessage.value = `Next round starts with ${startingScore} points from saved time.`;
-  if (!isPaused.value && !props.settingsShowing) {
-    startMultiRoundTimer();
-  }
 };
 
 const validateActiveRoundModifiers = (selectedTiles = []) => {
@@ -1264,6 +1283,20 @@ const validateActiveRoundModifiers = (selectedTiles = []) => {
       valid: false,
       message: `This round blocks ${bannedTile.baseLetter || bannedTile.letter}.`
     };
+  }
+
+  const minimumVowels = roundModifierEffects.value.minimumVowels || 0;
+  if (minimumVowels) {
+    const vowelCount = selectedTiles.filter((tile) => {
+      return /^[AEIOU]$/.test((tile.baseLetter || tile.letter || '').toUpperCase());
+    }).length;
+
+    if (vowelCount < minimumVowels) {
+      return {
+        valid: false,
+        message: `This round requires at least ${minimumVowels} vowels.`
+      };
+    }
   }
 
   return { valid: true };
@@ -1380,6 +1413,7 @@ const handleSubmit = async () => {
   if (!submitted) {
     return;
   }
+  startTimedModeTimerAfterFirstWord();
 
   if (isMultiRoundMode.value) {
     if (playerScores.value.host >= multiRoundRun.currentTargetScore.value) {
@@ -1545,6 +1579,11 @@ const refocusControllerSelection = () => {
     return;
   }
 
+  if (controllerRegion.value === 'rounds') {
+    focusControllerRound(controllerRoundCursorIndex.value);
+    return;
+  }
+
   focusControllerTile(controllerTileCursorIndex.value);
 };
 
@@ -1569,6 +1608,14 @@ const toggleSideDrawer = () => {
   }
 
   openSideDrawer({ auto: false });
+};
+
+const togglePersonalModifiersDrawer = () => {
+  if (!isMultiRoundMode.value) {
+    return;
+  }
+
+  personalModifiersDrawerRef.value?.toggleDrawer?.();
 };
 
 const focusControllerTile = (index = controllerTileCursorIndex.value) => {
@@ -1640,6 +1687,24 @@ const focusControllerAction = (index = controllerActionCursorIndex.value) => {
   });
 };
 
+const focusControllerRound = (index = controllerRoundCursorIndex.value) => {
+  if (!isMultiRoundMode.value || !multiRoundProgressRounds.value.length) {
+    return;
+  }
+
+  isControllerNavigationActive.value = true;
+  controllerRegion.value = 'rounds';
+  const boundedIndex = Math.max(0, Math.min(index, multiRoundProgressRounds.value.length - 1));
+  controllerRoundCursorIndex.value = boundedIndex;
+
+  nextTick(() => {
+    const roundButton = document.querySelector(`[data-controller-round="${boundedIndex}"]`);
+    if (roundButton && typeof roundButton.focus === 'function') {
+      roundButton.focus();
+    }
+  });
+};
+
 const moveControllerTileFocus = (direction) => {
   if (!myTiles.value.length) {
     return;
@@ -1658,9 +1723,12 @@ const moveControllerTileFocus = (direction) => {
   } else if (direction === 'right') {
     nextIndex = Math.min(myTiles.value.length - 1, currentIndex + 1);
   } else if (direction === 'up') {
+    if (isMultiRoundMode.value && currentIndex < columns) {
+      focusControllerRound(0);
+      return;
+    }
     nextIndex = Math.max(0, currentIndex - columns);
   } else if (direction === 'down') {
-    console.log('test')
     if (currentIndex + columns >= myTiles.value.length && selectedTilesForCurrentSide.value.length) {
       focusControllerBuilder(Math.min(currentIndex % columns, selectedTilesForCurrentSide.value.length - 1));
       return;
@@ -1809,6 +1877,7 @@ const handlePlayAgain = () => {
   resetActionMode();
   clearSelectionForSide(mySide.value);
   isSoloTimerPausedByAttack.value = false;
+  timedModeTimerStarted.value = false;
   timedSoloFinalWordSpent.value = false;
   pendingMultiRoundStartingScore.value = 0;
   window.clearTimeout(multiRoundRewardTimeoutId);
@@ -1883,8 +1952,12 @@ const stopMultiRoundTimer = () => {
   multiRoundTimerId = null;
 };
 
+const canRunTimedModeTimer = () => {
+  return timedModeTimerStarted.value && !isPaused.value && !props.settingsShowing && !showTutorialOverlay.value;
+};
+
 const startSoloTimer = () => {
-  if (!isTimedSoloMode.value || effectiveGameEnded.value) {
+  if (!isTimedSoloMode.value || effectiveGameEnded.value || !canRunTimedModeTimer()) {
     stopSoloTimer();
     return;
   }
@@ -1904,7 +1977,7 @@ const startSoloTimer = () => {
 };
 
 const startMultiRoundTimer = () => {
-  if (!isMultiRoundMode.value || effectiveGameEnded.value || multiRoundRun.rewardChoiceOpen.value) {
+  if (!isMultiRoundMode.value || effectiveGameEnded.value || multiRoundRun.rewardChoiceOpen.value || !canRunTimedModeTimer()) {
     stopMultiRoundTimer();
     return;
   }
@@ -1919,10 +1992,25 @@ const startMultiRoundTimer = () => {
   }, 1000);
 };
 
+const startTimedModeTimerAfterFirstWord = () => {
+  if (!isTimedSoloMode.value && !isMultiRoundMode.value) {
+    return;
+  }
+
+  if (timedModeTimerStarted.value) {
+    return;
+  }
+
+  timedModeTimerStarted.value = true;
+  startSoloTimer();
+  startMultiRoundTimer();
+};
+
 watch(() => props.playMode, (nextMode) => {
   if (nextMode === 'multi_round') {
     multiRoundRun.resetRun();
     multiRoundFinalWordSpent.value = false;
+    timedModeTimerStarted.value = false;
     pendingMultiRoundStartingScore.value = 0;
     window.clearTimeout(multiRoundRewardTimeoutId);
     startMultiRoundTimer();
@@ -1934,6 +2022,7 @@ watch(() => props.playMode, (nextMode) => {
   timerRemainingSeconds.value = nextMode === 'timed_solo' ? SOLO_TIMER_SECONDS : 0;
   isSoloTimerPausedByAttack.value = false;
   timedSoloFinalWordSpent.value = false;
+  timedModeTimerStarted.value = false;
 
   if (nextMode === 'timed_solo') {
     startSoloTimer();
@@ -1987,6 +2076,8 @@ const handleKeydown = (event) => {
         focusControllerBuilder(Math.max(0, controllerBuilderCursorIndex.value - 1));
       } else if (controllerRegion.value === 'actions') {
         focusControllerAction(Math.max(0, controllerActionCursorIndex.value - 1));
+      } else if (controllerRegion.value === 'rounds') {
+        focusControllerRound(Math.max(0, controllerRoundCursorIndex.value - 1));
       } else {
         moveControllerTileFocus('left');
       }
@@ -2001,6 +2092,8 @@ const handleKeydown = (event) => {
         focusControllerBuilder(Math.min(controllerBuilderCursorIndex.value + 1, selectedTilesForCurrentSide.value.length - 1));
       } else if (controllerRegion.value === 'actions') {
         focusControllerAction(Math.min(controllerActionCursorIndex.value + 1, 4));
+      } else if (controllerRegion.value === 'rounds') {
+        focusControllerRound(Math.min(controllerRoundCursorIndex.value + 1, multiRoundProgressRounds.value.length - 1));
       } else {
         moveControllerTileFocus('right');
       }
@@ -2023,6 +2116,8 @@ const handleKeydown = (event) => {
         focusControllerTile(Math.min(bottomRowStart + controllerBuilderCursorIndex.value, myTiles.value.length - 1));
       } else if (controllerRegion.value === 'actions' && selectedTilesForCurrentSide.value.length) {
         focusControllerBuilder(Math.min(controllerActionCursorIndex.value, selectedTilesForCurrentSide.value.length - 1));
+      } else if (controllerRegion.value === 'rounds') {
+        focusControllerRound(controllerRoundCursorIndex.value);
       } else {
         moveControllerTileFocus('up');
       }
@@ -2041,6 +2136,8 @@ const handleKeydown = (event) => {
         focusControllerAction(Math.min(controllerBuilderCursorIndex.value, 4));
       } else if (controllerRegion.value === 'actions') {
         focusControllerAction(controllerActionCursorIndex.value);
+      } else if (controllerRegion.value === 'rounds') {
+        focusControllerTile(Math.min(controllerRoundCursorIndex.value, 4));
       } else {
         moveControllerTileFocus('down');
       }
@@ -2072,6 +2169,16 @@ const handleKeydown = (event) => {
     if (event.key === 'rb') {
       event.preventDefault();
       handleClearRack();
+      return;
+    }
+    if (event.key === 'lt') {
+      event.preventDefault();
+      toggleSideDrawer();
+      return;
+    }
+    if (event.key === 'rt') {
+      event.preventDefault();
+      togglePersonalModifiersDrawer();
       return;
     }
 

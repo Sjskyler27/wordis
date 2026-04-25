@@ -41,16 +41,39 @@ const resolveModifierBudget = (modifierBudget = {}) => {
   return resolvedKeys;
 };
 
+const applyRoundEffects = (round, resolvedModifierKeys = []) => {
+  const roundEffects = resolvedModifierKeys.reduce((effects, modifierKey) => {
+    const modifier = getRoundModifierDefinition(modifierKey);
+    const modifierRoundEffects = modifier?.roundEffects || {};
+
+    return {
+      timeSecondsDelta: effects.timeSecondsDelta + (modifierRoundEffects.timeSecondsDelta || 0),
+      targetScoreDelta: effects.targetScoreDelta + (modifierRoundEffects.targetScoreDelta || 0)
+    };
+  }, {
+    timeSecondsDelta: 0,
+    targetScoreDelta: 0
+  });
+
+  return {
+    ...round,
+    timeSeconds: Math.max(10, (round.timeSeconds || 0) + roundEffects.timeSecondsDelta),
+    targetScore: Math.max(1, (round.targetScore || 0) + roundEffects.targetScoreDelta)
+  };
+};
+
 const resolveRounds = (rounds = MULTI_ROUND_ROUNDS) => {
   return rounds.map((round) => {
     const generatedModifierKeys = resolveModifierBudget(round.modifierBudget || {});
+    const resolvedModifierKeys = [...new Set([
+      ...(round.roundModifierKeys || []),
+      ...generatedModifierKeys,
+      ...FORCE_TEST_ROUND_MODIFIER_KEYS
+    ])];
+
     return {
-      ...round,
-      resolvedModifierKeys: [...new Set([
-        ...(round.roundModifierKeys || []),
-        ...generatedModifierKeys,
-        ...FORCE_TEST_ROUND_MODIFIER_KEYS
-      ])]
+      ...applyRoundEffects(round, resolvedModifierKeys),
+      resolvedModifierKeys
     };
   });
 };

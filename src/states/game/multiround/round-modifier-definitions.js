@@ -81,6 +81,109 @@ export const ROUND_MODIFIER_DEFINITIONS = {
     tileEffects: {
       fleetingAllTiles: true
     }
+  },
+  two_vowels: {
+    key: 'two_vowels',
+    label: 'Vowel Toll',
+    description: 'Words must use at least 2 vowels.',
+    difficulty: ROUND_MODIFIER_DIFFICULTIES.HARD,
+    force_test: false,
+    tags: ['word-shape'],
+    rules: {
+      minimumVowels: 2
+    }
+  },
+  idle_tiles_decay: {
+    key: 'idle_tiles_decay',
+    label: 'Rusting Rack',
+    description: 'Tiles you do not play lose 1 value after each word.',
+    difficulty: ROUND_MODIFIER_DIFFICULTIES.HARD,
+    force_test: false,
+    tags: ['tile-lifecycle', 'score-transform'],
+    tileEffects: {
+      idleScoreDelta: -1
+    }
+  },
+  pressure_timer_easy: {
+    key: 'pressure_timer_easy',
+    label: 'Quick Target',
+    description: 'The round has 10 less seconds and needs 15 more points.',
+    difficulty: ROUND_MODIFIER_DIFFICULTIES.EASY,
+    force_test: false,
+    tags: ['time', 'target-score'],
+    roundEffects: {
+      timeSecondsDelta: -10,
+      targetScoreDelta: 15
+    }
+  },
+  pressure_timer_medium: {
+    key: 'pressure_timer_medium',
+    label: 'Tight Target',
+    description: 'The round has 18 less seconds and needs 30 more points.',
+    difficulty: ROUND_MODIFIER_DIFFICULTIES.MEDIUM,
+    force_test: false,
+    tags: ['time', 'target-score'],
+    roundEffects: {
+      timeSecondsDelta: -18,
+      targetScoreDelta: 30
+    }
+  },
+  pressure_timer_hard: {
+    key: 'pressure_timer_hard',
+    label: 'Brutal Target',
+    description: 'The round has 25 less seconds and needs 45 more points.',
+    difficulty: ROUND_MODIFIER_DIFFICULTIES.HARD,
+    force_test: false,
+    tags: ['time', 'target-score'],
+    roundEffects: {
+      timeSecondsDelta: -25,
+      targetScoreDelta: 45
+    }
+  },
+  shuffle_after_submit: {
+    key: 'shuffle_after_submit',
+    label: 'Loose Rack',
+    description: 'Your tiles shuffle after every submitted word.',
+    difficulty: ROUND_MODIFIER_DIFFICULTIES.EASY,
+    force_test: false,
+    tags: ['tile-lifecycle'],
+    tileEffects: {
+      shuffleOnSubmit: true
+    }
+  },
+  rotating_lock_column: {
+    key: 'rotating_lock_column',
+    label: 'Lockstep',
+    description: 'After each word, the next column becomes locked.',
+    difficulty: ROUND_MODIFIER_DIFFICULTIES.HARD,
+    force_test: false,
+    tags: ['tile-lifecycle', 'locks'],
+    tileEffects: {
+      lockNextColumn: true
+    }
+  },
+  bad_modifier_surge: {
+    key: 'bad_modifier_surge',
+    label: 'Bad Luck',
+    description: 'Bad tile modifiers appear more often.',
+    difficulty: ROUND_MODIFIER_DIFFICULTIES.EASY,
+    force_test: false,
+    tags: ['tile-odds', 'bad'],
+    chanceEffects: {
+      badChanceBonus: 0.08,
+      badChanceCapDelta: 0.1
+    }
+  },
+  must_tile_each_turn: {
+    key: 'must_tile_each_turn',
+    label: 'Constant Demand',
+    description: 'Each turn gives you a MUST tile if you do not already have one.',
+    difficulty: ROUND_MODIFIER_DIFFICULTIES.HARD,
+    force_test: false,
+    tags: ['tile-lifecycle', 'mustuse'],
+    tileEffects: {
+      mustTileEachTurn: true
+    }
   }
 };
 

@@ -167,7 +167,8 @@ export const useSinglePlayerGame = ({
             host: createTestingRack('host', playerScores.value, {
               modifierProfile: modifierProfile(),
               includeAllModifiers: true,
-              personalModifierEffects: getPersonalModifierEffects()
+              personalModifierEffects: getPersonalModifierEffects(),
+              roundModifierEffects: getRoundModifierEffects()
             }),
             opponent: []
           };
@@ -202,6 +203,7 @@ export const useSinglePlayerGame = ({
           host: createRack('host', playerScores.value, {
             modifierProfile: modifierProfile(),
             personalModifierEffects: getPersonalModifierEffects(),
+            roundModifierEffects: getRoundModifierEffects(),
             phase: 'opening',
             turnCount: getTurnCount()
           }),
@@ -270,6 +272,7 @@ export const useSinglePlayerGame = ({
         currentTiles: botTiles,
         modifierProfile: modifierProfile(),
         personalModifierEffects: getPersonalModifierEffects(),
+        roundModifierEffects: getRoundModifierEffects(),
         turnCount: getTurnCount()
       })
     };
@@ -534,6 +537,7 @@ export const useSinglePlayerGame = ({
     const nextRack = createRack(side, playerScores.value, {
       modifierProfile: modifierProfile(),
       personalModifierEffects: getPersonalModifierEffects(),
+      roundModifierEffects: getRoundModifierEffects(),
       turnCount: getTurnCount()
     });
 
