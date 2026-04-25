@@ -105,7 +105,7 @@ const createModifierDefinitions = ({ bloodTilePositionValues }) => ({
     bankTile: {
       badge: 'BANK',
       description: 'Scores 0 when used, but gains +1 bonus score each turn it stays unused.',
-      effects: { setScore: 0, idleBonusScoreDelta: 1 },
+      effects: { idleBonusScoreDelta: 1 },
       rarityWeight: 0.18,
       animations: {
         onNewTurn: 'emerald'

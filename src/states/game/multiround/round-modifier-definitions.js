@@ -9,7 +9,7 @@ export const ROUND_MODIFIER_DEFINITIONS = {
     key: 'min_word_5',
     label: 'Five Up',
     description: 'Words must use at least 5 tiles.',
-    difficulty: ROUND_MODIFIER_DIFFICULTIES.EASY,
+    difficulty: ROUND_MODIFIER_DIFFICULTIES.MEDIUM,
     force_test: false,
     tags: ['word-length'],
     rules: {
@@ -49,17 +49,17 @@ export const ROUND_MODIFIER_DEFINITIONS = {
       cardsDisabled: true
     }
   },
-  min_word_6: {
-    key: 'min_word_6',
-    label: 'Six Up',
-    description: 'Words must use at least 6 tiles.',
-    difficulty: ROUND_MODIFIER_DIFFICULTIES.HARD,
-    force_test: false,
-    tags: ['word-length'],
-    rules: {
-      minimumWordLength: 6
-    }
-  },
+  // min_word_6: {
+  //   key: 'min_word_6',
+  //   label: 'Six Up',
+  //   description: 'Words must use at least 6 tiles.',
+  //   difficulty: ROUND_MODIFIER_DIFFICULTIES.HARD,
+  //   force_test: false,
+  //   tags: ['word-length'],
+  //   rules: {
+  //     minimumWordLength: 6
+  //   }
+  // },
   double_burns: {
     key: 'double_burns',
     label: 'Hot Rack',
@@ -75,7 +75,7 @@ export const ROUND_MODIFIER_DEFINITIONS = {
     key: 'fleeting_tiles',
     label: 'Fleeting Rack',
     description: 'All tiles are cleared after submitting a word',
-    difficulty: ROUND_MODIFIER_DIFFICULTIES.HARD,
+    difficulty: ROUND_MODIFIER_DIFFICULTIES.MEDIUM,
     force_test: false,
     tags: ['tile-lifecycle'],
     tileEffects: {

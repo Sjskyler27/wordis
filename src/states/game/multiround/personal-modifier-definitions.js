@@ -25,8 +25,8 @@ export const PERSONAL_MODIFIER_DEFINITIONS = {
     rarity: 0.75,
     tier: PERSONAL_MODIFIER_TIERS.COMMON,
     tags: ['score', 'tile-odds', 'ghostTile'],
-    maxStacks: 30,
-    start_with: 1,
+    maxStacks: 5,
+    start_with: 0,
     effects: {
       modifierScoreBonus: {
         ghostTile: 6
@@ -49,7 +49,7 @@ export const PERSONAL_MODIFIER_DEFINITIONS = {
     label: 'Golden Draft',
     description: 'Gold tiles appear more often.',
     rarity: 0.55,
-    tier: PERSONAL_MODIFIER_TIERS.RARE,
+    tier: PERSONAL_MODIFIER_TIERS.EPIC,
     tags: ['tile-odds', 'gold'],
     maxStacks: 300,
     start_with: 0,
@@ -83,7 +83,7 @@ export const PERSONAL_MODIFIER_DEFINITIONS = {
     rarity: 0.6,
     tier: PERSONAL_MODIFIER_TIERS.RARE,
     tags: ['tile-odds', 'good'],
-    maxStacks: 33,
+    maxStacks: 5,
     start_with: 0,
     effects: {
       goodChanceBonus: 0.006,
@@ -97,7 +97,7 @@ export const PERSONAL_MODIFIER_DEFINITIONS = {
     rarity: 0.65,
     tier: PERSONAL_MODIFIER_TIERS.RARE,
     tags: ['tile-odds', 'bad-cap'],
-    maxStacks: 22,
+    maxStacks: 5,
     start_with: 0,
     effects: {
       badChanceBonus: -0.004
@@ -110,7 +110,7 @@ export const PERSONAL_MODIFIER_DEFINITIONS = {
     rarity: 0.5,
     tier: PERSONAL_MODIFIER_TIERS.RARE,
     tags: ['opening-rack', 'good-cap'],
-    maxStacks: 20,
+    maxStacks: 5,
     start_with: 0,
     effects: {
       openingGoodChanceBonus: 0.04

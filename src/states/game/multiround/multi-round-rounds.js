@@ -36,16 +36,16 @@ export const MULTI_ROUND_ROUNDS = [
   createRound({
     id: 'round-1',
     label: 'Round 1',
-    targetScore: 250,
-    timeSeconds: 180,
+    targetScore: 120,
+    timeSeconds: 90,
     modifierBudget: {},
     rewardTiers: [MULTI_ROUND_REWARD_TIERS.COMMON]
   }),
   createRound({
     id: 'round-2',
     label: 'Round 2',
-    targetScore: 275,
-    timeSeconds: 180,
+    targetScore: 140,
+    timeSeconds: 95,
     modifierBudget: {
       [MULTI_ROUND_MODIFIER_DIFFICULTIES.EASY]: 1
     },
@@ -54,8 +54,8 @@ export const MULTI_ROUND_ROUNDS = [
   createRound({
     id: 'round-3',
     label: 'Challenge 1',
-    targetScore: 325,
-    timeSeconds: 175,
+    targetScore: 140,
+    timeSeconds: 105,
     isChallenge: true,
     modifierBudget: {
       [MULTI_ROUND_MODIFIER_DIFFICULTIES.EASY]: 1,
@@ -66,8 +66,8 @@ export const MULTI_ROUND_ROUNDS = [
   createRound({
     id: 'round-4',
     label: 'Round 4',
-    targetScore: 350,
-    timeSeconds: 170,
+    targetScore: 160,
+    timeSeconds: 110,
     modifierBudget: {
       [MULTI_ROUND_MODIFIER_DIFFICULTIES.MEDIUM]: 1
     },
@@ -79,8 +79,8 @@ export const MULTI_ROUND_ROUNDS = [
   createRound({
     id: 'round-5',
     label: 'Round 5',
-    targetScore: 375,
-    timeSeconds: 170,
+    targetScore: 180,
+    timeSeconds: 120,
     modifierBudget: {
       [MULTI_ROUND_MODIFIER_DIFFICULTIES.EASY]: 1,
       [MULTI_ROUND_MODIFIER_DIFFICULTIES.MEDIUM]: 1
@@ -93,8 +93,8 @@ export const MULTI_ROUND_ROUNDS = [
   createRound({
     id: 'round-6',
     label: 'Challenge 2',
-    targetScore: 425,
-    timeSeconds: 165,
+    targetScore: 190,
+    timeSeconds: 120,
     isChallenge: true,
     modifierBudget: {
       [MULTI_ROUND_MODIFIER_DIFFICULTIES.MEDIUM]: 2
@@ -104,8 +104,8 @@ export const MULTI_ROUND_ROUNDS = [
   createRound({
     id: 'round-7',
     label: 'Round 7',
-    targetScore: 450,
-    timeSeconds: 165,
+    targetScore: 150,
+    timeSeconds: 120,
     modifierBudget: {
       [MULTI_ROUND_MODIFIER_DIFFICULTIES.MEDIUM]: 1,
       [MULTI_ROUND_MODIFIER_DIFFICULTIES.HARD]: 1
@@ -118,8 +118,8 @@ export const MULTI_ROUND_ROUNDS = [
   createRound({
     id: 'round-8',
     label: 'Round 8',
-    targetScore: 500,
-    timeSeconds: 160,
+    targetScore: 180,
+    timeSeconds: 130,
     modifierBudget: {
       [MULTI_ROUND_MODIFIER_DIFFICULTIES.EASY]: 1,
       [MULTI_ROUND_MODIFIER_DIFFICULTIES.HARD]: 1
@@ -132,8 +132,8 @@ export const MULTI_ROUND_ROUNDS = [
   createRound({
     id: 'round-9',
     label: 'Challenge 3',
-    targetScore: 575,
-    timeSeconds: 155,
+    targetScore: 160,
+    timeSeconds: 140,
     isChallenge: true,
     modifierBudget: {
       [MULTI_ROUND_MODIFIER_DIFFICULTIES.MEDIUM]: 1,
@@ -144,7 +144,7 @@ export const MULTI_ROUND_ROUNDS = [
   createRound({
     id: 'round-10',
     label: 'Round 10',
-    targetScore: 625,
+    targetScore: 210,
     timeSeconds: 150,
     modifierBudget: {
       [MULTI_ROUND_MODIFIER_DIFFICULTIES.HARD]: 2
@@ -157,7 +157,7 @@ export const MULTI_ROUND_ROUNDS = [
   createRound({
     id: 'round-11',
     label: 'Round 11',
-    targetScore: 700,
+    targetScore: 240,
     timeSeconds: 150,
     modifierBudget: {
       [MULTI_ROUND_MODIFIER_DIFFICULTIES.MEDIUM]: 2,
@@ -171,8 +171,8 @@ export const MULTI_ROUND_ROUNDS = [
   createRound({
     id: 'round-12',
     label: 'Challenge 4',
-    targetScore: 800,
-    timeSeconds: 145,
+    targetScore: 150,
+    timeSeconds: 120,
     isChallenge: true,
     modifierBudget: {
       [MULTI_ROUND_MODIFIER_DIFFICULTIES.HARD]: 3
@@ -182,8 +182,8 @@ export const MULTI_ROUND_ROUNDS = [
   createRound({
     id: 'round-13',
     label: 'Final Challenge',
-    targetScore: 900,
-    timeSeconds: 140,
+    targetScore: 300,
+    timeSeconds: 180,
     isChallenge: true,
     modifierBudget: {
       [MULTI_ROUND_MODIFIER_DIFFICULTIES.MEDIUM]: 1,
