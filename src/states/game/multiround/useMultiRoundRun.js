@@ -140,7 +140,12 @@ export const useMultiRoundRun = ({ rounds = MULTI_ROUND_ROUNDS } = {}) => {
   const currentRoundNumber = computed(() => currentRoundIndex.value + 1);
   const totalRounds = computed(() => resolvedRounds.value.length);
   const currentTargetScore = computed(() => currentRound.value?.targetScore || 0);
-  const currentRoundTimeLimit = computed(() => currentRound.value?.timeSeconds || 0);
+  const currentRoundTimeLimit = computed(() => {
+    return Math.max(
+      10,
+      (currentRound.value?.timeSeconds || 0) + (activePersonalModifierEffects.value.roundTimeSecondsBonus || 0)
+    );
+  });
   const activeRoundModifierKeys = computed(() => currentRound.value?.resolvedModifierKeys || []);
   const activeRoundModifiers = computed(() => activeRoundModifierKeys.value
     .map((modifierKey) => getRoundModifierDefinition(modifierKey))
@@ -163,6 +168,7 @@ export const useMultiRoundRun = ({ rounds = MULTI_ROUND_ROUNDS } = {}) => {
       effects.goodChanceBonus += (definitionEffects.goodChanceBonus || 0) * stacks;
       effects.badChanceBonus += (definitionEffects.badChanceBonus || 0) * stacks;
       effects.neutralChanceBonus += (definitionEffects.neutralChanceBonus || 0) * stacks;
+      effects.roundTimeSecondsBonus += (definitionEffects.roundTimeSecondsBonus || 0) * stacks;
       effects.goodChanceCapDelta += (definitionEffects.goodChanceCapDelta || 0) * stacks;
       effects.badChanceCapDelta += (definitionEffects.badChanceCapDelta || 0) * stacks;
       effects.neutralChanceCapDelta += (definitionEffects.neutralChanceCapDelta || 0) * stacks;
@@ -208,6 +214,7 @@ export const useMultiRoundRun = ({ rounds = MULTI_ROUND_ROUNDS } = {}) => {
       goodChanceBonus: 0,
       badChanceBonus: 0,
       neutralChanceBonus: 0,
+      roundTimeSecondsBonus: 0,
       goodChanceCapDelta: 0,
       badChanceCapDelta: 0,
       neutralChanceCapDelta: 0

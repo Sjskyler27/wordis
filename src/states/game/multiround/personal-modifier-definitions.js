@@ -234,6 +234,19 @@ export const PERSONAL_MODIFIER_DEFINITIONS = {
       openingGoodChanceBonus: 0.04
     }
   },
+  time_reserve: {
+    key: 'time_reserve',
+    label: 'Time Reserve',
+    description: 'Every round starts with 5 extra seconds.',
+    rarity: 0.5,
+    tier: PERSONAL_MODIFIER_TIERS.RARE,
+    tags: ['time'],
+    maxStacks: 3,
+    start_with: 0,
+    effects: {
+      roundTimeSecondsBonus: 5
+    }
+  },
   // good_ceiling: {
   //   key: 'good_ceiling',
   //   label: 'Good Ceiling',
