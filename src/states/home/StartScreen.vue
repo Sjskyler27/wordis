@@ -39,7 +39,7 @@
       
     <!-- Start Game -->
     <div class="home-buttons animated-fade-in">
-      <button class="profile" ref="button2" @click="showProfile = true">Profile</button>
+      <button class="disabled" disabled ref="button2" @click="showProfile = true">Profile</button>
       <button class="play" ref="button1" @click="showType">Play</button>
       <button class="settings" ref="button3" @click="showSettings">Settings</button>
     </div>
@@ -532,8 +532,27 @@ font-family: 'Times New Roman', serif;
     }
     .profile{
       background-color: rgb(255, 170, 85);
-
     }
+    .disabled{
+      background-color: rgb(84, 84, 84);
+      cursor: not-allowed;
+      position: relative;
+    }
+    .disabled:hover::after{
+      content: "Coming Soon";
+      position: absolute;
+      left: 50%;
+      bottom: calc(100% + 10px);
+      transform: translateX(-50%);
+      background: rgba(20, 20, 20, 0.92);
+      border: 1px solid rgba(255, 255, 255, 0.22);
+      border-radius: 6px;
+      color: white;
+      font-size: 12px;
+      padding: 6px 10px;
+      white-space: nowrap;
+    }
+
     .settings{
       background-color: darkred;
 
