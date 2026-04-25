@@ -239,7 +239,7 @@ export const PERSONAL_MODIFIER_DEFINITIONS = {
   //   label: 'Good Ceiling',
   //   description: 'Good modifier chance cap is raised.',
   //   rarity: 0.0,
-  //   tier: PERSONAL_MODIFIER_TIERS.RARE,
+  //   tier: PERSONAL_MODIFIER_TIERS,
   //   tags: ['tile-odds', 'good-cap'],
   //   maxStacks: 3,
   //   start_with: 0,
@@ -252,7 +252,7 @@ export const PERSONAL_MODIFIER_DEFINITIONS = {
   //   label: 'Safety Ceiling',
   //   description: 'Bad modifier chance cap is lowered.',
   //   rarity: 0.0,
-  //   tier: PERSONAL_MODIFIER_TIERS.RARE,
+  //   tier: PERSONAL_MODIFIER_TIERS,
   //   tags: ['tile-odds', 'bad-cap'],
   //   maxStacks: 3,
   //   start_with: 0,
@@ -265,7 +265,7 @@ export const PERSONAL_MODIFIER_DEFINITIONS = {
   //   label: 'Neutral Ceiling',
   //   description: 'Neutral modifier chance cap is raised.',
   //   rarity: 0.0,
-  //   tier: PERSONAL_MODIFIER_TIERS.RARE,
+  //   tier: PERSONAL_MODIFIER_TIERS,
   //   tags: ['tile-odds', 'neutral-cap'],
   //   maxStacks: 3,
   //   start_with: 0,
@@ -277,13 +277,26 @@ export const PERSONAL_MODIFIER_DEFINITIONS = {
     key: 'boon_cache',
     label: 'Boon Cache',
     description: 'Immediately gain 3 boons when selected.',
-    rarity: 0.35,
-    tier: PERSONAL_MODIFIER_TIERS.EPIC,
+    rarity: 9.35,
+    tier: PERSONAL_MODIFIER_TIERS.COMMON,
     tags: ['boons', 'immediate'],
-    maxStacks: 1,
-    start_with: 0,
+    maxStacks: 20,
+    start_with: 1,
     effects: {
       immediateBoons: 3
+    }
+  },
+  attack_cache: {
+    key: 'attack_cache',
+    label: 'Attack Cache',
+    description: 'Immediately gain 3 attacks when selected.',
+    rarity: 9.35,
+    tier: PERSONAL_MODIFIER_TIERS.COMMON,
+    tags: ['attacks', 'immediate'],
+    maxStacks: 20,
+    start_with: 1,
+    effects: {
+      immediateAttacks: 3
     }
   },
   bright_letters: {
@@ -307,7 +320,7 @@ export const PERSONAL_MODIFIER_DEFINITIONS = {
     tier: PERSONAL_MODIFIER_TIERS.EPIC,
     tags: ['score', 'word-length'],
     maxStacks: 1,
-    start_with: 0,
+    start_with: 1,
     effects: {
       lengthScoreMultiplier: {
         4: 2

@@ -370,7 +370,7 @@ const matchOvertimeEnabled = computed(() => {
   return props.isMultiplayer ? multiplayerOvertimeEnabled.value : props.overtimeEnabled;
 });
 const attacksEnabled = computed(() => {
-  return !isOvertimeActive.value && (isTestingMode || isTimedSoloMode.value || isBotMode.value || props.isMultiplayer);
+  return !isOvertimeActive.value && (isTestingMode || isTimedSoloMode.value || isMultiRoundMode.value || isBotMode.value || props.isMultiplayer);
 });
 const showOpponentLane = computed(() => props.isMultiplayer || isBotMode.value);
 const isSideDrawerMode = computed(() => windowWidth.value < 1250);
@@ -1188,7 +1188,8 @@ const failMultiRoundRun = () => {
 
 const applyImmediatePersonalModifierEffects = (modifier) => {
   const immediateBoons = modifier?.effects?.immediateBoons || 0;
-  if (!immediateBoons) {
+  const immediateAttacks = modifier?.effects?.immediateAttacks || 0;
+  if (!immediateBoons && !immediateAttacks) {
     return;
   }
 
@@ -1199,6 +1200,14 @@ const applyImmediatePersonalModifierEffects = (modifier) => {
       boons: [
         ...(playerCards.value.host?.boons || []),
         ...drawCards('boon', immediateBoons)
+      ],
+      attacks: [
+        ...(playerCards.value.host?.attacks || []),
+        ...drawCards('attack', immediateAttacks, {
+          deck: (isTimedSoloMode.value || isMultiRoundMode.value) ? 'timed_solo' : 'duel',
+          side: 'host',
+          scores: playerScores.value
+        })
       ]
     }
   };
