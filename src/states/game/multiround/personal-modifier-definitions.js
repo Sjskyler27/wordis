@@ -312,6 +312,19 @@ export const PERSONAL_MODIFIER_DEFINITIONS = {
       vowelScoreMultiplier: 2
     }
   },
+  must_shield: {
+    key: 'must_shield',
+    label: 'Must Shield',
+    description: 'MUST tiles no longer appear.',
+    rarity: 0.22,
+    tier: PERSONAL_MODIFIER_TIERS.EPIC,
+    tags: ['tile-odds', 'mustuse'],
+    maxStacks: 1,
+    start_with: 0,
+    effects: {
+      blockedModifiers: ['mustuse']
+    }
+  },
   compact_double: {
     key: 'compact_double',
     label: 'Compact Double',

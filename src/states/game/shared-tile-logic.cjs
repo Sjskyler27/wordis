@@ -170,6 +170,14 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
       neutralModifiers: getAllowedModifiersForProfile(profile.neutralModifiers || [], profileName)
     };
   };
+  const filterBlockedModifiers = (modifiers = [], personalModifierEffects = {}) => {
+    const blockedModifiers = new Set(personalModifierEffects.blockedModifiers || []);
+    if (!blockedModifiers.size) {
+      return modifiers;
+    }
+
+    return modifiers.filter((modifier) => !blockedModifiers.has(modifier));
+  };
   const getScoreSwingBonus = (scoreDelta = 0, maxBonus = 0) => {
     const liveDelta = Math.max(0, Math.abs(scoreDelta) - MODIFIER_SWING_DEAD_ZONE);
 
@@ -572,7 +580,13 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
     const modifierProfile = chanceOverrides.modifierProfile || 'duel';
     const personalModifierEffects = chanceOverrides.personalModifierEffects || {};
     if(devLogging)console.log(modifierProfile)
-    const profile = getModifierProfile(modifierProfile);
+    const baseProfile = getModifierProfile(modifierProfile);
+    const profile = {
+      ...baseProfile,
+      goodModifiers: filterBlockedModifiers(baseProfile.goodModifiers, personalModifierEffects),
+      badModifiers: filterBlockedModifiers(baseProfile.badModifiers, personalModifierEffects),
+      neutralModifiers: filterBlockedModifiers(baseProfile.neutralModifiers || [], personalModifierEffects)
+    };
     const modifierOddsBonus = personalModifierEffects.modifierOddsBonus || {};
     const {
       goodChance,
@@ -1158,13 +1172,14 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
       }, { good: 0, bad: 0, neutral: 0 });
     };
 
-    const applyTargetModifierGroup = (rack, modifierPool, targetCount) => {
+    const applyTargetModifierGroup = (rack, modifierPool, targetCount, options = {}) => {
+      const availableModifierPool = filterBlockedModifiers(modifierPool, options.personalModifierEffects || {});
       for (let appliedCount = 0; appliedCount < targetCount; appliedCount += 1) {
         const candidateIndexes = rack
           .map((tile, index) => ({
             index,
             tile,
-            eligibleModifiers: modifierPool.filter((modifier) => canApplyModifier(modifier, {
+            eligibleModifiers: availableModifierPool.filter((modifier) => canApplyModifier(modifier, {
               letter: tile.baseLetter || tile.letter,
               baseScore: tile.baseScore || letterConfig[tile.baseLetter || tile.letter]?.score || 0,
               rackTiles: rack
@@ -1199,9 +1214,9 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
         }
       });
 
-      applyTargetModifierGroup(rack, profile.goodModifiers, targetGoodModifiers);
-      applyTargetModifierGroup(rack, profile.badModifiers, targetBadModifiers);
-      applyTargetModifierGroup(rack, profile.neutralModifiers || [], targetNeutralModifiers);
+      applyTargetModifierGroup(rack, profile.goodModifiers, targetGoodModifiers, options);
+      applyTargetModifierGroup(rack, profile.badModifiers, targetBadModifiers, options);
+      applyTargetModifierGroup(rack, profile.neutralModifiers || [], targetNeutralModifiers, options);
       return rack;
     };
 
@@ -1236,7 +1251,11 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
       });
     };
 
-    const applyTurnMustTile = (tiles = []) => {
+    const applyTurnMustTile = (tiles = [], options = {}) => {
+      if ((options.personalModifierEffects?.blockedModifiers || []).includes('mustuse')) {
+        return tiles;
+      }
+
       if (tiles.some((tile) => tile.status === 'mustuse' && !tile.locked)) {
         return tiles;
       }
@@ -1325,7 +1344,9 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
 
       let resolvedTiles = nextTiles;
       if (roundModifierEffects.mustTileEachTurn) {
-        resolvedTiles = applyTurnMustTile(resolvedTiles);
+        resolvedTiles = applyTurnMustTile(resolvedTiles, {
+          personalModifierEffects: options.personalModifierEffects || {}
+        });
       }
       if (roundModifierEffects.lockNextColumn) {
         resolvedTiles = applyRotatingLockColumn(resolvedTiles, options.turnCount || 1);

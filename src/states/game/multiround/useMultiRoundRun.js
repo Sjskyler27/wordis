@@ -187,6 +187,11 @@ export const useMultiRoundRun = ({ rounds = MULTI_ROUND_ROUNDS } = {}) => {
       Object.entries(definitionEffects.modifierOddsBonus || {}).forEach(([key, bonus]) => {
         effects.modifierOddsBonus[key] = (effects.modifierOddsBonus[key] || 0) + (bonus * stacks);
       });
+      (definitionEffects.blockedModifiers || []).forEach((modifierKey) => {
+        if (!effects.blockedModifiers.includes(modifierKey)) {
+          effects.blockedModifiers.push(modifierKey);
+        }
+      });
       return effects;
     }, {
       vowelScoreBonus: 0,
@@ -197,6 +202,7 @@ export const useMultiRoundRun = ({ rounds = MULTI_ROUND_ROUNDS } = {}) => {
       lengthScoreBonus: {},
       lengthScoreMultiplier: {},
       modifierOddsBonus: {},
+      blockedModifiers: [],
       badChanceMultiplier: 1,
       openingGoodChanceBonus: 0,
       goodChanceBonus: 0,
