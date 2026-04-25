@@ -166,9 +166,8 @@ const onshopZoomInput = (e) => emit("shopZoomChange", parseFloat(e.target.value)
   text-align: center;
   max-width: 600px;
   width: 90%;
-  box-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
   position: relative;
-  background: #222;
+
 }
 
 .tab-buttons {

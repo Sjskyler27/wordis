@@ -579,6 +579,7 @@ const simulateTab = (reverse = false) => {
     if(!localStorage.getItem('unlockSystem')) localStorage.setItem('unlockSystem',"hard")
     if(!localStorage.getItem('unlockedMonsters')) localStorage.setItem('unlockedMonsters','[1,2,3]')
     if(!localStorage.getItem('defaultHints')) localStorage.setItem('defaultHints', JSON.stringify(defaultHints.value))
+    if(!localStorage.getItem('nativeControllerSupport')) localStorage.setItem('nativeControllerSupport', true)
     else{
       // Load saved user hints (may be partial or missing new keys)
       let seenHints = JSON.parse(localStorage.getItem('defaultHints')) || {};
@@ -887,7 +888,8 @@ html::-webkit-scrollbar {
 /* Modal Content */
 .modal-content {
   font-family: 'Press Start 2P', cursive;
-  background: rgba(10, 10, 25, 1);
+  
+  background: linear-gradient(140deg, rgba(173, 101, 59, 0.92), rgba(121, 42, 15, 0.9));
   color: white;
   padding: 20px;
   border-radius: 10px;

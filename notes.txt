@@ -161,3 +161,4 @@ these would all be seperate tasks
 examples: must play 5 letter words, must play at least 6 letter words or more, highgest consonent is actually 0,  can't play s, burns are doubled and show up more, all tiles gain fleeting(on top of there current fleeting trait). boons and attacks cannot be played, 
 
 do you have any questions 
+

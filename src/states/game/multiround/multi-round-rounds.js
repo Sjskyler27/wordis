@@ -36,7 +36,7 @@ export const MULTI_ROUND_ROUNDS = [
   createRound({
     id: 'round-1',
     label: 'Round 1',
-    targetScore: 12,
+    targetScore: 120,
     timeSeconds: 90,
     modifierBudget: {},
     rewardTiers: [MULTI_ROUND_REWARD_TIERS.COMMON]

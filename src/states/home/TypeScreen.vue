@@ -11,7 +11,7 @@
   </div>
   <div class="modal animated-fade-in">
     <div class="modal-content animated-slide-up" >
-      <h3>How will you brave the Play</h3>
+      <h3>Choose How To Play</h3>
       <button class="invisible" @focus="button1.focus()" ref="button0"/>
       <div class="close-modal">
         <button ref="button1" class="modal-button" @click="emit('home')">&times;</button>
@@ -29,43 +29,58 @@
           <p>Return to your adventure!</p>
         </div>
       </div> -->
-      <div tabindex="-1" class="menu-option" ref="button2" 
-        @click="emit('singleplayer', { mode: 'timed_solo' })"
-        @keydown.space.prevent="emit('singleplayer', { mode: 'timed_solo' })"
-        @keydown.enter.prevent="emit('singleplayer', { mode: 'timed_solo' })"
+       <div tabindex="-1" class="menu-option" ref="button6"
+        @click="emit('singleplayer', { mode: 'bot_match' })"
+        @keydown.space.prevent="emit('singleplayer', { mode: 'bot_match' })"
+        @keydown.enter.prevent="emit('singleplayer', { mode: 'bot_match' })"
         >
-        <img src="/src/assets/images/playTypes/image.png" alt="Knight" class="menu-img" />
+        <!-- <img src="/src/assets/images/playTypes/image.png" alt="Bot Duel" class="menu-img" /> -->
         <div class="menu-text">
-          <h3>Single Player</h3>
-          <p>Race the clock and stack the highest score you can.</p>
+          <h3>Machine Learning</h3>
+          <p>Play against a machine that gets better the more you play!</p>
         </div>
       </div>
+
 
       <div tabindex="-1" class="menu-option" ref="button5"
         @click="emit('singleplayer', { mode: 'multi_round' })"
         @keydown.space.prevent="emit('singleplayer', { mode: 'multi_round' })"
         @keydown.enter.prevent="emit('singleplayer', { mode: 'multi_round' })"
         >
-        <img src="/src/assets/images/playTypes/image.png" alt="Expedition" class="menu-img" />
+        <!-- <img src="/src/assets/images/playTypes/image.png" alt="Expedition" class="menu-img" /> -->
         <div class="menu-text">
           <h3>Multi-Round</h3>
           <p>Clear escalating timed rounds and build a run of lasting upgrades.</p>
         </div>
       </div>
+
     
       <div tabindex="-1" :class="['menu-option']" ref="button3" 
         @click="emit('multiplayerScreen')"
         @keydown.space.prevent="emit('multiplayerScreen')"
         @keydown.enter.prevent="emit('multiplayerScreen')"
         >
-        <img src="/src/assets/images/playTypes/image.png" alt="Archmage" class="menu-img" />
+        <!-- <img src="/src/assets/images/playTypes/image.png" alt="Archmage" class="menu-img" /> -->
         <div class="menu-text">
           <h3>MultiPlayer</h3>
           <p v-if="!freePlayLocked">Draft freely with no limits!</p>
           <p v-else>Unlock 12 characters to play free play!</p>
         </div>
       </div>
-      <div tabindex="-1" :class="['menu-option', {disabled: draftLocked}]" ref="button4" 
+
+       <div tabindex="-1" class="menu-option" ref="button2" 
+        @click="emit('singleplayer', { mode: 'timed_solo' })"
+        @keydown.space.prevent="emit('singleplayer', { mode: 'timed_solo' })"
+        @keydown.enter.prevent="emit('singleplayer', { mode: 'timed_solo' })"
+        >
+        <!-- <img src="/src/assets/images/playTypes/image.png" alt="Knight" class="menu-img" /> -->
+        <div class="menu-text">
+          <h3>Quick Practice</h3>
+          <p>Race the clock and stack the highest score you can.</p>
+        </div>
+      </div>
+
+      <!-- <div tabindex="-1" :class="['menu-option', {disabled: draftLocked}]" ref="button4" 
         @click="emit('multiplayerScreen')"
         @keydown.space.prevent="emit('multiplayerScreen')"
         @keydown.enter.prevent="emit('multiplayerScreen')"
@@ -77,7 +92,7 @@
           <p v-else-if="draftcomingSoon">Coming Soon!</p>
           <p v-else>unlock 30 characters to unlock play Draft mode!</p>
         </div>
-      </div>
+      </div> -->
 
 
       <button class="invisible" @focus="button1.focus()" ref="button0"/>
