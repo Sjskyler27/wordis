@@ -64,8 +64,8 @@ export const useSinglePlayerGame = ({
   };
   const WINNING_SCORE = isTestingMode ? 40 : 250;
   const BOT_DELAYS = {
-    easy: 13000,
-    normal: 10000,
+    easy: 18000,
+    normal: 11000,
     hard: 7250
   };
   const modifierProfile = () => (isTimedSoloMode.value || isMultiRoundMode?.value) ? 'solo' : 'bot';

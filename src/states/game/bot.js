@@ -109,10 +109,11 @@ const chooseCandidate = (candidates = [], difficulty = 'normal', botPerformance 
   }
 
   const topSliceLengthByDifficulty = {
-    easy: Math.min(16, candidates.length),
-    normal: Math.min(10, candidates.length),
-    hard: Math.min(5, candidates.length)
-  };
+  easy: Math.min(32, candidates.length),
+  normal: Math.min(20, candidates.length),
+  hard: Math.min(10, candidates.length)
+};
+
 
   const baseSliceLength = topSliceLengthByDifficulty[difficulty] || topSliceLengthByDifficulty.normal;
   const performanceAdjustedSliceLength = Math.round(baseSliceLength * (1 - (botPerformance * 0.55)));
