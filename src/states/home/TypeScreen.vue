@@ -45,16 +45,16 @@
 
 
       <div tabindex="-1" class="menu-option" ref="button5"
-        @click="emit('singleplayer', { mode: 'multi_round' })"
-        @keydown.space.prevent="emit('singleplayer', { mode: 'multi_round' })"
-        @keydown.enter.prevent="emit('singleplayer', { mode: 'multi_round' })"
+        @click="emit('multiRoundScreen')"
+        @keydown.space.prevent="emit('multiRoundScreen')"
+        @keydown.enter.prevent="emit('multiRoundScreen')"
         >
         <!-- <img src="/src/assets/images/playTypes/image.png" alt="Expedition" class="menu-img" /> -->
         <div class="menu-text">
-          <h3>Multi-Round</h3>
+          <h3>BALATRO STYLE</h3>
           <br>
 
-          <p>Clear escalating timed rounds and build a run of lasting upgrades.</p>
+          <p>Meet each rounds required score within the time limit. Gain permanent upgrades to help you get through each round as they scale in difficulty.</p>
         </div>
       </div>
 
@@ -119,7 +119,7 @@ const now = new Date();
 const lockContent = computed(() => (new Date() > demoDate || isDemo) && !props.isStreamer === true);
 
 
-const emit = defineEmits(["game", "singleplayer", "multiplayerScreen", "home", "Dungeons", "FreePlay", "continue", "DungeonsCoop", "DraftDungeon", "DailyDungeon", 'EndlessDescent', 'Continue']);
+const emit = defineEmits(["game", "singleplayer", "multiplayerScreen", "multiRoundScreen", "home", "Dungeons", "FreePlay", "continue", "DungeonsCoop", "DraftDungeon", "DailyDungeon", 'EndlessDescent', 'Continue']);
 const gameInProgress = ref(localStorage.getItem("gameInProgress")); // Check if game is in progress
 const gameEnded = JSON.parse(localStorage.getItem('gameEnded'))
 const button0 =ref(null)

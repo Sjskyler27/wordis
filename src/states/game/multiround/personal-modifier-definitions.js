@@ -281,7 +281,7 @@ export const PERSONAL_MODIFIER_DEFINITIONS = {
     tier: PERSONAL_MODIFIER_TIERS.COMMON,
     tags: ['boons', 'immediate'],
     maxStacks: 20,
-    start_with: 1,
+    start_with: 0,
     effects: {
       immediateBoons: 3
     }
@@ -294,7 +294,7 @@ export const PERSONAL_MODIFIER_DEFINITIONS = {
     tier: PERSONAL_MODIFIER_TIERS.COMMON,
     tags: ['attacks', 'immediate'],
     maxStacks: 20,
-    start_with: 1,
+    start_with: 0,
     effects: {
       immediateAttacks: 3
     }
@@ -320,7 +320,7 @@ export const PERSONAL_MODIFIER_DEFINITIONS = {
     tier: PERSONAL_MODIFIER_TIERS.EPIC,
     tags: ['score', 'word-length'],
     maxStacks: 1,
-    start_with: 1,
+    start_with: 0,
     effects: {
       lengthScoreMultiplier: {
         4: 2

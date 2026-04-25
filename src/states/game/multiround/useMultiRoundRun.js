@@ -1,5 +1,5 @@
 import { computed, ref } from 'vue';
-import { MULTI_ROUND_ROUNDS } from './multi-round-rounds.js';
+import { MULTI_ROUND_ROUNDS } from './multi-round-rounds-hard.js';
 import {
   PERSONAL_MODIFIER_DEFINITIONS,
   getPersonalModifierDefinition

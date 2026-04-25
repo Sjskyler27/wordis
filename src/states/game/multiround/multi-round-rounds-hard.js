@@ -12,7 +12,7 @@ export const MULTI_ROUND_MODIFIER_DIFFICULTIES = {
   HARD: 'hard'
 };
 
-const createRound = ({
+export const createRound = ({
   id,
   label,
   targetScore,
@@ -32,7 +32,7 @@ const createRound = ({
   startingScoreBonusMultiplier
 });
 
-export const MULTI_ROUND_ROUNDS = [
+export const HARD_MULTI_ROUND_ROUNDS = [
   createRound({
     id: 'round-1',
     label: 'Round 1',
@@ -192,3 +192,5 @@ export const MULTI_ROUND_ROUNDS = [
     rewardTiers: []
   })
 ];
+
+export const MULTI_ROUND_ROUNDS = HARD_MULTI_ROUND_ROUNDS;

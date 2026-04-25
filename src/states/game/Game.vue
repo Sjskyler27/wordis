@@ -295,6 +295,7 @@ import GameLane from './components/GameLane.vue';
 import HistoryOverlay from './components/HistoryOverlay.vue';
 import MultiRoundProgress from './components/MultiRoundProgress.vue';
 import MultiRoundRewardChoice from './components/MultiRoundRewardChoice.vue';
+import { getMultiRoundRounds } from './multiround/multi-round-difficulties.js';
 import PersonalModifiersDrawer from './components/PersonalModifiersDrawer.vue';
 import TutorialOverlay from './components/TutorialOverlay.vue';
 import WordBuilder from './components/WordBuilder.vue';
@@ -307,6 +308,10 @@ const props = defineProps({
     default: 'timed_solo'
   },
   botDifficulty: {
+    type: String,
+    default: 'normal'
+  },
+  multiRoundDifficulty: {
     type: String,
     default: 'normal'
   },
@@ -403,7 +408,9 @@ const windowWidth = ref(typeof window !== 'undefined' ? window.innerWidth : 1440
 const isSideDrawerOpen = ref(false);
 const sideDrawerAutoOpen = ref(false);
 const GAME_TUTORIAL_STORAGE_KEY = 'hasSeenWordisGameTutorial';
-const multiRoundRun = useMultiRoundRun();
+const multiRoundRun = useMultiRoundRun({
+  rounds: getMultiRoundRounds(props.multiRoundDifficulty)
+});
 
 const mySide = computed(() => {
   if (props.isMultiplayer) {
@@ -2850,8 +2857,7 @@ body {
 
 @media (max-width: 1000px) {
   .accent-blue {
-    height: 0px;
-    display: none;
+    height: 100px;
   }
   .game-shell {
 
@@ -2865,7 +2871,7 @@ body {
 
   .side-drawer-handle {
     position: fixed;
-    top: 50%;
+    top: 25%;
     left: 0;
     z-index: 7;
     transform: translateY(-50%);
@@ -2874,7 +2880,7 @@ body {
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    padding: 10px 10px 10px 8px;
+    padding: 13px;
     border-radius: 0 14px 14px 0;
     background: rgba(55, 13, 31, 0.94);
     color: rgba(255, 244, 228, 0.86);
@@ -2892,8 +2898,8 @@ body {
   }
 
   .side-drawer-handle-grip {
-    width: 3px;
-    height: 28px;
+    width: 10px;
+    height: 38px;
     border-radius: 999px;
     background: rgba(255, 214, 157, 0.82);
     flex: 0 0 auto;

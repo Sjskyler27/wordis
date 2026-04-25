@@ -25,6 +25,7 @@
       :playMode="playMode"
       :overtimeEnabled="overtimeEnabled"
       :botDifficulty="botDifficulty"
+      :multiRoundDifficulty="multiRoundDifficulty"
       :uiZoom="zoom"
       :isStreamer="validSeed"
       :hasSeenIntro="hasSeenIntro"
@@ -32,6 +33,7 @@
       @end="goToShop" 
       @game="goToGame" 
       @multiplayerScreen="goTomultiplayerScreen"
+      @multiRoundScreen="goToMultiRoundScreen"
       @singleplayer="goToSingleplayer" 
       @type="goToType"
       @reset="resetGame"
@@ -81,8 +83,9 @@
 import { ref, shallowRef, onMounted, onBeforeUnmount, computed } from "vue";
 import Game from "/src/states/game/Game.vue";
 import MultiplayerScreen from "./states/game/MultiplayerScreen.vue";
+import MultiRoundScreen from "./states/game/MultiRoundScreen.vue";
 import { resetGame as resetMultiplayerGame } from "./states/game/multiplayer.js";
-import { playMode, botDifficulty, overtimeEnabled, updatePlayConfig, PLAY_MODES } from "./states/game/play-config.js";
+import { playMode, botDifficulty, multiRoundDifficulty, overtimeEnabled, updatePlayConfig, PLAY_MODES } from "./states/game/play-config.js";
 import TypeScreen from "./states/home/TypeScreen.vue";
 import StartScreen from "./states/home/StartScreen.vue";
 import Admin from "./admin/Admin.vue";
@@ -233,7 +236,7 @@ const showFeedback = ref(false)
   const currentStateKey = computed(() => {
     const stateName = currentState.value?.__name || currentState.value?.name || 'state';
     const modeName = isMultiplayer.value ? 'multiplayer' : 'singleplayer';
-    const playVariant = isMultiplayer.value ? 'live' : playMode.value;
+    const playVariant = isMultiplayer.value ? 'live' : `${playMode.value}-${multiRoundDifficulty.value}`;
     return `${stateName}-${modeName}-${playVariant}-${reloader.value}`;
   });
   const message = ref("");
@@ -400,6 +403,14 @@ const continueGame = () => {
     isMultiplayer.value = true;
   };
 
+  const goToMultiRoundScreen = () => {
+    hideGoogleTranslateExtras()
+    hideGoogleTranslateIframesAfterDelay();
+    hideGoogleTranslate.value = true
+    currentState.value = MultiRoundScreen;
+    isMultiplayer.value = false;
+  };
+
   const goToSingleplayer = (options = {}) => {
     hideGoogleTranslateExtras()
     hideGoogleTranslateIframesAfterDelay();
@@ -407,7 +418,8 @@ const continueGame = () => {
     isMultiplayer.value = false;
     updatePlayConfig({
       mode: options.mode || PLAY_MODES.TIMED_SOLO,
-      difficulty: options.difficulty || botDifficulty.value
+      difficulty: options.difficulty || botDifficulty.value,
+      multiRound: options.multiRoundDifficulty || multiRoundDifficulty.value
     });
     resetMultiplayerGame();
     currentState.value = Game;

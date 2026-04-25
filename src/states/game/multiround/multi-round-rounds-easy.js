@@ -1,0 +1,96 @@
+import {
+  MULTI_ROUND_MODIFIER_DIFFICULTIES,
+  MULTI_ROUND_REWARD_TIERS,
+  createRound
+} from './multi-round-rounds-hard.js';
+
+export const EASY_MULTI_ROUND_ROUNDS = [
+  createRound({
+    id: 'easy-round-1',
+    label: 'Round 1',
+    targetScore: 80,
+    timeSeconds: 110,
+    modifierBudget: {},
+    rewardTiers: [MULTI_ROUND_REWARD_TIERS.COMMON],
+    startingScoreBonusMultiplier: 0.6
+  }),
+  createRound({
+    id: 'easy-round-2',
+    label: 'Round 2',
+    targetScore: 95,
+    timeSeconds: 115,
+    modifierBudget: {},
+    rewardTiers: [MULTI_ROUND_REWARD_TIERS.COMMON],
+    startingScoreBonusMultiplier: 0.6
+  }),
+  createRound({
+    id: 'easy-round-3',
+    label: 'Challenge 1',
+    targetScore: 105,
+    timeSeconds: 125,
+    isChallenge: true,
+    modifierBudget: {
+      [MULTI_ROUND_MODIFIER_DIFFICULTIES.EASY]: 1
+    },
+    rewardTiers: [
+      MULTI_ROUND_REWARD_TIERS.COMMON,
+      MULTI_ROUND_REWARD_TIERS.RARE
+    ],
+    startingScoreBonusMultiplier: 0.6
+  }),
+  createRound({
+    id: 'easy-round-4',
+    label: 'Round 4',
+    targetScore: 120,
+    timeSeconds: 130,
+    modifierBudget: {
+      [MULTI_ROUND_MODIFIER_DIFFICULTIES.EASY]: 1
+    },
+    rewardTiers: [
+      MULTI_ROUND_REWARD_TIERS.COMMON,
+      MULTI_ROUND_REWARD_TIERS.RARE
+    ],
+    startingScoreBonusMultiplier: 0.6
+  }),
+  createRound({
+    id: 'easy-round-5',
+    label: 'Round 5',
+    targetScore: 135,
+    timeSeconds: 135,
+    isChallenge: true,
+    modifierBudget: {
+      [MULTI_ROUND_MODIFIER_DIFFICULTIES.EASY]: 1,
+      [MULTI_ROUND_MODIFIER_DIFFICULTIES.HARD]: 1
+    },
+    rewardTiers: [
+      MULTI_ROUND_REWARD_TIERS.COMMON,
+      MULTI_ROUND_REWARD_TIERS.RARE
+    ],
+    startingScoreBonusMultiplier: 0.6
+  }),
+  createRound({
+    id: 'easy-round-6',
+    label: 'Challenge 2',
+    targetScore: 145,
+    timeSeconds: 145,
+    modifierBudget: {
+      [MULTI_ROUND_MODIFIER_DIFFICULTIES.EASY]: 1,
+      [MULTI_ROUND_MODIFIER_DIFFICULTIES.MEDIUM]: 1
+    },
+    rewardTiers: [MULTI_ROUND_REWARD_TIERS.RARE],
+    startingScoreBonusMultiplier: 0.6
+  }),
+  createRound({
+    id: 'easy-round-7',
+    label: 'Final Challenge',
+    targetScore: 165,
+    timeSeconds: 160,
+    isChallenge: true,
+    modifierBudget: {
+      [MULTI_ROUND_MODIFIER_DIFFICULTIES.HARD]: 1,
+      [MULTI_ROUND_MODIFIER_DIFFICULTIES.MEDIUM]: 1
+    },
+    rewardTiers: [],
+    startingScoreBonusMultiplier: 0.6
+  })
+];
