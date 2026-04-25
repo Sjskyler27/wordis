@@ -33,9 +33,10 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
   const BASE_BAD_MODIFIER_CAP = 0.20;
   const BASE_NEUTRAL_MODIFIER_CAP = 0.2;
   const TOTAL_MODIFIER_CHANCE_CAP = 0.9;
-  const MODIFIER_SWING_DIVISOR = 90;
-  const MAX_GOOD_MODIFIER_BONUS = 0.3;
-  const MAX_BAD_MODIFIER_BONUS = 0.22;
+  const MODIFIER_SWING_DEAD_ZONE = 10;
+  const MODIFIER_SWING_DIVISOR = 200;
+  const MAX_GOOD_MODIFIER_BONUS = 0.24;
+  const MAX_BAD_MODIFIER_BONUS = 0.20;
   const TURN_MODIFIER_CHANCE_STEP = 0.003;
   const MAX_TURN_MODIFIER_BONUS = 0.08;
   const BLOOD_TILE_POSITION_VALUES = {
@@ -169,6 +170,11 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
       neutralModifiers: getAllowedModifiersForProfile(profile.neutralModifiers || [], profileName)
     };
   };
+  const getScoreSwingBonus = (scoreDelta = 0, maxBonus = 0) => {
+    const liveDelta = Math.max(0, Math.abs(scoreDelta) - MODIFIER_SWING_DEAD_ZONE);
+
+    return Math.min(maxBonus, liveDelta / MODIFIER_SWING_DIVISOR);
+  };
 
   const getModifierChances = (side, scores = {}, profileName = 'duel', turnCount = 0, options = {}) => {
     // base tiles off profile 
@@ -186,8 +192,8 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
 
       const opponentSide = side === 'host' ? 'opponent' : 'host';
       const scoreDelta = (scores[side] || 0) - (scores[opponentSide] || 0);
-      const catchupBonus = Math.min(MAX_GOOD_MODIFIER_BONUS, Math.max(0, -scoreDelta) / MODIFIER_SWING_DIVISOR);
-      const pressureBonus = Math.min(MAX_BAD_MODIFIER_BONUS, Math.max(0, scoreDelta) / MODIFIER_SWING_DIVISOR);
+      const catchupBonus = scoreDelta < 0 ? getScoreSwingBonus(scoreDelta, MAX_GOOD_MODIFIER_BONUS) : 0;
+      const pressureBonus = scoreDelta > 0 ? getScoreSwingBonus(scoreDelta, MAX_BAD_MODIFIER_BONUS) : 0;
 
       return {
         goodChance: Math.min(0.45, profile.baseGoodChance + catchupBonus + turnBonus),
