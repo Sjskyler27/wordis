@@ -18,7 +18,7 @@
       </div>
       <!-- <button class="continue" ref="button0" @click="continueGame" v-if="gameInProgress && !gameEnded">Continue</button> -->
 
-      <div v-if="gameInProgress && !gameEnded" tabindex="-1" class="menu-option" ref="button1" 
+      <!-- <div v-if="gameInProgress && !gameEnded" tabindex="-1" class="menu-option" ref="button1" 
         @click="emit('Continue')"
         @keydown.space.prevent="emit('Continue')"
         @keydown.enter.prevent="emit('Continue')"
@@ -28,7 +28,7 @@
           <h3>Continue</h3>
           <p>Return to your adventure!</p>
         </div>
-      </div>
+      </div> -->
       <div tabindex="-1" class="menu-option" ref="button2" 
         @click="emit('singleplayer', { mode: 'timed_solo' })"
         @keydown.space.prevent="emit('singleplayer', { mode: 'timed_solo' })"
