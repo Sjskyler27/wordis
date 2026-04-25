@@ -29,8 +29,8 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
   const BASE_GOOD_MODIFIER_CHANCE = 0.08;
   const BASE_BAD_MODIFIER_CHANCE = 0.03;
   const BASE_NEUTRAL_MODIFIER_CHANCE = 0.02;
-  const BASE_GOOD_MODIFIER_CAP = 0.45;
-  const BASE_BAD_MODIFIER_CAP = 0.4;
+  const BASE_GOOD_MODIFIER_CAP = 0.30;
+  const BASE_BAD_MODIFIER_CAP = 0.20;
   const BASE_NEUTRAL_MODIFIER_CAP = 0.2;
   const TOTAL_MODIFIER_CHANCE_CAP = 0.9;
   const MODIFIER_SWING_DIVISOR = 90;
@@ -561,6 +561,7 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
   };
 
   const rollTileModifier = (side, scores = {}, context = {}, chanceOverrides = {}) => {
+    console.log('ROLL MODIFIER FOR '+ side )
     const modifierProfile = chanceOverrides.modifierProfile || 'duel';
     const personalModifierEffects = chanceOverrides.personalModifierEffects || {};
     if(devLogging)console.log(modifierProfile)
