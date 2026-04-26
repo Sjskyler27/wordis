@@ -29,7 +29,7 @@
           <p>Return to your adventure!</p>
         </div>
       </div> -->
-       <div tabindex="-1" class="menu-option" ref="machineLearningButton"
+       <button tabindex="-1" class="menu-option" ref="machineLearningButton"
         @click="emit('singleplayer', { mode: 'bot_match' })"
         @keydown.space.prevent="emit('singleplayer', { mode: 'bot_match' })"
         @keydown.enter.prevent="emit('singleplayer', { mode: 'bot_match' })"
@@ -41,10 +41,10 @@
 
           <p>Play against a machine that gets better the more you play!</p>
         </div>
-      </div>
+      </button>
 
 
-      <div tabindex="-1" class="menu-option" ref="multiRoundButton"
+      <button tabindex="-1" class="menu-option" ref="multiRoundButton"
         @click="emit('multiRoundScreen')"
         @keydown.space.prevent="emit('multiRoundScreen')"
         @keydown.enter.prevent="emit('multiRoundScreen')"
@@ -56,10 +56,10 @@
 
           <p>Meet each rounds required score within the time limit. Gain permanent upgrades to help you get through each round as they scale in difficulty.</p>
         </div>
-      </div>
+      </button>
 
     
-      <div tabindex="-1" :class="['menu-option']" ref="multiplayerButton"
+      <button tabindex="-1" :class="['menu-option']" ref="multiplayerButton"
         @click="emit('multiplayerScreen')"
         @keydown.space.prevent="emit('multiplayerScreen')"
         @keydown.enter.prevent="emit('multiplayerScreen')"
@@ -71,9 +71,9 @@
 
           <p>Play head to head against your Friends</p>
         </div>
-      </div>
+      </button>
 
-       <div tabindex="-1" class="menu-option" ref="quickPracticeButton"
+       <button tabindex="-1" class="menu-option" ref="quickPracticeButton"
         @click="emit('singleplayer', { mode: 'timed_solo' })"
         @keydown.space.prevent="emit('singleplayer', { mode: 'timed_solo' })"
         @keydown.enter.prevent="emit('singleplayer', { mode: 'timed_solo' })"
@@ -84,7 +84,7 @@
           <br>
           <p>Race the clock and stack the highest score you can.</p>
         </div>
-      </div>
+       </button>
 
       <button class="invisible" @focus="focusMachineLearning" ref="bottomFocusTrap"/>
     </div>
@@ -180,7 +180,11 @@ const handleKeyDown = (e) => {
     return;
   }
 
-  if (e.key === "ArrowDown") {
+  if (e.key === "b") {
+    e.preventDefault();
+    emit('home')
+  }
+  else if (e.key === "ArrowDown") {
     e.preventDefault();
     currentIndex.value = Math.min(currentIndex.value + 1, targets.length - 1);
     updateFocus();
@@ -316,6 +320,9 @@ input[type="range"]::-webkit-slider-thumb {
   border-radius: 50%;
   cursor: pointer;
   margin-top: -4px; /* Align with track */
+}
+button{
+  width: 100%;
 }
 
 .invisible {
