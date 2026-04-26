@@ -38,11 +38,14 @@
           <div v-if="!slot.tile" class="word-slot-placeholder">
             <div
               class="word-slot-placeholder-surface"
-              :class="{ milestone: !!slot.bonus }"
+              :class="{
+                milestone: !!slot.bonus && !slot.minimumRequired,
+                'minimum-required': slot.minimumRequired
+              }"
               :style="getPlaceholderStyle(slot)"
             >
-              <span v-if="slot.bonus" class="word-slot-bonus">+{{ slot.bonus }}</span>
-              <span v-if="slot.rewardLabel" class="word-slot-reward">{{ slot.rewardLabel }}</span>
+              <span v-if="slot.bonus && !slot.minimumRequired" class="word-slot-bonus">+{{ slot.bonus }}</span>
+              <span v-if="slot.rewardLabel && !slot.minimumRequired" class="word-slot-reward">{{ slot.rewardLabel }}</span>
               <span class="word-slot-index">{{ slot.position }}</span>
             </div>
           </div>
@@ -231,6 +234,7 @@ const canShowTooltip = computed(() => isTooltipVisible.value && !props.isMobile)
 let tooltipTimeoutId = null;
 
 const wordSlots = computed(() => {
+  const minimumWordLength = props.scoreOptions?.roundModifierEffects?.minimumWordLength || 0;
   const slots = Array.from({ length: 9 }, (_, index) => {
     const position = index + 1;
     const bonusStep = props.lengthBonusSteps.find((step) => step.length === position);
@@ -241,11 +245,12 @@ const wordSlots = computed(() => {
 	      tile: props.selectedTiles[index] || null,
 	      bonus: bonusStep?.bonus || 0,
 	      difference: bonusStep?.difference || 0,
-	      rewardLabel: bonusStep?.rewardLabel || ''
+	      rewardLabel: bonusStep?.rewardLabel || '',
+	      minimumRequired: position <= minimumWordLength
 	    };
 	  });
 
-  const milestoneSlots = slots.filter((slot) => slot.bonus);
+  const milestoneSlots = slots.filter((slot) => slot.bonus && !slot.minimumRequired);
   const milestoneCount = milestoneSlots.length || 1;
 
   return slots.map((slot) => ({
@@ -591,6 +596,15 @@ button:focus{
   background-size: var(--milestone-gradient-size, 100% 100%);
   background-position: var(--milestone-gradient-position, 0% 0%);
   border-color: rgba(255, 202, 103, 0.22);
+}
+
+.word-slot-placeholder-surface.minimum-required {
+  background:
+    linear-gradient(180deg, rgba(147, 147, 147, 0.52), rgba(57, 57, 57, 0.58));
+  border-color: rgba(255, 255, 255, 0.08);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 227, 167, 0.08),
+    inset 0 -2px 0 rgba(73, 31, 8, 0.28);
 }
 
 
