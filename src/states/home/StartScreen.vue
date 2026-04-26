@@ -31,9 +31,9 @@
       </div>
 
       <div class="links">
-        <span class="link"><a href="https://steampowered.com" target="_blank"><img width="40px" src="/src/assets/images/links/steam.png" alt="steam"></a></span>
-        <span class="link"><a href="https://discord.gg/fBjAxWE3Ev" target="_blank"><img width="40px" src="/src/assets/images/links/discord.png" alt="discord"></a></span>
-        <span class="link" v-if="!isElectron"><a href="https://buymeacoffee.com/dungeondraft" target="_blank"><img width="40px" src="/src/assets/images/links/coffee.png" alt="buy me a coffee"></a></span>
+        <span class="link"><a ref="steamLink" href="https://steampowered.com" target="_blank"><img width="40px" src="/src/assets/images/links/steam.png" alt="steam"></a></span>
+        <span class="link"><a ref="discordLink" href="https://discord.gg/fBjAxWE3Ev" target="_blank"><img width="40px" src="/src/assets/images/links/discord.png" alt="discord"></a></span>
+        <span class="link" v-if="!isElectron"><a ref="coffeeLink" href="https://buymeacoffee.com/dungeondraft" target="_blank"><img width="40px" src="/src/assets/images/links/coffee.png" alt="buy me a coffee"></a></span>
       </div>
   
       
@@ -196,34 +196,107 @@ const button4 = ref(null);
 const button5 = ref(null);
 const button6 = ref(null);
 const button7 = ref(null);
+const steamLink = ref(null);
+const discordLink = ref(null);
+const coffeeLink = ref(null);
 
-const buttons = [button0, button1, button2, button3, button4, button5, button6, button7];
+const controllerRegion = ref('home');
+const homeCursorIndex = ref(0);
+const linkCursorIndex = ref(0);
+
+const getHomeTargets = () => [button1, button3, button4]
+  .map((button) => button.value)
+  .filter((element) => element && !element.disabled && element.offsetParent !== null);
+
+const getLinkTargets = () => [steamLink, discordLink, coffeeLink]
+  .map((link) => link.value)
+  .filter((element) => element && element.offsetParent !== null);
+
+const focusHomeTarget = (nextIndex = homeCursorIndex.value) => {
+  const targets = getHomeTargets();
+  if (!targets.length) {
+    return;
+  }
+
+  homeCursorIndex.value = Math.max(0, Math.min(nextIndex, targets.length - 1));
+  targets[homeCursorIndex.value]?.focus();
+};
+
+const focusLinkTarget = (nextIndex = linkCursorIndex.value) => {
+  const targets = getLinkTargets();
+  if (!targets.length) {
+    return;
+  }
+
+  linkCursorIndex.value = Math.max(0, Math.min(nextIndex, targets.length - 1));
+  targets[linkCursorIndex.value]?.focus();
+};
+
+const cycleIndex = (currentIndex, direction, total) => {
+  if (!total) {
+    return 0;
+  }
+
+  return (currentIndex + direction + total) % total;
+};
 
 const handleKeyDown = (e) => {
-  const activeIndex = buttons.findIndex((btn) => btn.value === document.activeElement);
-    if (e.key === 'ArrowDown') {
-      e.preventDefault();
-      const nextIndex = (activeIndex + 1) % buttons.length;
-      buttons[nextIndex]?.value?.focus();
-    } else if (e.key === 'ArrowUp') {
-      e.preventDefault();
-      const prevIndex = (activeIndex - 1 + buttons.length) % buttons.length;
-      buttons[prevIndex]?.value?.focus();
-    } else if (e.key === 'Enter') {
-      document.activeElement?.click();
+  if (showIntro.value || props.settingsShowing || showFeedback.value || showCredits.value || showPWA.value) {
+    return;
+  }
+
+  const homeTargets = getHomeTargets();
+  const linkTargets = getLinkTargets();
+  const activeHomeIndex = homeTargets.findIndex((target) => target === document.activeElement);
+  const activeLinkIndex = linkTargets.findIndex((target) => target === document.activeElement);
+  if (activeHomeIndex >= 0) {
+    controllerRegion.value = 'home';
+    homeCursorIndex.value = activeHomeIndex;
+  } else if (activeLinkIndex >= 0) {
+    controllerRegion.value = 'links';
+    linkCursorIndex.value = activeLinkIndex;
+  }
+
+  if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+    e.preventDefault();
+    const direction = e.key === 'ArrowRight' ? 1 : -1;
+    if (controllerRegion.value === 'links') {
+      linkCursorIndex.value = cycleIndex(linkCursorIndex.value, direction, linkTargets.length);
+      focusLinkTarget();
+    } else {
+      homeCursorIndex.value = cycleIndex(homeCursorIndex.value, direction, homeTargets.length);
+      focusHomeTarget();
     }
-  
+    return;
+  }
+
+  if (e.key === 'ArrowUp') {
+    e.preventDefault();
+    controllerRegion.value = 'links';
+    linkCursorIndex.value = Math.min(homeCursorIndex.value, Math.max(0, linkTargets.length - 1));
+    focusLinkTarget();
+    return;
+  }
+
+  if (e.key === 'ArrowDown') {
+    e.preventDefault();
+    controllerRegion.value = 'home';
+    homeCursorIndex.value = Math.min(linkCursorIndex.value, Math.max(0, homeTargets.length - 1));
+    focusHomeTarget();
+    return;
+  }
+
+  if (e.key === 'Enter' || e.key === ' ') {
+    e.preventDefault();
+    document.activeElement?.click();
+  }
 };
 
 onMounted(() => {
   document.addEventListener('visibilitychange', handleVisibilityChange);
   setTimeout(() => {
     window.addEventListener('keydown', handleKeyDown);
-    if(buttons[0].value){
-      buttons[0].value.focus();
-    } else {
-      buttons[1].value.focus();
-    }
+    focusHomeTarget(0);
   }, 450);
   if(props.hasSeenIntro) startMusic.play()
   
@@ -444,6 +517,19 @@ font-family: 'Times New Roman', serif;
       width: 30px;
     }
   }
+
+  .link a {
+    display: inline-flex;
+    border-radius: 12px;
+  }
+
+  .link a:focus-visible {
+    outline: 4px solid rgba(130, 253, 238, 0.86);
+    outline-offset: 4px;
+    box-shadow:
+      0 0 0 5px rgba(92, 25, 41, 0.38),
+      0 16px 26px rgba(33, 10, 30, 0.28);
+  }
   
   label {
 
@@ -502,6 +588,13 @@ font-family: 'Times New Roman', serif;
   
   button.selected {
     background:rgb(59, 99, 159); /* Highlight selected players */
+  }
+  button:focus-visible {
+    outline: 4px solid rgba(130, 253, 238, 0.86);
+    outline-offset: 4px;
+    box-shadow:
+      0 0 0 5px rgba(92, 25, 41, 0.38),
+      0 16px 26px rgba(33, 10, 30, 0.28);
   }
   button.selected:hover {
     background:rgb(51, 83, 132);
