@@ -248,6 +248,7 @@
 
       <TutorialOverlay
         v-if="showTutorialOverlay"
+        :isBotMode="isBotMode"
         @close="handleCloseTutorial"
       />
     </main>

@@ -11,17 +11,18 @@
       <div class="tutorial-sections">
         <article class="tutorial-card">
           <strong>Goal</strong>
-          <p>Submit words for points. In versus modes, beat the other board. In solo sprint, score as much as you can before time runs out.</p>
+          <p>Submit words for points. Longer words score more points but take longer to think of. <span v-if="isBotMode" class="tutorial-inline">The Machine gets better the better you do!</span></p>
         </article>
 
         <article class="tutorial-card">
           <strong>Cards</strong>
-          <p>Cards can be played to give you tile modifiers or special abilities. They can even effect your opponents board or the time.<span class="tutorial-inline"></span></p>
+          <p>Cards can be played to give you tile modifiers or special abilities. They can even <span class="tutorial-inline">{{isBotMode ? 'affect the machines board':'affect your opponents board'}}</span> as well!</p>
         </article>
 
         <article class="tutorial-card">
           <strong>Word Value</strong>
           <p>Your word score comes from tile values, extra points for longer words,and modifiers.</p>
+          <p v-if="isBotMode"> <span class="tutorial-inline">Watch the cogs!</span>  They will spin with how fast you are thing and how fast the machine is thinking!</p>
         </article>
       </div>
 
@@ -65,6 +66,7 @@
 
 <script setup>
 import { nextTick, onBeforeUnmount, onMounted, ref } from 'vue';
+const props = defineProps({isBotMode: Boolean})
 import {
   MODIFIER_DEFINITIONS,
   applyModifierToTile,
