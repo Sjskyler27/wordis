@@ -1,5 +1,5 @@
 <template>
-  <div class="multi-round-shell">
+  <div ref="screenRoot" class="multi-round-shell">
     <div id="background-layer">
       <div class="shape-layer layer-far"></div>
       <div class="shape-layer layer-near"></div>
@@ -167,7 +167,7 @@
 </template>
 
 <script setup>
-import { computed, ref } from 'vue';
+import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue';
 import { PERSONAL_MODIFIER_DEFINITIONS } from './multiround/personal-modifier-definitions.js';
 import { ROUND_MODIFIER_DEFINITIONS } from './multiround/round-modifier-definitions.js';
 
@@ -176,6 +176,8 @@ const selectedDifficulty = ref(localStorage.getItem('multiRoundDifficulty') || '
 const selectedReferenceType = ref('personal');
 const selectedPersonalTier = ref('common');
 const selectedRoundDifficulty = ref('easy');
+const screenRoot = ref(null);
+const controllerFocusIndex = ref(0);
 const difficulties = [
   {
     value: 'easy',
@@ -266,6 +268,69 @@ const startMultiRound = () => {
     multiRoundDifficulty: selectedDifficulty.value
   });
 };
+
+const getControllerTargets = () => {
+  if (!screenRoot.value) {
+    return [];
+  }
+
+  return Array.from(screenRoot.value.querySelectorAll('button:not(:disabled)'))
+    .filter((element) => element.offsetParent !== null);
+};
+
+const setControllerFocus = (nextIndex) => {
+  const targets = getControllerTargets();
+  if (!targets.length) {
+    return;
+  }
+
+  controllerFocusIndex.value = Math.max(0, Math.min(nextIndex, targets.length - 1));
+  targets[controllerFocusIndex.value]?.focus();
+};
+
+const syncControllerFocusIndex = () => {
+  const targets = getControllerTargets();
+  const activeIndex = targets.findIndex((element) => element === document.activeElement);
+  if (activeIndex >= 0) {
+    controllerFocusIndex.value = activeIndex;
+  }
+};
+
+const handleControllerKeyDown = (event) => {
+  if (event.key === 'Escape') {
+    event.preventDefault();
+    emit('type');
+    return;
+  }
+
+  if (event.key === 'ArrowDown' || event.key === 'ArrowRight') {
+    event.preventDefault();
+    syncControllerFocusIndex();
+    setControllerFocus(controllerFocusIndex.value + 1);
+    return;
+  }
+
+  if (event.key === 'ArrowUp' || event.key === 'ArrowLeft') {
+    event.preventDefault();
+    syncControllerFocusIndex();
+    setControllerFocus(controllerFocusIndex.value - 1);
+    return;
+  }
+
+  if (event.key === 'Enter' || event.key === ' ') {
+    event.preventDefault();
+    document.activeElement?.click();
+  }
+};
+
+onMounted(() => {
+  window.addEventListener('keydown', handleControllerKeyDown);
+  nextTick(() => setControllerFocus(0));
+});
+
+onBeforeUnmount(() => {
+  window.removeEventListener('keydown', handleControllerKeyDown);
+});
 </script>
 
 <style scoped>
@@ -649,6 +714,18 @@ p,
 .difficulty-chip.active {
   background: linear-gradient(180deg, rgba(93, 230, 203, 0.24), rgba(46, 179, 151, 0.38));
   border-color: rgba(111, 245, 221, 0.54);
+}
+
+.difficulty-chip:focus-visible,
+.reference-toggle-button:focus-visible,
+.filter-chip:focus-visible,
+.arcade-button:focus-visible,
+.back-button:focus-visible {
+  outline: 4px solid rgba(130, 253, 238, 0.86);
+  outline-offset: 3px;
+  box-shadow:
+    0 0 0 5px rgba(92, 25, 41, 0.38),
+    0 16px 26px rgba(33, 10, 30, 0.28);
 }
 
 .stat-grid {
