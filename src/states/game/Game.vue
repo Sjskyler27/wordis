@@ -223,6 +223,7 @@
       <MultiRoundRewardChoice
         v-if="isMultiRoundMode && isMultiRoundRewardChoiceOpen"
         :rewards="multiRoundRewardChoices"
+        :controller-focused-reward-index="controllerRegion === 'reward' ? controllerRewardCursorIndex : -1"
         @choose="handleMultiRoundRewardChoice"
       />
 
@@ -348,6 +349,7 @@ const controllerCardCursorIndex = ref(0);
 const controllerBuilderCursorIndex = ref(0);
 const controllerActionCursorIndex = ref(0);
 const controllerRoundCursorIndex = ref(0);
+const controllerRewardCursorIndex = ref(0);
 const isControllerNavigationActive = ref(false);
 const laneBurstPulse = ref({
   host: 0,
@@ -1281,6 +1283,7 @@ const handleMultiRoundRewardChoice = (rewardKey) => {
   }
 
   resetMultiRoundBoardForNextRound(startingScore);
+  focusControllerTile(0);
   localMessage.value = `Next round starts with ${startingScore} points from saved time.`;
 };
 
@@ -1609,6 +1612,11 @@ const refocusControllerSelection = () => {
     return;
   }
 
+  if (controllerRegion.value === 'reward') {
+    focusControllerReward(controllerRewardCursorIndex.value);
+    return;
+  }
+
   focusControllerTile(controllerTileCursorIndex.value);
 };
 
@@ -1726,6 +1734,25 @@ const focusControllerRound = (index = controllerRoundCursorIndex.value) => {
     const roundButton = document.querySelector(`[data-controller-round="${boundedIndex}"]`);
     if (roundButton && typeof roundButton.focus === 'function') {
       roundButton.focus();
+    }
+  });
+};
+
+const focusControllerReward = (index = controllerRewardCursorIndex.value) => {
+  if (!isMultiRoundRewardChoiceOpen.value || !multiRoundRewardChoices.value.length) {
+    return;
+  }
+
+  isControllerNavigationActive.value = true;
+  controllerRegion.value = 'reward';
+  const rewardCount = multiRoundRewardChoices.value.length;
+  const boundedIndex = ((index % rewardCount) + rewardCount) % rewardCount;
+  controllerRewardCursorIndex.value = boundedIndex;
+
+  nextTick(() => {
+    const rewardButton = document.querySelector(`[data-controller-reward="${boundedIndex}"]`);
+    if (rewardButton && typeof rewardButton.focus === 'function') {
+      rewardButton.focus();
     }
   });
 };
@@ -2088,6 +2115,45 @@ const handleKeydown = (event) => {
     return;
   }
 
+  if (isMultiRoundRewardChoiceOpen.value) {
+    if (!multiRoundRewardChoices.value.length) {
+      event.preventDefault();
+      return;
+    }
+
+    if (event.key === 'ArrowLeft') {
+      event.preventDefault();
+      focusControllerReward(controllerRewardCursorIndex.value - 1);
+      return;
+    }
+
+    if (event.key === 'ArrowRight') {
+      event.preventDefault();
+      focusControllerReward(controllerRewardCursorIndex.value + 1);
+      return;
+    }
+
+    if (event.key === 'ArrowUp' || event.key === 'ArrowDown') {
+      event.preventDefault();
+      focusControllerReward(controllerRewardCursorIndex.value);
+      return;
+    }
+
+    if (event.key === 'Enter' || event.key === ' ' || event.key === 'x') {
+      event.preventDefault();
+      const reward = multiRoundRewardChoices.value[controllerRewardCursorIndex.value];
+      if (reward) {
+        handleMultiRoundRewardChoice(reward.key);
+      }
+      return;
+    }
+
+    if (event.key !== 'Escape') {
+      event.preventDefault();
+      return;
+    }
+  }
+
   if (event.key !== 'Escape') {
     if (!myTiles.value.length) {
       return;
@@ -2216,6 +2282,20 @@ const handleKeydown = (event) => {
 watch([myTiles, mySide], () => {
   refocusControllerSelection();
 }, { deep: true });
+
+watch(isMultiRoundRewardChoiceOpen, (isOpen) => {
+  if (!isOpen) {
+    if (controllerRegion.value === 'reward') {
+      focusControllerTile(0);
+    }
+    return;
+  }
+
+  controllerRewardCursorIndex.value = 0;
+  nextTick(() => {
+    focusControllerReward(0);
+  });
+});
 
 watch(isSideDrawerMode, (isDrawerMode) => {
   if (!isDrawerMode) {

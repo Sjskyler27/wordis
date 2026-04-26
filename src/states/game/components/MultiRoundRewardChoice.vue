@@ -6,11 +6,12 @@
       <strong>Choose a modifier</strong>
       <div class="reward-choice-grid">
         <button
-          v-for="reward in rewards"
+          v-for="(reward, index) in rewards"
           :key="reward.key"
           type="button"
           class="reward-card"
-          :class="reward.tier"
+          :class="[reward.tier, { 'reward-card-controller-focus': controllerFocusedRewardIndex === index }]"
+          :data-controller-reward="index"
           @click="$emit('choose', reward.key)"
         >
           <span>{{ reward.tier }}</span>
@@ -27,6 +28,10 @@ defineProps({
   rewards: {
     type: Array,
     required: true
+  },
+  controllerFocusedRewardIndex: {
+    type: Number,
+    default: -1
   }
 });
 
@@ -115,6 +120,14 @@ defineEmits(['choose']);
   transform: translateY(-3px);
   border-color: rgba(255, 236, 187, 0.62);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18), 0 18px 28px rgba(20, 6, 18, 0.28);
+}
+
+.reward-card-controller-focus {
+  outline: 4px solid rgba(130, 253, 238, 0.88);
+  outline-offset: 3px;
+  transform: translateY(-3px);
+  border-color: rgba(223, 255, 250, 0.78);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18), 0 0 0 5px rgba(29, 109, 117, 0.24), 0 18px 28px rgba(20, 6, 18, 0.28);
 }
 
 .reward-card span {
