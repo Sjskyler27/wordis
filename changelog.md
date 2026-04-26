@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-04-26 0.0.33
+
+Start: 2026-04-26 07:45:00 EDT
+Stop: 2026-04-26 08:08:14 EDT
+
+- Smoothed the Machine Learning bot cog so it ramps up before a bot word and eases back down afterward.
+- Smoothed player cog speed changes so scoring pace transitions do not jump.
+- Changed Loose Rack to shuffle tiles every 8 seconds and updated its description.
+- Reduced duplicate card draw odds when a player already holds that card, and added card chance logs showing effective weights and chances.
+- Verified the changes with `npm run build`.
+
 ## 2026-04-26 0.0.31 6am 0.32
 skip intro
 dificulty balance changes 
