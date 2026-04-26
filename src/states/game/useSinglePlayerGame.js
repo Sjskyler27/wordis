@@ -68,9 +68,9 @@ export const useSinglePlayerGame = ({
   const WINNING_SCORE = isTestingMode ? 40 : 250;
   // determine how much time between thinking
   const BOT_DELAYS = {
-    easy: 13000,
-    normal: 11500,
-    hard: 10250
+    easy: 14000,
+    normal: 16500,
+    hard: 13250
   };
   const modifierProfile = () => (isTimedSoloMode.value || isMultiRoundMode?.value) ? 'solo' : 'bot';
   const attackDeck = () => isTimedSoloMode.value ? 'timed_solo' : 'duel';
