@@ -14,7 +14,7 @@ export const BOT_DIFFICULTIES = {
 };
 
 export const playMode = ref(PLAY_MODES.TIMED_SOLO);
-export const botDifficulty = ref(BOT_DIFFICULTIES.EASY);
+export const botDifficulty = ref(localStorage.getItem('botDefaultDifficulty') ?? BOT_DIFFICULTIES.EASY);
 export const multiRoundDifficulty = ref(localStorage.getItem('multiRoundDifficulty') || BOT_DIFFICULTIES.NORMAL);
 export const soloTimerSeconds = ref(180);
 export const overtimeEnabled = ref(JSON.parse(localStorage.getItem('overtimeEnabled') ?? 'true'));

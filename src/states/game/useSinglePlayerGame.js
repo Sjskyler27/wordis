@@ -19,6 +19,7 @@ import {
   rerollRackExceptTile
 } from './tile-logic.js';
 import { isTestingMode } from './testing.js';
+import { BOT_DIFFICULTIES } from './play-config.js';
 
 export const useSinglePlayerGame = ({
   isMultiplayer,
@@ -66,7 +67,7 @@ export const useSinglePlayerGame = ({
   };
   const WINNING_SCORE = isTestingMode ? 40 : 250;
   const BOT_DELAYS = {
-    easy: 18000,
+    easy: 16000,
     normal: 11000,
     hard: 7250
   };
@@ -551,6 +552,28 @@ export const useSinglePlayerGame = ({
     return true;
   };
 
+  const checkBotWin = (playerScore, botScore, botMode, botDifficulty) => {
+    console.log('CHECK!!'+ botMode)
+    if(!botMode) return botDifficulty;
+    console.log('isBot')
+    if (botDifficulty === BOT_DIFFICULTIES.HARD) return botDifficulty;
+    console.log('notHard')
+    const storedBotDifficulty = JSON.parse(localStorage.getItem('botDefaultDifficulty')) ?? BOT_DIFFICULTIES.EASY;
+    console.log('old'+storedBotDifficulty)
+    if(playerScore > botScore){
+      let newBotDifficulty;
+      if(storedBotDifficulty === BOT_DIFFICULTIES.EASY) 
+        newBotDifficulty = BOT_DIFFICULTIES.NORMAL;
+      if(storedBotDifficulty === BOT_DIFFICULTIES.Normal)
+        newBotDifficulty = BOT_DIFFICULTIES.HARD
+      localStorage.setItem('botDefaultDifficulty', newBotDifficulty);
+      console.log('new'+ newBotDifficulty)
+      return newBotDifficulty;
+    }
+    return botDifficulty
+  }
+
+
   const resetSinglePlayerRound = (side = 'host') => {
     submissionPauseOwner.value = null;
     const nextRack = createRack(side, playerScores.value, {
@@ -800,6 +823,7 @@ export const useSinglePlayerGame = ({
     ensureSinglePlayerState,
     startBotLoop,
     stopBotLoop,
+    checkBotWin,
     clearSinglePlayerRack,
     resetSinglePlayerRound,
     useSinglePlayerBoon,

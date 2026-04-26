@@ -303,6 +303,7 @@ import { getMultiRoundRounds } from './multiround/multi-round-difficulties.js';
 import PersonalModifiersDrawer from './components/PersonalModifiersDrawer.vue';
 import TutorialOverlay from './components/TutorialOverlay.vue';
 import WordBuilder from './components/WordBuilder.vue';
+import { botDifficulty } from './play-config.js';
 
 const props = defineProps({
   isMobile: Boolean,
@@ -571,6 +572,7 @@ const scoreRibbonScoreLabel = computed(() => {
 const {
   startBotLoop,
   stopBotLoop,
+  checkBotWin,
   clearSinglePlayerRack,
   resetSinglePlayerRound,
   useSinglePlayerBoon,
@@ -2183,6 +2185,7 @@ watch(() => props.playMode, (nextMode) => {
 watch(effectiveGameEnded, (ended) => {
   if (ended) {
     stopBotLoop();
+    props.botDifficulty = checkBotWin(leftLane.value.score, rightLane.value.score, isBotMode, props.botDifficulty);
     stopSoloTimer();
     stopMultiRoundTimer();
     return;
