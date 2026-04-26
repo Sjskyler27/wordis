@@ -583,7 +583,8 @@ const dispatchKey = (key) => {
 
   if ((key === 'Enter' || key === ' ') && document.activeElement) {
     const el = document.activeElement;
-    if (typeof el.click === 'function') {
+    const canClickFocusedControl = el.matches?.('button, a, input, textarea, select, [role="button"]');
+    if (canClickFocusedControl && typeof el.click === 'function') {
       el.click(); // Trigger real click
       return;
     }
