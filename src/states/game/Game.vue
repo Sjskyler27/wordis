@@ -2551,38 +2551,72 @@ body {
 .cog {
   position: absolute;
   border-radius: 50%;
+  }
+
+.machine-game-cogs .cog::before,
+.machine-game-cogs .cog::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+.machine-game-cogs .cog::before {
   background-position: center;
   background-repeat: no-repeat;
   background-size: contain;
+  background-image: var(--cog-image);
   filter:
     invert(84%)
     sepia(9%)
     saturate(369%)
     hue-rotate(169deg)
     brightness(1.12)
-    contrast(1.18)
-    drop-shadow(-12px 14px 0 rgba(4, 12, 18, 0.24))
-    drop-shadow(0 0 26px rgba(168, 220, 232, 0.14));
+    contrast(1.18);
   }
+
+.machine-game-cogs .cog::after {
+  background: var(--cog-image) center / contain no-repeat;
+  filter: brightness(0) blur(2px);
+  opacity: 0.24;
+  transform: translate(-12px, 14px) scale(0.94);
+  z-index: -1;
+}
+
 .machine-cog-large {
-  background-image: url('/src/assets/images/big-cog.png');
+  --cog-image: url('/src/assets/images/big-cog.png');
     
   width: min(44vw, 440px);
   height: min(44vw, 440px);
   right: 4vw;
   bottom: 4vh;
-  animation: machineCogSpin 18s linear infinite;
   opacity: 0.76;
 }
 
+.machine-cog-large::before {
+  animation: machineCogSpin 18s linear infinite;
+}
+
+.machine-cog-large::after {
+  animation: machineCogShadowSpin 18s linear infinite;
+}
+
 .machine-cog-small {
-  background-image: url('/src/assets/images/small-cog.png');
+  --cog-image: url('/src/assets/images/small-cog.png');
   width: min(22vw, 210px);
   height: min(22vw, 210px);
   left: 6vw;
   top: 12vh;
-  animation: machineCogSpinReverse 11s linear infinite;
   opacity: 0.92;
+}
+
+.machine-cog-small::before {
+  animation: machineCogSpinReverse 11s linear infinite;
+}
+
+.machine-cog-small::after {
+  animation: machineCogShadowSpinReverse 11s linear infinite;
 }
 
 .machine-game-shell .bonus-card {
@@ -2640,6 +2674,24 @@ body {
 @keyframes machineCogSpinReverse {
   to {
     transform: rotate(-360deg);
+  }
+}
+
+@keyframes machineCogShadowSpin {
+  from {
+    transform: translate(-12px, 14px) scale(0.94) rotate(0deg);
+  }
+  to {
+    transform: translate(-12px, 14px) scale(0.94) rotate(360deg);
+  }
+}
+
+@keyframes machineCogShadowSpinReverse {
+  from {
+    transform: translate(-12px, 14px) scale(0.94) rotate(0deg);
+  }
+  to {
+    transform: translate(-12px, 14px) scale(0.94) rotate(-360deg);
   }
 }
 

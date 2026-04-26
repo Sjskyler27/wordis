@@ -242,39 +242,72 @@ const close = () => emit("close");
 .cog {
   position: absolute;
   border-radius: 50%;
+  opacity: 0.88;
+  }
+
+.cog::before,
+.cog::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+.cog::before {
   background-position: center;
   background-repeat: no-repeat;
   background-size: contain;
+  background-image: var(--cog-image);
   filter:
     invert(84%)
     sepia(9%)
     saturate(369%)
     hue-rotate(169deg)
     brightness(1.12)
-    contrast(1.18)
-    drop-shadow(-10px 12px 0 rgba(5, 14, 20, 0.24))
-    drop-shadow(0 0 22px rgba(168, 220, 232, 0.16));
-  opacity: 0.88;
-  }
+    contrast(1.18);
+}
+
+.cog::after {
+  background: var(--cog-image) center / contain no-repeat;
+  filter: brightness(0) blur(2px);
+  opacity: 0.24;
+  transform: translate(-10px, 12px) scale(0.94);
+  z-index: -1;
+}
 
   .cog-large {
-    background-image: url('/src/assets/images/big-cog.png');
+    --cog-image: url('/src/assets/images/big-cog.png');
     width: min(42vw, 380px);
     height: min(42vw, 380px);
     right: 6vw;
     bottom: 6vh;
-    animation: cogSpin 18s linear infinite;
     opacity: 0.8;
   }
 
+  .cog-large::before {
+    animation: cogSpin 18s linear infinite;
+  }
+
+  .cog-large::after {
+    animation: cogShadowSpin 18s linear infinite;
+  }
+
   .cog-small {
-    background-image: url('/src/assets/images/small-cog.png');
+    --cog-image: url('/src/assets/images/small-cog.png');
     width: min(22vw, 190px);
     height: min(22vw, 190px);
     left: 8vw;
     top: 12vh;
-    animation: cogSpinReverse 12s linear infinite;
     opacity: 0.94;
+  }
+
+  .cog-small::before {
+    animation: cogSpinReverse 12s linear infinite;
+  }
+
+  .cog-small::after {
+    animation: cogShadowSpinReverse 12s linear infinite;
   }
 
   .shape-layer {
@@ -330,6 +363,24 @@ const close = () => emit("close");
   @keyframes cogSpinReverse {
     to {
       transform: rotate(-360deg);
+    }
+  }
+
+  @keyframes cogShadowSpin {
+    from {
+      transform: translate(-10px, 12px) scale(0.94) rotate(0deg);
+    }
+    to {
+      transform: translate(-10px, 12px) scale(0.94) rotate(360deg);
+    }
+  }
+
+  @keyframes cogShadowSpinReverse {
+    from {
+      transform: translate(-10px, 12px) scale(0.94) rotate(0deg);
+    }
+    to {
+      transform: translate(-10px, 12px) scale(0.94) rotate(-360deg);
     }
   }
 
