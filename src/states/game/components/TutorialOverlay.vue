@@ -323,11 +323,20 @@ const finishTutorial = () => {
 }
 
 .tutorial-footer {
+  position: sticky;
+  bottom: -28px;
+  z-index: 2;
   margin-top: 24px;
+  margin-inline: -28px;
+  margin-bottom: -28px;
+  padding: 16px 28px 18px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 16px;
+  background: rgba(50, 13, 30, 0.98);
+  border-top: 1px solid rgba(255, 202, 103, 0.18);
+  box-shadow: 0 -16px 28px rgba(20, 6, 18, 0.22);
 }
 
 .tutorial-checkbox {
@@ -359,6 +368,10 @@ const finishTutorial = () => {
   }
 
   .tutorial-footer {
+    bottom: -22px;
+    margin-inline: -22px;
+    margin-bottom: -22px;
+    padding: 14px 22px 16px;
     flex-direction: column;
     align-items: stretch;
   }
