@@ -45,7 +45,7 @@ const CARD_DEFINITIONS = {
     kind: 'boon',
     label: 'First Tile',
     description: 'Give one of your tiles the first-tile bonus.',
-    rarityWeight: 1,
+    rarityWeight: .68,
     effectType: 'apply_modifier',
     modifier: 'firsttile',
     ui: {
@@ -60,7 +60,7 @@ const CARD_DEFINITIONS = {
     kind: 'boon',
     label: 'Wild',
     description: 'Turn one of your tiles into a wild.',
-    rarityWeight: 0.8,
+    rarityWeight: 0.68,
     effectType: 'apply_modifier',
     modifier: 'wild',
     ui: {
@@ -75,7 +75,7 @@ const CARD_DEFINITIONS = {
     kind: 'boon',
     label: 'Gold',
     description: 'Give one of your tiles the gold modifier.',
-    rarityWeight: 0.35,
+    rarityWeight: 0.25,
     effectType: 'apply_modifier',
     modifier: 'gold',
     ui: {
