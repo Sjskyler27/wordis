@@ -2598,6 +2598,21 @@ body {
     0 14px 24px rgba(6, 18, 28, 0.2);
 }
 
+.machine-game-shell .bonus-card::after {
+  width: auto;
+  height: auto;
+  border-radius: 0;
+  background: url('/src/assets/images/small-cog.png') calc(100% + 18px) calc(100% + 24px) / 112px 112px no-repeat;
+  opacity: 0.24;
+  filter:
+    invert(84%)
+    sepia(9%)
+    saturate(369%)
+    hue-rotate(169deg)
+    brightness(1.12)
+    contrast(1.18);
+}
+
 @keyframes driftLayerFar {
   0% {
     background-position: 0 0;
@@ -2674,11 +2689,11 @@ body {
 .bonus-card::after {
   content: '';
   position: absolute;
-  inset: auto -30px -30px auto;
-  width: 120px;
-  height: 120px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.08);
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(circle 60px at calc(100% + 30px) calc(100% + 30px), rgba(255, 255, 255, 0.08) 0 99%, transparent 100%);
+  pointer-events: none;
+  z-index: 0;
 }
 
 .bonus-kicker {
