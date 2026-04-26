@@ -215,11 +215,11 @@ const finishTutorial = () => {
   flex: 0 0 94px;
   appearance: none;
   border: none;
-  min-height: 94px;
-  min-width: 94px;
-  max-width: 106px;
+  min-height: 64px;
+  min-width: 64px;
+  max-width: 72px;
   width: 100%;
-  border-radius: 16px;
+  border-radius: 14px;
   background: var(--tile-bg, linear-gradient(180deg, #fffef8 0%, #f2ebe0 70%, #d9cec0 100%));
   color: var(--tile-text-color, #1c1930);
   box-shadow: var(--tile-shadow, inset 0 -4px 0 rgba(0, 0, 0, 0.12), 0 10px 18px rgba(45, 10, 24, 0.16));
@@ -227,7 +227,7 @@ const finishTutorial = () => {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 15px;
+  padding: 12px;
   transition: transform 140ms ease, box-shadow 140ms ease;
   will-change: transform, opacity;
 }
