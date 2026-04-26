@@ -62,7 +62,10 @@
           <p v-else-if="isMultiRoundMode">Clear the current target to advance the run.</p>
           <p v-else>Words must be 4 letters, larger words score bonus points and may gain cards. Only used letters are replaced.</p>
         </div>
-        <div class="bonus-card accent-purple">
+        <div
+          class="bonus-card accent-purple card-panel"
+          :class="{ 'card-panel-blocked': cardControlsDisabled }"
+        >
           <span v-if="!isMobile" class="bonus-kicker">Cards</span>
           <strong>{{ cardSummary }}</strong>
           <p v-if="activeBoonCard">
@@ -2684,6 +2687,39 @@ body {
 
 .accent-purple {
   background: linear-gradient(180deg, rgba(112, 70, 182, 0.95), rgba(66, 33, 118, 0.9));
+}
+
+.card-panel {
+  position: relative;
+  overflow: hidden;
+}
+
+.card-panel-blocked {
+  filter: saturate(0.62);
+}
+
+.card-panel-blocked::after {
+  content: 'CARDS LOCKED';
+  position: absolute;
+  left: 18px;
+  right: 18px;
+  bottom: 18px;
+  z-index: 4;
+  padding: 9px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.48);
+  border-radius: 14px;
+  background: rgba(31, 13, 40, 0.88);
+  color: #fff7ee;
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  text-align: center;
+  box-shadow: 0 14px 24px rgba(20, 8, 26, 0.3);
+  pointer-events: none;
+}
+
+.card-panel-blocked .card-hand {
+  opacity: 0.46;
 }
 
 .card-hand {
