@@ -2123,24 +2123,55 @@ const handleKeydown = (event) => {
 
     if (event.key === 'ArrowLeft') {
       event.preventDefault();
+      if (controllerRegion.value === 'rounds') {
+        focusControllerRound(Math.max(0, controllerRoundCursorIndex.value - 1));
+        return;
+      }
+
       focusControllerReward(controllerRewardCursorIndex.value - 1);
       return;
     }
 
     if (event.key === 'ArrowRight') {
       event.preventDefault();
+      if (controllerRegion.value === 'rounds') {
+        focusControllerRound(Math.min(controllerRoundCursorIndex.value + 1, multiRoundProgressRounds.value.length - 1));
+        return;
+      }
+
       focusControllerReward(controllerRewardCursorIndex.value + 1);
       return;
     }
 
-    if (event.key === 'ArrowUp' || event.key === 'ArrowDown') {
+    if (event.key === 'ArrowUp') {
       event.preventDefault();
+      if (controllerRegion.value === 'reward') {
+        focusControllerRound(Math.min(controllerRewardCursorIndex.value, multiRoundProgressRounds.value.length - 1));
+        return;
+      }
+
+      focusControllerRound(controllerRoundCursorIndex.value);
+      return;
+    }
+
+    if (event.key === 'ArrowDown') {
+      event.preventDefault();
+      if (controllerRegion.value === 'rounds') {
+        focusControllerReward(Math.min(controllerRoundCursorIndex.value, multiRoundRewardChoices.value.length - 1));
+        return;
+      }
+
       focusControllerReward(controllerRewardCursorIndex.value);
       return;
     }
 
     if (event.key === 'Enter' || event.key === ' ' || event.key === 'x') {
       event.preventDefault();
+      if (controllerRegion.value === 'rounds') {
+        focusControllerRound(controllerRoundCursorIndex.value);
+        return;
+      }
+
       const reward = multiRoundRewardChoices.value[controllerRewardCursorIndex.value];
       if (reward) {
         handleMultiRoundRewardChoice(reward.key);
