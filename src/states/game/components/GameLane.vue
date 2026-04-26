@@ -60,6 +60,9 @@
             <span v-if="!getTileUi(tile).hideBadge && tile.status !== 'normal'" class="tile-modifier" :style="getBadgeStyle(tile)">
               {{ getTileBadge(tile) }}
             </span>
+            <span v-if="getRoundTileMarker(tile)" class="tile-round-marker">
+              {{ getRoundTileMarker(tile) }}
+            </span>
             <span class="tile-score">{{ getTileScore(tile) }}</span>
             <span class="tile-letter">{{ tile.letter }}</span>
           </button>
@@ -307,6 +310,16 @@ const getTileLetter = (tile) => (tile?.baseLetter || tile?.letter || '').toUpper
 const isBannedLetter = (tile) => {
   const bannedLetters = new Set(props.scoreOptions?.roundModifierEffects?.bannedLetters || []);
   return bannedLetters.has(getTileLetter(tile));
+};
+const isHotBurnTile = (tile) => {
+  return tile.status === 'burningTile' && (props.scoreOptions?.roundModifierEffects?.idlePenaltyMultiplier || 1) > 1;
+};
+const getRoundTileMarker = (tile) => {
+  if (isHotBurnTile(tile)) {
+    return 'x2';
+  }
+
+  return '';
 };
 
 const getTileStyle = (tile) => {
@@ -1166,6 +1179,28 @@ onBeforeUnmount(() => {
   text-transform: uppercase;
   text-align: center;
   box-shadow: 0 4px 10px rgba(27, 11, 20, 0.18);
+}
+
+.tile-round-marker {
+  position: absolute;
+  bottom: 7px;
+  left: 50%;
+  z-index: 3;
+  min-width: 34px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: rgba(32, 9, 12, 0.88);
+  color: #ffd673;
+  font-size: 0.72rem;
+  font-weight: 950;
+  line-height: 1;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  box-shadow:
+    0 0 0 2px rgba(255, 212, 115, 0.42),
+    0 7px 13px rgba(63, 16, 13, 0.28);
+  pointer-events: none;
+  transform: translateX(-50%);
 }
 
 .rack-tile-enter-active {
