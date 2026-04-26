@@ -5,9 +5,13 @@
   @done="handleTransitionDone"
 />
 
-  <div id="background-layer">
+  <div id="background-layer" :class="{ 'machine-home-background': MACHINE_STYLE }">
     <div class="shape-layer layer-far"></div>
     <div class="shape-layer layer-near"></div>
+    <div v-if="MACHINE_STYLE" class="machine-cogs" aria-hidden="true">
+      <span class="cog cog-large"></span>
+      <span class="cog cog-small"></span>
+    </div>
   </div>
   <IntroScreen v-if="showIntro" @finished="showHome" />
     <div v-else class="home-container" @click="playMusic">
@@ -92,6 +96,7 @@
     deviceId: String,
   });
 
+  const MACHINE_STYLE = true;
   const showIntro = ref(!props.hasSeenIntro);
   const demoDate = new Date('2025-10-01T00:00:00Z')
   const isDemo = false
@@ -411,6 +416,92 @@ function handleVisibilityChange() {
     pointer-events: none;
   }
 
+  #background-layer.machine-home-background {
+    background:
+      radial-gradient(circle at 18% 16%, rgba(124, 231, 255, 0.2) 0, rgba(124, 231, 255, 0.16) 11%, transparent 30%),
+      radial-gradient(circle at 82% 18%, rgba(255, 255, 255, 0.11) 0, rgba(255, 255, 255, 0.08) 8%, transparent 24%),
+      linear-gradient(135deg, #31475e 0%, #22384d 28%, #182535 62%, #101620 100%);
+    filter: saturate(0.9) contrast(1.08);
+  }
+
+  .machine-cogs {
+    position: absolute;
+    inset: 0;
+    opacity: 0.74;
+    pointer-events: none;
+  }
+
+  .cog {
+    position: absolute;
+    border-radius: 50%;
+    opacity: 0.88;
+  }
+
+  .cog::before,
+  .cog::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+  }
+
+  .cog::before {
+    background-image: var(--cog-image);
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: contain;
+    filter:
+      invert(84%)
+      sepia(9%)
+      saturate(369%)
+      hue-rotate(169deg)
+      brightness(1.12)
+      contrast(1.18);
+  }
+
+  .cog::after {
+    background: var(--cog-image) center / contain no-repeat;
+    filter: brightness(0) blur(2px);
+    opacity: 0.24;
+    transform: translate(-10px, 12px) scale(0.94);
+    z-index: -1;
+  }
+
+  .cog-large {
+    --cog-image: url('/src/assets/images/big-cog.png');
+    width: min(42vw, 380px);
+    height: min(42vw, 380px);
+    right: 6vw;
+    bottom: 6vh;
+    opacity: 0.8;
+  }
+
+  .cog-large::before {
+    animation: cogSpin 18s linear infinite;
+  }
+
+  .cog-large::after {
+    animation: cogShadowSpin 18s linear infinite;
+  }
+
+  .cog-small {
+    --cog-image: url('/src/assets/images/small-cog.png');
+    width: min(22vw, 190px);
+    height: min(22vw, 190px);
+    left: 8vw;
+    top: 12vh;
+    opacity: 0.94;
+  }
+
+  .cog-small::before {
+    animation: cogSpinReverse 12s linear infinite;
+  }
+
+  .cog-small::after {
+    animation: cogShadowSpinReverse 12s linear infinite;
+  }
+
   .shape-layer {
     position: absolute;
     inset: -10%;
@@ -451,6 +542,36 @@ function handleVisibilityChange() {
     }
     100% {
       background-position: -67px 420px;
+    }
+  }
+
+  @keyframes cogSpin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  @keyframes cogSpinReverse {
+    to {
+      transform: rotate(-360deg);
+    }
+  }
+
+  @keyframes cogShadowSpin {
+    from {
+      transform: translate(-10px, 12px) scale(0.94) rotate(0deg);
+    }
+    to {
+      transform: translate(-10px, 12px) scale(0.94) rotate(360deg);
+    }
+  }
+
+  @keyframes cogShadowSpinReverse {
+    from {
+      transform: translate(-10px, 12px) scale(0.94) rotate(0deg);
+    }
+    to {
+      transform: translate(-10px, 12px) scale(0.94) rotate(-360deg);
     }
   }
   .home-container {
