@@ -481,11 +481,59 @@ const buttonMap = {
 
   const prevButtonStates = [];
   const buttonCooldowns = [];
+  const prevAxisDirections = [];
+  const axisCooldowns = [];
   const COOLDOWN_FRAMES = 1; // Tune as needed
+  const AXIS_DEADZONE = 0.55;
+  const AXIS_REPEAT_FRAMES = 12;
+  let gamepadAnimationFrameId = 0;
+
+  const getJoystickDirection = (gamepad) => {
+    const horizontal = gamepad.axes?.[0] || 0;
+    const vertical = gamepad.axes?.[1] || 0;
+
+    if (Math.abs(horizontal) < AXIS_DEADZONE && Math.abs(vertical) < AXIS_DEADZONE) {
+      return '';
+    }
+
+    if (Math.abs(horizontal) > Math.abs(vertical)) {
+      return horizontal > 0 ? 'ArrowRight' : 'ArrowLeft';
+    }
+
+    return vertical > 0 ? 'ArrowDown' : 'ArrowUp';
+  };
+
+  const handleJoystickDirection = (gamepad, gamepadIndex) => {
+    const direction = getJoystickDirection(gamepad);
+    if (!axisCooldowns[gamepadIndex]) {
+      axisCooldowns[gamepadIndex] = 0;
+    }
+
+    const previousDirection = prevAxisDirections[gamepadIndex] || '';
+    const cooldown = axisCooldowns[gamepadIndex] || 0;
+
+    if (!direction) {
+      prevAxisDirections[gamepadIndex] = '';
+      axisCooldowns[gamepadIndex] = 0;
+      return;
+    }
+
+    if (direction !== previousDirection || cooldown === 0) {
+      dispatchKey(direction);
+      axisCooldowns[gamepadIndex] = AXIS_REPEAT_FRAMES;
+    } else {
+      axisCooldowns[gamepadIndex] = Math.max(0, cooldown - 1);
+    }
+
+    prevAxisDirections[gamepadIndex] = direction;
+  };
 
   const checkGamepadInput = () => {
   const gamepads = navigator.getGamepads ? navigator.getGamepads() : [];
-  if (!gamepads || !nativeControllerSupport.value) return;
+  if (!gamepads || !nativeControllerSupport.value) {
+    gamepadAnimationFrameId = requestAnimationFrame(checkGamepadInput);
+    return;
+  }
 
   for (let i = 0; i < gamepads.length; i++) {
     const gamepad = gamepads[i];
@@ -520,13 +568,15 @@ const buttonMap = {
 
   prevButtonStates[i][index] = isPressed;
 });
+    handleJoystickDirection(gamepad, i);
   }
   
-  requestAnimationFrame(checkGamepadInput);
+  gamepadAnimationFrameId = requestAnimationFrame(checkGamepadInput);
 };
 
 
 const dispatchKey = (key) => {
+  if (!key) return;
 
   if (key === 'Tab') return simulateTab(false);
   if (key === 'ShiftTab') return simulateTab(true);
@@ -642,6 +692,7 @@ const simulateTab = (reverse = false) => {
   onBeforeUnmount(() => {
     window.removeEventListener("gamepadconnected", onGamepadConnected);
     window.removeEventListener("gamepaddisconnected", onGamepadDisconnected);
+    cancelAnimationFrame(gamepadAnimationFrameId);
   });
   </script>
 
