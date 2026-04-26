@@ -379,29 +379,12 @@ const isTimedSoloMode = computed(() => !props.isMultiplayer && props.playMode ==
 const isMultiRoundMode = computed(() => !props.isMultiplayer && props.playMode === 'multi_round');
 const isBotMode = computed(() => !props.isMultiplayer && props.playMode === 'bot_match');
 const botCogSpeed = ref(1);
-const botCogTargetSpeed = ref(1);
 const playerCogSpeed = ref(1);
 const playerCogTargetSpeed = ref(1);
 const playerCogDuration = computed(() => `${Math.max(3.2, 11 / playerCogSpeed.value).toFixed(2)}s`);
 const botCogDuration = computed(() => `${Math.max(2.2, 18 / botCogSpeed.value).toFixed(2)}s`);
 const playerCogStyle = computed(() => ({ '--machine-cog-duration': playerCogDuration.value }));
 const botCogStyle = computed(() => ({ '--machine-cog-duration': botCogDuration.value }));
-const rampBotCogSpeed = () => {
-  window.cancelAnimationFrame(botCogRampFrameId);
-  const step = () => {
-    const difference = botCogTargetSpeed.value - botCogSpeed.value;
-    if (Math.abs(difference) < 0.02) {
-      botCogSpeed.value = botCogTargetSpeed.value;
-      botCogRampFrameId = null;
-      return;
-    }
-
-    botCogSpeed.value += difference * 0.035;
-    botCogRampFrameId = window.requestAnimationFrame(step);
-  };
-
-  botCogRampFrameId = window.requestAnimationFrame(step);
-};
 const rampPlayerCogSpeed = () => {
   window.cancelAnimationFrame(playerCogRampFrameId);
   const step = () => {
@@ -423,12 +406,10 @@ const triggerBotCogBoost = () => {
     return;
   }
 
-  botCogTargetSpeed.value = 3.5;
-  rampBotCogSpeed();
+  botCogSpeed.value = 3.5;
   window.clearTimeout(botCogBoostTimeoutId);
   botCogBoostTimeoutId = window.setTimeout(() => {
-    botCogTargetSpeed.value = 1;
-    rampBotCogSpeed();
+    botCogSpeed.value = 1;
   }, 1600);
 };
 const matchOvertimeEnabled = computed(() => {
@@ -464,7 +445,6 @@ let activeScorePopAudios = [];
 let historyOverlayTimeoutId = null;
 let multiRoundRewardTimeoutId = null;
 let botCogBoostTimeoutId = null;
-let botCogRampFrameId = null;
 let playerCogDecayIntervalId = null;
 let playerCogRampFrameId = null;
 let looseRackShuffleIntervalId = null;
@@ -1471,7 +1451,6 @@ watch(isBotMode, (enabled) => {
     return;
   }
 
-  botCogTargetSpeed.value = 1;
   botCogSpeed.value = 1;
   playerCogTargetSpeed.value = 1;
   playerCogSpeed.value = 1;
@@ -2568,7 +2547,6 @@ onBeforeUnmount(() => {
   window.clearTimeout(historyOverlayTimeoutId);
   window.clearTimeout(multiRoundRewardTimeoutId);
   window.clearTimeout(botCogBoostTimeoutId);
-  window.cancelAnimationFrame(botCogRampFrameId);
   window.cancelAnimationFrame(playerCogRampFrameId);
   window.clearInterval(playerCogDecayIntervalId);
   window.clearInterval(looseRackShuffleIntervalId);
