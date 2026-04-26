@@ -47,13 +47,13 @@
             <div
               class="word-slot-placeholder-surface"
               :class="{
-                milestone: !!slot.bonus && !slot.minimumRequired,
+                milestone: !!slot.bonus,
                 'minimum-required': slot.minimumRequired
               }"
               :style="getPlaceholderStyle(slot)"
             >
-              <span v-if="slot.bonus && !slot.minimumRequired" class="word-slot-bonus">+{{ slot.bonus }}</span>
-              <span v-if="slot.rewardLabel && !slot.minimumRequired" class="word-slot-reward">{{ slot.rewardLabel }}</span>
+              <span v-if="slot.bonus" class="word-slot-bonus">+{{ slot.bonus }}</span>
+              <span v-if="slot.rewardLabel" class="word-slot-reward">{{ slot.rewardLabel }}</span>
               <span class="word-slot-index">{{ slot.position }}</span>
             </div>
           </div>

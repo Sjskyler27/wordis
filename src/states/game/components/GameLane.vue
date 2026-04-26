@@ -48,8 +48,6 @@
               'tile-locked': tile.locked,
               'tile-must-alert': mustAlertIds.has(tile.id),
               'tile-banned-letter': isBannedLetter(tile),
-              'tile-round-fleeting': isFleetingRoundTile(tile),
-              'tile-round-rusting': isRustingIdleTile(tile),
               'tile-controller-focus': controllerFocusedTileId === tile.id,
               [getTileAnimationClass(tile)]: !!getTileAnimationClass(tile)
             }"
@@ -317,22 +315,10 @@ const isBannedLetter = (tile) => {
 const isHotBurnTile = (tile) => {
   return tile.status === 'burningTile' && (props.scoreOptions?.roundModifierEffects?.idlePenaltyMultiplier || 1) > 1;
 };
-const isFleetingRoundTile = (tile) => {
-  return Boolean(props.scoreOptions?.roundModifierEffects?.fleetingAllTiles) && tile.status !== 'normal';
-};
-const isRustingIdleTile = (tile) => {
-  return (props.scoreOptions?.roundModifierEffects?.idleScoreDelta || 0) < 0 && !selectedTileIds.value.has(tile.id);
-};
 const hasShuffleOnSubmit = computed(() => Boolean(props.scoreOptions?.roundModifierEffects?.shuffleOnSubmit));
 const getRoundTileMarker = (tile) => {
   if (isHotBurnTile(tile)) {
     return 'x2';
-  }
-  if (isFleetingRoundTile(tile)) {
-    return 'clear';
-  }
-  if (isRustingIdleTile(tile)) {
-    return '-1';
   }
 
   return '';
@@ -833,22 +819,6 @@ onBeforeUnmount(() => {
   pointer-events: none;
   transform: translateY(-50%) rotate(-38deg);
   z-index: 4;
-}
-
-.tile-round-fleeting {
-  box-shadow:
-    inset 0 0 0 3px rgba(237, 244, 255, 0.5),
-    inset 0 -18px 22px rgba(30, 23, 41, 0.18),
-    var(--tile-shadow, inset 0 -4px 0 rgba(0, 0, 0, 0.12), 0 10px 18px rgba(45, 10, 24, 0.16));
-  filter: saturate(0.86) brightness(0.98);
-}
-
-.tile-round-rusting {
-  box-shadow:
-    inset 0 0 0 3px rgba(158, 185, 187, 0.58),
-    inset 0 -18px 24px rgba(24, 46, 45, 0.22),
-    var(--tile-shadow, inset 0 -4px 0 rgba(0, 0, 0, 0.12), 0 10px 18px rgba(45, 10, 24, 0.16));
-  filter: saturate(0.7) brightness(0.95);
 }
 
 .tile-saved:not(.tile-in-use) {
