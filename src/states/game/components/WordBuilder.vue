@@ -786,24 +786,6 @@ button:focus{
   filter: saturate(0.58) brightness(0.92);
 }
 
-.built-tile-muted-consonant::after {
-  content: '0';
-  position: absolute;
-  left: 50%;
-  bottom: 8px;
-  transform: translateX(-50%);
-  min-width: 28px;
-  padding: 3px 7px;
-  border-radius: 999px;
-  background: rgba(32, 23, 34, 0.9);
-  color: #f8ecff;
-  font-size: 0.62rem;
-  font-weight: 900;
-  letter-spacing: 0.06em;
-  text-align: center;
-  box-shadow: 0 4px 10px rgba(20, 6, 18, 0.22);
-  z-index: 4;
-}
 
 .built-tile:focus{
   outline: 5px solid rgba(130, 253, 238, 0.85);
