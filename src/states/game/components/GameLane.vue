@@ -46,6 +46,7 @@
               'tile-saved': savedTileIds.has(tile.id),
               'tile-locked': tile.locked,
               'tile-must-alert': mustAlertIds.has(tile.id),
+              'tile-banned-letter': isBannedLetter(tile),
               'tile-controller-focus': controllerFocusedTileId === tile.id,
               [getTileAnimationClass(tile)]: !!getTileAnimationClass(tile)
             }"
@@ -302,6 +303,11 @@ const getTileScore = (tile) => tileScore(tile, {
   scores: props.currentPlayerScores,
   ...props.scoreOptions
 });
+const getTileLetter = (tile) => (tile?.baseLetter || tile?.letter || '').toUpperCase();
+const isBannedLetter = (tile) => {
+  const bannedLetters = new Set(props.scoreOptions?.roundModifierEffects?.bannedLetters || []);
+  return bannedLetters.has(getTileLetter(tile));
+};
 
 const getTileStyle = (tile) => {
   const ui = getTileUi(tile);
@@ -764,6 +770,21 @@ onBeforeUnmount(() => {
 .tile-locked {
   cursor: not-allowed;
   filter: saturate(0.76);
+}
+
+.tile-banned-letter::before {
+  content: '';
+  position: absolute;
+  left: 13%;
+  right: 13%;
+  top: 50%;
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(213, 31, 55, 0.94);
+  box-shadow: 0 0 0 2px rgba(255, 231, 220, 0.62), 0 6px 12px rgba(88, 5, 18, 0.26);
+  pointer-events: none;
+  transform: translateY(-50%) rotate(-38deg);
+  z-index: 4;
 }
 
 .tile-saved:not(.tile-in-use) {

@@ -55,6 +55,7 @@
               class="built-tile"
               :class="{
                 shaking: isShaking,
+                'built-tile-banned-letter': isBannedLetter(slot.tile),
                 'built-tile-controller-focus': controllerFocusedBuiltTileId === slot.tile.id
               }"
               :style="getTileStyle(slot.tile, slot.index)"
@@ -404,6 +405,11 @@ const getBuiltTileScore = (tile, index) => {
     ...props.scoreOptions
   });
 };
+const getTileLetter = (tile) => (tile?.baseLetter || tile?.letter || '').toUpperCase();
+const isBannedLetter = (tile) => {
+  const bannedLetters = new Set(props.scoreOptions?.roundModifierEffects?.bannedLetters || []);
+  return bannedLetters.has(getTileLetter(tile));
+};
 
 const getPlaceholderStyle = (slot) => {
   if (!slot.bonus) {
@@ -667,6 +673,21 @@ button:focus{
   justify-content: center;
   padding: 0;
   will-change: transform, opacity;
+}
+
+.built-tile-banned-letter::before {
+  content: '';
+  position: absolute;
+  left: 13%;
+  right: 13%;
+  top: 50%;
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(213, 31, 55, 0.94);
+  box-shadow: 0 0 0 2px rgba(255, 231, 220, 0.62), 0 6px 12px rgba(88, 5, 18, 0.26);
+  pointer-events: none;
+  transform: translateY(-50%) rotate(-38deg);
+  z-index: 4;
 }
 
 .built-tile:focus{
