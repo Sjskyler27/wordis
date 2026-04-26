@@ -1,6 +1,5 @@
 <template>
   <div class="reward-choice-overlay">
-    <div class="reward-choice-scrim"></div>
     <section class="reward-choice-panel animated-slide-up">
       <span class="reward-kicker">Round Complete</span>
       <strong>Choose a modifier</strong>
@@ -61,7 +60,7 @@ defineEmits(['choose']);
   z-index: 1;
   visibility: hidden;
   width: min(100%, 820px);
-  padding: 24px;
+  padding: 120px 80px;
   border-radius: 24px;
   color: #fff7e8;
   background: rgba(72, 22, 48, 0.96);
