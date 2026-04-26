@@ -716,7 +716,8 @@ onBeforeUnmount(() => {
 
 .tile:focus,
 .tile:focus-visible  {
-  outline: 3px solid rgba(255, 202, 103, 0.85);
+  outline: 5px solid rgba(130, 253, 238, 0.85);
+
   outline-offset: 2px;
   transform: translateY(-2px);
   box-shadow: var(--tile-focus-shadow, inset 0 -4px 0 rgba(0, 0, 0, 0.12), 0 0 0 4px rgba(92, 25, 41, 0.45), 0 14px 20px rgba(45, 10, 24, 0.24)) !important;

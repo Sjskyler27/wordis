@@ -670,21 +670,24 @@ button:focus{
 }
 
 .built-tile:focus{
-  outline: 3px solid rgba(255, 202, 103, 0.85);
+  outline: 5px solid rgba(130, 253, 238, 0.85);
+
 
 }
 .built-tile:focus-visible {
-  outline: 3px solid rgba(255, 202, 103, 0.85);
+  outline: 5px solid rgba(130, 253, 238, 0.85);
+
   outline-offset: 2px;
 }
 
 .built-tile-controller-focus {
-  outline: 3px solid rgba(255, 202, 103, 0.85);
+  outline: 5px solid rgba(130, 253, 238, 0.85);
+
   outline-offset: 2px;
 }
 
 .console-action-controller-focus {
-  outline: 3px solid rgba(255, 202, 103, 0.85) !important;
+  outline: 5px solid rgba(130, 253, 238, 0.85) !important;
   outline-offset: 2px;
 }
 
