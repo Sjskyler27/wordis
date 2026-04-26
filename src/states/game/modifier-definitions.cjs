@@ -76,7 +76,7 @@ const createModifierDefinitions = ({ bloodTilePositionValues }) => ({
     },
     royalPear: {
       badge: 'PAIR',
-      description: 'Royal Pear tile. Use two Royal Pear tiles in one word to multiply the word by 3.',
+      description: 'Royal Pair tile. Use two Royal Pear tiles in one word to multiply the word by 3.',
       effects: {
         pairWordMultiplier: {
           status: 'royalPear',
@@ -130,7 +130,7 @@ const createModifierDefinitions = ({ bloodTilePositionValues }) => ({
         startWithHalfScoreRoundedUp: true,
         idleBonusScoreDelta: 1
       },
-      rarityWeight: 9.18,
+      rarityWeight: 0.18,
       animations: {
         onNewTurn: 'emerald'
       },

@@ -378,22 +378,58 @@ const isMultiplayerRef = computed(() => props.isMultiplayer);
 const isTimedSoloMode = computed(() => !props.isMultiplayer && props.playMode === 'timed_solo');
 const isMultiRoundMode = computed(() => !props.isMultiplayer && props.playMode === 'multi_round');
 const isBotMode = computed(() => !props.isMultiplayer && props.playMode === 'bot_match');
-const botCogBoosted = ref(false);
+const botCogSpeed = ref(1);
+const botCogTargetSpeed = ref(1);
 const playerCogSpeed = ref(1);
+const playerCogTargetSpeed = ref(1);
 const playerCogDuration = computed(() => `${Math.max(3.2, 11 / playerCogSpeed.value).toFixed(2)}s`);
-const botCogDuration = computed(() => botCogBoosted.value ? '2.2s' : '18s');
+const botCogDuration = computed(() => `${Math.max(2.2, 18 / botCogSpeed.value).toFixed(2)}s`);
 const playerCogStyle = computed(() => ({ '--machine-cog-duration': playerCogDuration.value }));
 const botCogStyle = computed(() => ({ '--machine-cog-duration': botCogDuration.value }));
+const rampBotCogSpeed = () => {
+  window.cancelAnimationFrame(botCogRampFrameId);
+  const step = () => {
+    const difference = botCogTargetSpeed.value - botCogSpeed.value;
+    if (Math.abs(difference) < 0.02) {
+      botCogSpeed.value = botCogTargetSpeed.value;
+      botCogRampFrameId = null;
+      return;
+    }
+
+    botCogSpeed.value += difference * 0.035;
+    botCogRampFrameId = window.requestAnimationFrame(step);
+  };
+
+  botCogRampFrameId = window.requestAnimationFrame(step);
+};
+const rampPlayerCogSpeed = () => {
+  window.cancelAnimationFrame(playerCogRampFrameId);
+  const step = () => {
+    const difference = playerCogTargetSpeed.value - playerCogSpeed.value;
+    if (Math.abs(difference) < 0.02) {
+      playerCogSpeed.value = playerCogTargetSpeed.value;
+      playerCogRampFrameId = null;
+      return;
+    }
+
+    playerCogSpeed.value += difference * 0.08;
+    playerCogRampFrameId = window.requestAnimationFrame(step);
+  };
+
+  playerCogRampFrameId = window.requestAnimationFrame(step);
+};
 const triggerBotCogBoost = () => {
   if (!isBotMode.value) {
     return;
   }
 
-  botCogBoosted.value = true;
+  botCogTargetSpeed.value = 3.5;
+  rampBotCogSpeed();
   window.clearTimeout(botCogBoostTimeoutId);
   botCogBoostTimeoutId = window.setTimeout(() => {
-    botCogBoosted.value = false;
-  }, 1800);
+    botCogTargetSpeed.value = 1;
+    rampBotCogSpeed();
+  }, 1600);
 };
 const matchOvertimeEnabled = computed(() => {
   return props.isMultiplayer ? multiplayerOvertimeEnabled.value : props.overtimeEnabled;
@@ -428,7 +464,9 @@ let activeScorePopAudios = [];
 let historyOverlayTimeoutId = null;
 let multiRoundRewardTimeoutId = null;
 let botCogBoostTimeoutId = null;
+let botCogRampFrameId = null;
 let playerCogDecayIntervalId = null;
+let playerCogRampFrameId = null;
 let lastPlayerCogScoreAt = Date.now();
 const showHistoryOverlay = ref(false);
 const showTutorialOverlay = ref(false);
@@ -1417,7 +1455,8 @@ watch(() => playerScores.value.host, (nextScore, previousScore = nextScore) => {
   const now = Date.now();
   const elapsedSeconds = Math.max(0.5, (now - lastPlayerCogScoreAt) / 1000);
   const pointsPerSecond = (nextScore - previousScore) / elapsedSeconds;
-  playerCogSpeed.value = Math.min(3.4, Math.max(1.05, 1 + (pointsPerSecond * 0.18)));
+  playerCogTargetSpeed.value = Math.min(3.4, Math.max(1.05, 1 + (pointsPerSecond * 0.18)));
+  rampPlayerCogSpeed();
   lastPlayerCogScoreAt = now;
 });
 
@@ -1427,7 +1466,9 @@ watch(isBotMode, (enabled) => {
     return;
   }
 
-  botCogBoosted.value = false;
+  botCogTargetSpeed.value = 1;
+  botCogSpeed.value = 1;
+  playerCogTargetSpeed.value = 1;
   playerCogSpeed.value = 1;
 });
 
@@ -2473,7 +2514,8 @@ onMounted(() => {
       return;
     }
 
-    playerCogSpeed.value = Math.max(1, playerCogSpeed.value - 0.12);
+    playerCogTargetSpeed.value = Math.max(1, playerCogTargetSpeed.value - 0.12);
+    rampPlayerCogSpeed();
   }, 500);
   window.addEventListener('resize', syncWindowWidth);
   window.addEventListener('keydown', handleKeydown);
@@ -2489,6 +2531,8 @@ onBeforeUnmount(() => {
   window.clearTimeout(historyOverlayTimeoutId);
   window.clearTimeout(multiRoundRewardTimeoutId);
   window.clearTimeout(botCogBoostTimeoutId);
+  window.cancelAnimationFrame(botCogRampFrameId);
+  window.cancelAnimationFrame(playerCogRampFrameId);
   window.clearInterval(playerCogDecayIntervalId);
   tilePickupSound.pause();
   tilePutBackSound.pause();
