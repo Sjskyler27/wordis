@@ -25,7 +25,7 @@
   >
     <div class="personal-modifiers-drawer-content">
       <div class="personal-modifiers-header">
-        <span>Personal Modifiers</span>
+        <span>Upgrades</span>
         <strong>{{ modifiers.length }}</strong>
       </div>
       <ul v-if="modifiers.length" class="personal-modifier-list">
