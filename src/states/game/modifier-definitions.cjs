@@ -73,6 +73,25 @@ const createModifierDefinitions = ({ bloodTilePositionValues }) => ({
         hideBadge: true
       }
     },
+    royalPear: {
+      badge: 'PEAR',
+      description: 'Royal Pear tile. Use two Royal Pear tiles in one word to multiply the word by 3.',
+      effects: {
+        pairWordMultiplier: {
+          status: 'royalPear',
+          count: 2,
+          multiplier: 3
+        }
+      },
+      rarityWeight: 0.18,
+      ui: {
+        tileBackground: 'linear-gradient(145deg, #fff1ff 0%, #d89cff 28%, #8f45df 58%, #4b147f 100%)',
+        tileShadow: 'inset 0 -4px 0 rgba(46, 11, 86, 0.34), 0 14px 24px rgba(61, 18, 98, 0.28), 0 0 0 1px rgba(226, 179, 255, 0.44)',
+        textColor: '#fff8ff',
+        badgeBackground: 'rgba(255, 241, 255, 0.94)',
+        badgeColor: '#6d24b2'
+      }
+    },
     firsttile: {
       badge: '1st',
       description: 'Adds +10 if this tile is played in the first position.',

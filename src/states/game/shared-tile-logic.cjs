@@ -50,7 +50,7 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
     pos8: 5,
     pos9: 6
   };
-  const GOOD_MODIFIERS = ['gold', 'firsttile', 'wild', 'bankTile', 'gainboon', 'gainattack'];
+  const GOOD_MODIFIERS = ['gold', 'firsttile', 'wild', 'royalPear', 'bankTile', 'gainboon', 'gainattack'];
   const BAD_MODIFIERS = ['zeroTile', 'mustuse', 'locked3', 'burningTile'];
   const NEUTRAL_MODIFIERS = ['yinYang', 'ghostTile','bloodTile'];
   const EMPTY_TILE_ANIMATION_STATE = {
@@ -837,7 +837,27 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
     const letterTotal = baseLetterTotal + firstTileBonus + positionBonus;
     const personalLengthBonus = lengthScoreBonus[tiles.length] || lengthScoreBonus[String(tiles.length)] || 0;
     const lengthBonus = getLengthBonus(tiles.length) + personalLengthBonus;
-    const wordMultiplier = tiles.reduce((total, tile) => total * (tile?.wordMultiplier || 1), 1);
+    const baseWordMultiplier = tiles.reduce((total, tile) => total * (tile?.wordMultiplier || 1), 1);
+    const comboWordMultiplier = Object.values(tiles.reduce((combos, tile) => {
+      const pairWordMultiplier = getModifierDefinition(tile?.status).effects.pairWordMultiplier;
+      if (!pairWordMultiplier?.status) {
+        return combos;
+      }
+
+      const combo = combos[pairWordMultiplier.status] || {
+        count: 0,
+        neededCount: pairWordMultiplier.count || 2,
+        multiplier: pairWordMultiplier.multiplier || 1
+      };
+      combos[pairWordMultiplier.status] = {
+        ...combo,
+        count: combo.count + 1
+      };
+      return combos;
+    }, {})).reduce((total, combo) => {
+      return combo.count >= combo.neededCount ? total * combo.multiplier : total;
+    }, 1);
+    const wordMultiplier = baseWordMultiplier * comboWordMultiplier;
     const personalLengthMultiplier = lengthScoreMultiplier[tiles.length] || lengthScoreMultiplier[String(tiles.length)] || 1;
     const total = (letterTotal + lengthBonus) * wordMultiplier * personalLengthMultiplier;
 
