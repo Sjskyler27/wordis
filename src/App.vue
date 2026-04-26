@@ -24,7 +24,7 @@
       :isMultiplayer="isMultiplayer"
       :playMode="playMode"
       :overtimeEnabled="overtimeEnabled"
-      :botDifficulty="botDifficulty"
+      v-model:botDifficulty="botDifficulty"
       :multiRoundDifficulty="multiRoundDifficulty"
       :uiZoom="zoom"
       :isStreamer="validSeed"

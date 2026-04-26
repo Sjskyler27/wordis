@@ -584,7 +584,7 @@ export const useSinglePlayerGame = ({
         console.log('new'+ newBotDifficulty)
         return newBotDifficulty;
       }
-      if(storedBotDifficulty === BOT_DIFFICULTIES.Normal){
+      if(storedBotDifficulty === BOT_DIFFICULTIES.NORMAL){
         const newBotDifficulty = BOT_DIFFICULTIES.HARD
         console.log('new'+ newBotDifficulty)
         localStorage.setItem('botDefaultDifficulty', newBotDifficulty);

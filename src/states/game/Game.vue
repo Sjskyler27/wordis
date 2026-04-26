@@ -341,7 +341,8 @@ const emit = defineEmits([
   'playAgain',
   'volumeChange',
   'musicVolumeChange',
-  'effectsVolumeChange'
+  'effectsVolumeChange',
+  'update:botDifficulty'
 ]);
 const localMessage = ref('');
 const isPaused = ref(false);
@@ -2247,7 +2248,8 @@ watch(() => props.playMode, (nextMode) => {
 watch(effectiveGameEnded, (ended) => {
   if (ended) {
     stopBotLoop();
-    props.botDifficulty = checkBotWin(leftLane.value.score, rightLane.value.score, isBotMode, props.botDifficulty);
+    const nextDifficulty = checkBotWin(leftLane.value.score, rightLane.value.score, isBotMode, props.botDifficulty);
+    emit('update:botDifficulty', nextDifficulty);
     stopSoloTimer();
     stopMultiRoundTimer();
     return;
