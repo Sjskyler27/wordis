@@ -32,7 +32,7 @@
 
       <div class="links">
         <span class="link"><a ref="steamLink" href="https://steampowered.com" target="_blank"><img width="40px" src="/src/assets/images/links/steam.png" alt="steam"></a></span>
-        <span class="link"><a ref="discordLink" href="https://discord.gg/fBjAxWE3Ev" target="_blank"><img width="40px" src="/src/assets/images/links/discord.png" alt="discord"></a></span>
+        <span class="link"><a ref="discordLink" href="https://discord.gg/h9RmN6ta" target="_blank"><img width="40px" src="/src/assets/images/links/discord.png" alt="discord"></a></span>
         <span class="link" v-if="!isElectron"><a ref="coffeeLink" href="https://buymeacoffee.com/dungeondraft" target="_blank"><img width="40px" src="/src/assets/images/links/coffee.png" alt="buy me a coffee"></a></span>
       </div>
   
