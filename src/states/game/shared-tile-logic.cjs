@@ -579,12 +579,31 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
     });
   };
 
-  const chooseWeightedCard = (cardKeys = []) => {
+  const formatCardChancePercent = (chance) => `${(chance * 100).toFixed(1)}%`;
+  const getHeldCardCounts = (heldCards = []) => {
+    return heldCards.reduce((counts, card) => {
+      const cardKey = typeof card === 'string' ? card : card?.key;
+      if (cardKey) {
+        counts[cardKey] = (counts[cardKey] || 0) + 1;
+      }
+      return counts;
+    }, {});
+  };
+
+  const chooseWeightedCard = (cardKeys = [], options = {}) => {
+    const heldCardCounts = getHeldCardCounts(options.heldCards || []);
     const weightedCards = cardKeys
-      .map((cardKey) => ({
-        cardKey,
-        weight: Math.max(0, getCardDefinition(cardKey)?.rarityWeight ?? 1)
-      }))
+      .map((cardKey) => {
+        const baseWeight = Math.max(0, getCardDefinition(cardKey)?.rarityWeight ?? 1);
+        const heldCount = heldCardCounts[cardKey] || 0;
+        const duplicateMultiplier = heldCount > 0 ? Math.pow(0.22, heldCount) : 1;
+        return {
+          cardKey,
+          baseWeight,
+          heldCount,
+          weight: baseWeight * duplicateMultiplier
+        };
+      })
       .filter((entry) => entry.weight > 0);
 
     if (!weightedCards.length) {
@@ -593,15 +612,34 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
 
     const totalWeight = weightedCards.reduce((sum, entry) => sum + entry.weight, 0);
     let roll = Math.random() * totalWeight;
+    let selectedCardKey = weightedCards[weightedCards.length - 1].cardKey;
 
     for (const entry of weightedCards) {
       roll -= entry.weight;
       if (roll <= 0) {
-        return entry.cardKey;
+        selectedCardKey = entry.cardKey;
+        break;
       }
     }
 
-    return weightedCards[weightedCards.length - 1].cardKey;
+    console.log('[card-chances]', {
+      kind: options.kind || 'card',
+      deck: options.deck || 'default',
+      side: options.side || 'unknown',
+      selected: selectedCardKey,
+      totalWeight: Number(totalWeight.toFixed(3)),
+      chances: weightedCards.reduce((chances, entry) => {
+        chances[entry.cardKey] = {
+          chance: formatCardChancePercent(entry.weight / totalWeight),
+          weight: Number(entry.weight.toFixed(3)),
+          baseWeight: Number(entry.baseWeight.toFixed(3)),
+          heldCount: entry.heldCount
+        };
+        return chances;
+      }, {})
+    });
+
+    return selectedCardKey;
   };
 
   const rollTileModifier = (side, scores = {}, context = {}, chanceOverrides = {}) => {
@@ -953,12 +991,28 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
     };
 
     const drawCard = (kind, options = {}) => {
-      const cardKey = chooseWeightedCard(getCardPool(kind, options));
+      const cardKey = chooseWeightedCard(getCardPool(kind, options), {
+        ...options,
+        kind
+      });
       return cardKey ? createCard(cardKey) : null;
     };
 
     const drawCards = (kind, count = 1, options = {}) => {
-      return Array.from({ length: count }, () => drawCard(kind, options)).filter(Boolean);
+      const drawnCards = [];
+      for (let index = 0; index < count; index += 1) {
+        const card = drawCard(kind, {
+          ...options,
+          heldCards: [
+            ...(options.heldCards || []),
+            ...drawnCards
+          ]
+        });
+        if (card) {
+          drawnCards.push(card);
+        }
+      }
+      return drawnCards;
     };
 
     const createCards = (cardKeys = []) => {

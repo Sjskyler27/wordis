@@ -75,6 +75,17 @@ export const useSinglePlayerGame = ({
   const modifierProfile = () => (isTimedSoloMode.value || isMultiRoundMode?.value) ? 'solo' : 'bot';
   const attackDeck = () => isTimedSoloMode.value ? 'timed_solo' : 'duel';
   const shouldDrawAttacks = () => isTimedSoloMode.value || botEnabled.value;
+  const getHeldCards = (side, kind) => {
+    const handKey = kind === 'boon' ? 'boons' : 'attacks';
+    return playerCards.value[side]?.[handKey] || [];
+  };
+  const drawCardsForSide = (kind, count, side, options = {}) => {
+    return drawCards(kind, count, {
+      ...options,
+      side,
+      heldCards: getHeldCards(side, kind)
+    });
+  };
   const keepTestingHand = (hand = [], cardId) => {
     return isTestingMode ? hand : hand.filter((entry) => entry.id !== cardId);
   };
@@ -252,17 +263,15 @@ export const useSinglePlayerGame = ({
       playerCards.value = {
         host: {
           boons: drawCards('boon', 1),
-          attacks: shouldDrawAttacks() ? drawCards('attack', 1, {
+          attacks: shouldDrawAttacks() ? drawCardsForSide('attack', 1, 'host', {
             deck: attackDeck(),
-            side: 'host',
             scores: playerScores.value
           }) : []
         },
         opponent: {
           boons: drawCards('boon', 1),
-          attacks: botEnabled.value ? drawCards('attack', 1, {
+          attacks: botEnabled.value ? drawCardsForSide('attack', 1, 'opponent', {
             deck: attackDeck(),
-            side: 'opponent',
             scores: playerScores.value
           }) : []
         }
@@ -370,13 +379,12 @@ export const useSinglePlayerGame = ({
       opponent: {
         boons: [
           ...playerCards.value.opponent.boons,
-          ...drawCards('boon', grantedResources.boons)
+          ...drawCardsForSide('boon', grantedResources.boons, 'opponent')
         ],
         attacks: [
           ...playerCards.value.opponent.attacks,
-          ...drawCards('attack', grantedResources.attacks, {
+          ...drawCardsForSide('attack', grantedResources.attacks, 'opponent', {
             deck: attackDeck(),
-            side: 'opponent',
             scores: playerScores.value
           })
         ]
@@ -487,13 +495,12 @@ export const useSinglePlayerGame = ({
       host: {
         boons: [
           ...playerCards.value.host.boons,
-          ...drawCards('boon', grantedResources.boons)
+          ...drawCardsForSide('boon', grantedResources.boons, 'host')
         ],
         attacks: [
           ...playerCards.value.host.attacks,
-          ...drawCards('attack', grantedResources.attacks, {
+          ...drawCardsForSide('attack', grantedResources.attacks, 'host', {
             deck: attackDeck(),
-            side: 'host',
             scores: playerScores.value
           })
         ]

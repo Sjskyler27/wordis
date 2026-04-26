@@ -1338,14 +1338,18 @@ const applyImmediatePersonalModifierEffects = (modifier) => {
       ...playerCards.value.host,
       boons: [
         ...(playerCards.value.host?.boons || []),
-        ...drawCards('boon', immediateBoons)
+        ...drawCards('boon', immediateBoons, {
+          side: 'host',
+          heldCards: playerCards.value.host?.boons || []
+        })
       ],
       attacks: [
         ...(playerCards.value.host?.attacks || []),
         ...drawCards('attack', immediateAttacks, {
           deck: (isTimedSoloMode.value || isMultiRoundMode.value) ? 'timed_solo' : 'duel',
           side: 'host',
-          scores: playerScores.value
+          scores: playerScores.value,
+          heldCards: playerCards.value.host?.attacks || []
         })
       ]
     }
