@@ -4,8 +4,8 @@
       <div class="shape-layer layer-far"></div>
       <div class="shape-layer layer-near"></div>
       <div v-if="isBotMode" class="machine-game-cogs" aria-hidden="true">
-        <span class="machine-cog machine-cog-large"></span>
-        <span class="machine-cog machine-cog-small"></span>
+        <span class="machine-cog cog machine-cog-large"></span>
+        <span class="machine-cog cog machine-cog-small"></span>
       </div>
     </div>
 
@@ -2543,7 +2543,17 @@ body {
   box-shadow: 0 0 48px rgba(103, 218, 238, 0.12);
 }
 
+.cog {
+  position: absolute;
+  border-radius: 50%;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: contain;
+  box-shadow: 0 0 40px rgba(90, 199, 220, 0.16);
+  }
 .machine-cog-large {
+  background-image: url('/src/assets/images/big-cog.png');
+    
   width: min(44vw, 440px);
   height: min(44vw, 440px);
   right: 4vw;
@@ -2552,6 +2562,7 @@ body {
 }
 
 .machine-cog-small {
+  background-image: url('/src/assets/images/small-cog.png');
   width: min(22vw, 210px);
   height: min(22vw, 210px);
   left: 6vw;
