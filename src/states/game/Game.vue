@@ -577,12 +577,18 @@ const multiRoundProgressRounds = computed(() => multiRoundRun.visibleProgressRou
 const personalModifiersForDrawer = computed(() => multiRoundRun.personalModifiers.value);
 const multiRoundRewardChoices = computed(() => multiRoundRun.rewardChoices.value);
 const isMultiRoundRewardChoiceOpen = computed(() => multiRoundRun.rewardChoiceOpen.value);
+const BOT_WINNING_SCORES = {
+  easy: 100,
+  normal: 150,
+  hard: 200
+};
+
 const scoreRibbonScoreLabel = computed(() => {
   if (isMultiRoundMode.value) {
     return `${leftLane.value.score} / ${multiRoundRun.currentTargetScore.value}`;
   }
   if (isBotMode.value) {
-    return `${leftLane.value.score} / 250`;
+    return `${leftLane.value.score} / ${BOT_WINNING_SCORES[props.botDifficulty] ?? WINNING_SCORE}`;
   }
 
   return leftLane.value.score;
@@ -928,7 +934,7 @@ const modeSubtitle = computed(() => {
     return 'Play alone against the clock and squeeze out the highest score before time expires.';
   }
 
-  return `Beat the Machine by spelling words fast and using different tiles to get high scoring words. The first to 250 wins. Use your attacks to slow the Machine down and your boons to give yourself an advantage!`;
+  return `Beat the Machine by spelling words fast and using different tiles to get high scoring words. The first to reach the required score wins. Use your attacks to slow the Machine down and your boons to give yourself an advantage!`;
 });
 const statusHeadline = computed(() => {
   if (showTutorialOverlay.value) {

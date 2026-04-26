@@ -65,7 +65,12 @@ export const useSinglePlayerGame = ({
       lockTurns: tile.lockTurns
     }));
   };
-  const WINNING_SCORE = isTestingMode ? 40 : 250;
+  const BOT_WINNING_SCORES = {
+    easy: 100,
+    normal: 150,
+    hard: 200
+  };
+  const getWinningScore = () => isTestingMode ? 40 : BOT_WINNING_SCORES[botDifficulty.value] || 250;
   // determine how much time between thinking
   const BOT_DELAYS = {
     easy: 14000,
@@ -126,14 +131,16 @@ export const useSinglePlayerGame = ({
   };
 
   const bothSidesReachedWinningScore = () => {
-    return playerScores.value.host >= WINNING_SCORE && playerScores.value.opponent >= WINNING_SCORE;
+    const winningScore = getWinningScore();
+    return playerScores.value.host >= winningScore && playerScores.value.opponent >= winningScore;
   };
   const overtimePendingSide = ref(null);
   const overtimeFinalWordSubmitted = ref(false);
 
   const overtimeTrailingSide = () => {
-    const hostAtGoal = playerScores.value.host >= WINNING_SCORE;
-    const opponentAtGoal = playerScores.value.opponent >= WINNING_SCORE;
+    const winningScore = getWinningScore();
+    const hostAtGoal = playerScores.value.host >= winningScore;
+    const opponentAtGoal = playerScores.value.opponent >= winningScore;
 
     if (!overtimeEnabled.value || isTimedSoloMode.value || isMultiRoundMode?.value || overtimeFinalWordSubmitted.value) {
       return null;
@@ -162,8 +169,9 @@ export const useSinglePlayerGame = ({
       return;
     }
 
-    const hostAtGoal = playerScores.value.host >= WINNING_SCORE;
-    const opponentAtGoal = playerScores.value.opponent >= WINNING_SCORE;
+    const winningScore = getWinningScore();
+    const hostAtGoal = playerScores.value.host >= winningScore;
+    const opponentAtGoal = playerScores.value.opponent >= winningScore;
     if (hostAtGoal === opponentAtGoal) {
       return;
     }
@@ -172,15 +180,16 @@ export const useSinglePlayerGame = ({
   };
 
   const gameEnded = () => {
+    const winningScore = getWinningScore();
     if (isTimedSoloMode.value || isMultiRoundMode?.value) {
-      return playerScores.value.host >= WINNING_SCORE || playerScores.value.opponent >= WINNING_SCORE;
+      return playerScores.value.host >= winningScore || playerScores.value.opponent >= winningScore;
     }
 
     if (overtimeEnabled.value) {
       return overtimeFinalWordSubmitted.value;
     }
 
-    return playerScores.value.host >= WINNING_SCORE || playerScores.value.opponent >= WINNING_SCORE || bothSidesReachedWinningScore();
+    return playerScores.value.host >= winningScore || playerScores.value.opponent >= winningScore || bothSidesReachedWinningScore();
   };
 
   const ensureSinglePlayerState = () => {
