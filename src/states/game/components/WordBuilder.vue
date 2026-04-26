@@ -510,6 +510,8 @@ button:focus{
   align-items: center;
   justify-content: space-between;
   gap: 12px;
+  position: relative;
+  z-index: 8;
 }
 
 .overtime-banner {
@@ -824,6 +826,7 @@ button:focus{
   right: 10px;
   font-size: 0.95rem;
   font-weight: 800;
+  z-index: 7;
 }
 
 .tile-modifier {
@@ -919,7 +922,8 @@ button:focus{
 
 .console-label,
 .console-score {
-  
+  position: relative;
+  z-index: 8;
   font-size: 2rem;
   font-weight: 900;
   line-height: 1;

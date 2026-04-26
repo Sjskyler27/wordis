@@ -82,7 +82,7 @@
 </template>
 
 <script setup>
-import { computed, onBeforeUnmount, ref, watch } from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { getModifierBadge, getModifierUi, tileScore } from '../tile-logic.js';
 import TileHoverTooltip from './TileHoverTooltip.vue';
 
@@ -223,6 +223,20 @@ const toggleMobileInspect = () => {
   }
 };
 
+const handleDocumentClick = (event) => {
+  if (!props.isMobile || !mobileInspectEnabled.value) {
+    return;
+  }
+
+  const target = event.target;
+  if (target?.closest?.('.tile') || target?.closest?.('.mobile-inspect-toggle')) {
+    return;
+  }
+
+  mobileInspectEnabled.value = false;
+  hideTooltip();
+};
+
 const handleTileClick = (tile, event) => {
   if (props.isMobile && mobileInspectEnabled.value) {
     setTooltipPositionFromElement(event.currentTarget);
@@ -238,6 +252,10 @@ watch(() => mobileInspectEnabled.value, (isEnabled) => {
   if (props.isMobile && !isEnabled) {
     hideTooltip();
   }
+});
+
+onMounted(() => {
+  window.addEventListener('click', handleDocumentClick, true);
 });
 
 const displayWordScore = computed(() => {
@@ -565,6 +583,7 @@ watch(() => props.isMobile, (isMobile) => {
 });
 
 onBeforeUnmount(() => {
+  window.removeEventListener('click', handleDocumentClick, true);
   window.clearTimeout(burstTimeoutId);
   window.clearTimeout(tooltipTimeoutId);
   window.clearTimeout(rackClearAnimationTimeoutId);
