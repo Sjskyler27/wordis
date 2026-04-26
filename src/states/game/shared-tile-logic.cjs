@@ -1081,17 +1081,27 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
     };
   };
 
+  const getModifierStartingScore = (modifierEffects = {}, baseScore = 0) => {
+    if (modifierEffects.setScore != null) {
+      return modifierEffects.setScore;
+    }
+
+    if (modifierEffects.startWithHalfScoreRoundedDown) {
+      return Math.floor(baseScore / 2);
+    }
+
+    if (modifierEffects.startWithHalfScoreRoundedUp) {
+      return Math.ceil(baseScore / 2);
+    }
+
+    return baseScore;
+  };
+
   const applyModifierToTile = (tile, status = 'normal', options = {}) => {
     const definition = getModifierDefinition(status);
     const baseScore = letterConfig[tile.letter]?.score || tile.baseScore || tile.score || 0;
     const tileLetter = definition.effects.wild ? '*' : (tile.baseLetter || tile.letter);
-    const nextScore = definition.effects.setScore != null
-      ? definition.effects.setScore
-      : definition.effects.startWithHalfScoreRoundedDown
-        ? Math.floor(baseScore / 2) :
-        definition.effects.startWithHalfScoreRoundedUp
-        ? Math.ceil(baseScore / 2)
-        : baseScore;
+    const nextScore = getModifierStartingScore(definition.effects, baseScore);
     const lockTurns = definition.effects.lockTurns || 0;
 
     return attachTileAnimationHooks({
@@ -1182,12 +1192,7 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
         id: createTileId(),
         letter: tileLetter,
         baseLetter: letter,
-        score: modifierDefinition.effects.setScore != null ? modifierDefinition.effects.setScore
-        : modifierDefinition.effects.startWithHalfScoreRoundedDown
-        ? Math.floor(baseScore / 2) :
-        modifierDefinition.effects.startWithHalfScoreRoundedUp
-        ? Math.ceil(baseScore / 2)
-        : baseScore,
+        score: getModifierStartingScore(modifierDefinition.effects, baseScore),
         baseScore,
         bonusScore: modifierDefinition.effects.bonusScore || 0,
         multiplier: modifierDefinition.effects.zeroLetterScore ? 0 : 1,
