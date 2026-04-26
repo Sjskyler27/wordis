@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-04-26 0.0.31 6am 0.32
+skip intro
+dificulty balance changes 
+cog dynamic speed 
+word pool for bot 
+update dificulty on win
+auth prompt view
+card hover style
+
 ## 2026-04-26 0.0.31
 
 Start: 2026-04-26 03:18:00 EDT
