@@ -575,17 +575,21 @@ export const useSinglePlayerGame = ({
     console.log('isBot')
     if (botDifficulty === BOT_DIFFICULTIES.HARD) return botDifficulty;
     console.log('notHard')
-    const storedBotDifficulty = JSON.parse(localStorage.getItem('botDefaultDifficulty')) ?? BOT_DIFFICULTIES.EASY;
+    const storedBotDifficulty = localStorage.getItem('botDefaultDifficulty') ?? BOT_DIFFICULTIES.EASY;
     console.log('old'+storedBotDifficulty)
     if(playerScore > botScore){
-      let newBotDifficulty;
-      if(storedBotDifficulty === BOT_DIFFICULTIES.EASY) 
-        newBotDifficulty = BOT_DIFFICULTIES.NORMAL;
-      if(storedBotDifficulty === BOT_DIFFICULTIES.Normal)
-        newBotDifficulty = BOT_DIFFICULTIES.HARD
-      localStorage.setItem('botDefaultDifficulty', newBotDifficulty);
-      console.log('new'+ newBotDifficulty)
-      return newBotDifficulty;
+      if(storedBotDifficulty === BOT_DIFFICULTIES.EASY){
+        const newBotDifficulty = BOT_DIFFICULTIES.NORMAL;
+        localStorage.setItem('botDefaultDifficulty', newBotDifficulty);
+        console.log('new'+ newBotDifficulty)
+        return newBotDifficulty;
+      }
+      if(storedBotDifficulty === BOT_DIFFICULTIES.Normal){
+        const newBotDifficulty = BOT_DIFFICULTIES.HARD
+        console.log('new'+ newBotDifficulty)
+        localStorage.setItem('botDefaultDifficulty', newBotDifficulty);
+        return newBotDifficulty;
+      }
     }
     return botDifficulty
   }
