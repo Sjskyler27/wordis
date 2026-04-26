@@ -821,15 +821,62 @@ img {
     font-family: 'Press Start 2P', cursive;
   }
   /* Create a transparent overlay effect */
-  button:focus {
-
-  outline: 3px solid rgba(130, 253, 238, 0.74);
-/* Glowing effect */
-  }
-  
+  button:focus,
   button:focus-visible {
-  outline: 3px solid rgba(130, 253, 238, 0.74);
+    outline: 3px solid rgba(130, 253, 238, 0.74);
+    outline-offset: 3px;
+  }
 
+  input[type="checkbox"] {
+    appearance: none;
+    width: 24px;
+    height: 24px;
+    flex: 0 0 24px;
+    display: inline-grid;
+    place-items: center;
+    margin: 0;
+    border: 2px solid rgba(255, 231, 190, 0.42);
+    border-radius: 7px;
+    background:
+      linear-gradient(180deg, rgba(255, 245, 224, 0.12), rgba(255, 245, 224, 0.04)),
+      rgba(38, 14, 34, 0.86);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.12),
+      inset 0 -3px 0 rgba(24, 8, 18, 0.24),
+      0 6px 12px rgba(24, 8, 24, 0.2);
+    cursor: pointer;
+  }
+
+  input[type="checkbox"]::after {
+    content: "";
+    width: 7px;
+    height: 12px;
+    border: solid #fff4df;
+    border-width: 0 3px 3px 0;
+    opacity: 0;
+    transform: rotate(45deg) translate(-1px, -1px) scale(0.75);
+    transition: opacity 120ms ease, transform 120ms ease;
+  }
+
+  input[type="checkbox"]:checked {
+    border-color: rgba(130, 253, 238, 0.74);
+    background:
+      linear-gradient(180deg, rgba(83, 216, 194, 0.95), rgba(21, 151, 128, 0.95));
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.24),
+      inset 0 -3px 0 rgba(10, 62, 58, 0.32),
+      0 0 18px rgba(130, 253, 238, 0.2);
+  }
+
+  input[type="checkbox"]:checked::after {
+    opacity: 1;
+    transform: rotate(45deg) translate(-1px, -1px) scale(1);
+  }
+
+  input[type="checkbox"]:focus,
+  input[type="checkbox"]:focus-visible {
+    outline: 3px solid rgba(130, 253, 238, 0.74);
+    outline-offset: 3px;
   }
   
   .loading {
