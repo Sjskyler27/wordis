@@ -76,7 +76,7 @@
     </div>
     <StreamerCode v-if="showStreamerModal" @close="showStreamerModal = false" :passedCode="streamerCode" />
     <Feedback v-if="showFeedback" @close="showFeedback = false"/>
-  <GoogleTranslate :hideGoogleTranslate="hideGoogleTranslate" :isMobile="isMobile"/>
+  <!-- <GoogleTranslate :hideGoogleTranslate="hideGoogleTranslate" :isMobile="isMobile"/> -->
   </template>
   
 <script setup>
