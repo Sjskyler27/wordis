@@ -12,9 +12,9 @@
   <div class="modal animated-fade-in">
     <div class="modal-content animated-slide-up" >
       <h3>Choose How To Play</h3>
-      <button class="invisible" @focus="button1.focus()" ref="button0"/>
+      <button class="invisible" @focus="focusMachineLearning" ref="topFocusTrap"/>
       <div class="close-modal">
-        <button ref="button1" class="modal-button" @click="emit('home')">&times;</button>
+        <button ref="closeButton" class="modal-button" @click="emit('home')">&times;</button>
       </div>
       <!-- <button class="continue" ref="button0" @click="continueGame" v-if="gameInProgress && !gameEnded">Continue</button> -->
 
@@ -29,7 +29,7 @@
           <p>Return to your adventure!</p>
         </div>
       </div> -->
-       <div tabindex="-1" class="menu-option" ref="button6"
+       <div tabindex="-1" class="menu-option" ref="machineLearningButton"
         @click="emit('singleplayer', { mode: 'bot_match' })"
         @keydown.space.prevent="emit('singleplayer', { mode: 'bot_match' })"
         @keydown.enter.prevent="emit('singleplayer', { mode: 'bot_match' })"
@@ -44,7 +44,7 @@
       </div>
 
 
-      <div tabindex="-1" class="menu-option" ref="button5"
+      <div tabindex="-1" class="menu-option" ref="multiRoundButton"
         @click="emit('multiRoundScreen')"
         @keydown.space.prevent="emit('multiRoundScreen')"
         @keydown.enter.prevent="emit('multiRoundScreen')"
@@ -59,7 +59,7 @@
       </div>
 
     
-      <div tabindex="-1" :class="['menu-option']" ref="button3" 
+      <div tabindex="-1" :class="['menu-option']" ref="multiplayerButton"
         @click="emit('multiplayerScreen')"
         @keydown.space.prevent="emit('multiplayerScreen')"
         @keydown.enter.prevent="emit('multiplayerScreen')"
@@ -73,7 +73,7 @@
         </div>
       </div>
 
-       <div tabindex="-1" class="menu-option" ref="button2" 
+       <div tabindex="-1" class="menu-option" ref="quickPracticeButton"
         @click="emit('singleplayer', { mode: 'timed_solo' })"
         @keydown.space.prevent="emit('singleplayer', { mode: 'timed_solo' })"
         @keydown.enter.prevent="emit('singleplayer', { mode: 'timed_solo' })"
@@ -86,28 +86,13 @@
         </div>
       </div>
 
-      <!-- <div tabindex="-1" :class="['menu-option', {disabled: draftLocked}]" ref="button4" 
-        @click="emit('multiplayerScreen')"
-        @keydown.space.prevent="emit('multiplayerScreen')"
-        @keydown.enter.prevent="emit('multiplayerScreen')"
-        >
-        <img src="/src/assets/images/playTypes/image.png" alt="Summoner" class="menu-img" />
-        <div class="menu-text">
-          <h3>Drafting Duel</h3>
-          <p v-if="!draftLocked">Draft the Best Team and defeat your opponent?</p>
-          <p v-else-if="draftcomingSoon">Coming Soon!</p>
-          <p v-else>unlock 30 characters to unlock play Draft mode!</p>
-        </div>
-      </div> -->
-
-
-      <button class="invisible" @focus="button1.focus()" ref="button0"/>
+      <button class="invisible" @focus="focusMachineLearning" ref="bottomFocusTrap"/>
     </div>
   </div>
 </template>
 
 <script setup>
-import { defineProps, defineEmits, onMounted, onBeforeUnmount ,ref, computed} from "vue";
+import { defineProps, defineEmits, onMounted, onBeforeUnmount ,ref, computed, nextTick} from "vue";
 import { freePlayUnlock,draftingDuelUnlock,dailyChallengeUnlock, draftcomingSoon, dailyComingSoon } from "../../../globalVariables";
 const props = defineProps({
   isStreamer: Boolean
@@ -122,14 +107,13 @@ const lockContent = computed(() => (new Date() > demoDate || isDemo) && !props.i
 const emit = defineEmits(["game", "singleplayer", "multiplayerScreen", "multiRoundScreen", "home", "Dungeons", "FreePlay", "continue", "DungeonsCoop", "DraftDungeon", "DailyDungeon", 'EndlessDescent', 'Continue']);
 const gameInProgress = ref(localStorage.getItem("gameInProgress")); // Check if game is in progress
 const gameEnded = JSON.parse(localStorage.getItem('gameEnded'))
-const button0 =ref(null)
-const button1 =ref(null)
-const button2 =ref(null)
-const button3 =ref(null)
-const button4 =ref(null)
-const button5 =ref(null)
-const button6 =ref(null)
-const button7 =ref(null)
+const topFocusTrap = ref(null)
+const bottomFocusTrap = ref(null)
+const closeButton = ref(null)
+const machineLearningButton = ref(null)
+const multiRoundButton = ref(null)
+const multiplayerButton = ref(null)
+const quickPracticeButton = ref(null)
 const isAdmin = (localStorage.getItem('isA') || 'null') === import.meta.env.VITE_AD_C;
 
 
@@ -156,9 +140,21 @@ const dailyLocked = computed(() => {
   return charactersUnlocked.length < dailyChallengeUnlock;
 });
 const currentIndex = ref(0)
-const getControllerTargets = () => [button6, button5, button3, button2].filter((button) => button.value);
+const controllerButtons = [
+  machineLearningButton,
+  multiRoundButton,
+  multiplayerButton,
+  quickPracticeButton
+];
+const getControllerTargets = () => controllerButtons.filter((button) => button.value);
+const focusMachineLearning = () => {
+  currentIndex.value = 0;
+  updateFocus();
+};
 onMounted(() => {
-  getControllerTargets()[currentIndex.value]?.value?.focus();
+  nextTick(() => {
+    focusMachineLearning();
+  });
 
   window.addEventListener("keydown", handleKeyDown);
 });
