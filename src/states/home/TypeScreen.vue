@@ -5,9 +5,13 @@
   @done="handleTransitionDone"
 />
 
-  <div id="background-layer">
+  <div id="background-layer" :class="{ 'machine-learning-background': isMachineLearningSelected }">
     <div class="shape-layer layer-far"></div>
     <div class="shape-layer layer-near"></div>
+    <div class="machine-cogs" aria-hidden="true">
+      <span class="cog cog-large"></span>
+      <span class="cog cog-small"></span>
+    </div>
   </div>
   <div class="modal animated-fade-in">
     <div class="modal-content animated-slide-up" >
@@ -29,7 +33,7 @@
           <p>Return to your adventure!</p>
         </div>
       </div> -->
-       <button tabindex="-1" class="menu-option" ref="machineLearningButton"
+       <button tabindex="-1" class="menu-option machine-learning-option" ref="machineLearningButton"
         @click="emit('singleplayer', { mode: 'bot_match' })"
         @keydown.space.prevent="emit('singleplayer', { mode: 'bot_match' })"
         @keydown.enter.prevent="emit('singleplayer', { mode: 'bot_match' })"
@@ -140,6 +144,7 @@ const dailyLocked = computed(() => {
   return charactersUnlocked.length < dailyChallengeUnlock;
 });
 const currentIndex = ref(0)
+const isMachineLearningSelected = computed(() => currentIndex.value === 0);
 const controllerButtons = [
   machineLearningButton,
   multiRoundButton,
@@ -220,6 +225,53 @@ const close = () => emit("close");
     filter: saturate(1.08);
     overflow: hidden;
     pointer-events: none;
+    transition: filter 220ms ease;
+  }
+
+  #background-layer.machine-learning-background {
+    background:
+      radial-gradient(circle at 18% 16%, rgba(124, 231, 255, 0.2) 0, rgba(124, 231, 255, 0.16) 11%, transparent 30%),
+      radial-gradient(circle at 82% 18%, rgba(255, 255, 255, 0.11) 0, rgba(255, 255, 255, 0.08) 8%, transparent 24%),
+      linear-gradient(135deg, #31475e 0%, #22384d 28%, #182535 62%, #101620 100%);
+    filter: saturate(0.9) contrast(1.08);
+  }
+
+  .machine-cogs {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    transition: opacity 220ms ease;
+  }
+
+  .machine-learning-background .machine-cogs {
+    opacity: 0.74;
+  }
+
+  .cog {
+    position: absolute;
+    border-radius: 50%;
+    background:
+      repeating-conic-gradient(from 0deg, rgba(163, 226, 239, 0.46) 0deg 10deg, transparent 10deg 20deg),
+      radial-gradient(circle, transparent 0 34%, rgba(163, 226, 239, 0.18) 35% 54%, transparent 55%),
+      radial-gradient(circle, rgba(163, 226, 239, 0.18), rgba(44, 84, 106, 0.05) 62%, transparent 64%);
+    border: 2px solid rgba(185, 239, 250, 0.24);
+    box-shadow: 0 0 40px rgba(90, 199, 220, 0.16);
+  }
+
+  .cog-large {
+    width: min(42vw, 380px);
+    height: min(42vw, 380px);
+    right: 6vw;
+    bottom: 6vh;
+    animation: cogSpin 18s linear infinite;
+  }
+
+  .cog-small {
+    width: min(22vw, 190px);
+    height: min(22vw, 190px);
+    left: 8vw;
+    top: 12vh;
+    animation: cogSpinReverse 12s linear infinite;
   }
 
   .shape-layer {
@@ -263,6 +315,18 @@ const close = () => emit("close");
     }
     100% {
       background-position: -67px 420px;
+    }
+  }
+
+  @keyframes cogSpin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  @keyframes cogSpinReverse {
+    to {
+      transform: rotate(-360deg);
     }
   }
 
@@ -451,6 +515,27 @@ input {
     rgba(54, 20, 43, 0.78);
   border-color: rgba(255, 226, 177, 0.4);
   transform: translateY(-2px);
+}
+
+.machine-learning-option.selected,
+.machine-learning-option:focus-visible,
+.machine-learning-option:hover {
+  background:
+    linear-gradient(180deg, rgba(174, 231, 244, 0.17), rgba(113, 177, 198, 0.07)),
+    rgba(20, 34, 48, 0.88);
+  border-color: rgba(166, 230, 244, 0.52);
+  border-left-color: rgba(103, 218, 238, 0.95);
+  box-shadow:
+    inset 0 1px 0 rgba(222, 250, 255, 0.18),
+    inset 0 -3px 0 rgba(9, 20, 31, 0.32),
+    0 0 0 4px rgba(103, 218, 238, 0.12),
+    0 16px 26px rgba(6, 18, 28, 0.34);
+}
+
+.machine-learning-option.selected .menu-text h3,
+.machine-learning-option:focus-visible .menu-text h3,
+.machine-learning-option:hover .menu-text h3 {
+  color: #aeefff;
 }
 
 .menu-img {
