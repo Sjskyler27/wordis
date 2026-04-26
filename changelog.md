@@ -1,5 +1,8 @@
 # Changelog
 
+## 4-26 0.34
+- revert bot cogs fix card balance and pulling only bank tiles 
+adjust delays added diferent scores per bot dificulty 
 ## 2026-04-26 0.0.33
 
 Start: 2026-04-26 07:45:00 EDT
