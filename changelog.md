@@ -1,5 +1,8 @@
 # Changelog
 
+## 4-26 10:33am 0.35
+- fixed my typos from 3am coding bot now auto updates difficulty
+
 ## 4-26 0.34
 - revert bot cogs fix card balance and pulling only bank tiles 
 adjust delays added diferent scores per bot dificulty 
