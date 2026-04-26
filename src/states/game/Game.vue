@@ -2334,6 +2334,8 @@ watch(isSideDrawerMode, (isDrawerMode) => {
   }
 });
 
+
+//potential spasmning cursor issue
 watch(controllerRegion, (nextRegion, previousRegion) => {
   if (!isSideDrawerMode.value || !isControllerNavigationActive.value) {
     return;
@@ -2343,7 +2345,6 @@ watch(controllerRegion, (nextRegion, previousRegion) => {
     openSideDrawer({ auto: true });
     return;
   }
-
   if (previousRegion === 'cards' && sideDrawerAutoOpen.value) {
     closeSideDrawer();
   }
