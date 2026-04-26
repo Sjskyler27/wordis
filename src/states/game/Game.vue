@@ -253,7 +253,7 @@
 <script setup>
 import { computed, defineProps, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import gameMusicUrl from '/public/audio/gameMusic.mp3';
-import tilePickupSoundUrl from '/public/audio/tile_pick_up.mp3';
+import tilePickupSoundUrl from '/public/audio/blank.mp3';
 import tilePutBackSoundUrl from '/public/audio/tile_put_back.mp3';
 import tileReplaceSoundUrl from '/public/audio/blank.mp3';
 import scoreBuiltTileSoundUrl from '/public/audio/score_built_tile.mp3';
