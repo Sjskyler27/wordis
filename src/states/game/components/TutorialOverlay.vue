@@ -65,21 +65,75 @@
 
 <script setup>
 import { ref } from 'vue';
-import { getModifierBadge, getModifierDescription, getModifierUi, tileScore } from '../tile-logic.js';
+import {
+  MODIFIER_DEFINITIONS,
+  applyModifierToTile,
+  getModifierBadge,
+  getModifierDescription,
+  getModifierUi,
+  tileScore
+} from '../tile-logic.js';
 
 const emit = defineEmits(['close']);
 
 const dontShowAgain = ref(false);
-const tutorialTiles = [
-  { status: 'normal', letter: 'A', score: 1, title: 'Normal Tile' },
-  { status: 'gold', letter: 'M', score: 3, title: 'Gold Tile' },
-  { status: 'wild', letter: '*', score: 0, title: 'Wild Tile' },
-  { status: 'mustuse', letter: 'E', score: 1, title: 'Must Tile' },
-  { status: 'bankTile', letter: 'N', score: 1, title: 'Bank Tile' },
-  { status: 'ghostTile', letter: 'R', score: 1, title: 'Ghost Tile' },
-  { status: 'burningTile', letter: 'S', score: 1, title: 'Burn Tile' },
-  { status: 'gainboon', letter: 'O', score: 1, title: 'Boon Tile' }
-];
+const sampleLettersByStatus = {
+  normal: 'A',
+  gold: 'M',
+  wild: 'O',
+  firsttile: 'F',
+  royalPear: 'P',
+  bloodTile: 'B',
+  bankTile: 'N',
+  yinYang: 'Y',
+  zeroTile: 'E',
+  mustuse: 'U',
+  locked3: 'L',
+  ghostTile: 'R',
+  burningTile: 'S',
+  gainboon: 'G',
+  gainattack: 'T'
+};
+const titleByStatus = {
+  firsttile: 'First Tile',
+  royalPear: 'Royal Pear Tile',
+  bloodTile: 'Blood Tile',
+  bankTile: 'Bank Tile',
+  yinYang: 'Yin Yang Tile',
+  zeroTile: 'Zero Tile',
+  mustuse: 'Must Tile',
+  locked3: 'Locked Tile',
+  ghostTile: 'Ghost Tile',
+  burningTile: 'Burn Tile',
+  gainboon: 'Boon Tile',
+  gainattack: 'Attack Tile'
+};
+
+const formatModifierTitle = (status = 'normal') => {
+  if (titleByStatus[status]) {
+    return titleByStatus[status];
+  }
+
+  return `${status
+    .replace(/([a-z])([A-Z])/g, '$1 $2')
+    .replace(/^\w/, (letter) => letter.toUpperCase())} Tile`;
+};
+const createTutorialTile = (status) => {
+  const letter = sampleLettersByStatus[status] || 'A';
+  const baseTile = {
+    id: `tutorial-${status}`,
+    letter,
+    baseLetter: letter,
+    score: 1,
+    baseScore: 1
+  };
+
+  return {
+    ...applyModifierToTile(baseTile, status),
+    title: formatModifierTitle(status)
+  };
+};
+const tutorialTiles = Object.keys(MODIFIER_DEFINITIONS).map(createTutorialTile);
 
 const getTileStyle = (tile) => {
   const ui = getModifierUi(tile.status);

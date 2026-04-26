@@ -17,7 +17,8 @@ const createModifierDefinitions = ({ bloodTilePositionValues }) => ({
       badge: 'x2',
       description: 'Doubles this tile as a word multiplier when used.',
       effects: { wordMultiplier: 2 },
-      rarityWeight: 0.9,
+      rarityWeight: 0.19,
+      rarityWeightModifiers: {whenOneIsInHand: -0.9},
       canApply: ({ baseScore }) => baseScore >= 3,
       animations: {
         onPull: 'gold-shine'
@@ -34,7 +35,7 @@ const createModifierDefinitions = ({ bloodTilePositionValues }) => ({
       badge: 'BOON',
       description: 'Grants 1 boon card when this tile is used.',
       effects: { grantBoon: 1 },
-      rarityWeight: 0.28,
+      rarityWeight: 0.20,
       ui: {
         tileBackground: 'linear-gradient(180deg, #f6ffe1 0%, #b9e16b 72%, #6f9d24 100%)',
         tileShadow: 'inset 0 -4px 0 rgba(60, 92, 14, 0.24), 0 12px 20px rgba(45, 10, 24, 0.16), 0 0 0 1px rgba(209, 244, 131, 0.42)',
@@ -47,7 +48,7 @@ const createModifierDefinitions = ({ bloodTilePositionValues }) => ({
       badge: 'ATK',
       description: 'Grants 1 attack card when this tile is used.',
       effects: { grantAttack: 1 },
-      rarityWeight: 0.28,
+      rarityWeight: 0.20,
       ui: {
         tileBackground: 'linear-gradient(180deg, #ffe8d9 0%, #ff9b6e 72%, #b64a1f 100%)',
         tileShadow: 'inset 0 -4px 0 rgba(116, 43, 12, 0.24), 0 12px 20px rgba(45, 10, 24, 0.18), 0 0 0 1px rgba(255, 190, 150, 0.42)',
@@ -63,7 +64,7 @@ const createModifierDefinitions = ({ bloodTilePositionValues }) => ({
          setScore: -1,
          botPerformanceDelta: 0.28
         },
-      rarityWeight: 0.45,
+      rarityWeight: 0.35,
       ui: {
         tileBackground: 'linear-gradient(180deg, #fff6ff 0%, #d8c0ff 52%, #7f5cd4 100%)',
         tileShadow: 'inset 0 -4px 0 rgba(63, 36, 120, 0.24), 0 12px 20px rgba(38, 17, 62, 0.22), 0 0 0 1px rgba(226, 204, 255, 0.4)',
@@ -83,7 +84,8 @@ const createModifierDefinitions = ({ bloodTilePositionValues }) => ({
           multiplier: 3
         }
       },
-      rarityWeight: 0.18,
+      rarityWeight: .20,
+      rarityWeightModifiers: {whenOneIsInHand: +.32, capForAddingBonus: 2},
       ui: {
         tileBackground: 'linear-gradient(145deg, #d89cff 0%, #8f45df 28%, #4b147f 58%, #280648 100%)',
         tileShadow: 'inset 0 -4px 0 rgba(46, 11, 86, 0.34), 0 14px 24px rgba(61, 18, 98, 0.28), 0 0 0 1px rgba(226, 179, 255, 0.44)',

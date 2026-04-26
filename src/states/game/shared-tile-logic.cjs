@@ -314,11 +314,38 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
     return definition.canApply(context);
   };
 
-  const chooseWeightedModifier = (modifiers = [], weightBonuses = {}) => {
+  const getModifierRackCount = (rackTiles = [], status = 'normal') => {
+    const normalizedStatus = normalizeModifierStatus(status);
+    return rackTiles.filter((tile) => normalizeModifierStatus(tile?.status) === normalizedStatus).length;
+  };
+  const getContextualRarityWeightBonus = (modifier = 'normal', context = {}) => {
+    const rarityWeightModifiers = getModifierDefinition(modifier).rarityWeightModifiers || {};
+    const whenOneIsInHand = Number(rarityWeightModifiers.whenOneIsInHand) || 0;
+    if (!whenOneIsInHand) {
+      return 0;
+    }
+
+    const rackCount = getModifierRackCount(context.rackTiles || [], modifier);
+    const capForAddingBonus = Number.isFinite(Number(rarityWeightModifiers.capForAddingBonus))
+      ? Number(rarityWeightModifiers.capForAddingBonus)
+      : Infinity;
+
+    return rackCount > 0 && rackCount < capForAddingBonus ? whenOneIsInHand : 0;
+  };
+  const getModifierWeight = (modifier = 'normal', weightBonuses = {}, context = {}) => {
+    return Math.max(
+      0,
+      (getModifierDefinition(modifier).rarityWeight ?? 1)
+        + (weightBonuses[modifier] || 0)
+        + getContextualRarityWeightBonus(modifier, context)
+    );
+  };
+
+  const chooseWeightedModifier = (modifiers = [], weightBonuses = {}, context = {}) => {
     const weightedModifiers = modifiers
       .map((modifier) => ({
         modifier,
-        weight: Math.max(0, (getModifierDefinition(modifier).rarityWeight ?? 1) + (weightBonuses[modifier] || 0))
+        weight: getModifierWeight(modifier, weightBonuses, context)
       }))
       .filter((entry) => entry.weight > 0);
 
@@ -339,11 +366,11 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
     return weightedModifiers[weightedModifiers.length - 1].modifier;
   };
 
-  const getWeightedModifierOdds = (modifiers = [], poolChance = 0, weightBonuses = {}) => {
+  const getWeightedModifierOdds = (modifiers = [], poolChance = 0, weightBonuses = {}, context = {}) => {
     const weightedModifiers = modifiers
       .map((modifier) => ({
         modifier,
-        weight: Math.max(0, (getModifierDefinition(modifier).rarityWeight ?? 1) + (weightBonuses[modifier] || 0))
+        weight: getModifierWeight(modifier, weightBonuses, context)
       }))
       .filter((entry) => entry.weight > 0);
 
@@ -404,9 +431,9 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
       const eligibleGoodModifiers = (profile.goodModifiers || []).filter((modifier) => canApplyModifier(modifier, context));
       const eligibleBadModifiers = (profile.badModifiers || []).filter((modifier) => canApplyModifier(modifier, context));
       const eligibleNeutralModifiers = (profile.neutralModifiers || []).filter((modifier) => canApplyModifier(modifier, context));
-      const goodOdds = getWeightedModifierOdds(eligibleGoodModifiers, goodChance, modifierOddsBonus);
-      const badOdds = getWeightedModifierOdds(eligibleBadModifiers, badChance, modifierOddsBonus);
-      const neutralOdds = getWeightedModifierOdds(eligibleNeutralModifiers, neutralChance, modifierOddsBonus);
+      const goodOdds = getWeightedModifierOdds(eligibleGoodModifiers, goodChance, modifierOddsBonus, context);
+      const badOdds = getWeightedModifierOdds(eligibleBadModifiers, badChance, modifierOddsBonus, context);
+      const neutralOdds = getWeightedModifierOdds(eligibleNeutralModifiers, neutralChance, modifierOddsBonus, context);
       const letterModifierChance = [
         ...Object.values(goodOdds),
         ...Object.values(badOdds),
@@ -430,6 +457,7 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
     badChance,
     neutralChance,
     modifierOddsBonus = {},
+    context = {},
     eligibleGoodModifiers = [],
     eligibleBadModifiers = [],
     eligibleNeutralModifiers = []
@@ -440,18 +468,18 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
     }
 
     const modifierOdds = {
-      ...getWeightedModifierOdds(eligibleGoodModifiers, goodChance, modifierOddsBonus),
-      ...getWeightedModifierOdds(eligibleBadModifiers, badChance, modifierOddsBonus),
-      ...getWeightedModifierOdds(eligibleNeutralModifiers, neutralChance, modifierOddsBonus)
+      ...getWeightedModifierOdds(eligibleGoodModifiers, goodChance, modifierOddsBonus, context),
+      ...getWeightedModifierOdds(eligibleBadModifiers, badChance, modifierOddsBonus, context),
+      ...getWeightedModifierOdds(eligibleNeutralModifiers, neutralChance, modifierOddsBonus, context)
     };
     const normalChance = Math.max(
       0,
       1 - Object.values(modifierOdds).reduce((sum, chance) => sum + chance, 0)
     );
     return {
-      goodModifierOdds: getWeightedModifierOdds(eligibleGoodModifiers, goodChance, modifierOddsBonus),
-      badModifierOdds: getWeightedModifierOdds(eligibleBadModifiers, badChance, modifierOddsBonus),
-      neutralModifierOdds: getWeightedModifierOdds(eligibleNeutralModifiers, neutralChance, modifierOddsBonus),
+      goodModifierOdds: getWeightedModifierOdds(eligibleGoodModifiers, goodChance, modifierOddsBonus, context),
+      badModifierOdds: getWeightedModifierOdds(eligibleBadModifiers, badChance, modifierOddsBonus, context),
+      neutralModifierOdds: getWeightedModifierOdds(eligibleNeutralModifiers, neutralChance, modifierOddsBonus, context),
       modifierOdds,
       normalChance
     };
@@ -495,6 +523,7 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
       badChance,
       neutralChance,
       modifierOddsBonus,
+      context,
       eligibleGoodModifiers,
       eligibleBadModifiers,
       eligibleNeutralModifiers
@@ -604,11 +633,11 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
 
     let selectedModifier = 'normal';
     if (roll < goodChance) {
-      selectedModifier = eligibleGoodModifiers.length ? chooseWeightedModifier(eligibleGoodModifiers, modifierOddsBonus) : 'normal';
+      selectedModifier = eligibleGoodModifiers.length ? chooseWeightedModifier(eligibleGoodModifiers, modifierOddsBonus, context) : 'normal';
     } else if (roll < goodChance + badChance) {
-      selectedModifier = eligibleBadModifiers.length ? chooseWeightedModifier(eligibleBadModifiers, modifierOddsBonus) : 'normal';
+      selectedModifier = eligibleBadModifiers.length ? chooseWeightedModifier(eligibleBadModifiers, modifierOddsBonus, context) : 'normal';
     } else if (roll < goodChance + badChance + neutralChance) {
-      selectedModifier = eligibleNeutralModifiers.length ? chooseWeightedModifier(eligibleNeutralModifiers, modifierOddsBonus) : 'normal';
+      selectedModifier = eligibleNeutralModifiers.length ? chooseWeightedModifier(eligibleNeutralModifiers, modifierOddsBonus, context) : 'normal';
     }
 
     logModifierRoll({
@@ -648,15 +677,15 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
       });
 
     if (roll < goodChance) {
-      return eligibleGoodModifiers.length ? chooseWeightedModifier(eligibleGoodModifiers) : 'normal';
+      return eligibleGoodModifiers.length ? chooseWeightedModifier(eligibleGoodModifiers, {}, contexts[0] || {}) : 'normal';
     }
 
     if (roll < goodChance + badChance) {
-      return eligibleBadModifiers.length ? chooseWeightedModifier(eligibleBadModifiers) : 'normal';
+      return eligibleBadModifiers.length ? chooseWeightedModifier(eligibleBadModifiers, {}, contexts[0] || {}) : 'normal';
     }
 
     if (roll < goodChance + badChance + neutralChance) {
-      return eligibleNeutralModifiers.length ? chooseWeightedModifier(eligibleNeutralModifiers) : 'normal';
+      return eligibleNeutralModifiers.length ? chooseWeightedModifier(eligibleNeutralModifiers, {}, contexts[0] || {}) : 'normal';
     }
 
     return 'normal';
@@ -1212,7 +1241,11 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
         }
 
         const targetEntry = candidateIndexes[Math.floor(Math.random() * candidateIndexes.length)];
-        const nextStatus = chooseWeightedModifier(targetEntry.eligibleModifiers);
+        const nextStatus = chooseWeightedModifier(targetEntry.eligibleModifiers, {}, {
+          letter: targetEntry.tile.baseLetter || targetEntry.tile.letter,
+          baseScore: targetEntry.tile.baseScore || letterConfig[targetEntry.tile.baseLetter || targetEntry.tile.letter]?.score || 0,
+          rackTiles: rack
+        });
         rack[targetEntry.index] = applyModifierToTile(rack[targetEntry.index], nextStatus);
       }
 
