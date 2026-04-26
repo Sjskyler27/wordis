@@ -144,7 +144,7 @@ export const ROUND_MODIFIER_DEFINITIONS = {
     key: 'shuffle_after_submit',
     label: 'Loose Rack',
     description: 'Your tiles shuffle every 8 seconds.',
-    difficulty: ROUND_MODIFIER_DIFFICULTIES.EASY,
+    difficulty: ROUND_MODIFIER_DIFFICULTIES.HARD,
     force_test: false,
     tags: ['tile-lifecycle'],
     tileEffects: {

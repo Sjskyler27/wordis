@@ -162,3 +162,5 @@ examples: must play 5 letter words, must play at least 6 letter words or more, h
 
 do you have any questions 
 
+when you win the auto update of mode shows you go streight to 150 
+
