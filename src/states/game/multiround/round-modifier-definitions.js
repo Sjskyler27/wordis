@@ -143,7 +143,7 @@ export const ROUND_MODIFIER_DEFINITIONS = {
   shuffle_after_submit: {
     key: 'shuffle_after_submit',
     label: 'Loose Rack',
-    description: 'Your tiles shuffle after every submitted word.',
+    description: 'Your tiles shuffle every 8 seconds.',
     difficulty: ROUND_MODIFIER_DIFFICULTIES.EASY,
     force_test: false,
     tags: ['tile-lifecycle'],

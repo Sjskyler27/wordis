@@ -467,6 +467,7 @@ let botCogBoostTimeoutId = null;
 let botCogRampFrameId = null;
 let playerCogDecayIntervalId = null;
 let playerCogRampFrameId = null;
+let looseRackShuffleIntervalId = null;
 let lastPlayerCogScoreAt = Date.now();
 const showHistoryOverlay = ref(false);
 const showTutorialOverlay = ref(false);
@@ -1719,6 +1720,37 @@ const handleClearWord = () => {
   }
 };
 
+const shuffleLooseRackTiles = () => {
+  if (
+    !isMultiRoundMode.value
+    || !roundModifierEffects.value.shuffleOnSubmit
+    || isPaused.value
+    || effectiveGameEnded.value
+    || showTutorialOverlay.value
+    || isMultiRoundRewardChoiceOpen.value
+  ) {
+    return;
+  }
+
+  const rackTiles = playerTiles.value.host || [];
+  if (rackTiles.length < 2) {
+    return;
+  }
+
+  const shuffledTiles = [...rackTiles];
+  for (let index = shuffledTiles.length - 1; index > 0; index -= 1) {
+    const swapIndex = Math.floor(Math.random() * (index + 1));
+    [shuffledTiles[index], shuffledTiles[swapIndex]] = [shuffledTiles[swapIndex], shuffledTiles[index]];
+  }
+
+  clearSelectionForSide('host');
+  playerTiles.value = {
+    ...playerTiles.value,
+    host: shuffledTiles
+  };
+  localMessage.value = 'Loose Rack shuffled your tiles.';
+};
+
 const refocusControllerSelection = () => {
   if (showTutorialOverlay.value) {
     return;
@@ -2517,6 +2549,7 @@ onMounted(() => {
     playerCogTargetSpeed.value = Math.max(1, playerCogTargetSpeed.value - 0.12);
     rampPlayerCogSpeed();
   }, 500);
+  looseRackShuffleIntervalId = window.setInterval(shuffleLooseRackTiles, 8000);
   window.addEventListener('resize', syncWindowWidth);
   window.addEventListener('keydown', handleKeydown);
   startGameMusic({ restart: true });
@@ -2534,6 +2567,7 @@ onBeforeUnmount(() => {
   window.cancelAnimationFrame(botCogRampFrameId);
   window.cancelAnimationFrame(playerCogRampFrameId);
   window.clearInterval(playerCogDecayIntervalId);
+  window.clearInterval(looseRackShuffleIntervalId);
   tilePickupSound.pause();
   tilePutBackSound.pause();
   tileReplaceSound.pause();
