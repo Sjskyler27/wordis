@@ -64,7 +64,7 @@
 </template>
   
   <script setup>
-  import { ref, defineEmits, defineProps, computed, onMounted, onBeforeUnmount, watch } from "vue";
+  import { ref, defineEmits, defineProps, computed, onMounted, onBeforeUnmount, watch, nextTick } from "vue";
   import homeSoundUrl from '/public/audio/homeSound.mp3';
   import Feedback from "./Feedback.vue"
   import { onAuthStateChanged } from "firebase/auth";
@@ -134,6 +134,10 @@
   const showHome = () => {
     showIntro.value = false;
     playMusic();
+    nextTick(() => {
+      controllerRegion.value = 'home';
+      focusHomeTarget(0);
+    });
   };
   const showType = () => {
     emit('type')
@@ -249,13 +253,22 @@ const controllerRegion = ref('home');
 const homeCursorIndex = ref(0);
 const linkCursorIndex = ref(0);
 
+const isControllerTargetVisible = (element) => {
+  if (!element || element.disabled) {
+    return false;
+  }
+
+  const style = window.getComputedStyle(element);
+  return element.offsetParent !== null && style.visibility !== 'hidden' && style.display !== 'none';
+};
+
 const getHomeTargets = () => [button1, button3, button4]
   .map((button) => button.value)
-  .filter((element) => element && !element.disabled && element.offsetParent !== null);
+  .filter(isControllerTargetVisible);
 
 const getLinkTargets = () => [steamLink, discordLink, coffeeLink]
   .map((link) => link.value)
-  .filter((element) => element && element.offsetParent !== null);
+  .filter(isControllerTargetVisible);
 
 const focusHomeTarget = (nextIndex = homeCursorIndex.value) => {
   const targets = getHomeTargets();
@@ -292,6 +305,10 @@ const handleKeyDown = (e) => {
 
   const homeTargets = getHomeTargets();
   const linkTargets = getLinkTargets();
+  if (!homeTargets.length && !linkTargets.length) {
+    return;
+  }
+
   const activeHomeIndex = homeTargets.findIndex((target) => target === document.activeElement);
   const activeLinkIndex = linkTargets.findIndex((target) => target === document.activeElement);
   if (activeHomeIndex >= 0) {
