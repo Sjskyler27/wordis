@@ -155,55 +155,108 @@ const onshopZoomInput = (e) => emit("shopZoomChange", parseFloat(e.target.value)
   align-items: center;
   justify-content: center;
   z-index: 9999;
+  padding: 18px;
+  background:
+    radial-gradient(circle at 22% 18%, rgba(255, 203, 121, 0.18), transparent 32%),
+    rgba(15, 6, 20, 0.74);
 }
 
 .modal-content {
   visibility: hidden;
   font-family: 'Press Start 2P', cursive;
-  color: white;
-  padding: 20px;
-  border-radius: 10px;
+  color: #fff4df;
+  padding: 34px;
+  border: 1px solid rgba(255, 231, 190, 0.24);
+  border-radius: 22px;
   text-align: center;
-  max-width: 600px;
-  width: 90%;
+  max-width: 680px;
+  width: min(92vw, 680px);
+  max-height: 86vh;
+  overflow-y: auto;
   position: relative;
+  background:
+    linear-gradient(180deg, rgba(78, 25, 43, 0.97), rgba(42, 15, 40, 0.97)),
+    radial-gradient(circle at 18% 0%, rgba(255, 202, 123, 0.2), transparent 38%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 238, 205, 0.14),
+    0 24px 54px rgba(23, 8, 25, 0.46);
+}
 
+.modal-content h1 {
+  margin: 0 52px 24px;
+  color: #fff2ce;
+  font-size: 1.05rem;
+  line-height: 1.5;
+  letter-spacing: 0;
+  text-shadow: 0 3px 0 rgba(41, 10, 22, 0.34);
 }
 
 .tab-buttons {
   display: flex;
   justify-content: center;
-  gap: 10px;
-  margin-bottom: 20px;
+  gap: 8px;
+  margin-bottom: 22px;
+  padding: 5px;
+  border: 1px solid rgba(255, 225, 180, 0.18);
+  border-radius: 16px;
+  background: rgba(28, 10, 28, 0.46);
 
   button {
     font-family: 'Press Start 2P', cursive;
-    font-size: 12px;
-    padding: 10px 20px;
-    border: 2px solid darkred;
-    background-color: #F5F5DC;
-    color: #4B3A2F;
+    flex: 1 1 0;
+    min-width: 0;
+    font-size: 0.66rem;
+    line-height: 1.4;
+    padding: 11px 12px;
+    border: 1px solid rgba(255, 230, 190, 0.16);
+    border-radius: 12px;
+    background: rgba(255, 245, 224, 0.08);
+    color: rgba(255, 244, 223, 0.72);
     text-shadow: none;
     cursor: pointer;
+    transition: background 140ms ease, border-color 140ms ease, color 140ms ease, transform 140ms ease;
+  }
+
+  button:hover,
+  button:focus-visible {
+    outline: 3px solid rgba(130, 253, 238, 0.72);
+    outline-offset: 2px;
+    color: #fff4df;
+    border-color: rgba(255, 226, 177, 0.34);
   }
 
   .active {
-    background-color: darkred;
-    color: white;
+    background: linear-gradient(180deg, rgba(255, 189, 101, 0.92), rgba(171, 72, 52, 0.9));
+    color: #241020;
+    border-color: rgba(255, 231, 190, 0.46);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.24),
+      0 8px 16px rgba(28, 8, 26, 0.24);
   }
 }
 
 .settings-group {
-  margin-bottom: 30px;
-  padding-top: 10px;
+  margin-bottom: 12px;
+  padding: 18px;
+  border: 1px solid rgba(255, 225, 180, 0.16);
+  border-radius: 18px;
+  background: rgba(28, 10, 28, 0.38);
   text-align: left;
 }
 
 .setting {
-  margin-bottom: 20px;
+  margin-bottom: 22px;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+
   label {
     display: block;
-    margin-bottom: 6px;
+    margin-bottom: 10px;
+    color: rgba(255, 244, 223, 0.86);
+    font-size: 0.66rem;
+    line-height: 1.6;
   }
 }
 
@@ -212,39 +265,84 @@ const onshopZoomInput = (e) => emit("shopZoomChange", parseFloat(e.target.value)
   justify-content: center;
   gap: 10px;
   flex-wrap: wrap;
+  margin-bottom: 12px;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+
   button {
-    min-width: 200px;
+    min-width: min(100%, 260px);
   }
 }
 
 input[type="range"] {
   -webkit-appearance: none;
   width: 100%;
-  height: 8px;
-  background: #333;
-  border-radius: 4px;
+  height: 10px;
+  background: rgba(21, 9, 22, 0.72);
+  border: 1px solid rgba(255, 226, 177, 0.18);
+  border-radius: 999px;
   outline: none;
+  cursor: pointer;
 }
 
 input[type="range"]::-webkit-slider-runnable-track {
-  height: 8px;
-  background: darkred;
-  border-radius: 4px;
+  height: 10px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #ffd36f, #cf5d50);
 }
 
 input[type="range"]::-webkit-slider-thumb {
   -webkit-appearance: none;
-  height: 16px;
-  width: 16px;
-  background: white;
-  border: 2px solid darkred;
+  height: 22px;
+  width: 22px;
+  background: #fff4df;
+  border: 3px solid #78304a;
   border-radius: 50%;
   cursor: pointer;
-  margin-top: -4px;
+  margin-top: -6px;
+  box-shadow: 0 5px 10px rgba(21, 8, 20, 0.34);
 }
 
 .modal-button {
-  margin-top: 10px;
+  min-height: 42px;
+  margin-top: 0;
+  padding: 10px 14px;
+  border: 1px solid rgba(255, 229, 190, 0.28);
+  border-radius: 12px;
+  background: rgba(32, 10, 24, 0.74);
+  color: #fff2ce;
+  font-family: 'Press Start 2P', cursive;
+  font-size: 0.68rem;
+  line-height: 1.5;
+  cursor: pointer;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.14),
+    0 10px 18px rgba(24, 8, 20, 0.24);
+  transition: background 140ms ease, transform 140ms ease, box-shadow 140ms ease;
+}
+
+.modal-button:hover,
+.modal-button:focus-visible {
+  outline: 3px solid rgba(130, 253, 238, 0.74);
+  outline-offset: 2px;
+  background: rgba(67, 21, 45, 0.86);
+  transform: translateY(-1px);
+}
+
+.close-modal {
+  top: 18px;
+  left: 18px;
+}
+
+.close-modal .modal-button {
+  width: 42px;
+  min-width: 42px;
+  height: 42px;
+  padding: 0;
+  font-size: 1.25rem;
+  line-height: 1;
 }
 
 .invisible {
@@ -256,5 +354,27 @@ input[type="range"]::-webkit-slider-thumb {
   white-space: nowrap;
   border: 0;
   background-color: rgba(250, 250, 250, 0.9);
+}
+
+@media (max-width: 560px) {
+  .modal-content {
+    padding: 24px 18px;
+    border-radius: 18px;
+  }
+
+  .modal-content h1 {
+    margin-bottom: 18px;
+    font-size: 0.9rem;
+  }
+
+  .tab-buttons {
+    gap: 5px;
+  }
+
+  .tab-buttons button,
+  .setting label,
+  .modal-button {
+    font-size: 0.56rem;
+  }
 }
 </style>
