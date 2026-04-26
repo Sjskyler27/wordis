@@ -85,7 +85,7 @@ const createModifierDefinitions = ({ bloodTilePositionValues }) => ({
       },
       rarityWeight: 0.18,
       ui: {
-        tileBackground: 'linear-gradient(145deg, #fff1ff 0%, #d89cff 28%, #8f45df 58%, #4b147f 100%)',
+        tileBackground: 'linear-gradient(145deg, #d89cff 0%, #8f45df 28%, #4b147f 58%, #280648 100%)',
         tileShadow: 'inset 0 -4px 0 rgba(46, 11, 86, 0.34), 0 14px 24px rgba(61, 18, 98, 0.28), 0 0 0 1px rgba(226, 179, 255, 0.44)',
         textColor: '#fff8ff',
         badgeBackground: 'rgba(255, 241, 255, 0.94)',
