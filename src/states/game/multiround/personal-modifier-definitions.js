@@ -119,7 +119,7 @@ export const PERSONAL_MODIFIER_DEFINITIONS = {
   },
   crowded_bag: {
     key: 'crowded_bag',
-    label: 'Crowded Bag',
+    label: 'More Modifiers',
     description: 'All modifier groups appear more often.',
     rarity: 0.64,
     tier: PERSONAL_MODIFIER_TIERS.COMMON,
