@@ -4,8 +4,8 @@
       <div class="shape-layer layer-far"></div>
       <div class="shape-layer layer-near"></div>
       <div v-if="isBotMode" class="machine-game-cogs" aria-hidden="true">
-        <span class="machine-cog cog machine-cog-large"></span>
-        <span class="machine-cog cog machine-cog-small"></span>
+        <span class="machine-cog cog machine-cog-large" :style="botCogStyle"></span>
+        <span class="machine-cog cog machine-cog-small" :style="playerCogStyle"></span>
       </div>
     </div>
 
@@ -377,6 +377,23 @@ const isMultiplayerRef = computed(() => props.isMultiplayer);
 const isTimedSoloMode = computed(() => !props.isMultiplayer && props.playMode === 'timed_solo');
 const isMultiRoundMode = computed(() => !props.isMultiplayer && props.playMode === 'multi_round');
 const isBotMode = computed(() => !props.isMultiplayer && props.playMode === 'bot_match');
+const botCogBoosted = ref(false);
+const playerCogSpeed = ref(1);
+const playerCogDuration = computed(() => `${Math.max(3.2, 11 / playerCogSpeed.value).toFixed(2)}s`);
+const botCogDuration = computed(() => botCogBoosted.value ? '2.2s' : '18s');
+const playerCogStyle = computed(() => ({ '--machine-cog-duration': playerCogDuration.value }));
+const botCogStyle = computed(() => ({ '--machine-cog-duration': botCogDuration.value }));
+const triggerBotCogBoost = () => {
+  if (!isBotMode.value) {
+    return;
+  }
+
+  botCogBoosted.value = true;
+  window.clearTimeout(botCogBoostTimeoutId);
+  botCogBoostTimeoutId = window.setTimeout(() => {
+    botCogBoosted.value = false;
+  }, 1800);
+};
 const matchOvertimeEnabled = computed(() => {
   return props.isMultiplayer ? multiplayerOvertimeEnabled.value : props.overtimeEnabled;
 });
@@ -409,6 +426,9 @@ let scorePopTimeoutIds = [];
 let activeScorePopAudios = [];
 let historyOverlayTimeoutId = null;
 let multiRoundRewardTimeoutId = null;
+let botCogBoostTimeoutId = null;
+let playerCogDecayIntervalId = null;
+let lastPlayerCogScoreAt = Date.now();
 const showHistoryOverlay = ref(false);
 const showTutorialOverlay = ref(false);
 const windowWidth = ref(typeof window !== 'undefined' ? window.innerWidth : 1440);
@@ -541,6 +561,9 @@ const scoreRibbonScoreLabel = computed(() => {
   if (isMultiRoundMode.value) {
     return `${leftLane.value.score} / ${multiRoundRun.currentTargetScore.value}`;
   }
+  if (isBotMode.value) {
+    return `${leftLane.value.score} / 250`;
+  }
 
   return leftLane.value.score;
 });
@@ -590,6 +613,7 @@ const {
       }
     }
   },
+  onBotPreparing: triggerBotCogBoost,
   personalModifierEffects,
   roundModifierEffects
 });
@@ -1382,6 +1406,28 @@ watch(lastWordScores, (nextScores, previousScores = { host: 0, opponent: 0 }) =>
     }
   }
 }, { deep: true });
+
+watch(() => playerScores.value.host, (nextScore, previousScore = nextScore) => {
+  if (!isBotMode.value || nextScore <= previousScore) {
+    return;
+  }
+
+  const now = Date.now();
+  const elapsedSeconds = Math.max(0.5, (now - lastPlayerCogScoreAt) / 1000);
+  const pointsPerSecond = (nextScore - previousScore) / elapsedSeconds;
+  playerCogSpeed.value = Math.min(3.4, Math.max(1.05, 1 + (pointsPerSecond * 0.18)));
+  lastPlayerCogScoreAt = now;
+});
+
+watch(isBotMode, (enabled) => {
+  if (enabled) {
+    lastPlayerCogScoreAt = Date.now();
+    return;
+  }
+
+  botCogBoosted.value = false;
+  playerCogSpeed.value = 1;
+});
 
 watch(() => [props.volume, props.musicVolume, props.effectsVolume], () => {
   syncAudioLevels();
@@ -2419,6 +2465,13 @@ onMounted(() => {
     showTutorialOverlay.value = true;
   }
   syncWindowWidth();
+  playerCogDecayIntervalId = window.setInterval(() => {
+    if (!isBotMode.value || Date.now() - lastPlayerCogScoreAt < 1800) {
+      return;
+    }
+
+    playerCogSpeed.value = Math.max(1, playerCogSpeed.value - 0.12);
+  }, 500);
   window.addEventListener('resize', syncWindowWidth);
   window.addEventListener('keydown', handleKeydown);
   startGameMusic({ restart: true });
@@ -2432,6 +2485,8 @@ onBeforeUnmount(() => {
   stopGameMusic();
   window.clearTimeout(historyOverlayTimeoutId);
   window.clearTimeout(multiRoundRewardTimeoutId);
+  window.clearTimeout(botCogBoostTimeoutId);
+  window.clearInterval(playerCogDecayIntervalId);
   tilePickupSound.pause();
   tilePutBackSound.pause();
   tileReplaceSound.pause();
@@ -2596,11 +2651,11 @@ body {
 }
 
 .machine-cog-large::before {
-  animation: machineCogSpin 18s linear infinite;
+  animation: machineCogSpin var(--machine-cog-duration, 18s) linear infinite;
 }
 
 .machine-cog-large::after {
-  animation: machineCogShadowSpin 18s linear infinite;
+  animation: machineCogShadowSpin var(--machine-cog-duration, 18s) linear infinite;
 }
 
 .machine-cog-small {
@@ -2613,11 +2668,11 @@ body {
 }
 
 .machine-cog-small::before {
-  animation: machineCogSpinReverse 11s linear infinite;
+  animation: machineCogSpinReverse var(--machine-cog-duration, 11s) linear infinite;
 }
 
 .machine-cog-small::after {
-  animation: machineCogShadowSpinReverse 11s linear infinite;
+  animation: machineCogShadowSpinReverse var(--machine-cog-duration, 11s) linear infinite;
 }
 
 .machine-game-shell .bonus-card {

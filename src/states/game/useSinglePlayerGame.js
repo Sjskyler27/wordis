@@ -40,10 +40,12 @@ export const useSinglePlayerGame = ({
   wordHistory,
   onTimedSoloPauseTime,
   onTimedSoloGainTime,
+  onBotPreparing,
   personalModifierEffects,
   roundModifierEffects
 }) => {
   let botLoopId = null;
+  let botSubmitDelayId = null;
   const submissionPauseOwner = ref(null);
   const createHistoryTiles = (tiles = []) => {
     // Keep a frozen copy of played tiles so results can render the exact word later.
@@ -399,15 +401,21 @@ export const useSinglePlayerGame = ({
     }
 
     window.clearTimeout(botLoopId);
+    window.clearTimeout(botSubmitDelayId);
     botLoopId = window.setTimeout(() => {
-      submitBotWord();
-      scheduleBotLoop();
+      onBotPreparing?.();
+      botSubmitDelayId = window.setTimeout(() => {
+        submitBotWord();
+        scheduleBotLoop();
+      }, 650);
     }, BOT_DELAYS[botDifficulty.value] || BOT_DELAYS.normal);
   };
 
   const stopBotLoop = () => {
     window.clearTimeout(botLoopId);
+    window.clearTimeout(botSubmitDelayId);
     botLoopId = null;
+    botSubmitDelayId = null;
   };
 
   const startBotLoop = () => {
