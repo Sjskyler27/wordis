@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-04-26 0.0.31
+
+Start: 2026-04-26 03:18:00 EDT
+Stop: 2026-04-26 03:24:10 EDT
+
+- Restyled checkbox controls globally to match the current Wordis button/focus treatment.
+- Fixed StartScreen controller focus after the intro finishes and filtered controller navigation to visible, enabled targets.
+- Tuned the Machine Learning cogs to render the black PNG assets with a brighter steel finish in the type screen and game screen.
+- Verified the changes with `npm run build`.
+
 ## 2026-04-26 0.0.30
 
 Start: 2026-04-26 02:35:00 EDT
