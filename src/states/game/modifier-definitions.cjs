@@ -18,7 +18,7 @@ const createModifierDefinitions = ({ bloodTilePositionValues }) => ({
       description: 'Doubles this tile as a word multiplier when used.',
       effects: { wordMultiplier: 2 },
       rarityWeight: 0.19,
-      rarityWeightModifiers: {whenOneIsInHand: -0.9},
+      rarityWeightModifiers: {whenOneIsInHand: -0.09},
       canApply: ({ baseScore }) => baseScore >= 3,
       animations: {
         onPull: 'gold-shine'
@@ -85,7 +85,7 @@ const createModifierDefinitions = ({ bloodTilePositionValues }) => ({
         }
       },
       rarityWeight: .20,
-      rarityWeightModifiers: {whenOneIsInHand: +.32, capForAddingBonus: 2},
+      rarityWeightModifiers: {whenOneIsInHand: +.30, capForAddingBonus: 2},
       ui: {
         tileBackground: 'linear-gradient(145deg, #d89cff 0%, #8f45df 28%, #4b147f 58%, #280648 100%)',
         tileShadow: 'inset 0 -4px 0 rgba(46, 11, 86, 0.34), 0 14px 24px rgba(61, 18, 98, 0.28), 0 0 0 1px rgba(226, 179, 255, 0.44)',
