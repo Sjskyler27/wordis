@@ -155,11 +155,10 @@ const dailyLocked = computed(() => {
   const charactersUnlocked = JSON.parse(localStorage.getItem("unlockedMonsters")) || [];
   return charactersUnlocked.length < dailyChallengeUnlock;
 });
-const buttons = [button0,button1, button2, button3, button4,button5,button6, button7];
-
-const currentIndex = ref(1)
+const currentIndex = ref(0)
+const getControllerTargets = () => [button6, button5, button3, button2].filter((button) => button.value);
 onMounted(() => {
-  button0.value.focus();
+  getControllerTargets()[currentIndex.value]?.value?.focus();
 
   window.addEventListener("keydown", handleKeyDown);
 });
@@ -170,23 +169,35 @@ onBeforeUnmount(() => {
 
 
 function updateFocus() {
-  buttons.forEach((btn, index) => {
+  const targets = getControllerTargets();
+  targets.forEach((btn, index) => {
     if (btn.value) {
       btn.value.classList.toggle('selected', index === currentIndex.value);
     }
   });
-  buttons[currentIndex.value].value?.focus();
+  targets[currentIndex.value]?.value?.focus();
 }
 
 const handleKeyDown = (e) => {
+  const targets = getControllerTargets();
+  if (!targets.length) {
+    return;
+  }
+
   if (e.key === "ArrowDown") {
-    currentIndex.value = (currentIndex.value + 1) % buttons.length;
     e.preventDefault();
+    currentIndex.value = Math.min(currentIndex.value + 1, targets.length - 1);
     updateFocus();
   } else if (e.key === "ArrowUp") {
-    currentIndex.value = (currentIndex.value - 1 + buttons.length) % buttons.length;
     e.preventDefault();
+    currentIndex.value = Math.max(currentIndex.value - 1, 0);
     updateFocus();
+  } else if (e.key === "Enter" || e.key === " ") {
+    e.preventDefault();
+    targets[currentIndex.value]?.value?.click();
+  } else if (e.key === "Escape") {
+    e.preventDefault();
+    emit('home');
   }
 };
 

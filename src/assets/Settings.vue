@@ -227,7 +227,7 @@ const onshopZoomInput = (e) => emit("shopZoomChange", parseFloat(e.target.value)
 
   .active {
     background: linear-gradient(180deg, rgba(255, 189, 101, 0.92), rgba(171, 72, 52, 0.9));
-    color: #241020;
+    color: #e8e7e8;
     border-color: rgba(255, 231, 190, 0.46);
     box-shadow:
       inset 0 1px 0 rgba(255, 255, 255, 0.24),
