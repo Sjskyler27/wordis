@@ -161,7 +161,7 @@ const getRoundLabel = (round) => {
 }
 
 .round-step.has-modifiers:not(.challenge) .round-marker {
-  border-color: rgba(255, 202, 103, 0.58);
+  border-color: rgba(255, 202, 103, 0.28);
   box-shadow: inset 0 2px 8px rgba(255, 255, 255, 0.14), 0 8px 18px rgba(37, 8, 24, 0.28), 0 0 0 3px rgba(255, 202, 103, 0.12);
 }
 
@@ -173,7 +173,7 @@ const getRoundLabel = (round) => {
   width: 7px;
   height: 7px;
   border-radius: 50%;
-  background: #ffd47d;
+  background: #ff7d7d54;
   box-shadow: 0 0 8px rgba(255, 212, 125, 0.72);
 }
 
