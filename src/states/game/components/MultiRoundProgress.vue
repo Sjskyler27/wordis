@@ -12,6 +12,7 @@
           complete: round.isComplete,
           current: round.isCurrent,
           challenge: round.isChallenge,
+          'has-modifiers': round.visibleModifierKeys.length,
           'controller-focused': controllerFocusedRoundIndex === index
         }"
       >
@@ -23,13 +24,13 @@
         >
           <span class="round-number">{{ round.number }}</span>
         </button>
-        <div v-if="round.isChallenge && round.visibleModifierKeys.length" class="round-tooltip">
+        <div v-if="round.visibleModifierKeys.length" class="round-tooltip">
           <strong>{{ round.label }}</strong>
           <span
             v-for="modifierKey in round.visibleModifierKeys"
             :key="`${round.id}-${modifierKey}`"
           >
-            {{ formatModifierKey(modifierKey) }}
+            {{ getModifierLabel(modifierKey) }}
           </span>
         </div>
       </li>
@@ -39,6 +40,7 @@
 
 <script setup>
 import { computed } from 'vue';
+import { getRoundModifierDefinition } from '../multiround/round-modifier-definitions.js';
 
 const props = defineProps({
   rounds: {
@@ -70,10 +72,17 @@ const formatModifierKey = (modifierKey = '') => {
     .join(' ');
 };
 
+const getModifierLabel = (modifierKey = '') => {
+  return getRoundModifierDefinition(modifierKey)?.label || formatModifierKey(modifierKey);
+};
+
 const getRoundLabel = (round) => {
   const status = round.isComplete ? 'complete' : round.isCurrent ? 'current' : 'upcoming';
   const challengeText = round.isChallenge ? ' challenge round' : '';
-  return `${round.label}${challengeText}, ${status}`;
+  const modifierText = round.visibleModifierKeys?.length
+    ? `, modifiers: ${round.visibleModifierKeys.map(getModifierLabel).join(', ')}`
+    : '';
+  return `${round.label}${challengeText}, ${status}${modifierText}`;
 };
 </script>
 
@@ -124,6 +133,7 @@ const getRoundLabel = (round) => {
 
 .round-marker {
   appearance: none;
+  position: relative;
   width: 38px;
   height: 38px;
   padding: 0;
@@ -148,6 +158,23 @@ const getRoundLabel = (round) => {
 
 .round-step.challenge .round-number {
   transform: rotate(-45deg);
+}
+
+.round-step.has-modifiers:not(.challenge) .round-marker {
+  border-color: rgba(255, 202, 103, 0.58);
+  box-shadow: inset 0 2px 8px rgba(255, 255, 255, 0.14), 0 8px 18px rgba(37, 8, 24, 0.28), 0 0 0 3px rgba(255, 202, 103, 0.12);
+}
+
+.round-step.has-modifiers:not(.challenge) .round-marker::after {
+  content: '';
+  position: absolute;
+  right: 4px;
+  top: 4px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #ffd47d;
+  box-shadow: 0 0 8px rgba(255, 212, 125, 0.72);
 }
 
 .round-step.complete .round-marker {
@@ -194,7 +221,8 @@ const getRoundLabel = (round) => {
 }
 
 .round-marker:hover + .round-tooltip,
-.round-marker:focus-visible + .round-tooltip {
+.round-marker:focus-visible + .round-tooltip,
+.round-step.controller-focused .round-tooltip {
   opacity: 1;
   transform: translate(-50%, 0);
 }

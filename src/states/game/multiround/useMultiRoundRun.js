@@ -230,7 +230,7 @@ export const useMultiRoundRun = ({ rounds = MULTI_ROUND_ROUNDS } = {}) => {
       number: index + 1,
       isCurrent: index === currentRoundIndex.value,
       isComplete: index < currentRoundIndex.value,
-      visibleModifierKeys: round.isChallenge ? round.resolvedModifierKeys : []
+      visibleModifierKeys: round.resolvedModifierKeys || []
     }));
   });
 
