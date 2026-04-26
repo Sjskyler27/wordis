@@ -134,10 +134,7 @@
   const showHome = () => {
     showIntro.value = false;
     playMusic();
-    nextTick(() => {
-      controllerRegion.value = 'home';
-      focusHomeTarget(0);
-    });
+    focusPlayButton();
   };
   const showType = () => {
     emit('type')
@@ -280,6 +277,13 @@ const focusHomeTarget = (nextIndex = homeCursorIndex.value) => {
   targets[homeCursorIndex.value]?.focus();
 };
 
+const focusPlayButton = () => {
+  controllerRegion.value = 'home';
+  nextTick(() => {
+    focusHomeTarget(0);
+  });
+};
+
 const focusLinkTarget = (nextIndex = linkCursorIndex.value) => {
   const targets = getLinkTargets();
   if (!targets.length) {
@@ -356,9 +360,11 @@ const handleKeyDown = (e) => {
 
 onMounted(() => {
   document.addEventListener('visibilitychange', handleVisibilityChange);
+  if (!showIntro.value) {
+    focusPlayButton();
+  }
   setTimeout(() => {
     window.addEventListener('keydown', handleKeyDown);
-    focusHomeTarget(0);
   }, 450);
   if(props.hasSeenIntro) startMusic.play()
   
