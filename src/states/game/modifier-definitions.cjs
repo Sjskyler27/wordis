@@ -74,7 +74,7 @@ const createModifierDefinitions = ({ bloodTilePositionValues }) => ({
       }
     },
     royalPear: {
-      badge: 'PEAR',
+      badge: 'PAIR',
       description: 'Royal Pear tile. Use two Royal Pear tiles in one word to multiply the word by 3.',
       effects: {
         pairWordMultiplier: {
