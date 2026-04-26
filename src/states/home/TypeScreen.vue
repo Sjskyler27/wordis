@@ -245,7 +245,16 @@ const close = () => emit("close");
   background-position: center;
   background-repeat: no-repeat;
   background-size: contain;
-  box-shadow: 0 0 40px rgba(90, 199, 220, 0.16);
+  filter:
+    invert(84%)
+    sepia(9%)
+    saturate(369%)
+    hue-rotate(169deg)
+    brightness(1.12)
+    contrast(1.18)
+    drop-shadow(-10px 12px 0 rgba(5, 14, 20, 0.24))
+    drop-shadow(0 0 22px rgba(168, 220, 232, 0.16));
+  opacity: 0.88;
   }
 
   .cog-large {
@@ -255,6 +264,7 @@ const close = () => emit("close");
     right: 6vw;
     bottom: 6vh;
     animation: cogSpin 18s linear infinite;
+    opacity: 0.8;
   }
 
   .cog-small {
@@ -264,6 +274,7 @@ const close = () => emit("close");
     left: 8vw;
     top: 12vh;
     animation: cogSpinReverse 12s linear infinite;
+    opacity: 0.94;
   }
 
   .shape-layer {

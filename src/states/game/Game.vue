@@ -2539,19 +2539,13 @@ body {
 .machine-game-cogs {
   position: absolute;
   inset: 0;
-  opacity: 0.68;
+  opacity: 0.76;
   pointer-events: none;
 }
 
 .machine-cog {
   position: absolute;
   border-radius: 50%;
-  background:
-    repeating-conic-gradient(from 0deg, rgba(174, 231, 244, 0.36) 0deg 9deg, transparent 9deg 18deg),
-    radial-gradient(circle, transparent 0 34%, rgba(174, 231, 244, 0.15) 35% 55%, transparent 56%),
-    radial-gradient(circle, rgba(174, 231, 244, 0.12), rgba(33, 61, 78, 0.05) 64%, transparent 65%);
-  border: 2px solid rgba(174, 231, 244, 0.22);
-  box-shadow: 0 0 48px rgba(103, 218, 238, 0.12);
 }
 
 .cog {
@@ -2560,7 +2554,15 @@ body {
   background-position: center;
   background-repeat: no-repeat;
   background-size: contain;
-  box-shadow: 0 0 40px rgba(90, 199, 220, 0.16);
+  filter:
+    invert(84%)
+    sepia(9%)
+    saturate(369%)
+    hue-rotate(169deg)
+    brightness(1.12)
+    contrast(1.18)
+    drop-shadow(-12px 14px 0 rgba(4, 12, 18, 0.24))
+    drop-shadow(0 0 26px rgba(168, 220, 232, 0.14));
   }
 .machine-cog-large {
   background-image: url('/src/assets/images/big-cog.png');
@@ -2570,6 +2572,7 @@ body {
   right: 4vw;
   bottom: 4vh;
   animation: machineCogSpin 18s linear infinite;
+  opacity: 0.76;
 }
 
 .machine-cog-small {
@@ -2579,6 +2582,7 @@ body {
   left: 6vw;
   top: 12vh;
   animation: machineCogSpinReverse 11s linear infinite;
+  opacity: 0.92;
 }
 
 .machine-game-shell .bonus-card {
