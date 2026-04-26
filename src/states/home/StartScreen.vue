@@ -31,9 +31,9 @@
       </div>
 
       <div class="links">
-        <span class="link"><a ref="steamLink" href="https://steampowered.com" target="_blank"><img width="40px" src="/src/assets/images/links/steam.png" alt="steam"></a></span>
-        <span class="link"><a ref="discordLink" href="https://discord.gg/h9RmN6ta" target="_blank"><img width="40px" src="/src/assets/images/links/discord.png" alt="discord"></a></span>
-        <span class="link" v-if="!isElectron"><a ref="coffeeLink" href="https://buymeacoffee.com/dungeondraft" target="_blank"><img width="40px" src="/src/assets/images/links/coffee.png" alt="buy me a coffee"></a></span>
+        <span class="link"><a ref="steamLink" href="https://steampowered.com" target="_blank" rel="noreferrer noopener" @click.prevent="handleSteamClick"><img width="40px" src="/src/assets/images/links/steam.png" alt="steam"></a></span>
+        <span class="link"><a ref="discordLink" href="https://discord.gg/h9RmN6ta" target="_blank" rel="noreferrer noopener"><img width="40px" src="/src/assets/images/links/discord.png" alt="discord"></a></span>
+        <span class="link" v-if="!isElectron"><a ref="coffeeLink" href="https://buymeacoffee.com/dungeondraft" target="_blank" rel="noreferrer noopener"><img width="40px" src="/src/assets/images/links/coffee.png" alt="buy me a coffee"></a></span>
       </div>
   
       
@@ -75,7 +75,9 @@
   import { getPreferredLanguage } from "../game/language.js";
   import IntroScreen from "./IntroScreen.vue";
   import Credit from './Credits.vue'
-  import { auth as firebaseAuth, firebaseEnabled } from "../../firebaseClient.js";
+  import { auth, firebaseEnabled } from "../../firebaseClient.js";
+  import { db } from "../../main.js";
+  import { push, get, query, orderByChild, equalTo, ref as dbRef } from "firebase/database";
   
   const props = defineProps({
     monsterRoster: Array, // Expecting an array of monster objects [{ id, actionUsed, ready }]
@@ -87,6 +89,7 @@
     effectsVolume: Number,
     hasSeenIntro: Boolean,
     uiZoom: Number,
+    deviceId: String,
   });
 
   const showIntro = ref(!props.hasSeenIntro);
@@ -172,6 +175,47 @@
 
   const showSettings = () => {
     emit("showSettings");
+  };
+
+  const handleSteamClick = async () => {
+    window.open('https://steampowered.com', '_blank', 'noopener,noreferrer');
+    await trackSteamClick();
+  };
+
+  const trackSteamClick = async () => {
+    try {
+      if (!firebaseEnabled || !db) {
+        throw new Error("Steam interest tracking is unavailable right now.");
+      }
+
+      const steamDeviceId = props.deviceId || localStorage.getItem("deviceId");
+      if (!steamDeviceId) {
+        throw new Error("Missing device ID for steam interest tracking.");
+      }
+
+      const steamClicksRef = dbRef(db, "steamClicks");
+      // const deviceQuery = query(steamClicksRef, orderByChild("deviceId"), equalTo(steamDeviceId));
+      // const snapshot = await get(deviceQuery);
+      // if (snapshot.exists()) {
+      //   return;
+      // }
+
+      const currentUser = user.value || auth?.currentUser || null;
+      const now = Date.now();
+      await push(steamClicksRef, {
+        deviceId: steamDeviceId,
+        userId: currentUser?.uid || null,
+        email: currentUser?.email || null,
+        firstClickedAt: now,
+        lastClickedAt: now,
+        timesViewed: 1,
+        language: navigator.language || '',
+        platform: navigator.platform || '',
+        userAgent: navigator.userAgent || ''
+      });
+    } catch (error) {
+      console.warn('Steam interest tracking failed.', error);
+    }
   };
 
   const isElectron = navigator.userAgent.toLowerCase().includes('electron');
@@ -301,8 +345,8 @@ onMounted(() => {
   if(props.hasSeenIntro) startMusic.play()
   
   //check logged in 
-  if (firebaseEnabled && firebaseAuth) {
-    onAuthStateChanged(firebaseAuth, (u) => {
+  if (firebaseEnabled && auth) {
+    onAuthStateChanged(auth, (u) => {
       user.value = u;
     });
   } else {
