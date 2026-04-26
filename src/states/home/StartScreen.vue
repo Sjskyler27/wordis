@@ -654,25 +654,36 @@ font-family: 'Times New Roman', serif;
   }
   .home-buttons{
     align-items: center;
-    background-color: rgba(36, 36, 36, 0.9);
+    background:
+      linear-gradient(180deg, rgba(255, 245, 224, 0.1), rgba(255, 245, 224, 0.04)),
+      rgba(38, 14, 34, 0.72);
     visibility: hidden;
-    padding: 20px 50px;
-    border-radius: 10px;
+    padding: 14px 18px;
+    border: 1px solid rgba(255, 231, 190, 0.24);
+    border-radius: 22px;
     position: absolute;
     bottom: 200px;
     display:flex;
     flex-direction: row;
-    gap: 35px;
+    gap: 12px;
+    box-shadow:
+      inset 0 1px 0 rgba(255, 238, 205, 0.14),
+      0 22px 46px rgba(23, 8, 25, 0.36);
     .play{
-      background-color: rgb(59, 99, 159);
+      background: linear-gradient(180deg, rgba(83, 216, 194, 0.96), rgba(21, 151, 128, 0.94));
+    color: #fff4df;
+
       height: 90px;
       width: 275px;
+      border-color: rgba(176, 255, 238, 0.44);
     }
     .profile{
-      background-color: rgb(255, 170, 85);
+      background: linear-gradient(180deg, rgba(255, 189, 101, 0.92), rgba(171, 72, 52, 0.9));
     }
     .disabled{
-      background-color: rgb(84, 84, 84);
+      background: rgba(255, 245, 224, 0.08);
+      color: rgba(255, 244, 223, 0.42);
+      border-color: rgba(255, 230, 190, 0.1);
       cursor: not-allowed;
       position: relative;
     }
@@ -682,39 +693,54 @@ font-family: 'Times New Roman', serif;
       left: 50%;
       bottom: calc(100% + 10px);
       transform: translateX(-50%);
-      background: rgba(20, 20, 20, 0.92);
-      border: 1px solid rgba(255, 255, 255, 0.22);
-      border-radius: 6px;
-      color: white;
-      font-size: 12px;
-      padding: 6px 10px;
+      background: rgba(35, 10, 31, 0.96);
+      border: 1px solid rgba(255, 236, 187, 0.24);
+      border-radius: 10px;
+      color: rgba(255, 248, 236, 0.92);
+      font-size: 0.62rem;
+      padding: 8px 10px;
       white-space: nowrap;
+      box-shadow: 0 14px 28px rgba(20, 6, 14, 0.28);
     }
 
     .settings{
-      background-color: darkred;
+      background: linear-gradient(180deg, rgba(185, 55, 80, 0.92), rgba(116, 24, 48, 0.94));
 
     }
   }
 
   button {
-    background: var(--btn-color, rgb(59, 99, 159));
-    border-radius: 15px;
+    background:
+      linear-gradient(180deg, rgba(255, 245, 224, 0.13), rgba(255, 245, 224, 0.04)),
+      rgba(54, 20, 43, 0.78);
+    border: 1px solid rgba(255, 230, 190, 0.18);
+    border-radius: 14px;
     width: 250px;
     height: 75px;
-    box-shadow: -4px 4px 4px 0px #3e3232; /* shadow = depth */
+    color: #fff4df;
+    font-family: 'Press Start 2P', cursive;
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.14),
+      inset 0 -4px 0 rgba(24, 8, 18, 0.28),
+      0 12px 20px rgba(24, 8, 24, 0.22);
   }
 
 
   
   button:hover {
-    transform: translateY(2px) translateX(-3px);
-    box-shadow: -1px 2px 4px #4b2e1e;
+    transform: translateY(-2px);
+    filter: brightness(1.05);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.18),
+      inset 0 -4px 0 rgba(24, 8, 18, 0.26),
+      0 16px 26px rgba(24, 8, 24, 0.28);
   }
   
   button:active {
-    transform: translateY(4px);
-    box-shadow: none;
+    transform: translateY(1px);
+    box-shadow:
+      inset 0 2px 8px rgba(24, 8, 18, 0.32),
+      0 8px 14px rgba(24, 8, 24, 0.18);
   }
 
   /*animnation*/

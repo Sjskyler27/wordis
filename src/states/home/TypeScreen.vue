@@ -9,8 +9,8 @@
     <div class="shape-layer layer-far"></div>
     <div class="shape-layer layer-near"></div>
     <div class="machine-cogs" aria-hidden="true">
-      <span class="cog cog-large"></span>
-      <span class="cog cog-small"></span>
+      <span class="cog cog-large machine-cog"></span>
+      <span class="cog cog-small machine-cog"></span>
     </div>
   </div>
   <div class="modal animated-fade-in">
@@ -427,6 +427,7 @@ button{
   outline-offset: 2px;
   background: rgba(67, 21, 45, 0.86);
 }
+
 
 .menu-option:focus-visible {
   outline: 4px solid rgba(130, 253, 238, 0.88);

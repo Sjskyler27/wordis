@@ -1,7 +1,7 @@
 <template>
   <div class="tutorial-overlay">
     <div class="tutorial-scrim"></div>
-    <section class="tutorial-panel animated-slide-up">
+    <section ref="tutorialPanel" class="tutorial-panel animated-slide-up">
       <span class="tutorial-kicker">First Match Guide</span>
       <h2>How Wordis Works</h2>
       <p class="tutorial-copy">
@@ -51,11 +51,11 @@
 
       <div class="tutorial-footer">
         <label class="tutorial-checkbox">
-          <input v-model="dontShowAgain" type="checkbox" />
+          <input ref="dontShowAgainInput" v-model="dontShowAgain" type="checkbox" />
           <span>Don't show this again</span>
         </label>
 
-        <button type="button" class="tutorial-button" @click="finishTutorial">
+        <button ref="startPlayingButton" type="button" class="tutorial-button" @click="finishTutorial">
           Start Playing
         </button>
       </div>
@@ -64,7 +64,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { nextTick, onBeforeUnmount, onMounted, ref } from 'vue';
 import {
   MODIFIER_DEFINITIONS,
   applyModifierToTile,
@@ -77,6 +77,9 @@ import {
 const emit = defineEmits(['close']);
 
 const dontShowAgain = ref(false);
+const startPlayingButton = ref(null);
+const dontShowAgainInput = ref(null);
+const tutorialPanel = ref(null);
 const sampleLettersByStatus = {
   normal: 'A',
   gold: 'M',
@@ -160,6 +163,58 @@ const getBadgeStyle = (tile) => {
 const finishTutorial = () => {
   emit('close', { dontShowAgain: dontShowAgain.value });
 };
+
+const focusTutorialControl = (direction) => {
+  if (direction === 'left') {
+    dontShowAgainInput.value?.focus();
+    return;
+  }
+
+  startPlayingButton.value?.focus();
+};
+
+const scrollTutorialPanel = (direction) => {
+  tutorialPanel.value?.scrollBy({
+    top: direction === 'down' ? 120 : -120,
+    behavior: 'smooth'
+  });
+};
+
+const handleTutorialKeydown = (event) => {
+  if (event.key === 'ArrowLeft') {
+    event.preventDefault();
+    focusTutorialControl('left');
+    return;
+  }
+
+  if (event.key === 'ArrowRight') {
+    event.preventDefault();
+    focusTutorialControl('right');
+    return;
+  }
+
+  if (event.key === 'ArrowUp') {
+    event.preventDefault();
+    scrollTutorialPanel('up');
+    return;
+  }
+
+  if (event.key === 'ArrowDown') {
+    event.preventDefault();
+    scrollTutorialPanel('down');
+  }
+};
+
+onMounted(() => {
+  nextTick(() => {
+    startPlayingButton.value?.focus();
+  });
+  window.addEventListener('keydown', handleTutorialKeydown);
+});
+
+onBeforeUnmount(() => {
+  window.removeEventListener('keydown', handleTutorialKeydown);
+});
 </script>
 
 <style scoped>

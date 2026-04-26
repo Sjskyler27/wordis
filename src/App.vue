@@ -822,13 +822,14 @@ img {
   }
   /* Create a transparent overlay effect */
   button:focus {
-    outline: 2px solid yellow; /* Visible focus outline */
-    box-shadow: 0 0 10px rgba(255, 255, 0, 0.6); /* Glowing effect */
+
+  outline: 3px solid rgba(130, 253, 238, 0.74);
+/* Glowing effect */
   }
   
   button:focus-visible {
-    outline: 2px solid yellow;
-    box-shadow: 0 0 15px rgba(255, 255, 0, 6); /* Stronger glow */
+  outline: 3px solid rgba(130, 253, 238, 0.74);
+
   }
   
   .loading {

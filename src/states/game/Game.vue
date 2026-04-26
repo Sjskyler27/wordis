@@ -1630,6 +1630,10 @@ const handleClearWord = () => {
 };
 
 const refocusControllerSelection = () => {
+  if (showTutorialOverlay.value) {
+    return;
+  }
+
   if (!isControllerNavigationActive.value) {
     return;
   }
@@ -1961,6 +1965,9 @@ const handleCloseTutorial = ({ dontShowAgain } = {}) => {
   }
 
   showTutorialOverlay.value = false;
+  nextTick(() => {
+    focusControllerTile(0);
+  });
 };
 
 const togglePause = () => {
@@ -2154,6 +2161,10 @@ watch(showTutorialOverlay, (visible) => {
 
 const handleKeydown = (event) => {
   if (props.settingsShowing) {
+    return;
+  }
+
+  if (showTutorialOverlay.value) {
     return;
   }
 
