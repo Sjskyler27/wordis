@@ -485,7 +485,7 @@ const buttonMap = {
   const axisCooldowns = [];
   const COOLDOWN_FRAMES = 1; // Tune as needed
   const AXIS_DEADZONE = 0.55;
-  const AXIS_REPEAT_FRAMES = 12;
+  const AXIS_REPEAT_FRAMES = 26;
   let gamepadAnimationFrameId = 0;
 
   const getJoystickDirection = (gamepad) => {
