@@ -2,6 +2,14 @@
   <section class="word-console" :class="{ overtime: isOvertimeActive }">
     <div class="console-topline">
       <span class="console-label"><span v-if="currentWordScore < 10" style="visibility:hidden">_</span>{{ currentWordScore }} pts</span>
+      <div
+        v-if="minimumVowels"
+        class="vowel-toll-meter"
+        :class="{ complete: vowelTollMet }"
+      >
+        <span>Vowels</span>
+        <strong>{{ selectedVowelCount }}/{{ minimumVowels }}</strong>
+      </div>
       <div v-if="isOvertimeActive" class="overtime-banner animated-pulse ">{{ overtimeLabel }}</div>
     </div>
     <div class="bonus-ladder">
@@ -261,6 +269,12 @@ const wordSlots = computed(() => {
   }));
 });
 
+const minimumVowels = computed(() => props.scoreOptions?.roundModifierEffects?.minimumVowels || 0);
+const selectedVowelCount = computed(() => {
+  return props.selectedTiles.filter((tile) => isVowelLetter(getTileLetter(tile))).length;
+});
+const vowelTollMet = computed(() => selectedVowelCount.value >= minimumVowels.value);
+
 const isShaking = ref(false);
 let shakeTimeoutId = null;
 
@@ -508,6 +522,33 @@ button:focus{
   letter-spacing: 0.16em;
   text-align: center;
   box-shadow: inset 0 1px 0 rgba(255, 205, 193, 0.12);
+}
+
+.vowel-toll-meter {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 11px;
+  border: 1px solid rgba(255, 226, 184, 0.34);
+  border-radius: 999px;
+  background: rgba(92, 24, 43, 0.78);
+  color: #ffe3c2;
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  box-shadow: inset 0 -2px 0 rgba(24, 8, 18, 0.22);
+}
+
+.vowel-toll-meter strong {
+  color: #ffffff;
+  font-size: 0.82rem;
+}
+
+.vowel-toll-meter.complete {
+  border-color: rgba(129, 243, 196, 0.58);
+  background: rgba(33, 106, 82, 0.78);
+  color: #dfffee;
 }
 
 .word-console.overtime {
