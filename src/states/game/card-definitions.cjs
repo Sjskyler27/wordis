@@ -3,7 +3,7 @@ const CARD_DEFINITIONS = {
     kind: 'boon',
     label: 'Delete Tile',
     description: 'Delete one of your tiles and draw a replacement.',
-    rarityWeight: 1.25,
+    rarityWeight: 0.35,
     effectType: 'delete_tile',
     ui: {
       cardGlow: 'rgba(142, 255, 222, 0.22)',
@@ -90,7 +90,7 @@ const CARD_DEFINITIONS = {
     kind: 'attack',
     label: 'Zero Tile',
     description: 'Give a random enemy tile the Zero Tile modifier.',
-    rarityWeight: 1,
+    rarityWeight: .5,
     effectType: 'random_attack',
     modifier: 'zeroTile',
     ui: {
@@ -135,7 +135,7 @@ const CARD_DEFINITIONS = {
     kind: 'boon',
     label: 'Ghost Tile',
     description: 'Give a random enemy tile the ghostTile modifier.',
-    rarityWeight: 0.72,
+    rarityWeight: 0.62,
     effectType: 'apply_modifier',
     modifier: 'ghostTile',
     ui: {
