@@ -669,7 +669,7 @@ const simulateTab = (reverse = false) => {
     window.addEventListener("gamepaddisconnected", onGamepadDisconnected);
     window.addEventListener('keydown', (e) => {
     // console.log('Key received:', e.key);
-    if(e.key === 'Escape'){
+    if(e.key === 'Escape' && !e.repeat){
       showSettings.value = !showSettings.value;
     }
 });
