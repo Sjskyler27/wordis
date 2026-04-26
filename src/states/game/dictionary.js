@@ -1,5 +1,5 @@
-import easyDictionaryText from './english_dictionaries/bot_dictionary_easy.txt?raw';
-import normalDictionaryText from './english_dictionaries/bot_dictionary_normal.txt?raw';
+import easyDictionaryText from './english_dictionaries/4.txt?raw';
+import dictionary5Text from './english_dictionaries/5.txt?raw';
 import hardDictionaryText from './english_dictionaries/bot_dictionary_hard.txt?raw';
 
 const parseDictionaryEntries = (dictionaryText = '') => dictionaryText
@@ -9,7 +9,7 @@ const parseDictionaryEntries = (dictionaryText = '') => dictionaryText
 
 export const DICTIONARY_WORDS = {
   easy: parseDictionaryEntries(easyDictionaryText),
-  normal: parseDictionaryEntries(normalDictionaryText),
+  normal: parseDictionaryEntries(`${easyDictionaryText}\n${dictionary5Text}`),
   hard: parseDictionaryEntries(hardDictionaryText)
 };
 
