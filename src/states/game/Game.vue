@@ -1,8 +1,12 @@
 <template>
-  <div class="game-shell" :style="backgroundMoodStyle">
+  <div class="game-shell" :class="{ 'machine-game-shell': isBotMode }" :style="backgroundMoodStyle">
     <div id="background-layer">
       <div class="shape-layer layer-far"></div>
       <div class="shape-layer layer-near"></div>
+      <div v-if="isBotMode" class="machine-game-cogs" aria-hidden="true">
+        <span class="machine-cog machine-cog-large"></span>
+        <span class="machine-cog machine-cog-small"></span>
+      </div>
     </div>
 
     <main class="board-frame" :class="{ paused: isPaused }" :style="boardFrameStyle">
@@ -970,6 +974,19 @@ const backgroundProgress = computed(() => {
 const backgroundMoodStyle = computed(() => {
   const progress = backgroundProgress.value;
   const intensity = progress * progress;
+
+  if (isBotMode.value) {
+    return {
+      '--bg-corner': mixHexColor('#435b68', '#6a7f88', intensity),
+      '--bg-top': mixHexColor('#283c4e', '#334b5d', intensity),
+      '--bg-mid': mixHexColor('#1c2c3d', '#24384a', intensity),
+      '--bg-bottom': mixHexColor('#101720', '#091018', intensity),
+      '--bg-glow-alpha': `${0.16 + (intensity * 0.06)}`,
+      '--bg-shape-far-opacity': `${0.1 + (progress * 0.08)}`,
+      '--bg-shape-near-opacity': `${0.08 + (progress * 0.08)}`,
+      '--bg-saturate': `${0.86 + (progress * 0.08)}`
+    };
+  }
 
   return {
     '--bg-corner': mixHexColor('#e9b248', '#ff7b5c', intensity),
@@ -2359,6 +2376,12 @@ watch(isSideDrawerMode, (isDrawerMode) => {
   }
 });
 
+watch([isSideDrawerMode, () => props.isMobile], ([isDrawerMode, isMobile]) => {
+  if (isDrawerMode && isMobile) {
+    openSideDrawer({ auto: true });
+  }
+}, { immediate: true });
+
 
 //potential spasmning cursor issue
 watch(controllerRegion, (nextRegion, previousRegion) => {
@@ -2502,6 +2525,53 @@ body {
   animation: driftLayerNear 30s linear infinite;
 }
 
+.machine-game-cogs {
+  position: absolute;
+  inset: 0;
+  opacity: 0.68;
+  pointer-events: none;
+}
+
+.machine-cog {
+  position: absolute;
+  border-radius: 50%;
+  background:
+    repeating-conic-gradient(from 0deg, rgba(174, 231, 244, 0.36) 0deg 9deg, transparent 9deg 18deg),
+    radial-gradient(circle, transparent 0 34%, rgba(174, 231, 244, 0.15) 35% 55%, transparent 56%),
+    radial-gradient(circle, rgba(174, 231, 244, 0.12), rgba(33, 61, 78, 0.05) 64%, transparent 65%);
+  border: 2px solid rgba(174, 231, 244, 0.22);
+  box-shadow: 0 0 48px rgba(103, 218, 238, 0.12);
+}
+
+.machine-cog-large {
+  width: min(44vw, 440px);
+  height: min(44vw, 440px);
+  right: 4vw;
+  bottom: 4vh;
+  animation: machineCogSpin 22s linear infinite;
+}
+
+.machine-cog-small {
+  width: min(22vw, 210px);
+  height: min(22vw, 210px);
+  left: 6vw;
+  top: 12vh;
+  animation: machineCogSpinReverse 14s linear infinite;
+}
+
+.machine-game-shell .bonus-card {
+  background: rgba(25, 38, 51, 0.9);
+  border-color: rgba(166, 230, 244, 0.18);
+}
+
+.machine-game-shell .bonus-card.accent-purple,
+.machine-game-shell .bonus-card.accent-blue,
+.machine-game-shell .bonus-card.accent-red {
+  box-shadow:
+    inset 0 1px 0 rgba(214, 248, 255, 0.1),
+    0 14px 24px rgba(6, 18, 28, 0.2);
+}
+
 @keyframes driftLayerFar {
   0% {
     background-position: 0 0;
@@ -2517,6 +2587,18 @@ body {
   }
   100% {
     background-position: -67px 420px;
+  }
+}
+
+@keyframes machineCogSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes machineCogSpinReverse {
+  to {
+    transform: rotate(-360deg);
   }
 }
 
@@ -2560,7 +2642,7 @@ body {
   border: 2px solid rgba(255, 255, 255, 0.12);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
   position: relative;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .bonus-card::after {
@@ -2648,9 +2730,9 @@ body {
 
 .round-modifier-chip small {
   position: absolute;
-  left: 50%;
-  bottom: calc(100% + 8px);
-  width: min(220px, 72vw);
+  left: 0;
+  top: calc(100% + 8px);
+  width: min(260px, 72vw);
   padding: 9px 10px;
   border-radius: 10px;
   background: rgba(35, 10, 31, 0.96);
@@ -2662,7 +2744,7 @@ body {
   text-align: left;
   opacity: 0;
   pointer-events: none;
-  transform: translate(-50%, 4px);
+  transform: translateY(-4px);
   transition: opacity 150ms ease, transform 150ms ease;
   box-shadow: 0 14px 28px rgba(20, 6, 14, 0.28);
 }
@@ -2670,7 +2752,7 @@ body {
 .round-modifier-chip:hover small,
 .round-modifier-chip:focus-visible small {
   opacity: 1;
-  transform: translate(-50%, 0);
+  transform: translateY(0);
 }
 
 .round-modifier-empty {
