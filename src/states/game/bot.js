@@ -1,4 +1,4 @@
-import { DICTIONARY_WORDS } from './dictionary.js';
+import { getDictionaryWords } from './dictionary.js';
 import { getIdleScorePenalty, getModifierDefinition, getTilesForWord, getWordScoreDetails } from './tile-logic.js';
 
 const MIN_WORD_LENGTH = 4;
@@ -14,14 +14,27 @@ const createLetterCounts = (text = '') => {
   return counts;
 };
 
-const WORD_ENTRIES = DICTIONARY_WORDS
-  .filter((word) => word.length >= MIN_WORD_LENGTH)
-  .map((word) => ({
-    word,
-    length: word.length,
-    letterCounts: createLetterCounts(word)
-  }))
-  .sort((left, right) => right.length - left.length || left.word.localeCompare(right.word));
+const wordEntriesByDifficulty = Object.create(null);
+
+const buildWordEntries = (difficulty = 'normal') => {
+  const normalizedDifficulty = String(difficulty || 'normal').toLowerCase();
+  if (wordEntriesByDifficulty[normalizedDifficulty]) {
+    return wordEntriesByDifficulty[normalizedDifficulty];
+  }
+
+  const dictionaryWords = getDictionaryWords(normalizedDifficulty);
+  const entries = dictionaryWords
+    .filter((word) => word.length >= MIN_WORD_LENGTH)
+    .map((word) => ({
+      word,
+      length: word.length,
+      letterCounts: createLetterCounts(word)
+    }))
+    .sort((left, right) => right.length - left.length || left.word.localeCompare(right.word));
+
+  wordEntriesByDifficulty[normalizedDifficulty] = entries;
+  return entries;
+};
 
 const getRackProfile = (tiles = []) => {
   const letterCounts = Object.create(null);
@@ -130,8 +143,9 @@ export const getBotWord = (tiles = [], recentWords = [], difficulty = 'normal') 
   const rackProfile = getRackProfile(tiles);
   const freshCandidates = [];
   const repeatCandidates = [];
+  const wordEntries = buildWordEntries(difficulty);
 
-  for (const wordEntry of WORD_ENTRIES) {
+  for (const wordEntry of wordEntries) {
     if (!canWordFitRackProfile(wordEntry, rackProfile)) {
       continue;
     }

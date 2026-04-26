@@ -30,7 +30,7 @@ const FALLBACK_DICTIONARIES = {
       8: parseDictionary('8.txt'),
       9: parseDictionary('9.txt'),
     },
-    bot: parseDictionary('bot_dictionary.txt')
+    bot: parseDictionary('bot_dictionary_hard.txt')
   }
 };
 
