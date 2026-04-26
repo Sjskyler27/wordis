@@ -59,6 +59,7 @@
               :class="{
                 shaking: isShaking,
                 'built-tile-banned-letter': isBannedLetter(slot.tile),
+                'built-tile-muted-consonant': isZeroedConsonantSlot(slot.index),
                 'built-tile-controller-focus': controllerFocusedBuiltTileId === slot.tile.id
               }"
               :style="getTileStyle(slot.tile, slot.index)"
@@ -403,6 +404,10 @@ const getBadgeStyle = (tile) => {
 };
 
 const getBuiltTileScore = (tile, index) => {
+  if (isZeroedConsonantSlot(index)) {
+    return 0;
+  }
+
   return tileScore(tile, {
     side: props.currentWordSide,
     scores: props.currentPlayerScores,
@@ -415,6 +420,38 @@ const isBannedLetter = (tile) => {
   const bannedLetters = new Set(props.scoreOptions?.roundModifierEffects?.bannedLetters || []);
   return bannedLetters.has(getTileLetter(tile));
 };
+const isVowelLetter = (letter = '') => ['A', 'E', 'I', 'O', 'U'].includes(letter.toUpperCase());
+const isConsonantTile = (tile) => {
+  const letter = getTileLetter(tile);
+  return /^[A-Z]$/.test(letter) && !isVowelLetter(letter);
+};
+const zeroedConsonantIndex = computed(() => {
+  if (!props.scoreOptions?.roundModifierEffects?.zeroHighestConsonant) {
+    return -1;
+  }
+
+  const highestEntry = props.selectedTiles.reduce((highest, tile, index) => {
+    if (!isConsonantTile(tile)) {
+      return highest;
+    }
+
+    const score = tileScore(tile, {
+      side: props.currentWordSide,
+      scores: props.currentPlayerScores,
+      positionIndex: index,
+      ...props.scoreOptions
+    });
+
+    if (!highest || score > highest.score) {
+      return { index, score };
+    }
+
+    return highest;
+  }, null);
+
+  return highestEntry?.index ?? -1;
+});
+const isZeroedConsonantSlot = (index) => zeroedConsonantIndex.value === index;
 
 const getPlaceholderStyle = (slot) => {
   if (!slot.bonus) {
@@ -701,6 +738,29 @@ button:focus{
   box-shadow: 0 0 0 2px rgba(255, 231, 220, 0.62), 0 6px 12px rgba(88, 5, 18, 0.26);
   pointer-events: none;
   transform: translateY(-50%) rotate(-38deg);
+  z-index: 4;
+}
+
+.built-tile-muted-consonant {
+  filter: saturate(0.58) brightness(0.92);
+}
+
+.built-tile-muted-consonant::after {
+  content: '0';
+  position: absolute;
+  left: 50%;
+  bottom: 8px;
+  transform: translateX(-50%);
+  min-width: 28px;
+  padding: 3px 7px;
+  border-radius: 999px;
+  background: rgba(32, 23, 34, 0.9);
+  color: #f8ecff;
+  font-size: 0.62rem;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  text-align: center;
+  box-shadow: 0 4px 10px rgba(20, 6, 18, 0.22);
   z-index: 4;
 }
 
