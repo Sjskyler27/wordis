@@ -146,6 +146,21 @@ const CARD_DEFINITIONS = {
       cardBadgeBackground: 'rgba(50, 70, 104, 0.42)'
     }
   },
+  boon_pair: {
+    kind: 'boon',
+    label: 'Lost Royalty',
+    description: 'Give a random enemy tile the royal pair modifier.',
+    rarityWeight: 0.12,
+    effectType: 'apply_modifier',
+    modifier: 'royalPear',
+    ui: {
+        tileBackground: 'linear-gradient(145deg, #d89cff 0%, #8f45df 28%, #4b147f 58%, #280648 100%)',
+        tileShadow: 'inset 0 -4px 0 rgba(46, 11, 86, 0.34), 0 14px 24px rgba(61, 18, 98, 0.28), 0 0 0 1px rgba(226, 179, 255, 0.44)',
+        textColor: '#fff8ff',
+        badgeBackground: 'rgba(255, 241, 255, 0.94)',
+        badgeColor: '#6d24b2'
+      }
+  },
   attack_pause_submissions: {
     kind: 'attack',
     label: 'Pause Submissions',
