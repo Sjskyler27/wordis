@@ -221,6 +221,7 @@ onBeforeUnmount(() => {
 
 <style scoped>
 .tutorial-overlay {
+  visibility: hidden;
   position: fixed;
   inset: 0;
   z-index: 1200;
@@ -245,7 +246,7 @@ onBeforeUnmount(() => {
   border-radius: 28px;
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.02)),
-    rgba(50, 13, 30, 0.96);
+    rgba(50, 13, 30, 0.99);
   border: 1px solid rgba(255, 202, 103, 0.22);
   box-shadow: 0 28px 60px rgba(0, 0, 0, 0.34);
   color: #f7efe1;

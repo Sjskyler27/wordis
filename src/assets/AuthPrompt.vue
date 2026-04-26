@@ -5,14 +5,18 @@
           <button ref="closeButton" class="modal-close-button" @click="dismiss">&times;</button>
         </div>
         <h2>Save Progress</h2>
-        <p>You can create an account to save and sync your game across devices. Sync currently happens when you log out.</p>
+        <p>You can create an account to save and sync your game across devices.</p>
   
-        <input ref="emailInput" v-model="email" type="email" placeholder="Email" />
-        <input ref="passwordInput" v-model="password" type="password" placeholder="Password" />
-        <div class="button-column">
+        <div class="modal-actions">
+          <div class="text-inputs">
+            <input ref="emailInput" v-model="email" type="email" placeholder="Email" />
+            <input ref="passwordInput" v-model="password" type="password" placeholder="Password" />
+          </div>
+          <div class="button-column">
             <button ref="dismissButton" class="modal-button quiet" @click="dismiss">Maybe Later</button>
             <button ref="signUpButton" class="modal-button" @click="signUp">Sign Up</button>
             <button ref="loginButton" class="modal-button primary" @click="login">Log In</button>
+          </div>
         </div>
   
         <p v-if="error" class="error">{{ error }}</p>
@@ -191,15 +195,23 @@
     color: rgba(255, 244, 223, 0.78);
   }
   
+  .text-inputs {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    margin-bottom: 15px;
+  }
   .button-column {
     display: flex;
     flex-direction: column;
-    gap: 10px;
-    align-items: stretch;
+    gap: 15px;
+    align-items: center;
+    width: min(280px, 100%);
+    margin: 0 auto;
   }
 
   input {
-    width: 100%;
+    width: min(320px, 100%);
     padding: 13px 14px;
     font-size: 0.66rem;
     line-height: 1.4;
@@ -210,6 +222,7 @@
     color: #fff4df;
     text-align: center;
     outline: none;
+    margin: 0 auto;
   }
   
   input::placeholder {
@@ -234,7 +247,7 @@
   }
 
   .modal-button {
-    width: 100%;
+    width: min(260px, 100%);
     padding: 12px 14px;
     border-radius: 12px;
     background: rgba(255, 245, 224, 0.08);
@@ -261,7 +274,7 @@
 
   .modal-button.primary {
     background: linear-gradient(180deg, rgba(83, 216, 194, 0.94), rgba(21, 151, 128, 0.92));
-    color: #09231f;
+    color: #fff4df;
   }
 
   .modal-button.quiet {
