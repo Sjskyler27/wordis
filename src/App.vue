@@ -1128,7 +1128,7 @@ html::-webkit-scrollbar {
 
 .animated-pulse {
     transform: scale(1.3);
-    animation: activePulse 1s ease-out;
+    animation: activePulse 1.5s ease-out;
     animation-iteration-count: infinite;
   }
 

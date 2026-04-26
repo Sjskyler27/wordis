@@ -201,8 +201,8 @@
           :length-bonus-steps="lengthBonusSteps"
           :controller-focused-built-tile-id="controllerRegion === 'builder' ? controllerFocusedBuiltTileId : ''"
           :controller-focused-action-index="controllerRegion === 'actions' ? controllerActionCursorIndex : -1"
-          :is-overtime-active="isOvertimeActive"
-          :overtime-label="overtimeLabel"
+          :is-overtime-active="wordBuilderBannerActive"
+          :overtime-label="wordBuilderBannerLabel"
           @undo="handleUndo"
           @clear="handleClearWord"
           @save-letters="handleSaveLetters"
@@ -608,13 +608,38 @@ const overtimeFinalWordSubmitted = computed(() => {
     : singlePlayerOvertimeFinalWordSubmitted.value;
 });
 const isOvertimeActive = computed(() => Boolean(overtimeTrailingSide.value) && !overtimeFinalWordSubmitted.value);
+const finalWordPointsRemaining = computed(() => {
+  if (isMultiRoundMode.value && finalWordWindowActive.value) {
+    return Math.max(0, multiRoundRun.currentTargetScore.value - (playerScores.value.host || 0));
+  }
+
+  if (isTimedSoloMode.value && finalWordWindowActive.value) {
+    return Math.max(0, WINNING_SCORE - (playerScores.value.host || 0));
+  }
+
+  if (isOvertimeActive.value && overtimeTrailingSide.value === mySide.value) {
+    return Math.max(0, (playerScores.value[opponentSide.value] || 0) + 1 - (playerScores.value[mySide.value] || 0));
+  }
+
+  return 0;
+});
+const formatFinalWordLabel = (label) => `${label} ${finalWordPointsRemaining.value} points to go!`;
 const overtimeLabel = computed(() => {
   if (!isOvertimeActive.value) {
     return '';
   }
 
-  return overtimeTrailingSide.value === mySide.value ? 'Final Word!' : 'Keep playing words!';
+  return overtimeTrailingSide.value === mySide.value ? formatFinalWordLabel('Final Word!') : 'Keep playing words!';
 });
+const finalWordWindowLabel = computed(() => {
+  if (!finalWordWindowActive.value) {
+    return '';
+  }
+
+  return formatFinalWordLabel('Final Word!');
+});
+const wordBuilderBannerActive = computed(() => isOvertimeActive.value || finalWordWindowActive.value);
+const wordBuilderBannerLabel = computed(() => finalWordWindowLabel.value || overtimeLabel.value);
 const submissionPauseOwner = computed(() => {
   return props.isMultiplayer
     ? multiplayerSubmissionPauseOwner.value
