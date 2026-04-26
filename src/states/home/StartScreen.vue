@@ -55,7 +55,7 @@
     </div>
   </div>
   <Feedback v-if="showFeedback" @close="showFeedback = false" />
- <!-- <PWA @close="showPWA = false" v-if="showPWA && isMobile && !wavedash"></PWA> -->
+ <PWA @close="showPWA = false" v-if="showPWA && isMobile && !wavedash"></PWA>
   <Credit v-if="showCredits" @close="showCredits = false"></Credit>
   <div class="streamer-text" v-if="isStreamer">Streamer Access</div>
   <div class="version-text">Version: {{versionNumber}} · {{ languageLabel }} {{lockContent? 'Demo': ''}}</div>
@@ -99,7 +99,7 @@
   const versionNumber = ref(pkg.version)
   const languageLabel = ref(getPreferredLanguage().label)
   const isVisible = ref(true)
-  const wavedash = process.env.VITE_WAVEDASH === 'true';
+  const wavedash = import.meta.env.VITE_WAVEDASH === 'true';
 
   const startMusic = new Audio(homeSoundUrl);
   startMusic.currentTime = 0
