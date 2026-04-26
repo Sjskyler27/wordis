@@ -153,7 +153,7 @@ export const PERSONAL_MODIFIER_DEFINITIONS = {
   seven_second_wind: {
     key: 'seven_second_wind',
     label: 'Seven Second Wind',
-    description: 'Seven-letter words restore 10 seconds.',
+    description: 'Seven-letter words restore seven seconds.',
     rarity: 0.68,
     tier: PERSONAL_MODIFIER_TIERS.COMMON,
     tags: ['time', 'word-length'],
@@ -161,7 +161,7 @@ export const PERSONAL_MODIFIER_DEFINITIONS = {
     start_with: 0,
     effects: {
       lengthTimeBonus: {
-        7: 10
+        7: 7
       }
     }
   },
