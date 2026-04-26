@@ -2558,7 +2558,7 @@ body {
   height: min(44vw, 440px);
   right: 4vw;
   bottom: 4vh;
-  animation: machineCogSpin 22s linear infinite;
+  animation: machineCogSpin 18s linear infinite;
 }
 
 .machine-cog-small {
@@ -2567,7 +2567,7 @@ body {
   height: min(22vw, 210px);
   left: 6vw;
   top: 12vh;
-  animation: machineCogSpinReverse 14s linear infinite;
+  animation: machineCogSpinReverse 11s linear infinite;
 }
 
 .machine-game-shell .bonus-card {
