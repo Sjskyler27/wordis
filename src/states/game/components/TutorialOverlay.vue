@@ -352,7 +352,7 @@ const finishTutorial = () => {
   border-radius: 999px;
   padding: 12px 18px;
   background: linear-gradient(180deg, #53d8c2, #159780);
-  color: #08231f;
+  color: #dfdfdf;
   font: inherit;
   cursor: pointer;
 }

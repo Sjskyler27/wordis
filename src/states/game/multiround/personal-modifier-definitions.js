@@ -214,7 +214,6 @@ export const PERSONAL_MODIFIER_DEFINITIONS = {
     tier: PERSONAL_MODIFIER_TIERS.RARE,
     tags: ['score', 'bankTile'],
     maxStacks: 3,
-    start_with: 0,
     effects: {
       idleBonusScoreDeltaBonus: {
         bankTile: 1

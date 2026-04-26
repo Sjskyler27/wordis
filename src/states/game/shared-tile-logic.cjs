@@ -1085,7 +1085,13 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
     const definition = getModifierDefinition(status);
     const baseScore = letterConfig[tile.letter]?.score || tile.baseScore || tile.score || 0;
     const tileLetter = definition.effects.wild ? '*' : (tile.baseLetter || tile.letter);
-    const nextScore = definition.effects.setScore != null ? definition.effects.setScore : baseScore;
+    const nextScore = definition.effects.setScore != null
+      ? definition.effects.setScore
+      : definition.effects.startWithHalfScoreRoundedDown
+        ? Math.floor(baseScore / 2) :
+        definition.effects.startWithHalfScoreRoundedUp
+        ? Math.ceil(baseScore / 2)
+        : baseScore;
     const lockTurns = definition.effects.lockTurns || 0;
 
     return attachTileAnimationHooks({
@@ -1176,7 +1182,12 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
         id: createTileId(),
         letter: tileLetter,
         baseLetter: letter,
-        score: modifierDefinition.effects.setScore != null ? modifierDefinition.effects.setScore : baseScore,
+        score: modifierDefinition.effects.setScore != null ? modifierDefinition.effects.setScore
+        : modifierDefinition.effects.startWithHalfScoreRoundedDown
+        ? Math.floor(baseScore / 2) :
+        modifierDefinition.effects.startWithHalfScoreRoundedUp
+        ? Math.ceil(baseScore / 2)
+        : baseScore,
         baseScore,
         bonusScore: modifierDefinition.effects.bonusScore || 0,
         multiplier: modifierDefinition.effects.zeroLetterScore ? 0 : 1,

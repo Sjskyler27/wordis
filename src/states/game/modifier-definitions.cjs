@@ -111,7 +111,7 @@ const createModifierDefinitions = ({ bloodTilePositionValues }) => ({
       badge: 'BLD',
       description: 'Scores by position instead of face value. Later positions score higher.',
       effects: {
-        setScore: 0,
+        startWithHalfScoreRoundedDown: true,
         positionBonusByIndex: bloodTilePositionValues
       },
       rarityWeight: 0.36,
@@ -125,9 +125,12 @@ const createModifierDefinitions = ({ bloodTilePositionValues }) => ({
     },
     bankTile: {
       badge: 'BANK',
-      description: 'Scores 0 when used, but gains +1 bonus score each turn it stays unused.',
-      effects: { idleBonusScoreDelta: 1 },
-      rarityWeight: 0.18,
+      description: 'Gains +1 bonus score each turn it stays unused.',
+      effects: { 
+        startWithHalfScoreRoundedUp: true,
+        idleBonusScoreDelta: 1
+      },
+      rarityWeight: 9.18,
       animations: {
         onNewTurn: 'emerald'
       },
