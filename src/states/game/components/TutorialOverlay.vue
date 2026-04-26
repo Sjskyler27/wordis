@@ -22,7 +22,7 @@
         <article class="tutorial-card">
           <strong>Word Value</strong>
           <p>Your word score comes from tile values, extra points for longer words,and modifiers.</p>
-          <p v-if="isBotMode"> <span class="tutorial-inline">Watch the cogs!</span>  They will spin with how fast you are thing and how fast the machine is thinking!</p>
+          <p v-if="isBotMode"> <span class="tutorial-inline">Watch the cogs!</span>  They will spin with how fast you are thinking and how fast the machine is thinking!</p>
         </article>
       </div>
 
@@ -101,7 +101,7 @@ const sampleLettersByStatus = {
 };
 const titleByStatus = {
   firsttile: 'First Tile',
-  royalPear: 'Royal Pear Tile',
+  royalPear: 'Royal Pair Tile',
   bloodTile: 'Blood Tile',
   bankTile: 'Bank Tile',
   yinYang: 'Yin Yang Tile',
