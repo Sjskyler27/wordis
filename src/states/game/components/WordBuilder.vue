@@ -710,12 +710,12 @@ button:focus{
 
 .tile-modifier {
   position: absolute;
-  top: 8px;
-  left: 10px;
+  top: 6px;
+  left: 7px;
   min-width: 30px;
   padding: 3px 7px;
   border-radius: 999px;
-  font-size: 0.68rem;
+  font-size: 0.58rem;
   font-weight: 900;
   letter-spacing: 0.08em;
   text-transform: uppercase;
