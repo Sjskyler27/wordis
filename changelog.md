@@ -1,5 +1,20 @@
 # Changelog
 
+## 2026-04-26 0.0.30
+
+Start: 2026-04-26 02:35:00 EDT
+Stop: 2026-04-26 02:47:10 EDT
+
+- Restyled the auth prompt to match the settings modal and added controller-friendly focus navigation.
+- Added click, Space, Enter, and controller-dispatched skip support for the intro animation.
+- Added a mechanical Machine Learning presentation on the play-type screen with spinning cogs.
+- Updated bot match gameplay visuals with a cooler machine-themed background and cog animation.
+- Opened the card drawer automatically on mobile game start.
+- Prevented round modifier descriptions in the bonus card from being clipped.
+- Raised word-builder point labels above tile and score-pop layers.
+- Made mobile magnifier mode turn off when tapping anywhere other than a tile or the magnifier button.
+- Verified the changes with `npm run build`.
+
 ## 2026-04-23 0.0.29
  litterally so many changes
 
