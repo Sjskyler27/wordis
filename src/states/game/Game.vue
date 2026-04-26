@@ -63,7 +63,7 @@
           <p v-else>Words must be 4 letters, larger words score bonus points and may gain cards. Only used letters are replaced.</p>
         </div>
         <div class="bonus-card accent-purple">
-          <span class="bonus-kicker">Cards</span>
+          <span v-if="!isMobile" class="bonus-kicker">Cards</span>
           <strong>{{ cardSummary }}</strong>
           <p v-if="activeBoonCard">
             {{ activeBoonCard.label }} is ready. Click one of your tiles to use it.
@@ -108,7 +108,7 @@
           </div>
         </div>
       <button class="pause-button" @click="emit('showSettings')">{{ isPaused ? 'Resume' : 'Pause' }}</button>
-      <button class="back-button" @click="resetAndGoHome">Back to Home</button>
+      <!-- <button class="back-button" @click="resetAndGoHome">Back to Home</button> -->
 
       </aside>
 
@@ -2667,6 +2667,8 @@ body {
 }
 
 .accent-blue {
+
+  border-radius: 28px 68px;
   background: linear-gradient(180deg, rgba(58, 111, 208, 0.9), rgba(49, 78, 170, 0.82));
 }
 
@@ -2675,6 +2677,8 @@ body {
 }
 
 .accent-red {
+  min-height: 106px;
+  border-radius: 28px 68px;
   background: linear-gradient(180deg, rgba(164, 38, 68, 0.95), rgba(105, 22, 54, 0.88));
 }
 
@@ -2688,7 +2692,7 @@ body {
   margin-top: 12px;
   position: relative;
   z-index: 1;
-  max-height: 300px;
+  max-height: 450px;
   overflow-y: auto;
 }
 
@@ -3106,6 +3110,9 @@ body {
   .accent-blue {
     height: 100px;
   }
+  .accent-blue {
+    height: 100px;
+  }
   .game-shell {
 
   }
@@ -3167,9 +3174,9 @@ body {
 
   .side-stack.side-stack-drawer {
     position: fixed;
-    top: 18px;
+    top: 0px;
     left: 0;
-    bottom: 18px;
+    bottom: 0px;
     z-index: 19;
     width: min(360px, calc(100vw - 52px));
     max-width: none;
