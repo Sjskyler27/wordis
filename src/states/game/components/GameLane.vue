@@ -5,7 +5,8 @@
       'lane-burst-low': burstTier === 'low',
       'lane-burst-medium': burstTier === 'medium',
       'lane-burst-high': burstTier === 'high',
-      'lane-burst-epic': burstTier === 'epic'
+      'lane-burst-epic': burstTier === 'epic',
+      'lane-loose-rack': hasShuffleOnSubmit
     }"
   >
     <div class="lane-header">
@@ -322,6 +323,7 @@ const isFleetingRoundTile = (tile) => {
 const isRustingIdleTile = (tile) => {
   return (props.scoreOptions?.roundModifierEffects?.idleScoreDelta || 0) < 0 && !selectedTileIds.value.has(tile.id);
 };
+const hasShuffleOnSubmit = computed(() => Boolean(props.scoreOptions?.roundModifierEffects?.shuffleOnSubmit));
 const getRoundTileMarker = (tile) => {
   if (isHotBurnTile(tile)) {
     return 'x2';
@@ -715,10 +717,29 @@ onBeforeUnmount(() => {
   grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 10px;
   max-width: 530px;
+  position: relative;
 }
 
 .rack-slot {
   min-height: 94px;
+}
+
+.lane-loose-rack .rack-grid::after {
+  content: 'SHUFFLE';
+  position: absolute;
+  right: 8px;
+  top: -18px;
+  padding: 4px 9px;
+  border: 1px solid rgba(206, 235, 255, 0.42);
+  border-radius: 999px;
+  background: rgba(27, 37, 62, 0.78);
+  color: #d8f0ff;
+  font-size: 0.6rem;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  box-shadow: 0 8px 14px rgba(20, 13, 38, 0.2);
+  pointer-events: none;
 }
 
 .tile {
