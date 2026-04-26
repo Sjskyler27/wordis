@@ -2682,6 +2682,10 @@ body {
   background: rgba(25, 38, 51, 0.9);
   border-color: rgba(166, 230, 244, 0.18);
 }
+.machine-game-shell .accent-red {
+  background: rgba(123,133,133, 0.95);
+  border-color: rgba(166, 230, 244, 0.18);
+}
 
 .machine-game-shell .bonus-card.accent-purple,
 .machine-game-shell .bonus-card.accent-blue,
@@ -3025,17 +3029,9 @@ body {
   border-color: var(--card-edge);
 }
 
-.action-card:focus,
-.action-card:focus-visible {
-  outline: 3px solid rgba(255, 227, 141, 0.88);
-  outline-offset: 2px;
-}
 
-.action-card-controller-focus {
-  outline: 3px solid rgba(255, 227, 141, 0.88);
-  outline-offset: 2px;
-  transform: translateY(-2px);
-}
+
+
 
 .action-card strong {
   position: relative;
@@ -3070,8 +3066,8 @@ body {
 .action-card.armed {
   transform: translateY(-2px);
   box-shadow:
-    inset 0 0 0 2px rgba(255, 232, 160, 0.8),
-    inset 0 1px 0 rgba(255, 255, 255, 0.2),
+    inset 0 0 0 3px rgba(255, 232, 160, 0.8),
+    inset 0 2px 0 rgba(255, 255, 255, 0.2),
     inset 0 -3px 0 rgba(39, 11, 25, 0.32),
     0 16px 24px rgba(30, 8, 34, 0.28);
   border-color: rgba(255, 236, 187, 0.78);
