@@ -77,7 +77,18 @@ export const useSinglePlayerGame = ({
   const getTurnCount = () => {
     return (wordHistory.value.host?.length || 0) + (wordHistory.value.opponent?.length || 0);
   };
-  const getPersonalModifierEffects = () => personalModifierEffects?.value || {};
+  const cardModifierEffects = ref({
+    badChanceBonus: 0
+  });
+  const getPersonalModifierEffects = () => {
+    const baseEffects = personalModifierEffects?.value || {};
+
+    // console.log(cardModifierEffects.value.badChanceBonus)
+    return {
+      ...baseEffects,
+      badChanceBonus: (baseEffects.badChanceBonus || 0) + (cardModifierEffects.value.badChanceBonus || 0)
+    };
+  };
   const getRoundModifierEffects = () => roundModifierEffects?.value || {};
   const createTestingHands = () => {
     const boonKeys = Object.entries(CARD_DEFINITIONS)
@@ -698,6 +709,19 @@ export const useSinglePlayerGame = ({
       return {
         success: true,
         message: `Added ${card.amount || 10} seconds to the clock.`
+      };
+    }
+
+    if (card.effectType === 'reduce_bad_modifier_chance') {
+      const amount = Math.max(0, Number(card.amount) || 0.015);
+      cardModifierEffects.value = {
+        ...cardModifierEffects.value,
+        badChanceBonus: (cardModifierEffects.value.badChanceBonus || 0) - amount
+      };
+      return {
+        success: true,
+        // message: `Bad modifiers are ${Math.round(amount * 1000) / 10}% less likely.`
+        message: `Bad modifiers are a hair less likely to be pulled.`
       };
     }
 

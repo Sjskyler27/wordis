@@ -154,11 +154,11 @@ const CARD_DEFINITIONS = {
     effectType: 'apply_modifier',
     modifier: 'royalPear',
     ui: {
-        tileBackground: 'linear-gradient(145deg, #d89cff 0%, #8f45df 28%, #4b147f 58%, #280648 100%)',
+        cardBackground: 'linear-gradient(145deg, #d89cff 0%, #8f45df 28%, #4b147f 58%, #280648 100%)',
         tileShadow: 'inset 0 -4px 0 rgba(46, 11, 86, 0.34), 0 14px 24px rgba(61, 18, 98, 0.28), 0 0 0 1px rgba(226, 179, 255, 0.44)',
         textColor: '#fff8ff',
         badgeBackground: 'rgba(255, 241, 255, 0.94)',
-        badgeColor: '#6d24b2'
+        cardGlow: '#6d24b2'
       }
   },
   attack_pause_submissions: {
@@ -180,7 +180,7 @@ const CARD_DEFINITIONS = {
     kind: 'attack',
     label: 'Pause Time',
     description: 'Pause the clock until your next word.',
-    rarityWeight: 0.72,
+    rarityWeight: 0.32,
     effectType: 'pause_time',
     timedSoloOnly: true,
     ui: {
@@ -195,7 +195,7 @@ const CARD_DEFINITIONS = {
     kind: 'attack',
     label: 'Gain Time',
     description: 'Add 10 seconds to the timer.',
-    rarityWeight: 1.08,
+    rarityWeight: .8,
     effectType: 'gain_time',
     amount: 10,
     timedSoloOnly: true,
@@ -205,6 +205,22 @@ const CARD_DEFINITIONS = {
       cardPattern: 'rgba(232, 255, 236, 0.12)',
       cardBackground: 'linear-gradient(180deg, rgba(84, 205, 132, 0.98), rgba(35, 122, 68, 0.96))',
       cardBadgeBackground: 'rgba(18, 71, 35, 0.42)'
+    }
+  },
+  attack_reduce_bad_modifiers: {
+    kind: 'attack',
+    label: 'Clean Odds',
+    description: 'Lower the chance of pulling bad tiles (by a hair)',
+    rarityWeight: 0.78,
+    effectType: 'reduce_bad_modifier_chance',
+    amount: 0.002,
+    timedSoloOnly: true,
+    ui: {
+      cardGlow: 'rgba(208, 255, 221, 0.24)',
+      cardEdge: 'rgba(216, 255, 229, 0.34)',
+      cardPattern: 'rgba(238, 255, 243, 0.12)',
+      cardBackground: 'linear-gradient(180deg, rgba(95, 196, 124, 0.98), rgba(35, 112, 73, 0.96))',
+      cardBadgeBackground: 'rgba(18, 71, 43, 0.42)'
     }
   }
 };
@@ -226,7 +242,7 @@ const ATTACK_CARD_KEYS = [
   'attack_pause_submissions'
 ];
 
-const TIMED_SOLO_ATTACK_CARD_KEYS = ['attack_pause_time', 'attack_gain_time'];
+const TIMED_SOLO_ATTACK_CARD_KEYS = ['attack_pause_time', 'attack_gain_time', 'attack_reduce_bad_modifiers'];
 
 const cardDefinitionsApi = {
   CARD_DEFINITIONS,
