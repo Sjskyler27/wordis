@@ -16,7 +16,6 @@
   <div class="modal animated-fade-in">
     <div class="modal-content animated-slide-up" >
       <h3>Choose How To Play</h3>
-      <button class="invisible" @focus="focusMachineLearning" ref="topFocusTrap"/>
       <div class="close-modal">
         <button ref="closeButton" class="modal-button" @click="emit('home')">&times;</button>
       </div>
@@ -90,7 +89,6 @@
         </div>
        </button>
 
-      <button class="invisible" @focus="focusMachineLearning" ref="bottomFocusTrap"/>
     </div>
   </div>
 </template>
@@ -111,8 +109,6 @@ const lockContent = computed(() => (new Date() > demoDate || isDemo) && !props.i
 const emit = defineEmits(["game", "singleplayer", "multiplayerScreen", "multiRoundScreen", "home", "Dungeons", "FreePlay", "continue", "DungeonsCoop", "DraftDungeon", "DailyDungeon", 'EndlessDescent', 'Continue']);
 const gameInProgress = ref(localStorage.getItem("gameInProgress")); // Check if game is in progress
 const gameEnded = JSON.parse(localStorage.getItem('gameEnded'))
-const topFocusTrap = ref(null)
-const bottomFocusTrap = ref(null)
 const closeButton = ref(null)
 const machineLearningButton = ref(null)
 const multiRoundButton = ref(null)
@@ -152,13 +148,9 @@ const controllerButtons = [
   quickPracticeButton
 ];
 const getControllerTargets = () => controllerButtons.filter((button) => button.value);
-const focusMachineLearning = () => {
-  currentIndex.value = 0;
-  updateFocus();
-};
 onMounted(() => {
   nextTick(() => {
-    focusMachineLearning();
+    updateFocus();
   });
 
   window.addEventListener("keydown", handleKeyDown);
@@ -247,18 +239,17 @@ const close = () => emit("close");
     opacity: 0.74;
   }
 
-  .cog {
-    position: absolute;
-    border-radius: 50%;
-    background:
-      repeating-conic-gradient(from 0deg, rgba(163, 226, 239, 0.46) 0deg 10deg, transparent 10deg 20deg),
-      radial-gradient(circle, transparent 0 34%, rgba(163, 226, 239, 0.18) 35% 54%, transparent 55%),
-      radial-gradient(circle, rgba(163, 226, 239, 0.18), rgba(44, 84, 106, 0.05) 62%, transparent 64%);
-    border: 2px solid rgba(185, 239, 250, 0.24);
-    box-shadow: 0 0 40px rgba(90, 199, 220, 0.16);
+.cog {
+  position: absolute;
+  border-radius: 50%;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: contain;
+  box-shadow: 0 0 40px rgba(90, 199, 220, 0.16);
   }
 
   .cog-large {
+    background-image: url('/src/assets/images/big-cog.png');
     width: min(42vw, 380px);
     height: min(42vw, 380px);
     right: 6vw;
@@ -267,6 +258,7 @@ const close = () => emit("close");
   }
 
   .cog-small {
+    background-image: url('/src/assets/images/small-cog.png');
     width: min(22vw, 190px);
     height: min(22vw, 190px);
     left: 8vw;
