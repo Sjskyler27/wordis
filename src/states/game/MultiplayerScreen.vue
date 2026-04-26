@@ -1,5 +1,5 @@
 <template>
-  <div class="multiplayer-shell">
+  <div ref="screenRoot" class="multiplayer-shell">
     <div id="background-layer">
       <div class="shape-layer layer-far"></div>
       <div class="shape-layer layer-near"></div>
@@ -122,7 +122,7 @@
 </template>
 
 <script setup>
-import { ref, computed, watch } from 'vue';
+import { ref, computed, nextTick, onBeforeUnmount, onMounted, watch } from 'vue';
 import {
   roomCode,
   message,
@@ -140,6 +140,8 @@ const joinCode = ref('');
 const hostIsPrivate = ref(true);
 const hostOvertimeEnabled = ref(overtimeEnabled.value);
 const selectedDifficulty = ref('normal');
+const screenRoot = ref(null);
+const controllerFocusIndex = ref(0);
 const emit = defineEmits(['game', 'home', 'singleplayer']);
 const difficulties = [
   { value: 'easy', label: 'Easy' },
@@ -169,6 +171,68 @@ const handleJoinGame = () => {
 
 const joinLobby = (code) => {
   joinGame(code);
+};
+
+const getControllerTargets = () => {
+  if (!screenRoot.value) {
+    return [];
+  }
+
+  return Array.from(screenRoot.value.querySelectorAll('button:not(:disabled), input:not(:disabled)'))
+    .filter((element) => element.offsetParent !== null);
+};
+
+const setControllerFocus = (nextIndex) => {
+  const targets = getControllerTargets();
+  if (!targets.length) {
+    return;
+  }
+
+  controllerFocusIndex.value = Math.max(0, Math.min(nextIndex, targets.length - 1));
+  targets[controllerFocusIndex.value]?.focus();
+};
+
+const syncControllerFocusIndex = () => {
+  const targets = getControllerTargets();
+  const activeIndex = targets.findIndex((element) => element === document.activeElement);
+  if (activeIndex >= 0) {
+    controllerFocusIndex.value = activeIndex;
+  }
+};
+
+const handleControllerKeyDown = (event) => {
+  const activeElement = document.activeElement;
+  const activeTag = activeElement?.tagName?.toLowerCase();
+  const isTextInput = activeTag === 'input' && activeElement?.type !== 'checkbox';
+
+  if (event.key === 'Escape') {
+    event.preventDefault();
+    emit('home');
+    return;
+  }
+
+  if (isTextInput && (event.key === 'ArrowLeft' || event.key === 'ArrowRight')) {
+    return;
+  }
+
+  if (event.key === 'ArrowDown' || event.key === 'ArrowRight') {
+    event.preventDefault();
+    syncControllerFocusIndex();
+    setControllerFocus(controllerFocusIndex.value + 1);
+    return;
+  }
+
+  if (event.key === 'ArrowUp' || event.key === 'ArrowLeft') {
+    event.preventDefault();
+    syncControllerFocusIndex();
+    setControllerFocus(controllerFocusIndex.value - 1);
+    return;
+  }
+
+  if ((event.key === 'Enter' || event.key === ' ') && activeTag !== 'input') {
+    event.preventDefault();
+    activeElement?.click();
+  }
 };
 
 const connectionStatusLabel = computed(() => {
@@ -216,6 +280,15 @@ watch(connectionStatus, (status) => {
     requestLobbyList();
   }
 }, { immediate: true });
+
+onMounted(() => {
+  window.addEventListener('keydown', handleControllerKeyDown);
+  nextTick(() => setControllerFocus(0));
+});
+
+onBeforeUnmount(() => {
+  window.removeEventListener('keydown', handleControllerKeyDown);
+});
 </script>
 
 <style scoped>
@@ -536,6 +609,19 @@ p {
 .arcade-button:disabled {
   cursor: not-allowed;
   opacity: 0.55;
+}
+
+.difficulty-chip:focus-visible,
+.lobby-row:focus-visible,
+.arcade-button:focus-visible,
+.back-button:focus-visible,
+.room-input:focus-visible,
+.toggle-row input:focus-visible {
+  outline: 4px solid rgba(130, 253, 238, 0.86);
+  outline-offset: 3px;
+  box-shadow:
+    0 0 0 5px rgba(92, 25, 41, 0.38),
+    0 16px 26px rgba(33, 10, 30, 0.28);
 }
 
 .back-button {
