@@ -21,7 +21,7 @@ export const PERSONAL_MODIFIER_DEFINITIONS = {
   ghost_charge: {
     key: 'ghost_charge',
     label: 'Ghost Charge',
-    description: 'Ghost tiles give +6 more bonus score and appear more often.',
+    description: 'Ghost tiles give +3 more bonus score and appear more often.',
     rarity: 0.75,
     tier: PERSONAL_MODIFIER_TIERS.COMMON,
     tags: ['score', 'tile-odds', 'ghostTile'],
@@ -29,7 +29,7 @@ export const PERSONAL_MODIFIER_DEFINITIONS = {
     start_with: 0,
     effects: {
       modifierScoreBonus: {
-        ghostTile: 6
+        ghostTile: 3
       },
       // increases chance of pulling ghost tile 
       // this in theory would decrease chance of pulling other tiles 
@@ -51,7 +51,7 @@ export const PERSONAL_MODIFIER_DEFINITIONS = {
     rarity: 0.55,
     tier: PERSONAL_MODIFIER_TIERS.EPIC,
     tags: ['tile-odds', 'gold'],
-    maxStacks: 300,
+    maxStacks: 3,
     start_with: 0,
     effects: {
       modifierOddsBonus: {
@@ -98,8 +98,8 @@ export const PERSONAL_MODIFIER_DEFINITIONS = {
       modifierOddsBonus: {
         wild: 0.16
       },
-      goodChanceBonus: 0.002,
-      goodChanceCapDelta: 0.004
+      neutralChanceBonus: 0.002,
+      neutralChanceCapDelta: 0.004
     }
   },
   cool_embers: {
@@ -138,7 +138,7 @@ export const PERSONAL_MODIFIER_DEFINITIONS = {
   five_letter_form: {
     key: 'five_letter_form',
     label: 'Five Letter Form',
-    description: 'Five-letter words score +5.',
+    description: 'Five-letter words score +3.',
     rarity: 0.68,
     tier: PERSONAL_MODIFIER_TIERS.COMMON,
     tags: ['score', 'word-length'],
@@ -146,7 +146,7 @@ export const PERSONAL_MODIFIER_DEFINITIONS = {
     start_with: 0,
     effects: {
       lengthScoreBonus: {
-        5: 5
+        5: 3
       }
     }
   },
@@ -223,7 +223,7 @@ export const PERSONAL_MODIFIER_DEFINITIONS = {
   short_word_sharpener: {
     key: 'short_word_sharpener',
     label: 'Short Word Sharpener',
-    description: 'Four-letter words score +7.',
+    description: 'Four-letter words score +5.',
     rarity: 0.48,
     tier: PERSONAL_MODIFIER_TIERS.RARE,
     tags: ['score', 'word-length'],
@@ -231,7 +231,7 @@ export const PERSONAL_MODIFIER_DEFINITIONS = {
     start_with: 0,
     effects: {
       lengthScoreBonus: {
-        4: 7
+        4: 5
       }
     }
   },
@@ -239,13 +239,13 @@ export const PERSONAL_MODIFIER_DEFINITIONS = {
     key: 'strong_start',
     label: 'Strong Start',
     description: 'Rounds start with better good modifier odds.',
-    rarity: 0.5,
-    tier: PERSONAL_MODIFIER_TIERS.RARE,
+    rarity: 0.4,
+    tier: PERSONAL_MODIFIER_TIERS.COMMON,
     tags: ['opening-rack', 'good-cap'],
     maxStacks: 5,
-    start_with: 0,
+    start_with: 1,
     effects: {
-      openingGoodChanceBonus: 0.04
+      openingGoodChanceBonus: .99
     }
   },
   time_reserve: {
@@ -352,10 +352,23 @@ export const PERSONAL_MODIFIER_DEFINITIONS = {
       blockedModifiers: ['mustuse']
     }
   },
+  burn_shield: {
+    key: 'burn_shield',
+    label: 'Burn Shield',
+    description: 'MUST tiles no longer appear.',
+    rarity: 0.22,
+    tier: PERSONAL_MODIFIER_TIERS.EPIC,
+    tags: ['tile-odds', 'burn'],
+    maxStacks: 1,
+    start_with: 0,
+    effects: {
+      blockedModifiers: ['burn']
+    }
+  },
   compact_double: {
     key: 'compact_double',
-    label: 'Compact Double',
-    description: 'Four-letter word scores are doubled after all other points.',
+    label: 'Compact Multiplier',
+    description: 'Four-letter word scores are now multiplied by 1.2 after all other points.',
     rarity: 0.2,
     tier: PERSONAL_MODIFIER_TIERS.EPIC,
     tags: ['score', 'word-length'],
@@ -363,7 +376,22 @@ export const PERSONAL_MODIFIER_DEFINITIONS = {
     start_with: 0,
     effects: {
       lengthScoreMultiplier: {
-        4: 2
+        5: 1.3
+      }
+    }
+  },
+  semi_compact_double: {
+    key: 'semi_compact_double',
+    label: 'Semi Compact Multiplier',
+    description: 'Five-letter word scores are now multiplied by 1.3 after all other points.',
+    rarity: 0.2,
+    tier: PERSONAL_MODIFIER_TIERS.EPIC,
+    tags: ['score', 'word-length'],
+    maxStacks: 1,
+    start_with: 0,
+    effects: {
+      lengthScoreMultiplier: {
+        4: 1.3
       }
     }
   }
