@@ -695,6 +695,10 @@ export const useSinglePlayerGame = ({
       localMessage.value = 'That tile cannot take a boon.';
       return false;
     }
+    if (tile.status === "mustuse") {
+      localMessage.value = 'That tile cannot take a boon.';
+      return false;
+    }
 
     playerCards.value = {
       ...playerCards.value,

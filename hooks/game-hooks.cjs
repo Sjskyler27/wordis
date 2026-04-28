@@ -357,6 +357,9 @@ const useBoon = (roomCode, clientId, cardId, tileId) => {
   if (tile.locked) {
     return { success: false, error: 'That tile cannot take a boon' };
   }
+  if (tile.mustuse) {
+    return { success: false, error: 'That tile cannot take a boon' };
+  }
 
   state.cards[side].boons = keepTestingHand(state.cards[side].boons, cardId);
 
