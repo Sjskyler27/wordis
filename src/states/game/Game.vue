@@ -631,8 +631,9 @@ const {
     isMultiRoundTimerPausedByAttack.value = true;
   },
   onTimedSoloGainTime: (seconds) => {
-    const wasOutOfTime = timerRemainingSeconds.value <= 0;
+    const wasOutOfTime = timerRemainingSeconds.value <= 0 || multiRoundRun.timerRemainingSeconds <= 0;
     timerRemainingSeconds.value += seconds;
+    multiRoundRun.timerRemainingSeconds.value += seconds;
     if (wasOutOfTime && timerRemainingSeconds.value > 0) {
       // Recovering from timeout should fully return solo sprint to live play.
       timedSoloFinalWordSpent.value = false;
