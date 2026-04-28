@@ -316,14 +316,14 @@ export const PERSONAL_MODIFIER_DEFINITIONS = {
   attack_cache: {
     key: 'attack_cache',
     label: 'Attack Cache',
-    description: 'Immediately gain 3 attacks when selected.',
-    rarity: 9.35,
+    description: 'Immediately gain 2 attacks when selected.',
+    rarity: 0.25,
     tier: PERSONAL_MODIFIER_TIERS.COMMON,
     tags: ['attacks', 'immediate'],
     maxStacks: 20,
     start_with: 0,
     effects: {
-      immediateAttacks: 3
+      immediateAttacks: 2
     }
   },
   bright_letters: {
