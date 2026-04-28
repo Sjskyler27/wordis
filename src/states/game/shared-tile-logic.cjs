@@ -28,7 +28,7 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
   const MIN_DUPLICATE_WEIGHT = 0.18;
   const BASE_GOOD_MODIFIER_CHANCE = 0.08;
   const BASE_BAD_MODIFIER_CHANCE = 0.03;
-  const BASE_NEUTRAL_MODIFIER_CHANCE = 0.02;
+  const BASE_NEUTRAL_MODIFIER_CHANCE = 0.04;
   const BASE_GOOD_MODIFIER_CAP = 0.30;
   const BASE_BAD_MODIFIER_CAP = 0.20;
   const BASE_NEUTRAL_MODIFIER_CAP = 0.2;
@@ -50,9 +50,9 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
     pos8: 5,
     pos9: 6
   };
-  const GOOD_MODIFIERS = ['gold', 'firsttile', 'wild', 'royalPear', 'bankTile', 'gainboon', 'gainattack'];
+  const GOOD_MODIFIERS = ['gold', 'firsttile', 'royalPear', 'bankTile', 'gainboon', 'gainattack'];
   const BAD_MODIFIERS = ['zeroTile', 'mustuse', 'locked3', 'burningTile'];
-  const NEUTRAL_MODIFIERS = ['yinYang', 'ghostTile','bloodTile'];
+  const NEUTRAL_MODIFIERS = ['yinYang', 'ghostTile','bloodTile', 'wild'];
   const EMPTY_TILE_ANIMATION_STATE = {
     trigger: '',
     name: '',
