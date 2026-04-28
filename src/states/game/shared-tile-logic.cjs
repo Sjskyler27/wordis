@@ -16,6 +16,11 @@ const {
   createModifierDefinitions
 } = modifierDefinitionsApi || {};
 
+
+const GOOD_MODIFIERS = ['gold', 'firsttile', 'royalPear', 'bankTile', 'gainboon', 'gainattack'];
+const BAD_MODIFIERS = ['zeroTile', 'mustuse', 'locked3', 'burningTile'];
+const NEUTRAL_MODIFIERS = ['yinYang', 'ghostTile','bloodTile', 'wild'];
+
 const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {}, devLogging = false, testing = false }) => {
   const LETTER_KEYS = Object.keys(letterConfig);
   const LETTER_POOL = Object.entries(letterConfig).flatMap(([letter, config]) =>
@@ -50,9 +55,6 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
     pos8: 5,
     pos9: 6
   };
-  const GOOD_MODIFIERS = ['gold', 'firsttile', 'royalPear', 'bankTile', 'gainboon', 'gainattack'];
-  const BAD_MODIFIERS = ['zeroTile', 'mustuse', 'locked3', 'burningTile'];
-  const NEUTRAL_MODIFIERS = ['yinYang', 'ghostTile','bloodTile', 'wild'];
   const EMPTY_TILE_ANIMATION_STATE = {
     trigger: '',
     name: '',
@@ -1651,3 +1653,7 @@ if (typeof globalThis !== 'undefined') {
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = sharedTileLogicApi;
 }
+
+ export const BAD_TILES = BAD_MODIFIERS;
+ export const NEUTRAL_TILES = NEUTRAL_MODIFIERS;
+ export const GOOD_TILES = GOOD_MODIFIERS;
