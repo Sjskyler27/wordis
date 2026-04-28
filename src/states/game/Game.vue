@@ -425,6 +425,7 @@ const preferredLanguage = getPreferredLanguage();
 const SOLO_TIMER_SECONDS = isTestingMode ? 25 : 180;
 const timerRemainingSeconds = ref(SOLO_TIMER_SECONDS);
 const isSoloTimerPausedByAttack = ref(false);
+const isMultiRoundTimerPausedByAttack = ref(false);
 const timedModeTimerStarted = ref(false);
 const timedSoloFinalWordSpent = ref(false);
 const multiRoundFinalWordSpent = ref(false);
@@ -627,6 +628,7 @@ const {
   wordHistory,
   onTimedSoloPauseTime: () => {
     isSoloTimerPausedByAttack.value = true;
+    isMultiRoundTimerPausedByAttack.value = true;
   },
   onTimedSoloGainTime: (seconds) => {
     const wasOutOfTime = timerRemainingSeconds.value <= 0;
@@ -635,8 +637,10 @@ const {
       // Recovering from timeout should fully return solo sprint to live play.
       timedSoloFinalWordSpent.value = false;
       isSoloTimerPausedByAttack.value = false;
+      isMultiRoundTimerPausedByAttack.value = false;
       if (!isPaused.value) {
         startBotLoop();
+        startMultiRoundTimer()
         startSoloTimer();
       }
     }
@@ -1555,6 +1559,7 @@ const handleSubmit = async () => {
   if (isTimedSoloMode.value) {
     isSoloTimerPausedByAttack.value = false;
   }
+  isMultiRoundTimerPausedByAttack.value = false;
 
   const submitted = submitSinglePlayerWord(resolvedWord);
   if (!submitted) {
@@ -2091,6 +2096,7 @@ const handlePlayAgain = () => {
   resetActionMode();
   clearSelectionForSide(mySide.value);
   isSoloTimerPausedByAttack.value = false;
+  isMultiRoundTimerPausedByAttack.value = false;
   timedModeTimerStarted.value = false;
   timedSoloFinalWordSpent.value = false;
   pendingMultiRoundStartingScore.value = 0;
@@ -2198,6 +2204,10 @@ const startMultiRoundTimer = () => {
 
   window.clearInterval(multiRoundTimerId);
   multiRoundTimerId = window.setInterval(() => {
+    if (isMultiRoundTimerPausedByAttack.value) {
+      return;
+    }
+    
     multiRoundRun.setTimerRemainingSeconds(multiRoundRun.timerRemainingSeconds.value - 1);
     if (multiRoundRun.timerRemainingSeconds.value <= 0) {
       stopMultiRoundTimer();
@@ -2226,6 +2236,7 @@ watch(() => props.playMode, (nextMode) => {
     multiRoundFinalWordSpent.value = false;
     timedModeTimerStarted.value = false;
     pendingMultiRoundStartingScore.value = 0;
+    isMultiRoundTimerPausedByAttack.value = false;
     window.clearTimeout(multiRoundRewardTimeoutId);
     startMultiRoundTimer();
   } else {
@@ -2582,6 +2593,7 @@ const resetAndGoHome = () => {
   showHistoryOverlay.value = false;
   window.clearTimeout(historyOverlayTimeoutId);
   isSoloTimerPausedByAttack.value = false;
+  isMultiRoundTimerPausedByAttack.value = false;
   timedSoloFinalWordSpent.value = false;
   pendingMultiRoundStartingScore.value = 0;
   window.clearTimeout(multiRoundRewardTimeoutId);
