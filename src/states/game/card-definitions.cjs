@@ -149,7 +149,7 @@ const CARD_DEFINITIONS = {
   boon_pair: {
     kind: 'boon',
     label: 'Lost Royalty',
-    description: 'Give a random enemy tile the royal pair modifier.',
+    description: 'Give a tile the royal pair modifier.',
     rarityWeight: 0.12,
     effectType: 'apply_modifier',
     modifier: 'royalPear',
