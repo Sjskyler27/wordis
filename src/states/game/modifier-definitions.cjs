@@ -114,6 +114,7 @@ const createModifierDefinitions = ({ bloodTilePositionValues }) => ({
         startWithHalfScoreRoundedDown: true,
         positionBonusByIndex: bloodTilePositionValues
       },
+      canApply: ({ baseScore }) => baseScore <= 5,
       rarityWeight: 0.36,
       ui: {
         tileBackground: 'radial-gradient(circle at 26% 24%, rgba(255, 125, 125, 0.96) 0%, rgba(255, 125, 125, 0.96) 11%, rgba(120, 15, 21, 0.94) 12%, rgba(120, 15, 21, 0.94) 26%, rgba(28, 7, 12, 0.98) 27%, rgba(28, 7, 12, 0.98) 44%, rgba(182, 20, 34, 0.96) 45%, rgba(182, 20, 34, 0.96) 62%, rgba(24, 6, 10, 0.98) 63%, rgba(24, 6, 10, 0.98) 100%)',
