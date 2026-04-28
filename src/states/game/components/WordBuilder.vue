@@ -67,6 +67,7 @@
               :class="{
                 shaking: isShaking,
                 'built-tile-banned-letter': isBannedLetter(slot.tile),
+                'built-tile-disabled-gold': isDisabledGold(slot.tile),
                 'built-tile-muted-consonant': isZeroedConsonantSlot(slot.index),
                 'built-tile-controller-focus': controllerFocusedBuiltTileId === slot.tile.id
               }"
@@ -240,6 +241,7 @@ const hoveredTile = ref(null);
 const isTooltipVisible = ref(false);
 const tooltipPosition = ref({ x: 0, y: 0 });
 const canShowTooltip = computed(() => isTooltipVisible.value && !props.isMobile);
+const disabledGoldIds = ref([]);
 let tooltipTimeoutId = null;
 
 const wordSlots = computed(() => {
@@ -392,6 +394,9 @@ const getTileBadge = (tile) => {
   if (yinYangState === 'ahead') {
     return 'YANG';
   }
+  if(disabledGoldIds.value.includes(tile.id)){
+    return 'X1'
+  }
 
   return getModifierBadge(tile);
 };
@@ -433,6 +438,34 @@ const getTileLetter = (tile) => (tile?.baseLetter || tile?.letter || '').toUpper
 const isBannedLetter = (tile) => {
   const bannedLetters = new Set(props.scoreOptions?.roundModifierEffects?.bannedLetters || []);
   return bannedLetters.has(getTileLetter(tile));
+};
+
+const isDisabledGold = (tile) => {
+  // get selected gold ids
+  const goldIds = props.selectedTiles
+    .filter(t => t.status === 'gold')
+    .map(t => t.id);
+
+  if(!goldIds.length) return false;
+
+  // get all royals
+  const royals = new Set(props.selectedTiles.filter(t => t.status === 'royalPear'));
+
+  // if 2 or more royals all golds disabled
+
+  if (royals.size>1){
+    [disabledGoldIds.value] = goldIds;
+    return tile.status === 'gold'
+  }
+
+  // if 2 or more golds, don't disable the first selected gold
+
+  if (goldIds.length > 1) {
+    [, ...disabledGoldIds.value] = goldIds;
+    return disabledGoldIds.value.includes(tile.id);
+  }
+
+  return false;
 };
 const isVowelLetter = (letter = '') => ['A', 'E', 'I', 'O', 'U'].includes(letter.toUpperCase());
 const isConsonantTile = (tile) => {
@@ -785,6 +818,9 @@ button:focus{
 }
 
 .built-tile-muted-consonant {
+  filter: saturate(0.58) brightness(0.92);
+}
+.built-tile-disabled-gold {
   filter: saturate(0.58) brightness(0.92);
 }
 

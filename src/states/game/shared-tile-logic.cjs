@@ -875,6 +875,32 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
     return highestEntry ? new Set([highestEntry.index]) : new Set();
   };
 
+  const isDisabledGold = (tiles, tile) => {
+
+  // get selected gold ids
+  const goldIds = tiles
+    .filter(t => t.status === 'gold')
+    .map(t => t.id);
+
+  if(!goldIds.length) return false;
+
+  // get all royals
+  const royals = new Set(tiles.filter(t => t.status === 'royalPear'));
+
+  // if 2 or more royals all golds disabled
+  if (royals.size>1){
+    return tile.status === 'gold'
+  }
+
+  // if 2 or more golds, don't disable the first selected gold
+  if (goldIds.length > 1) {
+    const [, ...disabledGoldIds] = goldIds;
+    return disabledGoldIds.includes(tile.id);
+  }
+
+  return false;
+};
+
   const getWordScoreDetails = (tiles, options = {}) => {
     const personalModifierEffects = options.personalModifierEffects || options.personalModifiers || {};
     const lengthScoreBonus = personalModifierEffects.lengthScoreBonus || {};
@@ -904,7 +930,10 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
     const letterTotal = baseLetterTotal + firstTileBonus + positionBonus;
     const personalLengthBonus = lengthScoreBonus[tiles.length] || lengthScoreBonus[String(tiles.length)] || 0;
     const lengthBonus = getLengthBonus(tiles.length) + personalLengthBonus;
-    const baseWordMultiplier = tiles.reduce((total, tile) => total * (tile?.wordMultiplier || 1), 1);
+    // we need to know if a gold tile is disabled 
+
+
+    const baseWordMultiplier = tiles.reduce((total, tile) => total * (isDisabledGold(tiles, tile) ? 1 :  tile?.wordMultiplier || 1), 1);
     const comboWordMultiplier = Object.values(tiles.reduce((combos, tile) => {
       const pairWordMultiplier = getModifierDefinition(tile?.status).effects.pairWordMultiplier;
       if (!pairWordMultiplier?.status) {
