@@ -308,7 +308,7 @@ const overrideMessage = computed(() => {
   if (!hoveredTile.value) return null;
 
   return isDisabledGold(hoveredTile.value)
-    ? 'Only 1 multiplier modifier per word'
+    ? 'Only 1 multiplier tile modifier per word'
     : null;
 });
 
@@ -456,6 +456,13 @@ const getTileStyle = (tile, index = 0) => {
 
 const getBadgeStyle = (tile) => {
   const ui = getTileUi(tile);
+
+  if(disabledGoldIds.value.includes(tile.id)){
+    return {
+    background: 'pink',
+    color: 'red'
+  };
+  }
 
   return {
     background: ui.badgeBackground,
@@ -831,10 +838,11 @@ button:focus{
   z-index: 4;
 }
 
-.built-tile-muted-consonant {
-  filter: saturate(0.58) brightness(0.92);
-}
 .built-tile-disabled-gold {
+  filter: saturate(0.99) brightness(0.94);
+  background:  linear-gradient(180deg, #fff7d2 0%, #f4ce67ca 72%, #c68b1dbc 100%);
+}
+.built-tile-muted-consonant {
   filter: saturate(0.58) brightness(0.92);
 }
 
