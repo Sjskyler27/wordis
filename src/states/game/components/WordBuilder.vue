@@ -144,6 +144,8 @@
     </div>
     <TileHoverTooltip
       :tile="hoveredTile"
+      :overrideMessage="overrideMessage"
+      :overrideBadge="overrideBadge"
       :visible="canShowTooltip"
       :x="tooltipPosition.x"
       :y="tooltipPosition.y"
@@ -241,7 +243,6 @@ const hoveredTile = ref(null);
 const isTooltipVisible = ref(false);
 const tooltipPosition = ref({ x: 0, y: 0 });
 const canShowTooltip = computed(() => isTooltipVisible.value && !props.isMobile);
-const disabledGoldIds = ref([]);
 let tooltipTimeoutId = null;
 
 const wordSlots = computed(() => {
@@ -269,6 +270,46 @@ const wordSlots = computed(() => {
     milestoneIndex: slot.bonus ? milestoneSlots.findIndex((entry) => entry.index === slot.index) : -1,
     milestoneCount
   }));
+});
+const disabledGoldIds = computed(() => {
+  // get golds 
+  const goldIds = props.selectedTiles
+    .filter(t => t.status === 'gold')
+    .map(t => t.id);
+    // get pairs
+  const royalCount = props.selectedTiles
+    .filter(t => t.status === 'royalPear')
+    .length;
+    // 2 pairs all golds disable
+  if (royalCount > 1) {
+    return goldIds;
+  }
+  // if more than one gold return all after 1st 
+  if (goldIds.length > 1) {
+    return goldIds.slice(1);
+  }
+  return [];
+
+});
+
+const isDisabledGold = (tile) => {
+  return disabledGoldIds.value.includes(tile.id);
+};
+
+
+const overrideBadge = computed(() => {
+  if (!hoveredTile.value) return null;
+
+  return isDisabledGold(hoveredTile.value)
+    ? 'X1'
+    : null;
+});
+const overrideMessage = computed(() => {
+  if (!hoveredTile.value) return null;
+
+  return isDisabledGold(hoveredTile.value)
+    ? 'Only 1 multiplier modifier per word'
+    : null;
 });
 
 const minimumVowels = computed(() => props.scoreOptions?.roundModifierEffects?.minimumVowels || 0);
@@ -440,33 +481,6 @@ const isBannedLetter = (tile) => {
   return bannedLetters.has(getTileLetter(tile));
 };
 
-const isDisabledGold = (tile) => {
-  // get selected gold ids
-  const goldIds = props.selectedTiles
-    .filter(t => t.status === 'gold')
-    .map(t => t.id);
-
-  if(!goldIds.length) return false;
-
-  // get all royals
-  const royals = new Set(props.selectedTiles.filter(t => t.status === 'royalPear'));
-
-  // if 2 or more royals all golds disabled
-
-  if (royals.size>1){
-    [disabledGoldIds.value] = goldIds;
-    return tile.status === 'gold'
-  }
-
-  // if 2 or more golds, don't disable the first selected gold
-
-  if (goldIds.length > 1) {
-    [, ...disabledGoldIds.value] = goldIds;
-    return disabledGoldIds.value.includes(tile.id);
-  }
-
-  return false;
-};
 const isVowelLetter = (letter = '') => ['A', 'E', 'I', 'O', 'U'].includes(letter.toUpperCase());
 const isConsonantTile = (tile) => {
   const letter = getTileLetter(tile);

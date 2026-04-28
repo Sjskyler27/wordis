@@ -14,9 +14,9 @@
     >
       x
     </button>
-    <span class="tile-hover-badge">{{ badgeLabel }}</span>
+    <span class="tile-hover-badge">{{ overrideBadge || badgeLabel }}</span>
     <strong>{{ title }}</strong>
-    <p>{{ description }}</p>
+    <p>{{ overrideMessage || description }}</p>
   </div>
 </template>
 
@@ -44,6 +44,14 @@ const props = defineProps({
     default: 0
   },
   dismissible: {
+    type: Boolean,
+    default: false
+  },
+  overrideMessage: {
+    type: Boolean,
+    default: false
+  },
+  overrideBadge: {
     type: Boolean,
     default: false
   }
