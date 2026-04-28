@@ -242,10 +242,10 @@ export const PERSONAL_MODIFIER_DEFINITIONS = {
     rarity: 0.4,
     tier: PERSONAL_MODIFIER_TIERS.COMMON,
     tags: ['opening-rack', 'good-cap'],
-    maxStacks: 5,
-    start_with: 1,
+    maxStacks: 3,
+    start_with: 0,
     effects: {
-      openingGoodChanceBonus: .99
+      openingGoodChanceBonus: 0.25
     }
   },
   time_reserve: {
