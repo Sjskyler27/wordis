@@ -119,25 +119,25 @@ export const ROUND_MODIFIER_DEFINITIONS = {
   pressure_timer_medium: {
     key: 'pressure_timer_medium',
     label: 'Tight Target',
-    description: 'The round has 18 less seconds and needs 30 more points.',
+    description: 'The round has 15 less seconds and needs 20 more points.',
     difficulty: ROUND_MODIFIER_DIFFICULTIES.MEDIUM,
     force_test: false,
     tags: ['time', 'target-score'],
     roundEffects: {
-      timeSecondsDelta: -18,
-      targetScoreDelta: 30
+      timeSecondsDelta: -15,
+      targetScoreDelta: 20
     }
   },
   pressure_timer_hard: {
     key: 'pressure_timer_hard',
     label: 'Brutal Target',
-    description: 'The round has 25 less seconds and needs 45 more points.',
+    description: 'The round has 20 less seconds and needs 30 more points.',
     difficulty: ROUND_MODIFIER_DIFFICULTIES.HARD,
     force_test: false,
     tags: ['time', 'target-score'],
     roundEffects: {
-      timeSecondsDelta: -25,
-      targetScoreDelta: 45
+      timeSecondsDelta: -20,
+      targetScoreDelta: 30
     }
   },
   shuffle_after_submit: {
