@@ -80,7 +80,7 @@ export const useSinglePlayerGame = ({
   };
   const modifierProfile = () => (isTimedSoloMode.value || isMultiRoundMode?.value) ? 'solo' : 'bot';
   const attackDeck = () => isTimedSoloMode.value ? 'timed_solo' : 'duel';
-  const shouldDrawAttacks = () => isTimedSoloMode.value || botEnabled.value;
+  const shouldDrawAttacks = () => true; // may set to false for multiplayer if too rough
   const getHeldCards = (side, kind) => {
     const handKey = kind === 'boon' ? 'boons' : 'attacks';
     return playerCards.value[side]?.[handKey] || [];
