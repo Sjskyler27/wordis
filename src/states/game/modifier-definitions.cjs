@@ -212,7 +212,6 @@ const createModifierDefinitions = ({ bloodTilePositionValues }) => ({
       description: 'Worth +3, but disappears if you leave it unused.',
       effects: { fadesIfUnused: true, bonusScore: 3 },
       rarityWeight: 0.52,
-      canApply: ({ baseScore }) => baseScore <= 4,
       ui: {
         tileBackground: 'linear-gradient(180deg, rgba(242, 250, 255, 0.88) 0%, rgba(198, 218, 236, 0.78) 58%, rgba(131, 156, 181, 0.74) 100%)',
         tileShadow: 'inset 0 -4px 0 rgba(82, 105, 131, 0.18), 0 10px 18px rgba(44, 61, 86, 0.16), 0 0 0 1px rgba(236, 247, 255, 0.48)',
@@ -222,12 +221,10 @@ const createModifierDefinitions = ({ bloodTilePositionValues }) => ({
       }
     },
     burningTile: {
-      noSinglePlayer: true,
       badge: 'BURN',
       description: 'Scores as 1 if used. If left unused, it burns you for -3.',
       effects: { setScore: 1, idleScorePenalty: 3 },
       rarityWeight: 0.5,
-      canApply: ({ baseScore }) => baseScore <= 4,
       animations: {
         onNewTurn: 'blaze'
       },
