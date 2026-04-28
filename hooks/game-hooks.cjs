@@ -7,7 +7,8 @@ const { validateWord } = require('./word-validator.cjs');
 const { isTestingMode, isDevMode } = require('./env.cjs');
 const WINNING_SCORE = isTestingMode ? 40 : 250;
 const {
-  createSharedTileLogic
+  createSharedTileLogic,
+  BAD_TILES
 } = require('../src/states/game/shared-tile-logic.cjs');
 
 const {
@@ -330,7 +331,7 @@ const useBoon = (roomCode, clientId, cardId, tileId) => {
   if (card.effectType === 'clear_negative_modifiers') {
     state.cards[side].boons = keepTestingHand(state.cards[side].boons, cardId);
     state.tiles[side] = state.tiles[side].map((entry) => {
-      if (!['zeroTile', 'mustuse', 'locked3', 'ghostTile', 'burningTile'].includes(entry.status)) {
+      if (!BAD_TILES.includes(entry.status)) {
         return entry;
       }
 
