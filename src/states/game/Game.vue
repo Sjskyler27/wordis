@@ -1564,7 +1564,6 @@ const handleSubmit = async () => {
   if (secondsRestored) {
     localMessage.value = `${localMessage.value} Restored ${secondsRestored} seconds.`;
   }
-  startTimedModeTimerAfterFirstWord();
 
   if (isMultiRoundMode.value) {
     if (playerScores.value.host >= multiRoundRun.currentTargetScore.value) {
@@ -1953,6 +1952,8 @@ const moveControllerTileFocus = (direction) => {
 };
 
 const handleTileClickWithCards = (tile, side) => {
+  // start timer as soon as user starts playing
+  startTimedModeTimerAfterFirstTileClicked()
   if (effectiveGameEnded.value) {
     return;
   }
@@ -2205,7 +2206,7 @@ const startMultiRoundTimer = () => {
   }, 1000);
 };
 
-const startTimedModeTimerAfterFirstWord = () => {
+const startTimedModeTimerAfterFirstTileClicked = () => {
   if (!isTimedSoloMode.value && !isMultiRoundMode.value) {
     return;
   }
