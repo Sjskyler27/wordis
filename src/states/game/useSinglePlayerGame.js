@@ -20,6 +20,7 @@ import {
 } from './tile-logic.js';
 import { isTestingMode } from './testing.js';
 import { BOT_DIFFICULTIES } from './play-config.js';
+import { BAD_TILES } from './shared-tile-logic.cjs';
 
 export const useSinglePlayerGame = ({
   isMultiplayer,
@@ -643,10 +644,13 @@ export const useSinglePlayerGame = ({
         }
       };
 
+      // console.log('player' + JSON.stringify(playerTiles.value))
+
       playerTiles.value = {
         ...playerTiles.value,
         [side]: playerTiles.value[side].map((entry) => {
-          if (!CARD_DEFINITIONS[entry.status] || !['zeroTile', 'mustuse', 'locked3', 'ghostTile', 'burningTile'].includes(entry.status)) {
+          const tiles = BAD_TILES; 
+          if (!tiles.includes(entry.status)) {
             return entry;
           }
 
