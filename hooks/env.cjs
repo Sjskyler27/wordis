@@ -20,8 +20,8 @@ const readEnvValue = (key) => {
   }
 };
 
-const isTestingMode = readEnvValue('VITE_TESTING') === 't';
-const isDevMode = readEnvValue('VITE_MODE') === 'dev';
+const isTestingMode = readEnvValue('VITE_TESTING') === 't' || localStorage.getItem('testModifiers') === '1';
+const isDevMode = readEnvValue('VITE_MODE') === 'dev' || localStorage.getItem('devMode') === '1';
 
 module.exports = {
   isTestingMode,

@@ -14,8 +14,8 @@ const sharedTileLogic = createSharedTileLogic({
   letterConfig,
   wordBonuses,
   milestoneRewards,
-  devLogging: import.meta.env.VITE_MODE === 'dev',
-  testing: import.meta.env.VITE_TESTING === 't'
+  devLogging: import.meta.env.VITE_MODE === 'dev' || localStorage.getItem('devMode') === '1',
+  testing: import.meta.env.VITE_TESTING === 't' || localStorage.getItem('testModifiers') === '1'
 });
 
 const {
