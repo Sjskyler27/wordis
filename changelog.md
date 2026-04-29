@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-04-29 0.0.37
+
+Start: 2026-04-29 00:15 EDT
+Stop: 2026-04-29 01:10 EDT
+
+- Moved the Game.vue scoped styles into Game.scss.
+- Extracted MachineBackground, GameCardsPanel, ScoreRibbon, and GameStatusCards from Game.vue without changing gameplay behavior.
+- Extracted side drawer state, card panel state, and score ribbon state into small composables in separate commits.
+- Verified the refactor slices with `npm run build`.
+
 ## 4-26 10:33am 0.35
 - fixed my typos from 3am coding bot now auto updates difficulty
 
