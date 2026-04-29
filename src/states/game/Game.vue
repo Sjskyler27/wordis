@@ -24,45 +24,21 @@
         @click="closeSideDrawer"
       ></button>
       <aside class="side-stack" :class="{ 'side-stack-drawer': isSideDrawerMode, open: isSideDrawerOpen }">
-        <div class="bonus-card accent-blue">
-          <span class="bonus-kicker" v-if="!isMobile">Game mode</span>
-          <strong v-if="!isMobile">{{ modeTitle }}</strong>
-          <p v-if="props.isMultiplayer">
-            <button type="button" class="room-code-button" @click="copyRoomCode">
-              Room {{ roomCode }}
-            </button>
-            · {{ isHost ? 'Host lane' : 'Opponent lane' }}
-          </p>
-          <p>{{ modeSubtitle }}</p>
-          <div v-if="isMultiRoundMode" class="round-modifier-panel">
-            <span class="round-modifier-heading">Round Modifiers</span>
-            <div class="round-modifier-list">
-            <template v-if="activeRoundModifiers.length">
-              <button
-                v-for="modifier in activeRoundModifiers"
-                :key="modifier.key"
-                type="button"
-                class="round-modifier-chip"
-                :aria-label="`${modifier.label}: ${modifier.description}`"
-              >
-                <span>{{ modifier.label }}</span>
-                <small>{{ modifier.description }}</small>
-              </button>
-            </template>
-            <span v-else class="round-modifier-empty">No round modifiers</span>
-            </div>
-          </div>
-        </div>
-
-
-        <div class="bonus-card accent-red">
-          <span class="bonus-kicker">Info</span>
-          <strong>{{ localMessage || statusHeadline }}</strong>
-          <p v-if="props.isMultiplayer && !gameStarted">Waiting for opponent to connect</p>
-          <p v-else-if="isTimedSoloMode">Timer ends the run, so play fast and bank points.</p>
-          <p v-else-if="isMultiRoundMode">Clear the current target to advance the run.</p>
-          <p v-else>Words must be 4 letters, larger words score bonus points and may gain cards. Only used letters are replaced.</p>
-        </div>
+        <GameStatusCards
+          :is-mobile="isMobile"
+          :is-multiplayer="props.isMultiplayer"
+          :room-code="roomCode"
+          :is-host="isHost"
+          :mode-title="modeTitle"
+          :mode-subtitle="modeSubtitle"
+          :is-multi-round-mode="isMultiRoundMode"
+          :active-round-modifiers="activeRoundModifiers"
+          :local-message="localMessage"
+          :status-headline="statusHeadline"
+          :game-started="gameStarted"
+          :is-timed-solo-mode="isTimedSoloMode"
+          @copy-room-code="copyRoomCode"
+        />
         <GameCardsPanel
           :is-mobile="isMobile"
           :card-summary="cardSummary"
@@ -259,6 +235,7 @@ import { useMultiRoundRun } from './multiround/useMultiRoundRun.js';
 import { validateWord } from './word-validator.js';
 import { isTestingMode } from './testing.js';
 import GameCardsPanel from './components/GameCardsPanel.vue';
+import GameStatusCards from './components/GameStatusCards.vue';
 import GameLane from './components/GameLane.vue';
 import HistoryOverlay from './components/HistoryOverlay.vue';
 import MachineBackground from './components/MachineBackground.vue';
