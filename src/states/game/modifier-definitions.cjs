@@ -126,7 +126,7 @@ const createModifierDefinitions = ({ bloodTilePositionValues }) => ({
     },
     shimmer: {
       badge: 'SHMR',
-      description: 'Magic-oil tile. Its letter shifts every 8 seconds while in your rack and scores that letter +1.',
+      description: 'Shimmer  tile. Its letter shifts every 8 seconds while in your rack and scores that letter +1.',
       effects: {
         bonusScore: 1,
         shimmerIntervalMs: 8000

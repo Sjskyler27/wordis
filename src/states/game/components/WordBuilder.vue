@@ -453,7 +453,7 @@ const getTileStyle = (tile, index = 0) => {
     '--built-tile-text-color': ui.textColor,
     '--built-tile-letter-stroke': tile.status === 'yinYang' || tile.status === 'rustingTile' ? '1px rgba(255, 255, 255, 0.92)' : '0 transparent',
     '--built-tile-rust-coverage': `${Math.min(120, (((tile.rustTurns  || 0) + 1) * 20) + 18)}%`,
-    '--built-tile-shimmer-cycle': `${tile.shimmerIntervalMs || 8000}ms`,
+    '--built-tile-shimmer-cycle': `${tile.shimmerIntervalMs * 2 || 16000}ms`, // idle is slower
     '--score-pop-delay': `${index * 110}ms`
   };
 };
@@ -847,7 +847,7 @@ button:focus{
   filter: blur(0.5px) saturate(1.35);
   mix-blend-mode: screen;
   opacity: 0.8;
-  animation: built-shimmer-oil-cycle var(--built-tile-shimmer-cycle, 8000ms) linear infinite;
+  animation: built-shimmer-oil-cycle var(--built-tile-shimmer-cycle, 16000ms) linear infinite;
 }
 
 .built-tile-rusting::before {

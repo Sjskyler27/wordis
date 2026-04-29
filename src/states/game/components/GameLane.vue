@@ -891,7 +891,7 @@ onBeforeUnmount(() => {
 }
 
 .tile-shimmer-idle::before {
-  animation: shimmer-idle-oil-cycle 8000ms linear infinite;
+  animation: shimmer-idle-oil-cycle 16000ms linear infinite;
 }
 
 .tile-rusting::before {
@@ -1076,15 +1076,15 @@ onBeforeUnmount(() => {
     filter: blur(0.6px) saturate(1.12) brightness(1);
   }
   58% {
-    transform: rotate(180deg) scale(1.02);
+    transform: rotate(90deg) scale(1.02);
     filter: blur(0.54px) saturate(1.22) brightness(1.04);
   }
   84% {
-    transform: rotate(420deg) scale(1.06);
+    transform: rotate(240deg) scale(1.06);
     filter: blur(0.46px) saturate(1.52) brightness(1.12);
   }
   100% {
-    transform: rotate(720deg) scale(1.08);
+    transform: rotate(360deg) scale(1.08);
     filter: blur(0.42px) saturate(1.72) brightness(1.2);
   }
 }
@@ -1095,15 +1095,15 @@ onBeforeUnmount(() => {
     filter: blur(0.6px) saturate(1.12) brightness(1);
   }
   58% {
-    transform: rotate(180deg) scale(1.02);
+    transform: rotate(90deg) scale(1.02);
     filter: blur(0.54px) saturate(1.22) brightness(1.04);
   }
   84% {
-    transform: rotate(420deg) scale(1.06);
+    transform: rotate(240deg) scale(1.06);
     filter: blur(0.46px) saturate(1.52) brightness(1.12);
   }
   100% {
-    transform: rotate(720deg) scale(1.08);
+    transform: rotate(360deg) scale(1.08);
     filter: blur(0.42px) saturate(1.72) brightness(1.2);
   }
 }
