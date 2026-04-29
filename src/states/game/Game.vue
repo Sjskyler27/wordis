@@ -233,6 +233,7 @@ import { useWordBuilder } from './useWordBuilder.js';
 import { useSinglePlayerGame } from './useSinglePlayerGame.js';
 import { useMultiRoundRun } from './multiround/useMultiRoundRun.js';
 import { useCardPanelState } from './composables/useCardPanelState.js';
+import { useScoreRibbonState } from './composables/useScoreRibbonState.js';
 import { useSideDrawerState } from './composables/useSideDrawerState.js';
 import { validateWord } from './word-validator.js';
 import { isTestingMode } from './testing.js';
@@ -915,31 +916,11 @@ const statusHeadline = computed(() => {
 const boardFrameStyle = computed(() => ({
   zoom: props.gameZoom || 1
 }));
-const scoreGap = computed(() => {
-  if (!showOpponentLane.value) {
-    return 0;
-  }
-
-  return Math.abs(leftLane.value.score - rightLane.value.score);
-});
-const scoreGapTier = computed(() => {
-  if (scoreGap.value >= 120) {
-    return 'epic';
-  }
-
-  if (scoreGap.value >= 60) {
-    return 'high';
-  }
-
-  if (scoreGap.value >= 25) {
-    return 'medium';
-  }
-
-  if (scoreGap.value >= 10) {
-    return 'low';
-  }
-
-  return 'none';
+const { scoreBoxClass } = useScoreRibbonState({
+  showOpponentLane,
+  isTimedSoloMode,
+  leftLane,
+  rightLane
 });
 
 const clamp01 = (value) => Math.max(0, Math.min(1, value));
@@ -1004,24 +985,6 @@ const backgroundMoodStyle = computed(() => {
     '--bg-saturate': `${1.03 + (progress * 0.16)}`
   };
 });
-const scoreBoxClass = (side) => {
-  if (!showOpponentLane.value || isTimedSoloMode.value || scoreGapTier.value === 'none') {
-    return {};
-  }
-
-  const sideScore = side === 'host' ? leftLane.value.score : rightLane.value.score;
-  const otherScore = side === 'host' ? rightLane.value.score : leftLane.value.score;
-
-  return {
-    'score-gap-low': scoreGapTier.value === 'low',
-    'score-gap-medium': scoreGapTier.value === 'medium',
-    'score-gap-high': scoreGapTier.value === 'high',
-    'score-gap-epic': scoreGapTier.value === 'epic',
-    'score-box-leading': sideScore > otherScore,
-    'score-box-trailing': sideScore < otherScore
-  };
-};
-
 const triggerInvalidWordShake = () => {
   invalidWordPulse.value += 1;
 };
