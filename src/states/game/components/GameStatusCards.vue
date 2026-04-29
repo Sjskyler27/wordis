@@ -1,5 +1,5 @@
 <template>
-  <div class="bonus-card accent-blue">
+  <div class="bonus-card accent-blue" :class="{ 'machine-status-card': isBotMode }">
     <span class="bonus-kicker" v-if="!isMobile">Game mode</span>
     <strong v-if="!isMobile">{{ modeTitle }}</strong>
     <p v-if="isMultiplayer">
@@ -29,7 +29,7 @@
     </div>
   </div>
 
-  <div class="bonus-card accent-red">
+  <div class="bonus-card accent-red" :class="{ 'machine-status-card': isBotMode }">
     <span class="bonus-kicker">Info</span>
     <strong>{{ localMessage || statusHeadline }}</strong>
     <p v-if="isMultiplayer && !gameStarted">Waiting for opponent to connect</p>
@@ -66,6 +66,10 @@ defineProps({
   modeSubtitle: {
     type: String,
     required: true
+  },
+  isBotMode: {
+    type: Boolean,
+    default: false
   },
   isMultiRoundMode: {
     type: Boolean,
@@ -245,24 +249,23 @@ defineProps({
   background: linear-gradient(180deg, rgba(164, 38, 68, 0.95), rgba(105, 22, 54, 0.88));
 }
 
-:global(.machine-game-shell) .bonus-card {
+.bonus-card.machine-status-card {
   background: rgba(25, 38, 51, 0.9);
   border-color: rgba(166, 230, 244, 0.18);
 }
 
-:global(.machine-game-shell) .accent-red {
+.bonus-card.machine-status-card.accent-red {
   background: rgba(123,133,133, 0.95);
   border-color: rgba(166, 230, 244, 0.18);
 }
 
-:global(.machine-game-shell) .bonus-card.accent-blue,
-:global(.machine-game-shell) .bonus-card.accent-red {
+.bonus-card.machine-status-card {
   box-shadow:
     inset 0 1px 0 rgba(214, 248, 255, 0.1),
     0 14px 24px rgba(6, 18, 28, 0.2);
 }
 
-:global(.machine-game-shell) .bonus-card::after {
+.bonus-card.machine-status-card::after {
   width: auto;
   height: auto;
   border-radius: 0;

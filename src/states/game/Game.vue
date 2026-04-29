@@ -31,6 +31,7 @@
           :is-host="isHost"
           :mode-title="modeTitle"
           :mode-subtitle="modeSubtitle"
+          :is-bot-mode="isBotMode"
           :is-multi-round-mode="isMultiRoundMode"
           :active-round-modifiers="activeRoundModifiers"
           :local-message="localMessage"
