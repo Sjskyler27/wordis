@@ -2542,6 +2542,11 @@ const syncWindowWidth = () => {
   windowWidth.value = window.innerWidth;
 };
 
+const showTutorialFromSettings = () => {
+  showHistoryOverlay.value = false;
+  showTutorialOverlay.value = true;
+};
+
 onMounted(() => {
   if (!localStorage.getItem(GAME_TUTORIAL_STORAGE_KEY)) {
     showTutorialOverlay.value = true;
@@ -2558,12 +2563,14 @@ onMounted(() => {
   roundModifierTickIntervalId = window.setInterval(tickTimedGameEffects, 250);
   window.addEventListener('resize', syncWindowWidth);
   window.addEventListener('keydown', handleKeydown);
+  window.addEventListener('wordis:show-tutorial', showTutorialFromSettings);
   startGameMusic({ restart: true });
 });
 
 onBeforeUnmount(() => {
   window.removeEventListener('resize', syncWindowWidth);
   window.removeEventListener('keydown', handleKeydown);
+  window.removeEventListener('wordis:show-tutorial', showTutorialFromSettings);
   stopSoloTimer();
   stopMultiRoundTimer();
   stopGameMusic();

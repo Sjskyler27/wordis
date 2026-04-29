@@ -56,6 +56,7 @@
       :zoom="zoom"
       :gameZoom="gameZoom"
       :nativeControllerSupport="nativeControllerSupport"
+      :canShowHowToPlay="isGameState"
       :names="names"
       @volumeChange="setVolume"
       @musicVolumeChange="setmusicVolume"
@@ -70,6 +71,7 @@
       @game="goToGame"
       @type="goToType"
       @feedback="showFeedback = true"
+      @showTutorial="showHowToPlay"
       @close="showSettings = false"></Settings>
       <AuthPrompt v-if="showAuthModal" @close="showAuthModal = false" @loggedIn="userLoggedIn" />
       <AssetLoader :monsterRoster="monsterRoster"/>
@@ -80,7 +82,7 @@
   </template>
   
 <script setup>
-import { ref, shallowRef, onMounted, onBeforeUnmount, computed } from "vue";
+import { ref, shallowRef, onMounted, onBeforeUnmount, computed, nextTick } from "vue";
 import Game from "/src/states/game/Game.vue";
 import MultiplayerScreen from "./states/game/MultiplayerScreen.vue";
 import MultiRoundScreen from "./states/game/MultiRoundScreen.vue";
@@ -257,6 +259,7 @@ const showFeedback = ref(false)
   let names = localStorage.getItem('names') || '{"player1":"Player 1","player2":"Player 2","player3":"Player 3","player4":"Player 4"}'
 
   const showSettings = ref(false)
+  const isGameState = computed(() => currentState.value === Game);
 
   function setVolume(val) {
     volume.value = val
@@ -433,6 +436,13 @@ const continueGame = () => {
     resetMultiplayerGame();
     reloader.value += 1;
     currentState.value = Game;
+  };
+
+  const showHowToPlay = () => {
+    showSettings.value = false;
+    nextTick(() => {
+      window.dispatchEvent(new CustomEvent('wordis:show-tutorial'));
+    });
   };
   
 

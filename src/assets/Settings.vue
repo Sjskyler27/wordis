@@ -53,6 +53,9 @@
         <div class="menu-section">
           <button ref="button3" class="modal-button" @click="emit('feedback')">Feedback</button>
         </div>
+        <div v-if="props.canShowHowToPlay" class="menu-section">
+          <button ref="button5" class="modal-button" @click="emit('showTutorial')">How To Play</button>
+        </div>
         <div v-if="!hideControllerSupport" class="menu-section">
           <button title="requires refresh" ref="button4" class="modal-button" @click="toggleController">
             Native Controller: {{ nativeControllerSupport }}
@@ -78,6 +81,7 @@ const props = defineProps({
   gameZoom: Number,
   shopZoom: Number,
   nativeControllerSupport: Boolean,
+  canShowHowToPlay: Boolean,
 });
 
 const emit = defineEmits([
@@ -91,7 +95,8 @@ const emit = defineEmits([
   "reset",
   "NativeControllerChange",
   "home",
-  "feedback"
+  "feedback",
+  "showTutorial"
 ]);
 
 const activeTab = ref("game");
@@ -100,7 +105,8 @@ const button1 = ref(null);
 const button2 = ref(null);
 const button3 = ref(null);
 const button4 = ref(null);
-const buttons = [button1, button2, button3, button4];
+const button5 = ref(null);
+const buttons = [button1, button2, button3, button5, button4];
 
 onMounted(() => {
   button1.value.focus();
@@ -117,15 +123,16 @@ const handleKeyDown = (e) => {
     return;
   }
 
-  const currentIndex = buttons.findIndex((btn) => btn.value === document.activeElement);
+  const focusableButtons = buttons.filter((btn) => btn.value);
+  const currentIndex = focusableButtons.findIndex((btn) => btn.value === document.activeElement);
   if (e.key === "ArrowDown") {
     e.preventDefault();
-    const nextIndex = (currentIndex + 1) % buttons.length;
-    buttons[nextIndex].value.focus();
+    const nextIndex = (currentIndex + 1) % focusableButtons.length;
+    focusableButtons[nextIndex].value.focus();
   } else if (e.key === "ArrowUp") {
     e.preventDefault();
-    const prevIndex = (currentIndex - 1 + buttons.length) % buttons.length;
-    buttons[prevIndex].value.focus();
+    const prevIndex = (currentIndex - 1 + focusableButtons.length) % focusableButtons.length;
+    focusableButtons[prevIndex].value.focus();
   }
 };
 
