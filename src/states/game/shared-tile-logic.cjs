@@ -22,6 +22,7 @@ const BAD_MODIFIERS = ['zeroTile', 'mustuse', 'locked3', 'burningTile'];
 const NEUTRAL_MODIFIERS = ['yinYang', 'ghostTile','bloodTile', 'wild'];
 
 const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {}, devLogging = false, testing = false }) => {
+  const isDevLoggingEnabled = () => typeof devLogging === 'function' ? Boolean(devLogging()) : Boolean(devLogging);
   const LETTER_KEYS = Object.keys(letterConfig);
   const LETTER_POOL = Object.entries(letterConfig).flatMap(([letter, config]) =>
     Array.from({ length: config.count }, () => letter)
@@ -152,7 +153,7 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
       if (profileName === 'solo') {
         return !definition.noSinglePlayer;
       }
-      if(devLogging)console.log('profile'+ profileName)
+      if (isDevLoggingEnabled()) console.log('profile'+ profileName)
 
       if (profileName === 'duel' || profileName === 'bot') {
         return !definition.noMultiPlayer;
@@ -265,7 +266,7 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
       openingGoodChanceBonus
     };
 
-    if(devLogging){
+    if (isDevLoggingEnabled()) {
       // update logs for actual chances
       console.log('[modifier-chances]', {
         profileName,
@@ -465,7 +466,7 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
     eligibleNeutralModifiers = []
   }) => {
 
-    if (!devLogging) {
+    if (!isDevLoggingEnabled()) {
       return;
     }
 
@@ -510,7 +511,7 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
     eligibleBadModifiers = [],
     eligibleNeutralModifiers = [],
   }) => {
-    if (!devLogging) {
+    if (!isDevLoggingEnabled()) {
       return;
     }
 
@@ -646,10 +647,10 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
 
   const rollTileModifier = (side, scores = {}, context = {}, chanceOverrides = {}) => {
     const modifierProfile = chanceOverrides.modifierProfile || 'solo';
-    console.log('ROLL MODIFIER FOR '+ side + 'on'+modifierProfile )
+    if (isDevLoggingEnabled()) console.log('ROLL MODIFIER FOR '+ side + 'on'+modifierProfile )
     
     const personalModifierEffects = chanceOverrides.personalModifierEffects || {};
-    if(devLogging)console.log(modifierProfile)
+    if (isDevLoggingEnabled()) console.log(modifierProfile)
     const baseProfile = getModifierProfile(modifierProfile);
     const profile = {
       ...baseProfile,
@@ -1495,7 +1496,7 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
           turnCount: options.turnCount || 0
         });
       });
-      if(devLogging) console.log(nextTiles) // logs something callled status so modifier is determined by this point 
+      if (isDevLoggingEnabled()) console.log(nextTiles) // logs something callled status so modifier is determined by this point 
 
       let resolvedTiles = nextTiles;
       if (roundModifierEffects.mustTileEachTurn) {

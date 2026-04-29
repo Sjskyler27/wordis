@@ -15,12 +15,23 @@ if (typeof createSharedTileLogic !== 'function') {
   throw new Error('Shared tile logic failed to initialize');
 }
 
+const readLocalStorageFlag = (keys = []) => {
+  if (typeof localStorage === 'undefined') {
+    return false;
+  }
+
+  return keys.some((key) => {
+    const value = localStorage.getItem(key);
+    return value === '1' || value === 'true' || value === 'yes';
+  });
+};
+
 const sharedTileLogic = createSharedTileLogic({
   letterConfig,
   wordBonuses,
   milestoneRewards,
-  devLogging: import.meta.env.VITE_MODE === 'dev' || localStorage.getItem('devMode') === '1',
-  testing: import.meta.env.VITE_TESTING === 't' || localStorage.getItem('testModifiers') === '1'
+  devLogging: () => import.meta.env.VITE_MODE === 'dev' || readLocalStorageFlag(['devMode', 'devLogging', 'wordisDevLogging']),
+  testing: import.meta.env.VITE_TESTING === 't' || readLocalStorageFlag(['testModifiers'])
 });
 
 const {

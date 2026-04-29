@@ -89,9 +89,9 @@
   },
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
-    "build:wavedash": "VITE_WAVEDASH=true vite build",
-    "build:app": "vite build && electron-builder",
+    "build": "VITE_MODE=prod vite build",
+    "build:wavedash": "VITE_MODE=prod VITE_WAVEDASH=true vite build",
+    "build:app": "VITE_MODE=prod vite build && electron-builder",
     "preview": "vite preview",
     "electron": "electron .",
     "start": "concurrently \"vite\" \"npm:electron\"",
