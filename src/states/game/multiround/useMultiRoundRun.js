@@ -20,25 +20,50 @@ const chooseRandomEntry = (entries = []) => {
   return entries[Math.floor(Math.random() * entries.length)] || null;
 };
 
+const getCantCombineWith = (modifierKey) => {
+  const definition = getRoundModifierDefinition(modifierKey);
+  return new Set(definition?.cantCombineWith || []);
+};
+
+const canAddRoundModifier = (modifierKey, selectedKeys = []) => {
+  if (selectedKeys.includes(modifierKey)) {
+    return false;
+  }
+
+  const blockedByCandidate = getCantCombineWith(modifierKey);
+  return selectedKeys.every((selectedKey) => {
+    return !blockedByCandidate.has(selectedKey) && !getCantCombineWith(selectedKey).has(modifierKey);
+  });
+};
+
 const resolveModifierBudget = (modifierBudget = {}) => {
   const resolvedKeys = [];
 
   Object.entries(modifierBudget).forEach(([difficulty, count]) => {
     const pool = ROUND_MODIFIER_KEYS_BY_DIFFICULTY[difficulty] || [];
-    const availableKeys = [...pool];
 
     for (let index = 0; index < normalizeBudgetCount(count); index += 1) {
+      const availableKeys = pool.filter((modifierKey) => canAddRoundModifier(modifierKey, resolvedKeys));
       const key = chooseRandomEntry(availableKeys);
       if (!key) {
         break;
       }
 
       resolvedKeys.push(key);
-      availableKeys.splice(availableKeys.indexOf(key), 1);
     }
   });
 
   return resolvedKeys;
+};
+
+const resolveCompatibleModifierKeys = (modifierKeys = []) => {
+  return modifierKeys.reduce((selectedKeys, modifierKey) => {
+    if (!canAddRoundModifier(modifierKey, selectedKeys)) {
+      return selectedKeys;
+    }
+
+    return [...selectedKeys, modifierKey];
+  }, []);
 };
 
 const applyRoundEffects = (round, resolvedModifierKeys = []) => {
@@ -65,11 +90,11 @@ const applyRoundEffects = (round, resolvedModifierKeys = []) => {
 const resolveRounds = (rounds = MULTI_ROUND_ROUNDS) => {
   return rounds.map((round) => {
     const generatedModifierKeys = resolveModifierBudget(round.modifierBudget || {});
-    const resolvedModifierKeys = [...new Set([
+    const resolvedModifierKeys = resolveCompatibleModifierKeys([
       ...(round.roundModifierKeys || []),
       ...generatedModifierKeys,
       ...FORCE_TEST_ROUND_MODIFIER_KEYS
-    ])];
+    ]);
 
     return {
       ...applyRoundEffects(round, resolvedModifierKeys),

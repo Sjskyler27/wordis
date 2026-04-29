@@ -33,7 +33,7 @@
           :mode-subtitle="modeSubtitle"
           :is-bot-mode="isBotMode"
           :is-multi-round-mode="isMultiRoundMode"
-          :active-round-modifiers="activeRoundModifiers"
+          :active-round-modifiers="activeRoundModifiersWithCountdowns"
           :local-message="localMessage"
           :status-headline="statusHeadline"
           :game-started="gameStarted"
@@ -396,13 +396,14 @@ let multiRoundRewardTimeoutId = null;
 let botCogBoostTimeoutId = null;
 let playerCogDecayIntervalId = null;
 let playerCogRampFrameId = null;
-let looseRackShuffleIntervalId = null;
+let roundModifierTickIntervalId = null;
 let lastPlayerCogScoreAt = Date.now();
 const GAME_TUTORIAL_STORAGE_KEY = 'hasSeenWordisGameTutorial';
 const hasSeenGameTutorial = () => typeof localStorage !== 'undefined' && localStorage.getItem(GAME_TUTORIAL_STORAGE_KEY);
 const showHistoryOverlay = ref(false);
 const showTutorialOverlay = ref(!hasSeenGameTutorial());
 const windowWidth = ref(typeof window !== 'undefined' ? window.innerWidth : 1440);
+const roundModifierCountdowns = ref({});
 const {
   isSideDrawerOpen,
   closeSideDrawer,
@@ -432,6 +433,12 @@ const controllerFocusedBuiltTileId = computed(() => selectedTilesForCurrentSide.
 const opponentSide = computed(() => (mySide.value === 'host' ? 'opponent' : 'host'));
 const personalModifierEffects = computed(() => isMultiRoundMode.value ? multiRoundRun.activePersonalModifierEffects.value : {});
 const activeRoundModifiers = computed(() => isMultiRoundMode.value ? multiRoundRun.activeRoundModifiers.value : []);
+const activeRoundModifiersWithCountdowns = computed(() => {
+  return activeRoundModifiers.value.map((modifier) => ({
+    ...modifier,
+    countdownLabel: roundModifierCountdowns.value[modifier.key]?.label || ''
+  }));
+});
 const roundModifierEffects = computed(() => {
   return activeRoundModifiers.value.reduce((effects, modifier) => {
     const rules = modifier.rules || {};
@@ -452,7 +459,9 @@ const roundModifierEffects = computed(() => {
     effects.minimumVowels = Math.max(effects.minimumVowels, rules.minimumVowels || 0);
     effects.idleScoreDelta += tileEffects.idleScoreDelta || 0;
     effects.fleetingAllTiles = effects.fleetingAllTiles || Boolean(tileEffects.fleetingAllTiles);
-    effects.shuffleOnSubmit = effects.shuffleOnSubmit || Boolean(tileEffects.shuffleOnSubmit);
+    effects.returnBuilderIntervalMs = effects.returnBuilderIntervalMs || tileEffects.returnBuilderIntervalMs || 0;
+    effects.shuffleRackIntervalMs = effects.shuffleRackIntervalMs || tileEffects.shuffleRackIntervalMs || 0;
+    effects.chaoticBoardIntervalMs = effects.chaoticBoardIntervalMs || tileEffects.chaoticBoardIntervalMs || 0;
     effects.lockNextColumn = effects.lockNextColumn || Boolean(tileEffects.lockNextColumn);
     effects.mustTileEachTurn = effects.mustTileEachTurn || Boolean(tileEffects.mustTileEachTurn);
     effects.goodChanceBonus += chanceEffects.goodChanceBonus || 0;
@@ -471,7 +480,9 @@ const roundModifierEffects = computed(() => {
     idlePenaltyMultiplier: 1,
     idleScoreDelta: 0,
     fleetingAllTiles: false,
-    shuffleOnSubmit: false,
+    returnBuilderIntervalMs: 0,
+    shuffleRackIntervalMs: 0,
+    chaoticBoardIntervalMs: 0,
     lockNextColumn: false,
     mustTileEachTurn: false,
     goodChanceBonus: 0,
@@ -485,7 +496,8 @@ const roundModifierEffects = computed(() => {
 });
 const multiRoundScoreOptions = computed(() => ({
   personalModifierEffects: personalModifierEffects.value,
-  roundModifierEffects: roundModifierEffects.value
+  roundModifierEffects: roundModifierEffects.value,
+  roundModifierCountdowns: roundModifierCountdowns.value
 }));
 const buildLane = (side, label) => ({
   side,
@@ -1626,35 +1638,123 @@ const handleClearWord = () => {
   }
 };
 
-const shuffleLooseRackTiles = () => {
-  if (
-    !isMultiRoundMode.value
-    || !roundModifierEffects.value.shuffleOnSubmit
-    || isPaused.value
-    || effectiveGameEnded.value
-    || showTutorialOverlay.value
-    || isMultiRoundRewardChoiceOpen.value
-  ) {
-    return;
-  }
+const roundModifierTimerState = {};
+const getTimedRoundModifierActions = () => {
+  const effects = roundModifierEffects.value;
+  return [
+    {
+      key: 'loose_letters',
+      intervalMs: effects.returnBuilderIntervalMs && !effects.chaoticBoardIntervalMs ? effects.returnBuilderIntervalMs : 0,
+      label: 'Return',
+      run: () => returnBuiltLettersToRack('Loose Letters returned your built letters.')
+    },
+    {
+      key: 'disorganised',
+      intervalMs: effects.shuffleRackIntervalMs && !effects.chaoticBoardIntervalMs ? effects.shuffleRackIntervalMs : 0,
+      label: 'Shuffle',
+      run: () => shuffleRackTiles({ includeSelected: false, message: 'Disorganised shuffled your rack.' })
+    },
+    {
+      key: 'chaotic_board',
+      intervalMs: effects.chaoticBoardIntervalMs || 0,
+      label: 'Chaos',
+      run: () => {
+        returnBuiltLettersToRack('');
+        shuffleRackTiles({ includeSelected: true, message: 'Chaotic Board reset your word and shuffled your rack.' });
+      }
+    }
+  ].filter((entry) => entry.intervalMs > 0);
+};
 
-  const rackTiles = playerTiles.value.host || [];
-  if (rackTiles.length < 2) {
-    return;
-  }
+const canRunTimedRoundModifiers = () => {
+  return isMultiRoundMode.value
+    && !isPaused.value
+    && !effectiveGameEnded.value
+    && !showTutorialOverlay.value
+    && !isMultiRoundRewardChoiceOpen.value;
+};
 
-  const shuffledTiles = [...rackTiles];
-  for (let index = shuffledTiles.length - 1; index > 0; index -= 1) {
-    const swapIndex = Math.floor(Math.random() * (index + 1));
-    [shuffledTiles[index], shuffledTiles[swapIndex]] = [shuffledTiles[swapIndex], shuffledTiles[index]];
+const returnBuiltLettersToRack = (message) => {
+  if (!selectedTilesForCurrentSide.value.length) {
+    return false;
   }
 
   clearSelectionForSide('host');
+  if (message) {
+    localMessage.value = message;
+  }
+  return true;
+};
+
+const shuffleRackTiles = ({ includeSelected = false, message = '' } = {}) => {
+  const rackTiles = playerTiles.value.host || [];
+  if (rackTiles.length < 2) {
+    return false;
+  }
+
+  const selectedIds = selectedTileIds.value.host || new Set();
+  const shuffleIndexes = rackTiles
+    .map((tile, index) => ({ tile, index }))
+    .filter(({ tile }) => includeSelected || !selectedIds.has(tile.id))
+    .map(({ index }) => index);
+
+  if (shuffleIndexes.length < 2) {
+    return false;
+  }
+
+  const shuffledTiles = [...rackTiles];
+  const shuffledEntries = shuffleIndexes.map((index) => shuffledTiles[index]);
+  for (let index = shuffledEntries.length - 1; index > 0; index -= 1) {
+    const swapIndex = Math.floor(Math.random() * (index + 1));
+    [shuffledEntries[index], shuffledEntries[swapIndex]] = [shuffledEntries[swapIndex], shuffledEntries[index]];
+  }
+
+  shuffleIndexes.forEach((tileIndex, entryIndex) => {
+    shuffledTiles[tileIndex] = shuffledEntries[entryIndex];
+  });
   playerTiles.value = {
     ...playerTiles.value,
     host: shuffledTiles
   };
-  localMessage.value = 'Loose Rack shuffled your tiles.';
+  if (message) {
+    localMessage.value = message;
+  }
+  return true;
+};
+
+const resetTimedRoundModifierIndicators = () => {
+  Object.keys(roundModifierTimerState).forEach((key) => {
+    delete roundModifierTimerState[key];
+  });
+  roundModifierCountdowns.value = {};
+};
+
+const tickTimedRoundModifiers = () => {
+  if (
+    !canRunTimedRoundModifiers()
+  ) {
+    return;
+  }
+
+  const now = Date.now();
+  const nextCountdowns = {};
+  getTimedRoundModifierActions().forEach((action) => {
+    if (!roundModifierTimerState[action.key]) {
+      roundModifierTimerState[action.key] = now + action.intervalMs;
+    }
+
+    if (now >= roundModifierTimerState[action.key]) {
+      action.run();
+      roundModifierTimerState[action.key] = now + action.intervalMs;
+    }
+
+    const seconds = Math.max(0, Math.ceil((roundModifierTimerState[action.key] - now) / 1000));
+    nextCountdowns[action.key] = {
+      seconds,
+      label: `${action.label} in ${seconds}s`
+    };
+  });
+  roundModifierCountdowns.value = nextCountdowns;
 };
 
 const refocusControllerSelection = () => {
@@ -2173,6 +2273,10 @@ watch(showTutorialOverlay, (visible) => {
   syncTutorialPauseState(visible);
 });
 
+watch(() => multiRoundRun.activeRoundModifierKeys.value.join('|'), () => {
+  resetTimedRoundModifierIndicators();
+});
+
 const handleKeydown = (event) => {
   if (props.settingsShowing) {
     return;
@@ -2412,7 +2516,7 @@ onMounted(() => {
     playerCogTargetSpeed.value = Math.max(1, playerCogTargetSpeed.value - 0.12);
     rampPlayerCogSpeed();
   }, 500);
-  looseRackShuffleIntervalId = window.setInterval(shuffleLooseRackTiles, 8000);
+  roundModifierTickIntervalId = window.setInterval(tickTimedRoundModifiers, 250);
   window.addEventListener('resize', syncWindowWidth);
   window.addEventListener('keydown', handleKeydown);
   startGameMusic({ restart: true });
@@ -2429,7 +2533,7 @@ onBeforeUnmount(() => {
   window.clearTimeout(botCogBoostTimeoutId);
   window.cancelAnimationFrame(playerCogRampFrameId);
   window.clearInterval(playerCogDecayIntervalId);
-  window.clearInterval(looseRackShuffleIntervalId);
+  window.clearInterval(roundModifierTickIntervalId);
   tilePickupSound.pause();
   tilePutBackSound.pause();
   tileReplaceSound.pause();

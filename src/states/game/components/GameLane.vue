@@ -6,8 +6,9 @@
       'lane-burst-medium': burstTier === 'medium',
       'lane-burst-high': burstTier === 'high',
       'lane-burst-epic': burstTier === 'epic',
-      'lane-loose-rack': hasShuffleOnSubmit
+      'lane-board-timer': boardEffectLabel
     }"
+    :data-board-effect="boardEffectLabel"
   >
     <div class="lane-header">
       <div>
@@ -33,7 +34,7 @@
       </button>
     </div>
 
-    <div class="rack-grid">
+    <div class="rack-grid" :data-board-effect="boardEffectLabel">
       <div v-for="(tile, index) in tiles" :key="`${side}-slot-${index}`" class="rack-slot">
         <Transition :name="getTileTransitionName(tile)" mode="out-in">
           <button
@@ -333,7 +334,23 @@ const isBannedLetter = (tile) => {
 const isHotBurnTile = (tile) => {
   return tile.status === 'burningTile' && (props.scoreOptions?.roundModifierEffects?.idlePenaltyMultiplier || 1) > 1;
 };
-const hasShuffleOnSubmit = computed(() => Boolean(props.scoreOptions?.roundModifierEffects?.shuffleOnSubmit));
+const getRoundModifierCountdownLabel = (modifierKey) => {
+  return props.scoreOptions?.roundModifierCountdowns?.[modifierKey]?.label || '';
+};
+const boardEffectLabel = computed(() => {
+  const effects = props.scoreOptions?.roundModifierEffects || {};
+  if (effects.chaoticBoardIntervalMs) {
+    return getRoundModifierCountdownLabel('chaotic_board') || 'Chaos soon';
+  }
+  if (effects.shuffleRackIntervalMs) {
+    return getRoundModifierCountdownLabel('disorganised') || 'Shuffle soon';
+  }
+  if (effects.returnBuilderIntervalMs) {
+    return getRoundModifierCountdownLabel('loose_letters') || 'Return soon';
+  }
+
+  return '';
+});
 const getRoundTileMarker = (tile) => {
   if (isHotBurnTile(tile)) {
     return 'x2';
@@ -729,8 +746,8 @@ onBeforeUnmount(() => {
   min-height: 94px;
 }
 
-.lane-loose-rack .rack-grid::after {
-  content: 'SHUFFLE';
+.lane-board-timer .rack-grid::after {
+  content: attr(data-board-effect);
   position: absolute;
   right: 8px;
   top: -18px;

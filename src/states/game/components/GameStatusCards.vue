@@ -21,6 +21,7 @@
             :aria-label="`${modifier.label}: ${modifier.description}`"
           >
             <span>{{ modifier.label }}</span>
+            <em v-if="modifier.countdownLabel">{{ modifier.countdownLabel }}</em>
             <small>{{ modifier.description }}</small>
           </button>
         </template>
@@ -212,6 +213,15 @@ defineProps({
   transform: translateY(-4px);
   transition: opacity 150ms ease, transform 150ms ease;
   box-shadow: 0 14px 28px rgba(20, 6, 14, 0.28);
+}
+
+.round-modifier-chip em {
+  position: relative;
+  z-index: 1;
+  margin-left: 6px;
+  font-style: normal;
+  font-size: 0.62rem;
+  color: rgba(255, 248, 236, 0.82);
 }
 
 .round-modifier-chip:hover small,

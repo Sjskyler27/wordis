@@ -11,6 +11,7 @@ export const ROUND_MODIFIER_DEFINITIONS = {
     description: 'Words must use at least 5 tiles.',
     difficulty: ROUND_MODIFIER_DIFFICULTIES.MEDIUM,
     force_test: false,
+    cantCombineWith: [],
     tags: ['word-length'],
     rules: {
       minimumWordLength: 5
@@ -22,6 +23,7 @@ export const ROUND_MODIFIER_DEFINITIONS = {
     description: 'Words cannot use S.',
     difficulty: ROUND_MODIFIER_DIFFICULTIES.MEDIUM,
     force_test: false,
+    cantCombineWith: [],
     tags: ['letter-ban'],
     rules: {
       bannedLetters: ['S']
@@ -33,6 +35,7 @@ export const ROUND_MODIFIER_DEFINITIONS = {
     description: 'The highest-scoring consonant in each word scores 0.',
     difficulty: ROUND_MODIFIER_DIFFICULTIES.MEDIUM,
     force_test: false,
+    cantCombineWith: [],
     tags: ['score-transform'],
     scoreEffects: {
       zeroHighestConsonant: true
@@ -44,6 +47,7 @@ export const ROUND_MODIFIER_DEFINITIONS = {
     description: 'Boons and attacks cannot be played this round.',
     difficulty: ROUND_MODIFIER_DIFFICULTIES.MEDIUM,
     force_test: false,
+    cantCombineWith: [],
     tags: ['cards'],
     cardRules: {
       cardsDisabled: true
@@ -66,6 +70,7 @@ export const ROUND_MODIFIER_DEFINITIONS = {
     description: 'Burn penalties are doubled.',
     difficulty: ROUND_MODIFIER_DIFFICULTIES.EASY,
     force_test: false,
+    cantCombineWith: [],
     tags: ['burns'],
     scoreEffects: {
       idlePenaltyMultiplier: 2
@@ -77,6 +82,7 @@ export const ROUND_MODIFIER_DEFINITIONS = {
     description: 'All tiles are cleared after submitting a word',
     difficulty: ROUND_MODIFIER_DIFFICULTIES.MEDIUM,
     force_test: false,
+    cantCombineWith: [],
     tags: ['tile-lifecycle'],
     tileEffects: {
       fleetingAllTiles: true
@@ -88,6 +94,7 @@ export const ROUND_MODIFIER_DEFINITIONS = {
     description: 'Words must use at least 2 vowels.',
     difficulty: ROUND_MODIFIER_DIFFICULTIES.HARD,
     force_test: false,
+    cantCombineWith: [],
     tags: ['word-shape'],
     rules: {
       minimumVowels: 2
@@ -99,6 +106,7 @@ export const ROUND_MODIFIER_DEFINITIONS = {
     description: 'Tiles you do not play lose 1 value after each word.',
     difficulty: ROUND_MODIFIER_DIFFICULTIES.HARD,
     force_test: false,
+    cantCombineWith: [],
     tags: ['tile-lifecycle', 'score-transform'],
     tileEffects: {
       idleScoreDelta: -1
@@ -110,6 +118,7 @@ export const ROUND_MODIFIER_DEFINITIONS = {
     description: 'The round has 10 less seconds and needs 15 more points.',
     difficulty: ROUND_MODIFIER_DIFFICULTIES.EASY,
     force_test: false,
+    cantCombineWith: ['pressure_timer_medium', 'pressure_timer_hard'],
     tags: ['time', 'target-score'],
     roundEffects: {
       timeSecondsDelta: -10,
@@ -122,6 +131,7 @@ export const ROUND_MODIFIER_DEFINITIONS = {
     description: 'The round has 15 less seconds and needs 20 more points.',
     difficulty: ROUND_MODIFIER_DIFFICULTIES.MEDIUM,
     force_test: false,
+    cantCombineWith: ['pressure_timer_easy', 'pressure_timer_hard'],
     tags: ['time', 'target-score'],
     roundEffects: {
       timeSecondsDelta: -15,
@@ -134,21 +144,49 @@ export const ROUND_MODIFIER_DEFINITIONS = {
     description: 'The round has 20 less seconds and needs 30 more points.',
     difficulty: ROUND_MODIFIER_DIFFICULTIES.HARD,
     force_test: false,
+    cantCombineWith: ['pressure_timer_easy', 'pressure_timer_medium'],
     tags: ['time', 'target-score'],
     roundEffects: {
       timeSecondsDelta: -20,
       targetScoreDelta: 30
     }
   },
-  shuffle_after_submit: {
-    key: 'shuffle_after_submit',
-    label: 'Loose Rack',
-    description: 'Your tiles shuffle every 8 seconds.',
-    difficulty: ROUND_MODIFIER_DIFFICULTIES.HARD,
+  loose_letters: {
+    key: 'loose_letters',
+    label: 'Loose Letters',
+    description: 'Built letters return to your rack every 8 seconds.',
+    difficulty: ROUND_MODIFIER_DIFFICULTIES.MEDIUM,
     force_test: false,
+    cantCombineWith: ['chaotic_board'],
     tags: ['tile-lifecycle'],
     tileEffects: {
-      shuffleOnSubmit: true
+      returnBuilderIntervalMs: 8000
+    }
+  },
+  disorganised: {
+    key: 'disorganised',
+    label: 'Disorganised',
+    description: 'Rack tiles shuffle every 6 seconds, leaving built letters alone.',
+    difficulty: ROUND_MODIFIER_DIFFICULTIES.EASY,
+    force_test: false,
+    cantCombineWith: ['chaotic_board'],
+    tags: ['tile-lifecycle'],
+    tileEffects: {
+      shuffleRackIntervalMs: 6000
+    }
+  },
+  chaotic_board: {
+    key: 'chaotic_board',
+    label: 'Chaotic Board',
+    description: 'Built letters return and the rack shuffles every 10 seconds.',
+    difficulty: ROUND_MODIFIER_DIFFICULTIES.HARD,
+    force_test: false,
+    cantCombineWith: ['loose_letters', 'disorganised'],
+    tags: ['tile-lifecycle'],
+    tileEffects: {
+      returnBuilderIntervalMs: 10000,
+      shuffleRackIntervalMs: 10000,
+      chaoticBoardIntervalMs: 10000
     }
   },
   rotating_lock_column: {
@@ -157,6 +195,7 @@ export const ROUND_MODIFIER_DEFINITIONS = {
     description: 'After each word, the next column becomes locked.',
     difficulty: ROUND_MODIFIER_DIFFICULTIES.HARD,
     force_test: false,
+    cantCombineWith: [],
     tags: ['tile-lifecycle', 'locks'],
     tileEffects: {
       lockNextColumn: true
@@ -168,6 +207,7 @@ export const ROUND_MODIFIER_DEFINITIONS = {
     description: 'Bad tile modifiers appear more often.',
     difficulty: ROUND_MODIFIER_DIFFICULTIES.EASY,
     force_test: false,
+    cantCombineWith: [],
     tags: ['tile-odds', 'bad'],
     chanceEffects: {
       badChanceBonus: 0.08,
@@ -180,6 +220,7 @@ export const ROUND_MODIFIER_DEFINITIONS = {
     description: 'Each turn gives you a MUST tile if you do not already have one.',
     difficulty: ROUND_MODIFIER_DIFFICULTIES.HARD,
     force_test: false,
+    cantCombineWith: [],
     tags: ['tile-lifecycle', 'mustuse'],
     tileEffects: {
       mustTileEachTurn: true
