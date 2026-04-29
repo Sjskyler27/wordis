@@ -1,5 +1,5 @@
 import { computed, ref } from 'vue';
-import { getLengthBonus, getWordScoreDetails, getDifference, getMilestoneReward } from './tile-logic.js';
+import { getLengthBonus, getWordScoreDetails, getDifference, getIdleScorePenalty, getMilestoneReward } from './tile-logic.js';
 
 const formatMilestoneReward = (length) => {
   const reward = getMilestoneReward(length);
@@ -53,11 +53,20 @@ export const useWordBuilder = ({ mySide, myTiles, playerScores, scoreOptions }) 
     scores: playerScores.value,
     ...(scoreOptions?.value || {})
   }));
+  const currentIdlePenalty = computed(() => {
+    if (!selectedTilesForCurrentSide.value.length) {
+      return 0;
+    }
+
+    return getIdleScorePenalty(myTiles.value, selectedTilesForCurrentSide.value.map((tile) => tile.id), {
+      roundModifierEffects: scoreOptions?.value?.roundModifierEffects || {}
+    });
+  });
   const currentLengthBonus = computed(() => currentScoreDetails.value.lengthBonus);
   const currentFirstTileBonus = computed(() => currentScoreDetails.value.firstTileBonus);
   const currentLetterTotal = computed(() => currentScoreDetails.value.letterTotal);
   const currentWordMultiplier = computed(() => currentScoreDetails.value.wordMultiplier);
-  const currentWordScore = computed(() => currentScoreDetails.value.total);
+  const currentWordScore = computed(() => currentScoreDetails.value.total - currentIdlePenalty.value);
   const lengthBonusSteps = computed(() => ([
     { length: 5, bonus: getLengthBonus(5), difference: getDifference(5), rewardLabel: formatMilestoneReward(5) },
     { length: 6, bonus: getLengthBonus(6), difference: getDifference(6), rewardLabel: formatMilestoneReward(6) },

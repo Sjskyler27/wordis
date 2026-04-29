@@ -301,10 +301,20 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
   const hasModifierInRack = (rackTiles = [], status = 'normal') => {
     return rackTiles.some((tile) => tile.status === status);
   };
+  const isSingleLetterTile = (tileOrLetter = '') => {
+    const letter = typeof tileOrLetter === 'string'
+      ? tileOrLetter
+      : (tileOrLetter?.baseLetter || tileOrLetter?.letter || '');
+    return letter.length === 1;
+  };
   const canApplyModifier = (status = 'normal', context = {}) => {
     status = normalizeModifierStatus(status);
 
     if (status === 'mustuse' && hasModifierInRack(context.rackTiles || [], 'mustuse')) {
+      return false;
+    }
+
+    if (status === 'mustuse' && !isSingleLetterTile(context.letter || '')) {
       return false;
     }
 
@@ -1190,6 +1200,15 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
     const tileLetter = definition.effects.wild ? '*' : (tile.baseLetter || tile.letter);
     const nextScore = getModifierStartingScore(definition.effects, baseScore);
     const lockTurns = definition.effects.lockTurns || 0;
+    const lockRestoreTile = status === 'locked3' && options.preserveTile
+      ? {
+          ...tile,
+          locked: false,
+          lockTurns: 0,
+          lockRestoreTile: undefined,
+          animationState: EMPTY_TILE_ANIMATION_STATE
+        }
+      : tile.lockRestoreTile;
 
     return attachTileAnimationHooks({
       ...tile,
@@ -1203,6 +1222,7 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
       firstTileBonus: definition.effects.firstTileBonus || 0,
       locked: lockTurns > 0,
       lockTurns,
+      lockRestoreTile,
       status
     }, status, options.trigger || '');
   };
@@ -1230,6 +1250,30 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
     }
 
     const nextLockTurns = Math.max(0, (tile.lockTurns || 0) - 1);
+    if (nextLockTurns === 0 && tile.lockRestoreTile) {
+      const unlockAnimationName = tile.onNewTurn || '';
+      const restoredTile = attachTileAnimationHooks({
+        ...tile.lockRestoreTile,
+        locked: false,
+        lockTurns: 0,
+        lockRestoreTile: undefined,
+        animationState: createTileAnimationState(tile.lockRestoreTile, options.trigger || '')
+      }, tile.lockRestoreTile.status || 'normal', options.trigger || '');
+
+      if (!unlockAnimationName || options.trigger !== 'onNewTurn') {
+        return restoredTile;
+      }
+
+      return {
+        ...restoredTile,
+        animationState: {
+          trigger: options.trigger,
+          name: unlockAnimationName,
+          key: `${options.trigger}-${unlockAnimationName}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`
+        }
+      };
+    }
+
     const nextStatus = nextLockTurns > 0 ? tile.status : 'normal';
     const unlockAnimationName = nextStatus === 'normal' ? tile.onNewTurn : '';
     const nextTile = applyModifierToTile({
@@ -1291,10 +1335,34 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
       }, status, 'onPull');
     };
 
+    const canForceTurnMustTile = (options = {}) => {
+      const roundModifierEffects = options.roundModifierEffects || options.chanceOverrides?.roundModifierEffects || {};
+      const personalModifierEffects = options.personalModifierEffects || options.chanceOverrides?.personalModifierEffects || {};
+      return Boolean(roundModifierEffects.mustTileEachTurn)
+        && !(personalModifierEffects.blockedModifiers || []).includes('mustuse');
+    };
+
+    const rackHasAvailableMustTile = (tiles = []) => {
+      return tiles.some((tile) => tile.status === 'mustuse' && !tile.locked);
+    };
+
+    const drawSingleLetter = (rack = []) => {
+      for (let attempt = 0; attempt < 30; attempt += 1) {
+        const letter = drawLetter(rack);
+        if (isSingleLetterTile(letter)) {
+          return letter;
+        }
+      }
+
+      return LETTER_KEYS.find((letter) => isSingleLetterTile(letter)) || drawLetter(rack);
+    };
+
     const buildFreshRack = (side = null, scores = {}, options = {}) => {
       const rack = [];
+      const forceOpeningMust = canForceTurnMustTile(options);
       while (rack.length < RACK_SIZE) {
-        rack.push(createTile(drawLetter(rack), side, scores, options.forcedStatus || null, {
+        const forceMust = forceOpeningMust && rack.length === 0;
+        rack.push(createTile(forceMust ? drawSingleLetter(rack) : drawLetter(rack), side, scores, forceMust ? 'mustuse' : (options.forcedStatus || null), {
           ...(options.chanceOverrides || {}),
           rackTiles: rack,
           personalModifierEffects: options.personalModifierEffects || options.chanceOverrides?.personalModifierEffects || {},
@@ -1364,8 +1432,12 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
       const targetNeutralModifiers = currentModifierCounts.neutral;
       const rack = buildFreshRack(side, scores, {
         forcedStatus: 'normal',
+        personalModifierEffects: options.personalModifierEffects || {},
+        roundModifierEffects: options.roundModifierEffects || {},
         chanceOverrides: {
           modifierProfile,
+          personalModifierEffects: options.personalModifierEffects || {},
+          roundModifierEffects: options.roundModifierEffects || {},
           turnCount: options.turnCount || 0
         }
       });
@@ -1378,10 +1450,16 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
 
     const createRack = (side = null, scores = {}, options = {}) => {
       if (options.mode === 'clear') {
-        return createClearRack(options.currentTiles || [], side, scores, options);
+        const clearRack = createClearRack(options.currentTiles || [], side, scores, options);
+        return options.roundModifierEffects?.lockNextColumn
+          ? applyRotatingLockColumn(clearRack, options.turnCount || 1)
+          : clearRack;
       }
 
-      return buildFreshRack(side, scores, options);
+      const rack = buildFreshRack(side, scores, options);
+      return options.roundModifierEffects?.lockNextColumn
+        ? applyRotatingLockColumn(rack, options.turnCount || 1)
+        : rack;
     };
 
     const shuffleTiles = (tiles = []) => {
@@ -1403,7 +1481,7 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
           return tile;
         }
 
-        return applyModifierToTile(tile, 'locked3', { trigger: 'onPull' });
+        return applyModifierToTile(tile, 'locked3', { trigger: 'onPull', preserveTile: true });
       });
     };
 
@@ -1478,6 +1556,10 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
         }), { trigger: 'onNewTurn' });
       });
 
+      const shouldForceReplacementMust = canForceTurnMustTile(options)
+        && !rackHasAvailableMustTile(nextTiles.filter((tile) => !replacedIds.has(tile.id)));
+      let forcedReplacementMust = false;
+
       nextTiles.forEach((tile, index) => {
         if (!replacedIds.has(tile.id)) {
           return;
@@ -1487,7 +1569,8 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
           return entryIndex !== index && !replacedIds.has(entry.id);
         });
 
-        nextTiles[index] = createTile(drawLetter(remainingTiles), side, scores, null, {
+        const forceMust = shouldForceReplacementMust && !forcedReplacementMust;
+        nextTiles[index] = createTile(forceMust ? drawSingleLetter(remainingTiles) : drawLetter(remainingTiles), side, scores, forceMust ? 'mustuse' : null, {
           rackTiles: remainingTiles,
           modifierProfile: options.modifierProfile || 'duel',
           personalModifierEffects: options.personalModifierEffects || {},
@@ -1495,15 +1578,13 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
           phase: options.phase || 'submit',
           turnCount: options.turnCount || 0
         });
+        if (forceMust) {
+          forcedReplacementMust = true;
+        }
       });
       if (isDevLoggingEnabled()) console.log(nextTiles) // logs something callled status so modifier is determined by this point 
 
       let resolvedTiles = nextTiles;
-      if (roundModifierEffects.mustTileEachTurn) {
-        resolvedTiles = applyTurnMustTile(resolvedTiles, {
-          personalModifierEffects: options.personalModifierEffects || {}
-        });
-      }
       if (roundModifierEffects.lockNextColumn) {
         resolvedTiles = applyRotatingLockColumn(resolvedTiles, options.turnCount || 1);
       }
