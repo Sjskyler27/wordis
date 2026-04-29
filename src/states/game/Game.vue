@@ -453,13 +453,14 @@ let playerCogDecayIntervalId = null;
 let playerCogRampFrameId = null;
 let looseRackShuffleIntervalId = null;
 let lastPlayerCogScoreAt = Date.now();
+const GAME_TUTORIAL_STORAGE_KEY = 'hasSeenWordisGameTutorial';
+const hasSeenGameTutorial = () => typeof localStorage !== 'undefined' && localStorage.getItem(GAME_TUTORIAL_STORAGE_KEY);
 const showHistoryOverlay = ref(false);
-const showTutorialOverlay = ref(false);
+const showTutorialOverlay = ref(!hasSeenGameTutorial());
 const windowWidth = ref(typeof window !== 'undefined' ? window.innerWidth : 1440);
 const isSideDrawerOpen = ref(false);
 const sideDrawerAutoOpen = ref(false);
 const personalModifiersDrawerRef = ref(null);
-const GAME_TUTORIAL_STORAGE_KEY = 'hasSeenWordisGameTutorial';
 const multiRoundRun = useMultiRoundRun({
   rounds: getMultiRoundRounds(props.multiRoundDifficulty)
 });
@@ -642,7 +643,7 @@ const {
       isSoloTimerPausedByAttack.value = false;
       isMultiRoundTimerPausedByAttack.value = false;
       if (!isPaused.value) {
-        startBotLoop();
+        startBotLoopAfterTutorial();
         startMultiRoundTimer()
         startSoloTimer();
       }
@@ -652,6 +653,15 @@ const {
   personalModifierEffects,
   roundModifierEffects
 });
+
+const startBotLoopAfterTutorial = () => {
+  if (showTutorialOverlay.value) {
+    stopBotLoop();
+    return;
+  }
+
+  startBotLoop();
+};
 
 const overtimeTrailingSide = computed(() => {
   if (isTimedSoloMode.value || isMultiRoundMode.value || !matchOvertimeEnabled.value) {
@@ -2078,7 +2088,7 @@ const setPauseState = (nextPaused) => {
     return;
   }
 
-  startBotLoop();
+  startBotLoopAfterTutorial();
   startSoloTimer();
   startMultiRoundTimer();
   startGameMusic();
@@ -2098,7 +2108,7 @@ const syncTutorialPauseState = (visible) => {
   }
 
   if (!props.settingsShowing && !effectiveGameEnded.value) {
-    startBotLoop();
+    startBotLoopAfterTutorial();
     startSoloTimer();
     startMultiRoundTimer();
     startGameMusic();
