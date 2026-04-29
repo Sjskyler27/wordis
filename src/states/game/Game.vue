@@ -1,13 +1,10 @@
 <template>
   <div class="game-shell" :class="{ 'machine-game-shell': isBotMode }" :style="backgroundMoodStyle">
-    <div id="background-layer">
-      <div class="shape-layer layer-far"></div>
-      <div class="shape-layer layer-near"></div>
-      <div v-if="isBotMode" class="machine-game-cogs" aria-hidden="true">
-        <span class="machine-cog cog machine-cog-large" :style="botCogStyle"></span>
-        <span class="machine-cog cog machine-cog-small" :style="playerCogStyle"></span>
-      </div>
-    </div>
+    <MachineBackground
+      :is-bot-mode="isBotMode"
+      :bot-cog-style="botCogStyle"
+      :player-cog-style="playerCogStyle"
+    />
 
     <main class="board-frame" :class="{ paused: isPaused }" :style="boardFrameStyle">
       <button
@@ -299,6 +296,7 @@ import { validateWord } from './word-validator.js';
 import { isTestingMode } from './testing.js';
 import GameLane from './components/GameLane.vue';
 import HistoryOverlay from './components/HistoryOverlay.vue';
+import MachineBackground from './components/MachineBackground.vue';
 import MultiRoundProgress from './components/MultiRoundProgress.vue';
 import MultiRoundRewardChoice from './components/MultiRoundRewardChoice.vue';
 import { getMultiRoundRounds } from './multiround/multi-round-difficulties.js';
