@@ -62,6 +62,7 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
     key: ''
   };
   const SHIMMER_INTERVAL_MS = 8000;
+  const getNextShimmerCycleIndex = (tile = {}) => (tile.shimmerCycleIndex || 0) + 1;
   const MODIFIER_PROFILES = {
     duel: {
       goodModifiers: GOOD_MODIFIERS,
@@ -874,14 +875,25 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
     const frozenTileIds = options.frozenTileIds || new Set();
 
     if (frozenTileIds.has(tile.id)) {
-      if (tile.shimmerShiftAt && tile.shimmerShiftAt > now) {
+      if (tile.shimmerFrozen && tile.shimmerShiftAt && tile.shimmerShiftAt > now) {
         return tile;
       }
 
       return {
         ...tile,
+        shimmerFrozen: true,
         shimmerIntervalMs: intervalMs,
         shimmerShiftAt: now + intervalMs
+      };
+    }
+
+    if (tile.shimmerFrozen) {
+      return {
+        ...tile,
+        shimmerFrozen: false,
+        shimmerIntervalMs: intervalMs,
+        shimmerShiftAt: now + intervalMs,
+        shimmerCycleIndex: getNextShimmerCycleIndex(tile)
       };
     }
 
@@ -904,8 +916,10 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
       score: baseScore,
       baseScore,
       bonusScore: getModifierDefinition('shimmer').effects.bonusScore || 1,
+      shimmerFrozen: false,
       shimmerIntervalMs: intervalMs,
       shimmerShiftAt: now + intervalMs,
+      shimmerCycleIndex: getNextShimmerCycleIndex(tile),
       animationState: {
         trigger: 'timer',
         name: 'shimmer-shift',
@@ -1297,9 +1311,13 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
       const intervalMs = effects.shimmerIntervalMs || SHIMMER_INTERVAL_MS;
       state.shimmerIntervalMs = intervalMs;
       state.shimmerShiftAt = options.shimmerShiftAt || tile.shimmerShiftAt || Date.now() + intervalMs;
+      state.shimmerFrozen = false;
+      state.shimmerCycleIndex = tile.shimmerCycleIndex || 0;
     } else {
       state.shimmerIntervalMs = undefined;
       state.shimmerShiftAt = undefined;
+      state.shimmerFrozen = undefined;
+      state.shimmerCycleIndex = undefined;
     }
 
     if (effects.rustMaxTurns) {

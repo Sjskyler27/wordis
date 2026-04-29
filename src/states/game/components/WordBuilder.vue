@@ -853,7 +853,10 @@ button:focus{
 .built-tile-rusting::before {
   content: '';
   position: absolute;
-  inset: 0;
+  top: 0;
+  right: 0;
+  left: 0;
+  height: var(--built-tile-rust-coverage, 20%);
   z-index: 0;
   border-radius: 14px;
   pointer-events: none;
@@ -1006,19 +1009,11 @@ button:focus{
 @keyframes built-shimmer-oil-cycle {
   0% {
     transform: rotate(0deg) scale(1);
-    filter: blur(0.6px) saturate(1.15);
-  }
-  62% {
-    transform: rotate(105deg) scale(1.04);
-    filter: blur(0.5px) saturate(1.28);
-  }
-  82% {
-    transform: rotate(255deg) scale(1.07);
-    filter: blur(0.45px) saturate(1.55);
+    filter: blur(0.55px) saturate(1.18);
   }
   100% {
-    transform: rotate(720deg) scale(1.02);
-    filter: blur(0.5px) saturate(1.32);
+    transform: rotate(360deg) scale(1);
+    filter: blur(0.55px) saturate(1.18);
   }
 }
 

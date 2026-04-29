@@ -48,10 +48,13 @@
               'tile-saved': savedTileIds.has(tile.id),
               'tile-locked': tile.locked,
               'tile-shimmer': tile.status === 'shimmer',
+              'tile-shimmer-active': tile.status === 'shimmer' && !selectedTileIds.has(tile.id),
+              'tile-shimmer-idle': tile.status === 'shimmer' && selectedTileIds.has(tile.id),
               'tile-rusting': tile.status === 'rustingTile',
               'tile-must-alert': mustAlertIds.has(tile.id),
               'tile-banned-letter': isBannedLetter(tile),
               'tile-controller-focus': controllerFocusedTileId === tile.id,
+              [getShimmerCycleClass(tile)]: !!getShimmerCycleClass(tile),
               [getTileAnimationClass(tile)]: !!getTileAnimationClass(tile)
             }"
             :style="getTileStyle(tile)"
@@ -359,6 +362,14 @@ const getRoundTileMarker = (tile) => {
   }
 
   return '';
+};
+
+const getShimmerCycleClass = (tile) => {
+  if (tile?.status !== 'shimmer') {
+    return '';
+  }
+
+  return (tile.shimmerCycleIndex || 0) % 2 === 0 ? 'tile-shimmer-cycle-even' : 'tile-shimmer-cycle-odd';
 };
 
 const getTileStyle = (tile) => {
@@ -868,20 +879,41 @@ onBeforeUnmount(() => {
   filter: blur(0.5px) saturate(1.35);
   mix-blend-mode: screen;
   opacity: 0.8;
-  animation: shimmer-oil-cycle var(--tile-shimmer-cycle, 8000ms) linear infinite;
+  animation: shimmer-idle-oil-cycle 8000ms linear infinite;
+}
+
+.tile-shimmer-active.tile-shimmer-cycle-even::before {
+  animation: shimmer-oil-cycle-a var(--tile-shimmer-cycle, 8000ms) linear infinite;
+}
+
+.tile-shimmer-active.tile-shimmer-cycle-odd::before {
+  animation: shimmer-oil-cycle-b var(--tile-shimmer-cycle, 8000ms) linear infinite;
+}
+
+.tile-shimmer-idle::before {
+  animation: shimmer-idle-oil-cycle 8000ms linear infinite;
 }
 
 .tile-rusting::before {
   content: '';
   position: absolute;
-  inset: 0;
+  top: 0;
+  right: 0;
+  left: 0;
+  height: var(--tile-rust-coverage, 20%);
   z-index: 0;
   border-radius: 16px;
   pointer-events: none;
   background:
-    linear-gradient(180deg, rgba(89, 42, 19, 0.96) 0%, rgba(160, 76, 31, 0.88) var(--tile-rust-coverage, 20%), rgba(160, 76, 31, 0) var(--tile-rust-coverage, 20%)),
-    repeating-linear-gradient(135deg, rgba(255, 196, 102, 0.16) 0 5px, rgba(69, 31, 14, 0.18) 5px 10px);
-  box-shadow: inset 0 1px 0 rgba(255, 202, 126, 0.22);
+    radial-gradient(circle at 18% 72%, rgba(42, 23, 15, 0.78) 0 7%, transparent 8%),
+    radial-gradient(circle at 68% 76%, rgba(42, 23, 15, 0.64) 0 5%, transparent 6%),
+    radial-gradient(circle at 84% 36%, rgba(255, 154, 52, 0.42) 0 6%, transparent 7%),
+    linear-gradient(180deg, rgba(64, 29, 17, 0.96) 0 15%, rgba(164, 77, 29, 0.94) 16% 34%, rgba(74, 36, 22, 0.92) 35% 50%, rgba(214, 106, 31, 0.88) 51% 70%, rgba(88, 45, 27, 0.72) 71% 100%),
+    repeating-linear-gradient(0deg, rgba(35, 18, 12, 0.34) 0 4px, rgba(244, 129, 35, 0.2) 4px 9px, rgba(103, 49, 24, 0.3) 9px 15px);
+  box-shadow:
+    inset 0 -4px 0 rgba(39, 20, 13, 0.32),
+    inset 0 1px 0 rgba(255, 202, 126, 0.22);
+  clip-path: polygon(0 0, 100% 0, 100% 72%, 94% 68%, 89% 78%, 82% 70%, 75% 84%, 68% 76%, 60% 86%, 52% 71%, 45% 81%, 36% 70%, 28% 84%, 20% 73%, 12% 80%, 0 70%);
 }
 
 .tile-shimmer .tile-letter,
@@ -1032,22 +1064,52 @@ onBeforeUnmount(() => {
   }
 }
 
-@keyframes shimmer-oil-cycle {
+@keyframes shimmer-oil-cycle-a {
   0% {
     transform: rotate(0deg) scale(1);
-    filter: blur(0.6px) saturate(1.15);
+    filter: blur(0.6px) saturate(1.12) brightness(1);
   }
-  62% {
-    transform: rotate(105deg) scale(1.04);
-    filter: blur(0.5px) saturate(1.28);
+  58% {
+    transform: rotate(180deg) scale(1.02);
+    filter: blur(0.54px) saturate(1.22) brightness(1.04);
   }
-  82% {
-    transform: rotate(255deg) scale(1.07);
-    filter: blur(0.45px) saturate(1.55);
+  84% {
+    transform: rotate(420deg) scale(1.06);
+    filter: blur(0.46px) saturate(1.52) brightness(1.12);
   }
   100% {
-    transform: rotate(720deg) scale(1.02);
-    filter: blur(0.5px) saturate(1.32);
+    transform: rotate(720deg) scale(1.08);
+    filter: blur(0.42px) saturate(1.72) brightness(1.2);
+  }
+}
+
+@keyframes shimmer-oil-cycle-b {
+  0% {
+    transform: rotate(0deg) scale(1);
+    filter: blur(0.6px) saturate(1.12) brightness(1);
+  }
+  58% {
+    transform: rotate(180deg) scale(1.02);
+    filter: blur(0.54px) saturate(1.22) brightness(1.04);
+  }
+  84% {
+    transform: rotate(420deg) scale(1.06);
+    filter: blur(0.46px) saturate(1.52) brightness(1.12);
+  }
+  100% {
+    transform: rotate(720deg) scale(1.08);
+    filter: blur(0.42px) saturate(1.72) brightness(1.2);
+  }
+}
+
+@keyframes shimmer-idle-oil-cycle {
+  0% {
+    transform: rotate(0deg) scale(1);
+    filter: blur(0.55px) saturate(1.18);
+  }
+  100% {
+    transform: rotate(360deg) scale(1);
+    filter: blur(0.55px) saturate(1.18);
   }
 }
 
