@@ -164,3 +164,102 @@ do you have any questions
 
 when you win the auto update of mode shows you go streight to 150 
 
+
+NOTES FRO M MY PLAYS: 
+shuffle is way to hard 
+
+
+
+wilds need to be neutral and increase chance if behind 
+
+lock rack needs to unlock back to the original it also needs to start first turn with a lock clearing rack should still lock the current column
+is strong start even working, add a minimum amoount of good tiles to start with in strong start 
+shuffle should give a countdown
+givr one second grace for submitting two words if they accidently submit a word right when time ends
+
+must cannot be on a double letter  
+
+pause time does not work in baltro
+
+5 up should give players more time it is too hard 
+
+final word z index 
+
+add local storage key for dev logging instead of env 
+cards should be time x so u can see how many of each hyou have 
+
+cleanse does not work in balatro
+
+fleeting rack is not working it is only clearing mdifiers
+if no letters in built word and saved letterds exist make it unsave letters 
+
+constant demand is coded wrong it should not change a letter into a must it should pull a must 
+
+constant demand should give a must on the first turn too
+
+no cards is also too hard should maybe be a hard one or give more time 
+
+didnt see a single gold time with golden draft
+
+early game is hard time not starting is great but it should be more like a prep window you get 15 seconds until the time starts
+ or when you play your first word, i was able to get waining for 270 the multiplers on multiplers is insain and kinda breaks some aspects
+of the game with how long you can craft a realy good word. 
+
+loose rack could be a medium if it had more time 
+
+bright vowels is really good the decision making was decent between things
+
+the game is longer with all the pauses but it still felt like a good length i felt op by the end but still nervouse and did not want to use all my cards 
+
+i held onto cards for rainy days but it seemed fine i could get huge points from stacking them. it kinda made the final round useless/ not hard since i beat it with one word. 
+
+maybe blur the letters so the user can look at other info first or start the timer as soon as the player hits the cards or anything. only allow a max of 10 seconds to look at everything... there is too much advantatage to the prep 
+
+the only way i am winning is the royal pairs on hadrder modes they should probably be less good 
+
+penelty for mispelled words? could be a challange or a n easy challange 
+
+headers do not allow click on upgarade cards
+
+yin yang is showing on balatro
+
+saved letter should probably have a style change it looks selected 
+
+you can get around no s with wilds 
+
+should not have quick and tight target in the same to short 
+
+double letters are not considered consonents thats fine
+
+in balatro the background color is on the points not the time 
+
+shuffle and lock step could be crazy if it was like unlocking stuff
+
+i finished with 2 min 7 seconds why do i have 67 points 
+rust visualization also its rough
+
+boon for an extra new rack
+
+first tile is unnefected by the muted constant 
+
+lol better odds might be better than golden ticket 
+
+ran out of epic modifiers with stck fixed
+
+i might have new rack eeery time 
+
+stile for hard balatro is out of bounds make rounds scrollable 
+
+if you have bright letters you want to use ghost on vowels not gold it makes them way more  
+add a  timer 
+
+Should not be able to use multiple mutiplyers on the same word, it will only use one any unused multiplyer is greyed out and becomes a times one royal pair overrides all golds 
+
+
+lower epic multiplyer for four letter words  
+
+strong start does not work due to max good modifer chance we need to temporarily boost it and log the chances when pulling intro tiles 
+
+define what  a tile is for syntax highliting 
+
+focus something already focused spasms 
