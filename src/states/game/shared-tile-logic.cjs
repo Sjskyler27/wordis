@@ -645,8 +645,9 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
   };
 
   const rollTileModifier = (side, scores = {}, context = {}, chanceOverrides = {}) => {
-    console.log('ROLL MODIFIER FOR '+ side )
-    const modifierProfile = chanceOverrides.modifierProfile || 'duel';
+    const modifierProfile = chanceOverrides.modifierProfile || 'solo';
+    console.log('ROLL MODIFIER FOR '+ side + 'on'+modifierProfile )
+    
     const personalModifierEffects = chanceOverrides.personalModifierEffects || {};
     if(devLogging)console.log(modifierProfile)
     const baseProfile = getModifierProfile(modifierProfile);
