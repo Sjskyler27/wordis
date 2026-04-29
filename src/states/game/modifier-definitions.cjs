@@ -124,6 +124,23 @@ const createModifierDefinitions = ({ bloodTilePositionValues }) => ({
         badgeColor: '#ff9fa8'
       }
     },
+    shimmer: {
+      badge: 'SHMR',
+      description: 'Magic-oil tile. Its letter shifts every 8 seconds while in your rack and scores that letter +1.',
+      effects: {
+        bonusScore: 1,
+        shimmerIntervalMs: 8000
+      },
+      canApply: ({ letter }) => (letter || '').length === 1,
+      rarityWeight: 0.26,
+      ui: {
+        tileBackground: 'linear-gradient(160deg, #09121e 0%, #101529 28%, #2e1842 50%, #062d35 72%, #050912 100%)',
+        tileShadow: 'inset 0 -4px 0 rgba(1, 7, 16, 0.42), 0 12px 22px rgba(6, 12, 28, 0.3), 0 0 0 1px rgba(107, 246, 232, 0.28)',
+        textColor: '#f4fffb',
+        badgeBackground: 'rgba(215, 255, 248, 0.92)',
+        badgeColor: '#123444'
+      }
+    },
     bankTile: {
       badge: 'BANK',
       description: 'Gains +1 bonus score each turn it stays unused.',
@@ -234,6 +251,25 @@ const createModifierDefinitions = ({ bloodTilePositionValues }) => ({
         textColor: '#fff1dd',
         badgeBackground: 'rgba(74, 18, 6, 0.92)',
         badgeColor: '#ffd08b'
+      }
+    },
+    rustingTile: {
+      badge: 'RUST',
+      description: 'Loses 2 score each turn it stays unused, rusting further for 4 turns.',
+      effects: {
+        rustScoreDelta: -2,
+        rustMaxTurns: 4
+      },
+      rarityWeight: 0.75,
+      animations: {
+        onNewTurn: 'rust-spread'
+      },
+      ui: {
+        tileBackground: 'linear-gradient(180deg, #fffef8 0%, #f2ebe0 70%, #d9cec0 100%)',
+        tileShadow: 'inset 0 -4px 0 rgba(73, 31, 8, 0.18), 0 10px 18px rgba(45, 10, 24, 0.18), 0 0 0 1px rgba(156, 83, 34, 0.24)',
+        textColor: '#26170f',
+        badgeBackground: 'rgba(90, 42, 20, 0.92)',
+        badgeColor: '#ffd8aa'
       }
     }
   });

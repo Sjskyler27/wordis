@@ -228,7 +228,7 @@ import {
   multiplayerOvertimeFinalWordSubmitted,
   multiplayerSubmissionPauseOwner
 } from './multiplayer.js';
-import { MIN_WORD_LENGTH, drawCards, getWordScoreDetails, isMissingRequiredTile, selectedTilesMatchWord } from './tile-logic.js';
+import { MIN_WORD_LENGTH, drawCards, getWordScoreDetails, isMissingRequiredTile, selectedTilesMatchWord, tickShimmerTiles } from './tile-logic.js';
 import { getPreferredLanguage } from './language.js';
 import { useWordBuilder } from './useWordBuilder.js';
 import { useSinglePlayerGame } from './useSinglePlayerGame.js';
@@ -1674,6 +1674,13 @@ const canRunTimedRoundModifiers = () => {
     && !isMultiRoundRewardChoiceOpen.value;
 };
 
+const canRunTimedTileModifiers = () => {
+  return !isPaused.value
+    && !effectiveGameEnded.value
+    && !showTutorialOverlay.value
+    && !isMultiRoundRewardChoiceOpen.value;
+};
+
 const returnBuiltLettersToRack = (message) => {
   if (!selectedTilesForCurrentSide.value.length) {
     return false;
@@ -1755,6 +1762,38 @@ const tickTimedRoundModifiers = () => {
     };
   });
   roundModifierCountdowns.value = nextCountdowns;
+};
+
+const tickTimedTileModifiers = () => {
+  if (!canRunTimedTileModifiers()) {
+    return;
+  }
+
+  const now = Date.now();
+  const nextTilesBySide = { ...playerTiles.value };
+  let changed = false;
+
+  Object.keys(nextTilesBySide).forEach((side) => {
+    const tiles = nextTilesBySide[side] || [];
+    const nextTiles = tickShimmerTiles(tiles, {
+      now,
+      frozenTileIds: selectedTileIds.value[side] || new Set()
+    });
+
+    if (nextTiles !== tiles) {
+      nextTilesBySide[side] = nextTiles;
+      changed = true;
+    }
+  });
+
+  if (changed) {
+    playerTiles.value = nextTilesBySide;
+  }
+};
+
+const tickTimedGameEffects = () => {
+  tickTimedRoundModifiers();
+  tickTimedTileModifiers();
 };
 
 const refocusControllerSelection = () => {
@@ -2516,7 +2555,7 @@ onMounted(() => {
     playerCogTargetSpeed.value = Math.max(1, playerCogTargetSpeed.value - 0.12);
     rampPlayerCogSpeed();
   }, 500);
-  roundModifierTickIntervalId = window.setInterval(tickTimedRoundModifiers, 250);
+  roundModifierTickIntervalId = window.setInterval(tickTimedGameEffects, 250);
   window.addEventListener('resize', syncWindowWidth);
   window.addEventListener('keydown', handleKeydown);
   startGameMusic({ restart: true });

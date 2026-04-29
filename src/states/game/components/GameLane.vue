@@ -47,6 +47,8 @@
               'tile-in-use': selectedTileIds.has(tile.id),
               'tile-saved': savedTileIds.has(tile.id),
               'tile-locked': tile.locked,
+              'tile-shimmer': tile.status === 'shimmer',
+              'tile-rusting': tile.status === 'rustingTile',
               'tile-must-alert': mustAlertIds.has(tile.id),
               'tile-banned-letter': isBannedLetter(tile),
               'tile-controller-focus': controllerFocusedTileId === tile.id,
@@ -369,6 +371,8 @@ const getTileStyle = (tile) => {
     '--tile-focus-shadow': ui.tileFocusShadow || ui.tileShadow,
     '--tile-text-color': ui.textColor,
     '--tile-letter-stroke': tile.status === 'yinYang' ? '1px rgba(255, 255, 255, 0.92)' : '0 transparent',
+    '--tile-rust-coverage': `${Math.min(100, ((tile.rustTurns || 0) + 1) * 20)}%`,
+    '--tile-shimmer-cycle': `${tile.shimmerIntervalMs || 8000}ms`,
     '--tile-enter-delay': `${tileEnterDelays.value[tile.id] || 0}ms`,
     '--tile-animation-duration': `${getTileAnimationDuration(tile)}ms`
   };
@@ -397,7 +401,9 @@ const TILE_ANIMATION_DURATIONS = {
   blaze: 580,
   emerald: 580,
   'gold-shine': 580,
-  'unlock-dissolve': 530
+  'unlock-dissolve': 530,
+  'shimmer-shift': 680,
+  'rust-spread': 680
 };
 
 const getTileAnimationDuration = (tile) => {
@@ -842,6 +848,51 @@ onBeforeUnmount(() => {
   filter: saturate(0.76);
 }
 
+.tile-shimmer,
+.tile-rusting {
+  overflow: hidden;
+}
+
+.tile-shimmer::before {
+  content: '';
+  position: absolute;
+  inset: -44%;
+  z-index: 1;
+  border-radius: 34px;
+  pointer-events: none;
+  background:
+    conic-gradient(from 0deg, rgba(86, 255, 235, 0.05), rgba(197, 98, 255, 0.45), rgba(50, 255, 196, 0.36), rgba(10, 20, 36, 0.08), rgba(86, 255, 235, 0.05)),
+    radial-gradient(circle at 35% 30%, rgba(255, 255, 255, 0.5), transparent 18%),
+    radial-gradient(circle at 66% 68%, rgba(24, 224, 213, 0.48), transparent 26%);
+  filter: blur(0.5px) saturate(1.35);
+  mix-blend-mode: screen;
+  opacity: 0.8;
+  animation: shimmer-oil-cycle var(--tile-shimmer-cycle, 8000ms) linear infinite;
+}
+
+.tile-rusting::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  border-radius: 16px;
+  pointer-events: none;
+  background:
+    linear-gradient(180deg, rgba(89, 42, 19, 0.96) 0%, rgba(160, 76, 31, 0.88) var(--tile-rust-coverage, 20%), rgba(160, 76, 31, 0) var(--tile-rust-coverage, 20%)),
+    repeating-linear-gradient(135deg, rgba(255, 196, 102, 0.16) 0 5px, rgba(69, 31, 14, 0.18) 5px 10px);
+  box-shadow: inset 0 1px 0 rgba(255, 202, 126, 0.22);
+}
+
+.tile-shimmer .tile-letter,
+.tile-shimmer .tile-score,
+.tile-shimmer .tile-modifier,
+.tile-rusting .tile-letter,
+.tile-rusting .tile-score,
+.tile-rusting .tile-modifier {
+  position: relative;
+  z-index: 2;
+}
+
 .tile-banned-letter::before {
   content: '';
   position: absolute;
@@ -950,6 +1001,14 @@ onBeforeUnmount(() => {
   animation: tile-lock-overlay-dissolve var(--tile-animation-duration, 1320ms) ease-out forwards;
 }
 
+.tile-anim-shimmer-shift {
+  animation: tile-shimmer-shift var(--tile-animation-duration, 680ms) ease-out;
+}
+
+.tile-anim-rust-spread {
+  animation: tile-rust-spread var(--tile-animation-duration, 680ms) ease-out;
+}
+
 @keyframes must-tile-flash {
   0%,
   100% {
@@ -963,6 +1022,45 @@ onBeforeUnmount(() => {
       0 0 24px rgba(255, 226, 141, 0.68),
       var(--tile-shadow, inset 0 -4px 0 rgba(0, 0, 0, 0.12), 0 10px 18px rgba(45, 10, 24, 0.16));
     filter: saturate(1.18) brightness(1.08);
+  }
+}
+
+@keyframes shimmer-oil-cycle {
+  0% {
+    transform: rotate(0deg) scale(1);
+    filter: blur(0.6px) saturate(1.15);
+  }
+  62% {
+    transform: rotate(105deg) scale(1.04);
+    filter: blur(0.5px) saturate(1.28);
+  }
+  82% {
+    transform: rotate(255deg) scale(1.07);
+    filter: blur(0.45px) saturate(1.55);
+  }
+  100% {
+    transform: rotate(720deg) scale(1.02);
+    filter: blur(0.5px) saturate(1.32);
+  }
+}
+
+@keyframes tile-shimmer-shift {
+  0%,
+  100% {
+    filter: brightness(1) saturate(1);
+  }
+  45% {
+    filter: brightness(1.26) saturate(1.5);
+  }
+}
+
+@keyframes tile-rust-spread {
+  0%,
+  100% {
+    filter: brightness(1) saturate(1);
+  }
+  48% {
+    filter: brightness(0.88) saturate(1.28);
   }
 }
 

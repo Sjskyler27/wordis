@@ -69,6 +69,8 @@
                 'built-tile-banned-letter': isBannedLetter(slot.tile),
                 'built-tile-disabled-gold': isDisabledGold(slot.tile),
                 'built-tile-muted-consonant': isZeroedConsonantSlot(slot.index),
+                'built-tile-shimmer': slot.tile.status === 'shimmer',
+                'built-tile-rusting': slot.tile.status === 'rustingTile',
                 'built-tile-controller-focus': controllerFocusedBuiltTileId === slot.tile.id
               }"
               :style="getTileStyle(slot.tile, slot.index)"
@@ -450,6 +452,8 @@ const getTileStyle = (tile, index = 0) => {
     '--built-tile-shadow': ui.tileShadow,
     '--built-tile-text-color': ui.textColor,
     '--built-tile-letter-stroke': tile.status === 'yinYang' ? '1px rgba(255, 255, 255, 0.92)' : '0 transparent',
+    '--built-tile-rust-coverage': `${Math.min(100, ((tile.rustTurns || 0) + 1) * 20)}%`,
+    '--built-tile-shimmer-cycle': `${tile.shimmerIntervalMs || 8000}ms`,
     '--score-pop-delay': `${index * 110}ms`
   };
 };
@@ -823,6 +827,51 @@ button:focus{
   will-change: transform, opacity;
 }
 
+.built-tile-shimmer,
+.built-tile-rusting {
+  overflow: hidden;
+}
+
+.built-tile-shimmer::before {
+  content: '';
+  position: absolute;
+  inset: -44%;
+  z-index: 1;
+  border-radius: 32px;
+  pointer-events: none;
+  background:
+    conic-gradient(from 0deg, rgba(86, 255, 235, 0.05), rgba(197, 98, 255, 0.45), rgba(50, 255, 196, 0.36), rgba(10, 20, 36, 0.08), rgba(86, 255, 235, 0.05)),
+    radial-gradient(circle at 35% 30%, rgba(255, 255, 255, 0.5), transparent 18%),
+    radial-gradient(circle at 66% 68%, rgba(24, 224, 213, 0.48), transparent 26%);
+  filter: blur(0.5px) saturate(1.35);
+  mix-blend-mode: screen;
+  opacity: 0.8;
+  animation: built-shimmer-oil-cycle var(--built-tile-shimmer-cycle, 8000ms) linear infinite;
+}
+
+.built-tile-rusting::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  border-radius: 14px;
+  pointer-events: none;
+  background:
+    linear-gradient(180deg, rgba(89, 42, 19, 0.96) 0%, rgba(160, 76, 31, 0.88) var(--built-tile-rust-coverage, 20%), rgba(160, 76, 31, 0) var(--built-tile-rust-coverage, 20%)),
+    repeating-linear-gradient(135deg, rgba(255, 196, 102, 0.16) 0 5px, rgba(69, 31, 14, 0.18) 5px 10px);
+  box-shadow: inset 0 1px 0 rgba(255, 202, 126, 0.22);
+}
+
+.built-tile-shimmer .tile-letter,
+.built-tile-shimmer .tile-score,
+.built-tile-shimmer .tile-modifier,
+.built-tile-rusting .tile-letter,
+.built-tile-rusting .tile-score,
+.built-tile-rusting .tile-modifier {
+  position: relative;
+  z-index: 2;
+}
+
 .built-tile-banned-letter::before {
   content: '';
   position: absolute;
@@ -938,6 +987,25 @@ button:focus{
   100% {
     opacity: 0;
     transform: translateY(-10px) scale(0.84);
+  }
+}
+
+@keyframes built-shimmer-oil-cycle {
+  0% {
+    transform: rotate(0deg) scale(1);
+    filter: blur(0.6px) saturate(1.15);
+  }
+  62% {
+    transform: rotate(105deg) scale(1.04);
+    filter: blur(0.5px) saturate(1.28);
+  }
+  82% {
+    transform: rotate(255deg) scale(1.07);
+    filter: blur(0.45px) saturate(1.55);
+  }
+  100% {
+    transform: rotate(720deg) scale(1.02);
+    filter: blur(0.5px) saturate(1.32);
   }
 }
 

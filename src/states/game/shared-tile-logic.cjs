@@ -18,8 +18,8 @@ const {
 
 
 const GOOD_MODIFIERS = ['gold', 'firsttile', 'royalPear', 'bankTile', 'gainboon', 'gainattack'];
-const BAD_MODIFIERS = ['zeroTile', 'mustuse', 'locked3', 'burningTile'];
-const NEUTRAL_MODIFIERS = ['yinYang', 'ghostTile','bloodTile', 'wild'];
+const BAD_MODIFIERS = ['zeroTile', 'mustuse', 'locked3', 'burningTile', 'rustingTile'];
+const NEUTRAL_MODIFIERS = ['yinYang', 'ghostTile','bloodTile', 'wild', 'shimmer'];
 
 const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {}, devLogging = false, testing = false }) => {
   const isDevLoggingEnabled = () => typeof devLogging === 'function' ? Boolean(devLogging()) : Boolean(devLogging);
@@ -61,6 +61,7 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
     name: '',
     key: ''
   };
+  const SHIMMER_INTERVAL_MS = 8000;
   const MODIFIER_PROFILES = {
     duel: {
       goodModifiers: GOOD_MODIFIERS,
@@ -120,6 +121,27 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
 
     if (!totalWeight) {
       return LETTER_POOL[Math.floor(Math.random() * LETTER_POOL.length)];
+    }
+
+    let roll = Math.random() * totalWeight;
+    for (const entry of weightedPool) {
+      roll -= entry.weight;
+      if (roll <= 0) {
+        return entry.letter;
+      }
+    }
+
+    return weightedPool[weightedPool.length - 1]?.letter || 'E';
+  };
+  const drawShimmerLetter = (currentLetter = '', tiles = []) => {
+    const current = (currentLetter || '').toUpperCase();
+    const weightedPool = getWeightedLetterPool(tiles)
+      .filter((entry) => entry.letter.length === 1 && entry.letter !== current);
+    const totalWeight = weightedPool.reduce((sum, entry) => sum + entry.weight, 0);
+
+    if (!totalWeight) {
+      const singleLetters = LETTER_KEYS.filter((letter) => letter.length === 1 && letter !== current);
+      return singleLetters[Math.floor(Math.random() * singleLetters.length)] || 'E';
     }
 
     let roll = Math.random() * totalWeight;
@@ -807,17 +829,25 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
     const personalModifierEffects = options.personalModifierEffects || options.personalModifiers || {};
     const roundModifierEffects = options.roundModifierEffects || {};
     const idleBonusScoreDeltaBonus = personalModifierEffects.idleBonusScoreDeltaBonus || {};
+    const rustScoreDelta = definition.effects.rustScoreDelta || 0;
+    const rustMaxTurns = definition.effects.rustMaxTurns || 0;
+    const canRust = rustScoreDelta && rustMaxTurns && (tile?.rustTurns || 0) < rustMaxTurns;
     const idleBonusScoreDelta = (definition.effects.idleBonusScoreDelta || 0)
       + (idleBonusScoreDeltaBonus[tile?.status] || 0)
-      + (roundModifierEffects.idleScoreDelta || 0);
+      + (roundModifierEffects.idleScoreDelta || 0)
+      + (canRust ? rustScoreDelta : 0);
 
     if (!idleBonusScoreDelta) {
       return tile;
     }
 
+    const nextBonusScore = (tile?.bonusScore || 0) + idleBonusScoreDelta;
+
     return {
       ...tile,
-      bonusScore: Math.max(-(tile?.score || 0), (tile?.bonusScore || 0) + idleBonusScoreDelta)
+      rustTurns: canRust ? Math.min(rustMaxTurns, (tile?.rustTurns || 0) + 1) : tile?.rustTurns,
+      rustMaxTurns: rustMaxTurns || tile?.rustMaxTurns,
+      bonusScore: canRust ? nextBonusScore : Math.max(-(tile?.score || 0), nextBonusScore)
     };
   };
 
@@ -833,6 +863,72 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
       const definition = getModifierDefinition(tile?.status);
       return total + ((definition.effects.idleScorePenalty || 0) * idlePenaltyMultiplier);
     }, 0);
+  };
+  const tickShimmerTile = (tile, options = {}) => {
+    if (tile?.status !== 'shimmer') {
+      return tile;
+    }
+
+    const now = options.now || Date.now();
+    const intervalMs = tile.shimmerIntervalMs || getModifierDefinition('shimmer').effects.shimmerIntervalMs || SHIMMER_INTERVAL_MS;
+    const frozenTileIds = options.frozenTileIds || new Set();
+
+    if (frozenTileIds.has(tile.id)) {
+      if (tile.shimmerShiftAt && tile.shimmerShiftAt > now) {
+        return tile;
+      }
+
+      return {
+        ...tile,
+        shimmerIntervalMs: intervalMs,
+        shimmerShiftAt: now + intervalMs
+      };
+    }
+
+    const shiftAt = tile.shimmerShiftAt || now + intervalMs;
+    if (now < shiftAt) {
+      return tile.shimmerShiftAt ? tile : {
+        ...tile,
+        shimmerIntervalMs: intervalMs,
+        shimmerShiftAt: shiftAt
+      };
+    }
+
+    const nextLetter = drawShimmerLetter(tile.baseLetter || tile.letter, options.rackTiles || []);
+    const baseScore = letterConfig[nextLetter]?.score || 0;
+
+    return {
+      ...tile,
+      letter: nextLetter,
+      baseLetter: nextLetter,
+      score: baseScore,
+      baseScore,
+      bonusScore: getModifierDefinition('shimmer').effects.bonusScore || 1,
+      shimmerIntervalMs: intervalMs,
+      shimmerShiftAt: now + intervalMs,
+      animationState: {
+        trigger: 'timer',
+        name: 'shimmer-shift',
+        key: `timer-shimmer-shift-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`
+      }
+    };
+  };
+  const tickShimmerTiles = (tiles = [], options = {}) => {
+    let changed = false;
+    const nextTiles = tiles.map((tile) => {
+      const nextTile = tickShimmerTile(tile, {
+        ...options,
+        rackTiles: tiles
+      });
+
+      if (nextTile !== tile) {
+        changed = true;
+      }
+
+      return nextTile;
+    });
+
+    return changed ? nextTiles : tiles;
   };
 
   const getLengthBonus = (length) => {
@@ -1193,6 +1289,29 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
 
     return baseScore;
   };
+  const getModifierTileState = (tile = {}, definition = {}, status = 'normal', options = {}) => {
+    const effects = definition.effects || {};
+    const state = {};
+
+    if (effects.shimmerIntervalMs) {
+      const intervalMs = effects.shimmerIntervalMs || SHIMMER_INTERVAL_MS;
+      state.shimmerIntervalMs = intervalMs;
+      state.shimmerShiftAt = options.shimmerShiftAt || tile.shimmerShiftAt || Date.now() + intervalMs;
+    } else {
+      state.shimmerIntervalMs = undefined;
+      state.shimmerShiftAt = undefined;
+    }
+
+    if (effects.rustMaxTurns) {
+      state.rustTurns = Math.max(0, tile.rustTurns || 0);
+      state.rustMaxTurns = effects.rustMaxTurns;
+    } else if (status !== tile.status) {
+      state.rustTurns = undefined;
+      state.rustMaxTurns = undefined;
+    }
+
+    return state;
+  };
 
   const applyModifierToTile = (tile, status = 'normal', options = {}) => {
     const definition = getModifierDefinition(status);
@@ -1223,7 +1342,8 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
       locked: lockTurns > 0,
       lockTurns,
       lockRestoreTile,
-      status
+      status,
+      ...getModifierTileState(tile, definition, status, options)
     }, status, options.trigger || '');
   };
 
@@ -1331,7 +1451,8 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
         firstTileBonus: modifierDefinition.effects.firstTileBonus || 0,
         locked: lockTurns > 0,
         lockTurns,
-        status
+        status,
+        ...getModifierTileState({}, modifierDefinition, status)
       }, status, 'onPull');
     };
 
@@ -1706,6 +1827,7 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
     getTilesScore,
     getWordScoreDetails,
     getIdleScorePenalty,
+    tickShimmerTiles,
     getResourceGrants,
     getTilesForWord,
     getSelectedTiles,
