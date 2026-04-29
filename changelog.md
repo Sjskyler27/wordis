@@ -1,5 +1,22 @@
 # Changelog
 
+## 0.0.38 - 2026-04-29
+
+Start: 13:30 EDT
+Stop: 13:52 EDT
+
+- Tracked multi-round turn count per round instead of using full word history.
+- Enabled shared tile dev logging from local storage in multiplayer-safe shared logic.
+- Forced production mode for build scripts that call Vite.
+- Included burn penalties in the word builder preview score.
+- Updated lockstep to apply immediately and restore original tiles after locks expire.
+- Reworked Constant Demand so the first eligible pulled tile is guaranteed MUST when needed, including the opening rack, without converting existing special tiles.
+- Prevented double-letter tiles from becoming MUST tiles.
+- Split Loose Rack into Loose Letters, Disorganised, and Chaotic Board with configurable intervals and countdown indicators.
+- Added round modifier incompatibility rules so mutually exclusive pressure and board modifiers do not combine.
+- Added the Shimmer neutral tile modifier with timed letter shifting, rack-only shifting, magic-oil styling, and letter +1 scoring.
+- Added the Rusting bad tile modifier with four-turn score decay and progressive rust styling.
+
 ## 2026-04-29 0.0.37
 
 Start: 2026-04-29 00:15 EDT
