@@ -232,6 +232,7 @@ import { getPreferredLanguage } from './language.js';
 import { useWordBuilder } from './useWordBuilder.js';
 import { useSinglePlayerGame } from './useSinglePlayerGame.js';
 import { useMultiRoundRun } from './multiround/useMultiRoundRun.js';
+import { useSideDrawerState } from './composables/useSideDrawerState.js';
 import { validateWord } from './word-validator.js';
 import { isTestingMode } from './testing.js';
 import GameCardsPanel from './components/GameCardsPanel.vue';
@@ -399,8 +400,16 @@ const hasSeenGameTutorial = () => typeof localStorage !== 'undefined' && localSt
 const showHistoryOverlay = ref(false);
 const showTutorialOverlay = ref(!hasSeenGameTutorial());
 const windowWidth = ref(typeof window !== 'undefined' ? window.innerWidth : 1440);
-const isSideDrawerOpen = ref(false);
-const sideDrawerAutoOpen = ref(false);
+const {
+  isSideDrawerOpen,
+  closeSideDrawer,
+  toggleSideDrawer
+} = useSideDrawerState({
+  isSideDrawerMode,
+  isMobile: () => props.isMobile,
+  controllerRegion,
+  isControllerNavigationActive
+});
 const personalModifiersDrawerRef = ref(null);
 const multiRoundRun = useMultiRoundRun({
   rounds: getMultiRoundRounds(props.multiRoundDifficulty)
@@ -1752,29 +1761,6 @@ const refocusControllerSelection = () => {
   focusControllerTile(controllerTileCursorIndex.value);
 };
 
-const openSideDrawer = ({ auto = false } = {}) => {
-  if (!isSideDrawerMode.value) {
-    return;
-  }
-
-  isSideDrawerOpen.value = true;
-  sideDrawerAutoOpen.value = auto;
-};
-
-const closeSideDrawer = () => {
-  isSideDrawerOpen.value = false;
-  sideDrawerAutoOpen.value = false;
-};
-
-const toggleSideDrawer = () => {
-  if (isSideDrawerOpen.value) {
-    closeSideDrawer();
-    return;
-  }
-
-  openSideDrawer({ auto: false });
-};
-
 const togglePersonalModifiersDrawer = () => {
   if (!isMultiRoundMode.value) {
     return;
@@ -2474,34 +2460,6 @@ watch(isMultiRoundRewardChoiceOpen, (isOpen) => {
   nextTick(() => {
     focusControllerReward(0);
   });
-});
-
-watch(isSideDrawerMode, (isDrawerMode) => {
-  if (!isDrawerMode) {
-    closeSideDrawer();
-  }
-});
-
-watch([isSideDrawerMode, () => props.isMobile], ([isDrawerMode, isMobile]) => {
-  if (isDrawerMode && isMobile) {
-    openSideDrawer({ auto: true });
-  }
-}, { immediate: true });
-
-
-//potential spasmning cursor issue
-watch(controllerRegion, (nextRegion, previousRegion) => {
-  if (!isSideDrawerMode.value || !isControllerNavigationActive.value) {
-    return;
-  }
-
-  if (nextRegion === 'cards') {
-    openSideDrawer({ auto: true });
-    return;
-  }
-  if (previousRegion === 'cards' && sideDrawerAutoOpen.value) {
-    closeSideDrawer();
-  }
 });
 
 const syncWindowWidth = () => {
