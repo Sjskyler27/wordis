@@ -858,9 +858,15 @@ button:focus{
   border-radius: 14px;
   pointer-events: none;
   background:
-    linear-gradient(180deg, rgba(89, 42, 19, 0.96) 0%, rgba(160, 76, 31, 0.88) var(--built-tile-rust-coverage, 20%), rgba(160, 76, 31, 0) var(--built-tile-rust-coverage, 20%)),
-    repeating-linear-gradient(135deg, rgba(255, 196, 102, 0.16) 0 5px, rgba(69, 31, 14, 0.18) 5px 10px);
-  box-shadow: inset 0 1px 0 rgba(255, 202, 126, 0.22);
+    radial-gradient(circle at 18% 72%, rgba(42, 23, 15, 0.78) 0 7%, transparent 8%),
+    radial-gradient(circle at 68% 76%, rgba(42, 23, 15, 0.64) 0 5%, transparent 6%),
+    radial-gradient(circle at 84% 36%, rgba(255, 154, 52, 0.42) 0 6%, transparent 7%),
+    linear-gradient(180deg, rgba(64, 29, 17, 0.96) 0 15%, rgba(164, 77, 29, 0.94) 16% 34%, rgba(74, 36, 22, 0.92) 35% 50%, rgba(214, 106, 31, 0.88) 51% 70%, rgba(88, 45, 27, 0.72) 71% 100%),
+    repeating-linear-gradient(0deg, rgba(35, 18, 12, 0.34) 0 4px, rgba(244, 129, 35, 0.2) 4px 9px, rgba(103, 49, 24, 0.3) 9px 15px);
+  box-shadow:
+    inset 0 -4px 0 rgba(39, 20, 13, 0.32),
+    inset 0 1px 0 rgba(255, 202, 126, 0.22);
+  clip-path: polygon(0 0, 100% 0, 100% 72%, 94% 68%, 89% 78%, 82% 70%, 75% 84%, 68% 76%, 60% 86%, 52% 71%, 45% 81%, 36% 70%, 28% 84%, 20% 73%, 12% 80%, 0 70%);
 }
 
 .built-tile-shimmer .tile-letter,
