@@ -70,7 +70,7 @@
           <span v-if="!isMobile" class="bonus-kicker">Cards</span>
           <strong>{{ cardSummary }}</strong>
           <p v-if="activeBoonCard">
-            {{ activeBoonCard.label }} is ready. Click one of your tiles to use it.
+            {{ activeBoonCard.label }} is ready. Select a tile!
           </p>
           <div class="card-hand">
             <button
@@ -1621,7 +1621,7 @@ const selectBoonCard = (card) => {
   }
 
   activeBoonCardId.value = card.id;
-  localMessage.value = `Ready ${card.label}. Click one of your tiles to use it.`;
+  localMessage.value = `Ready ${card.label}. Select a tile!`;
   focusControllerTile(controllerTileCursorIndex.value);
 };
 
