@@ -63,53 +63,20 @@
           <p v-else-if="isMultiRoundMode">Clear the current target to advance the run.</p>
           <p v-else>Words must be 4 letters, larger words score bonus points and may gain cards. Only used letters are replaced.</p>
         </div>
-        <div class="bonus-card accent-purple">
-          <span v-if="!isMobile" class="bonus-kicker">Cards</span>
-          <strong>{{ cardSummary }}</strong>
-          <p v-if="activeBoonCard">
-            {{ activeBoonCard.label }} is ready. Select a tile!
-          </p>
-          <div class="card-hand">
-            <button
-              v-for="(cardGroup, index) in groupedBoonCards"
-              :key="cardGroup.key"
-              type="button"
-              class="action-card"
-              :style="getCardStyle(cardGroup.card)"
-              :class="{
-                armed: cardGroup.cards.some((card) => activeBoonCardId === card.id),
-                'action-card-controller-focus': controllerRegion === 'cards' && controllerCardCursorIndex === index
-              }"
-              :disabled="cardControlsDisabled"
-              :data-controller-card="index"
-              @click="selectBoonCard(cardGroup.card)"
-            >
-              <span class="action-card-type">Boon</span>
-              <span v-if="cardGroup.count > 1" class="action-card-count">x{{ cardGroup.count }}</span>
-              <strong>{{ cardGroup.card.label }}</strong>
-              <span>{{ cardGroup.card.description }}</span>
-            </button>
-            <button
-              v-if="attacksEnabled"
-              v-for="(cardGroup, attackIndex) in groupedAttackCards"
-              :key="cardGroup.key"
-              type="button"
-              class="action-card"
-              :style="getCardStyle(cardGroup.card)"
-              :class="{
-                'action-card-controller-focus': controllerRegion === 'cards' && controllerCardCursorIndex === groupedBoonCards.length + attackIndex
-              }"
-              :disabled="cardControlsDisabled"
-              :data-controller-card="groupedBoonCards.length + attackIndex"
-              @click="useAttackCard(cardGroup.card)"
-            >
-              <span class="action-card-type">Attack</span>
-              <span v-if="cardGroup.count > 1" class="action-card-count">x{{ cardGroup.count }}</span>
-              <strong>{{ cardGroup.card.label }}</strong>
-              <span>{{ cardGroup.card.description }}</span>
-            </button>
-          </div>
-        </div>
+        <GameCardsPanel
+          :is-mobile="isMobile"
+          :card-summary="cardSummary"
+          :active-boon-card="activeBoonCard"
+          :grouped-boon-cards="groupedBoonCards"
+          :grouped-attack-cards="groupedAttackCards"
+          :attacks-enabled="attacksEnabled"
+          :card-controls-disabled="cardControlsDisabled"
+          :active-boon-card-id="activeBoonCardId"
+          :controller-region="controllerRegion"
+          :controller-card-cursor-index="controllerCardCursorIndex"
+          @select-boon="selectBoonCard"
+          @use-attack="useAttackCard"
+        />
       <button class="pause-button" @click="emit('showSettings')">{{ isPaused ? 'Resume' : 'Pause' }}</button>
       <!-- <button class="back-button" @click="resetAndGoHome">Back to Home</button> -->
 
@@ -294,6 +261,7 @@ import { useSinglePlayerGame } from './useSinglePlayerGame.js';
 import { useMultiRoundRun } from './multiround/useMultiRoundRun.js';
 import { validateWord } from './word-validator.js';
 import { isTestingMode } from './testing.js';
+import GameCardsPanel from './components/GameCardsPanel.vue';
 import GameLane from './components/GameLane.vue';
 import HistoryOverlay from './components/HistoryOverlay.vue';
 import MachineBackground from './components/MachineBackground.vue';
@@ -790,16 +758,6 @@ const multiRoundHistorySummary = computed(() => {
     personalModifiers: multiRoundRun.personalModifiers.value
   };
 });
-const getCardStyle = (card) => {
-  const ui = card?.ui || {};
-  return {
-    '--card-glow': ui.cardGlow || 'rgba(255, 255, 255, 0.16)',
-    '--card-edge': ui.cardEdge || 'rgba(255, 255, 255, 0.24)',
-    '--card-pattern': ui.cardPattern || 'rgba(255, 255, 255, 0.08)',
-    '--card-background': ui.cardBackground || 'linear-gradient(180deg, rgba(119, 206, 113, 0.96), rgba(63, 129, 84, 0.96))',
-    '--card-badge-background': ui.cardBadgeBackground || 'rgba(24, 8, 22, 0.26)'
-  };
-};
 const WINNING_SCORE = isTestingMode ? 40 : 250;
 const winningSide = computed(() => {
   if (isOvertimeActive.value) {
