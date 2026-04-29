@@ -451,8 +451,8 @@ const getTileStyle = (tile, index = 0) => {
     '--built-tile-bg': ui.tileBackground,
     '--built-tile-shadow': ui.tileShadow,
     '--built-tile-text-color': ui.textColor,
-    '--built-tile-letter-stroke': tile.status === 'yinYang' ? '1px rgba(255, 255, 255, 0.92)' : '0 transparent',
-    '--built-tile-rust-coverage': `${Math.min(100, ((tile.rustTurns || 0) + 1) * 20)}%`,
+    '--built-tile-letter-stroke': tile.status === 'yinYang' || tile.status === 'rustingTile' ? '1px rgba(255, 255, 255, 0.92)' : '0 transparent',
+    '--built-tile-rust-coverage': `${Math.min(120, (((tile.rustTurns  || 0) + 1) * 20) + 18)}%`,
     '--built-tile-shimmer-cycle': `${tile.shimmerIntervalMs || 8000}ms`,
     '--score-pop-delay': `${index * 110}ms`
   };
@@ -856,16 +856,14 @@ button:focus{
   top: 0;
   right: 0;
   left: 0;
-  height: var(--built-tile-rust-coverage, 20%);
+  height: var(--built-tile-rust-coverage, 25%);
   z-index: 0;
   border-radius: 14px;
   pointer-events: none;
+
   background:
-    radial-gradient(circle at 18% 72%, rgba(42, 23, 15, 0.78) 0 7%, transparent 8%),
-    radial-gradient(circle at 68% 76%, rgba(42, 23, 15, 0.64) 0 5%, transparent 6%),
-    radial-gradient(circle at 84% 36%, rgba(255, 154, 52, 0.42) 0 6%, transparent 7%),
-    linear-gradient(180deg, rgba(64, 29, 17, 0.96) 0 15%, rgba(164, 77, 29, 0.94) 16% 34%, rgba(74, 36, 22, 0.92) 35% 50%, rgba(214, 106, 31, 0.88) 51% 70%, rgba(88, 45, 27, 0.72) 71% 100%),
-    repeating-linear-gradient(0deg, rgba(35, 18, 12, 0.34) 0 4px, rgba(244, 129, 35, 0.2) 4px 9px, rgba(103, 49, 24, 0.3) 9px 15px);
+    linear-gradient(45deg, rgba(194, 103, 55, 0.94) 16%, rgba(255, 145, 86, 0.94) 50%, rgba(145, 66, 39, 0.96) 100%);
+
   box-shadow:
     inset 0 -4px 0 rgba(39, 20, 13, 0.32),
     inset 0 1px 0 rgba(255, 202, 126, 0.22);
@@ -877,6 +875,14 @@ button:focus{
   position: relative;
   z-index: 2;
 }
+.built-tile-rusting{
+  --tile-letter-stroke: 1px rgba(255, 255, 255, 0.92);
+}
+.built-tile-rusting .tile-score{
+  color: white;
+  --tile-letter-stroke: 1px rgba(0, 0, 0, 0.92);
+}
+
 
 .built-tile-shimmer .tile-score,
 .built-tile-rusting .tile-score {
