@@ -263,3 +263,10 @@ strong start does not work due to max good modifer chance we need to temporarily
 define what  a tile is for syntax highliting 
 
 focus something already focused spasms 
+
+
+each time a word is played in balatro mode the odds go up this amount persists accross rounds, it should reset per round but bad modifier should go up per round
+
+score in word builder should account for the burns 
+
+mlutiplayer is still using api client and breaks if wrong word

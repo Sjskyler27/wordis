@@ -12,7 +12,8 @@ players can earn attack cards that they can play against their opponent to make 
 
 # structure 
 The codebase uses websockets for hosting multyplayer games
-game.vue is the meat of the gameplay functionality but things should be broken into components when appropriate.
+game.vue is the meat of the gameplay functionality but things should be broken into components and composables when appropriate, we do not want game.vue to get too large.
+
 
 
 # Coding
