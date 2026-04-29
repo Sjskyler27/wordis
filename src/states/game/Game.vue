@@ -700,7 +700,7 @@ const finalWordWindowLabel = computed(() => {
 
   return formatFinalWordLabel('Final Word!');
 });
-const wordBuilderBannerActive = computed(() => isOvertimeActive.value || finalWordWindowActive.value);
+const wordBuilderBannerActive = computed(() => isOvertimeActive.value || (finalWordWindowActive.value && !isMultiRoundRewardChoiceOpen.value === true));
 const wordBuilderBannerLabel = computed(() => finalWordWindowLabel.value || overtimeLabel.value);
 const submissionPauseOwner = computed(() => {
   return props.isMultiplayer
