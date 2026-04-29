@@ -74,40 +74,42 @@
           </p>
           <div class="card-hand">
             <button
-              v-for="(card, index) in myCards.boons"
-              :key="card.id"
+              v-for="(cardGroup, index) in groupedBoonCards"
+              :key="cardGroup.key"
               type="button"
               class="action-card"
-              :style="getCardStyle(card)"
+              :style="getCardStyle(cardGroup.card)"
               :class="{
-                armed: activeBoonCardId === card.id,
+                armed: cardGroup.cards.some((card) => activeBoonCardId === card.id),
                 'action-card-controller-focus': controllerRegion === 'cards' && controllerCardCursorIndex === index
               }"
               :disabled="cardControlsDisabled"
               :data-controller-card="index"
-              @click="selectBoonCard(card)"
+              @click="selectBoonCard(cardGroup.card)"
             >
               <span class="action-card-type">Boon</span>
-              <strong>{{ card.label }}</strong>
-              <span>{{ card.description }}</span>
+              <span v-if="cardGroup.count > 1" class="action-card-count">x{{ cardGroup.count }}</span>
+              <strong>{{ cardGroup.card.label }}</strong>
+              <span>{{ cardGroup.card.description }}</span>
             </button>
             <button
               v-if="attacksEnabled"
-              v-for="(card, attackIndex) in myCards.attacks"
-              :key="card.id"
+              v-for="(cardGroup, attackIndex) in groupedAttackCards"
+              :key="cardGroup.key"
               type="button"
               class="action-card"
-              :style="getCardStyle(card)"
+              :style="getCardStyle(cardGroup.card)"
               :class="{
-                'action-card-controller-focus': controllerRegion === 'cards' && controllerCardCursorIndex === myCards.boons.length + attackIndex
+                'action-card-controller-focus': controllerRegion === 'cards' && controllerCardCursorIndex === groupedBoonCards.length + attackIndex
               }"
               :disabled="cardControlsDisabled"
-              :data-controller-card="myCards.boons.length + attackIndex"
-              @click="useAttackCard(card)"
+              :data-controller-card="groupedBoonCards.length + attackIndex"
+              @click="useAttackCard(cardGroup.card)"
             >
               <span class="action-card-type">Attack</span>
-              <strong>{{ card.label }}</strong>
-              <span>{{ card.description }}</span>
+              <span v-if="cardGroup.count > 1" class="action-card-count">x{{ cardGroup.count }}</span>
+              <strong>{{ cardGroup.card.label }}</strong>
+              <span>{{ cardGroup.card.description }}</span>
             </button>
           </div>
         </div>
@@ -711,10 +713,36 @@ const isMySubmissionPaused = computed(() => Boolean(submissionPauseOwner.value) 
 const isSubmissionPauseActive = computed(() => Boolean(submissionPauseOwner.value));
 
 const myCards = computed(() => playerCards.value[mySide.value] || { boons: [], attacks: [] });
+const groupCardsByKey = (cards = []) => {
+  const groupedCards = [];
+  const groupByKey = new Map();
+
+  cards.forEach((card) => {
+    const groupKey = card.key || card.id;
+    if (!groupByKey.has(groupKey)) {
+      const group = {
+        key: groupKey,
+        card,
+        cards: [],
+        count: 0
+      };
+      groupByKey.set(groupKey, group);
+      groupedCards.push(group);
+    }
+
+    const group = groupByKey.get(groupKey);
+    group.cards.push(card);
+    group.count = group.cards.length;
+  });
+
+  return groupedCards;
+};
+const groupedBoonCards = computed(() => groupCardsByKey(myCards.value.boons));
+const groupedAttackCards = computed(() => attacksEnabled.value ? groupCardsByKey(myCards.value.attacks) : []);
 const controllerCards = computed(() => {
   return [
-    ...myCards.value.boons,
-    ...(attacksEnabled.value ? myCards.value.attacks : [])
+    ...groupedBoonCards.value.map((group) => group.card),
+    ...groupedAttackCards.value.map((group) => group.card)
   ];
 });
 const activeBoonCard = computed(() => {
@@ -3143,6 +3171,32 @@ body {
   color: rgba(255, 248, 236, 0.92);
   background: var(--card-badge-background);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+
+.action-card-count {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 2;
+  min-width: 44px;
+  height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 10px;
+  border-radius: 999px;
+  border: 2px solid rgba(255, 248, 220, 0.9);
+  background:
+    linear-gradient(180deg, rgba(246, 238, 206, 0.98), rgba(252, 194, 123, 0.826));
+  color: #35111f;
+  font-size: 1.25rem;
+  font-weight: 900;
+  line-height: 1;
+  text-shadow: none;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.6),
+    0 4px 0 rgba(66, 17, 30, 0.34),
+    0 8px 16px rgba(20, 6, 18, 0.28);
 }
 
 .action-card.armed {
