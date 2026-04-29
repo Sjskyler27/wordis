@@ -95,7 +95,12 @@ export const useSinglePlayerGame = ({
   const keepTestingHand = (hand = [], cardId) => {
     return isTestingMode ? hand : hand.filter((entry) => entry.id !== cardId);
   };
+  const multiRoundWordsPlayedThisRound = ref(0);
   const getTurnCount = () => {
+    if (isMultiRoundMode?.value) {
+      return multiRoundWordsPlayedThisRound.value;
+    }
+
     return (wordHistory.value.host?.length || 0) + (wordHistory.value.opponent?.length || 0);
   };
   const cardModifierEffects = ref({
@@ -484,6 +489,9 @@ export const useSinglePlayerGame = ({
       }, ...wordHistory.value.host],
       opponent: wordHistory.value.opponent
     };
+    if (isMultiRoundMode?.value) {
+      multiRoundWordsPlayedThisRound.value += 1;
+    }
 
     playerScores.value = {
       host: playerScores.value.host + scoreDelta,
@@ -598,6 +606,10 @@ export const useSinglePlayerGame = ({
 
   const resetSinglePlayerRound = (side = 'host') => {
     submissionPauseOwner.value = null;
+    if (isMultiRoundMode?.value) {
+      multiRoundWordsPlayedThisRound.value = 0;
+    }
+
     const nextRack = createRack(side, playerScores.value, {
       modifierProfile: modifierProfile(),
       personalModifierEffects: getPersonalModifierEffects(),
