@@ -89,17 +89,14 @@
           :controller-focused-round-index="controllerRegion === 'rounds' ? controllerRoundCursorIndex : -1"
         />
 
-        <div class="score-ribbon">
-          <div class="score-box host" :class="scoreBoxClass('host')">
-            <span>Your Board</span>
-            <strong>{{ scoreRibbonScoreLabel }}</strong>
-          </div>
-          <div class="score-divider">VS</div>
-          <div class="score-box opponent" :class="[{ timer: isTimedSoloMode || isMultiRoundMode }, scoreBoxClass('opponent')]">
-            <span>{{ isTimedSoloMode || isMultiRoundMode ? 'Time Left' : 'Their Board' }}</span>
-            <strong>{{ isTimedSoloMode || isMultiRoundMode ? clockScoreRibbonLabel : rightLane.score }}</strong>
-          </div>
-        </div>
+        <ScoreRibbon
+          :score-ribbon-score-label="scoreRibbonScoreLabel"
+          :clock-score-ribbon-label="clockScoreRibbonLabel"
+          :right-score="rightLane.score"
+          :show-clock="isTimedSoloMode || isMultiRoundMode"
+          :host-score-class="scoreBoxClass('host')"
+          :opponent-score-class="[{ timer: isTimedSoloMode || isMultiRoundMode }, scoreBoxClass('opponent')]"
+        />
 
         <div v-if="props.isMultiplayer ? gameStarted : true" class="arena" :class="{ 'arena-solo': !showOpponentLane }">
           <GameLane
@@ -267,6 +264,7 @@ import HistoryOverlay from './components/HistoryOverlay.vue';
 import MachineBackground from './components/MachineBackground.vue';
 import MultiRoundProgress from './components/MultiRoundProgress.vue';
 import MultiRoundRewardChoice from './components/MultiRoundRewardChoice.vue';
+import ScoreRibbon from './components/ScoreRibbon.vue';
 import { getMultiRoundRounds } from './multiround/multi-round-difficulties.js';
 import PersonalModifiersDrawer from './components/PersonalModifiersDrawer.vue';
 import TutorialOverlay from './components/TutorialOverlay.vue';
