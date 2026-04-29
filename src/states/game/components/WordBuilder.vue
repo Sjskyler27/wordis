@@ -829,15 +829,16 @@ button:focus{
 
 .built-tile-shimmer,
 .built-tile-rusting {
+  isolation: isolate;
   overflow: hidden;
 }
 
 .built-tile-shimmer::before {
   content: '';
   position: absolute;
-  inset: -44%;
-  z-index: 1;
-  border-radius: 32px;
+  inset: -36%;
+  z-index: 0;
+  border-radius: 14px;
   pointer-events: none;
   background:
     conic-gradient(from 0deg, rgba(86, 255, 235, 0.05), rgba(197, 98, 255, 0.45), rgba(50, 255, 196, 0.36), rgba(10, 20, 36, 0.08), rgba(86, 255, 235, 0.05)),
@@ -853,7 +854,7 @@ button:focus{
   content: '';
   position: absolute;
   inset: 0;
-  z-index: 1;
+  z-index: 0;
   border-radius: 14px;
   pointer-events: none;
   background:
@@ -863,13 +864,19 @@ button:focus{
 }
 
 .built-tile-shimmer .tile-letter,
-.built-tile-shimmer .tile-score,
-.built-tile-shimmer .tile-modifier,
-.built-tile-rusting .tile-letter,
-.built-tile-rusting .tile-score,
-.built-tile-rusting .tile-modifier {
+.built-tile-rusting .tile-letter {
   position: relative;
   z-index: 2;
+}
+
+.built-tile-shimmer .tile-score,
+.built-tile-rusting .tile-score {
+  z-index: 5;
+}
+
+.built-tile-shimmer .tile-modifier,
+.built-tile-rusting .tile-modifier {
+  z-index: 6;
 }
 
 .built-tile-banned-letter::before {
