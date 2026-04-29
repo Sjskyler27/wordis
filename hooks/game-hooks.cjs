@@ -6,10 +6,11 @@ const MILESTONE_REWARDS = require('../src/states/game/word-milestone-rewards.jso
 const { validateWord } = require('./word-validator.cjs');
 const { isTestingMode, isDevMode } = require('./env.cjs');
 const WINNING_SCORE = isTestingMode ? 40 : 250;
+const sharedTileLogic = require('../src/states/game/shared-tile-logic.cjs');
 const {
   createSharedTileLogic,
   BAD_TILES
-} = require('../src/states/game/shared-tile-logic.cjs');
+} = sharedTileLogic;
 
 const {
   CARD_DEFINITIONS,

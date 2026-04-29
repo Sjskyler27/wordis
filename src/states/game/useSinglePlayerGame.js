@@ -9,6 +9,7 @@ import {
   createTestingOpeningRackPair,
   createRack,
   drawCards,
+  BAD_TILES,
   getTilesForWord,
   getResourceGrants,
   replaceTileWithModifier,
@@ -20,7 +21,6 @@ import {
 } from './tile-logic.js';
 import { isTestingMode } from './testing.js';
 import { BOT_DIFFICULTIES } from './play-config.js';
-import { BAD_TILES } from './shared-tile-logic.cjs';
 
 export const useSinglePlayerGame = ({
   isMultiplayer,

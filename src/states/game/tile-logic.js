@@ -5,7 +5,12 @@ import './card-definitions.cjs';
 import './modifier-definitions.cjs';
 import './shared-tile-logic.cjs';
 
-const { createSharedTileLogic } = globalThis.__sharedTileLogic || {};
+const {
+  createSharedTileLogic,
+  BAD_TILES: SHARED_BAD_TILES,
+  NEUTRAL_TILES: SHARED_NEUTRAL_TILES,
+  GOOD_TILES: SHARED_GOOD_TILES
+} = globalThis.__sharedTileLogic || {};
 if (typeof createSharedTileLogic !== 'function') {
   throw new Error('Shared tile logic failed to initialize');
 }
@@ -82,6 +87,9 @@ const {
 const { createCard, createCards, drawCard, drawCards } = createCardLogic({
   createCardId: () => nextClientId('__wordisLocalCardIdState', 'local-card')
 });
+const BAD_TILES = SHARED_BAD_TILES || [];
+const NEUTRAL_TILES = SHARED_NEUTRAL_TILES || [];
+const GOOD_TILES = SHARED_GOOD_TILES || [];
 
 export {
   LETTER_KEYS,
@@ -112,6 +120,9 @@ export {
   getModifierDefinition,
   getModifierDescription,
   MODIFIER_DEFINITIONS,
+  BAD_TILES,
+  NEUTRAL_TILES,
+  GOOD_TILES,
   CARD_DEFINITIONS,
   getCardDefinition,
   createCard,

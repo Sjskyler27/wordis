@@ -1643,7 +1643,10 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
 };
 
 const sharedTileLogicApi = {
-  createSharedTileLogic
+  createSharedTileLogic,
+  BAD_TILES: BAD_MODIFIERS,
+  NEUTRAL_TILES: NEUTRAL_MODIFIERS,
+  GOOD_TILES: GOOD_MODIFIERS
 };
 
 if (typeof globalThis !== 'undefined') {
@@ -1653,7 +1656,3 @@ if (typeof globalThis !== 'undefined') {
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = sharedTileLogicApi;
 }
-
- export const BAD_TILES = BAD_MODIFIERS;
- export const NEUTRAL_TILES = NEUTRAL_MODIFIERS;
- export const GOOD_TILES = GOOD_MODIFIERS;
