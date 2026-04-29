@@ -2094,7 +2094,6 @@ const syncTutorialPauseState = (visible) => {
     stopBotLoop();
     stopSoloTimer();
     stopMultiRoundTimer();
-    gameMusic.pause();
     return;
   }
 
