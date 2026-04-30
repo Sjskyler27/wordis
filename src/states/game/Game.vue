@@ -2779,6 +2779,8 @@ onMounted(() => {
 });
 
 onBeforeUnmount(() => {
+  saveCurrentMultiRoundLocal();
+  saveCurrentBotMatchLocal();
   window.removeEventListener('resize', syncWindowWidth);
   window.removeEventListener('keydown', handleKeydown);
   window.removeEventListener('wordis:show-tutorial', showTutorialFromSettings);
