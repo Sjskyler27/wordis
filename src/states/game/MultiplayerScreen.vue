@@ -5,7 +5,7 @@
       <div class="shape-layer layer-near"></div>
     </div>
 
-    <main class="multiplayer-frame">
+    <main class="multiplayer-frame" :class="{ exiting: isExiting }">
       <section class="hero-card">
         <span class="kicker">Wordis Online</span>
         <h1>Real-Time Duel Lobby</h1>
@@ -60,7 +60,7 @@
               :disabled="isConnecting || !isSocketConnected"
             />
           </label>
-          <button class="arcade-button" @click="handleHostGame" :disabled="isConnecting || !isSocketConnected">
+          <button class="arcade-button" @click="handleHostGame" :disabled="isExiting || isConnecting || !isSocketConnected">
             Host Multiplayer Game
           </button>
         </div>
@@ -142,6 +142,7 @@ const hostOvertimeEnabled = ref(overtimeEnabled.value);
 const selectedDifficulty = ref('normal');
 const screenRoot = ref(null);
 const controllerFocusIndex = ref(0);
+const isExiting = ref(false);
 const emit = defineEmits(['game', 'home', 'singleplayer']);
 const difficulties = [
   { value: 'easy', label: 'Easy' },
@@ -157,12 +158,19 @@ const startBotMatch = () => {
 };
 
 const handleHostGame = () => {
+  if (isExiting.value) {
+    return;
+  }
+
+  isExiting.value = true;
   overtimeEnabled.value = hostOvertimeEnabled.value;
   localStorage.setItem('overtimeEnabled', JSON.stringify(hostOvertimeEnabled.value));
-  hostGame({
-    isPrivate: hostIsPrivate.value,
-    overtimeEnabled: hostOvertimeEnabled.value
-  });
+  window.setTimeout(() => {
+    hostGame({
+      isPrivate: hostIsPrivate.value,
+      overtimeEnabled: hostOvertimeEnabled.value
+    });
+  }, 240);
 };
 
 const handleJoinGame = () => {
@@ -264,7 +272,10 @@ const hasNavigated = ref(false);
 watch(readyToStartMultiplayer, (ready) => {
   if (ready && !hasNavigated.value) {
     hasNavigated.value = true;
-    emit('game');
+    if (!isExiting.value) {
+      isExiting.value = true;
+    }
+    window.setTimeout(() => emit('game'), 320);
   }
 });
 
@@ -359,6 +370,18 @@ onBeforeUnmount(() => {
   display: flex;
   flex-direction: column;
   gap: 20px;
+  transform-origin: center top;
+  transition:
+    transform 520ms cubic-bezier(0.7, 0, 0.84, 0),
+    opacity 420ms ease,
+    filter 520ms ease;
+}
+
+.multiplayer-frame.exiting {
+  transform: translateY(120vh) scale(0.96);
+  opacity: 0;
+  filter: blur(3px);
+  pointer-events: none;
 }
 
 .hero-card,

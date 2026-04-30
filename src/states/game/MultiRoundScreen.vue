@@ -5,7 +5,7 @@
       <div class="shape-layer layer-near"></div>
     </div>
 
-    <main class="multi-round-frame">
+    <main class="multi-round-frame" :class="{ exiting: isExiting }">
       <section class="hero-card">
         <span class="kicker">Wordis Run Mode</span>
         <h1>Wordis Run</h1>
@@ -42,7 +42,7 @@
               {{ difficulty.label }}
             </button>
           </div>
-          <button class="arcade-button" @click="startMultiRound">Start Multi-Round</button>
+          <button class="arcade-button" :disabled="isExiting" @click="startMultiRound">Start Multi-Round</button>
         </div>
 
         <div class="panel-card">
@@ -178,6 +178,7 @@ const selectedPersonalTier = ref('common');
 const selectedRoundDifficulty = ref('easy');
 const screenRoot = ref(null);
 const controllerFocusIndex = ref(0);
+const isExiting = ref(false);
 const difficulties = [
   {
     value: 'easy',
@@ -263,10 +264,17 @@ const activeRoundModifierGroup = computed(() => {
 });
 
 const startMultiRound = () => {
-  emit('singleplayer', {
-    mode: 'multi_round',
-    multiRoundDifficulty: selectedDifficulty.value
-  });
+  if (isExiting.value) {
+    return;
+  }
+
+  isExiting.value = true;
+  window.setTimeout(() => {
+    emit('singleplayer', {
+      mode: 'multi_round',
+      multiRoundDifficulty: selectedDifficulty.value
+    });
+  }, 560);
 };
 
 const getControllerTargets = () => {
@@ -400,6 +408,18 @@ onBeforeUnmount(() => {
   display: flex;
   flex-direction: column;
   gap: 20px;
+  transform-origin: center top;
+  transition:
+    transform 520ms cubic-bezier(0.7, 0, 0.84, 0),
+    opacity 420ms ease,
+    filter 520ms ease;
+}
+
+.multi-round-frame.exiting {
+  transform: translateY(120vh) scale(0.96);
+  opacity: 0;
+  filter: blur(3px);
+  pointer-events: none;
 }
 
 .hero-card,

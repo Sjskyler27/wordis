@@ -83,6 +83,7 @@ defineExpose({
 .personal-modifiers-drawer {
   width: min(260px, 100%);
   align-self: stretch;
+  animation: personalModifiersIn 560ms cubic-bezier(0.2, 0.8, 0.2, 1) 360ms both;
 }
 
 .personal-modifiers-drawer-content {
@@ -175,6 +176,20 @@ defineExpose({
   opacity: 0.74;
 }
 
+@keyframes personalModifiersIn {
+  from {
+    opacity: 0;
+    transform: translateX(44px);
+    filter: blur(3px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+    filter: blur(0);
+  }
+}
+
 @media (max-width: 1249px) {
   .personal-modifiers-handle {
     height: 70px;
@@ -241,6 +256,7 @@ defineExpose({
     box-shadow: -24px 0 42px rgba(18, 6, 17, 0.24);
     overflow-y: auto;
     transform: translateX(calc(100% + 16px));
+    animation: none;
     transition: transform 220ms ease;
   }
 
