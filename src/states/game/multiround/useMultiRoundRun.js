@@ -274,6 +274,25 @@ export const useMultiRoundRun = ({ rounds = MULTI_ROUND_ROUNDS } = {}) => {
     failureSummary.value = null;
   };
 
+  const restoreRunState = (state = {}) => {
+    resolvedRounds.value = Array.isArray(state.resolvedRounds) && state.resolvedRounds.length
+      ? state.resolvedRounds
+      : resolveRounds(rounds);
+    currentRoundIndex.value = Math.max(0, Math.min(
+      Number(state.currentRoundIndex) || 0,
+      Math.max(0, resolvedRounds.value.length - 1)
+    ));
+    startingScoreBonus.value = Math.max(0, Math.floor(Number(state.startingScoreBonus) || 0));
+    timerRemainingSeconds.value = Math.max(0, Number(state.timerRemainingSeconds) || 0);
+    completedRounds.value = Array.isArray(state.completedRounds) ? state.completedRounds : [];
+    personalModifiers.value = Array.isArray(state.personalModifiers)
+      ? state.personalModifiers
+      : createStartingPersonalModifiers();
+    rewardChoices.value = Array.isArray(state.rewardChoices) ? state.rewardChoices : [];
+    runEnded.value = Boolean(state.runEnded);
+    failureSummary.value = state.failureSummary || null;
+  };
+
   const setTimerRemainingSeconds = (seconds) => {
     timerRemainingSeconds.value = Math.max(0, Number(seconds) || 0);
   };
@@ -485,6 +504,7 @@ export const useMultiRoundRun = ({ rounds = MULTI_ROUND_ROUNDS } = {}) => {
     runWon,
     failureSummary,
     resetRun,
+    restoreRunState,
     setTimerRemainingSeconds,
     setStartingScoreBonus,
     rerollNextRoundModifiers,

@@ -248,6 +248,16 @@ import MultiRoundRewardChoice from './components/MultiRoundRewardChoice.vue';
 import ScoreRibbon from './components/ScoreRibbon.vue';
 import { getMultiRoundRounds } from './multiround/multi-round-difficulties.js';
 import PersonalModifiersDrawer from './components/PersonalModifiersDrawer.vue';
+import {
+  SAVE_MODES,
+  SAVE_ON_WORD_SUBMIT,
+  clearCloudGameSave,
+  clearLocalGameSave,
+  packCommonGameState,
+  packMultiRoundSave,
+  saveCloudGame,
+  saveLocalGame
+} from './save-state.js';
 import TutorialOverlay from './components/TutorialOverlay.vue';
 import WordBuilder from './components/WordBuilder.vue';
 import { botDifficulty } from './play-config.js';
@@ -439,6 +449,63 @@ const activeRoundModifiersWithCountdowns = computed(() => {
     countdownLabel: roundModifierCountdowns.value[modifier.key]?.label || ''
   }));
 });
+
+const buildCommonSaveState = () => packCommonGameState({
+  scores: playerScores.value,
+  tiles: playerTiles.value,
+  cards: playerCards.value,
+  wordHistory: wordHistory.value,
+  submittedWords: submittedWords.value,
+  rackClears: rackClears.value
+});
+
+const buildMultiRoundSaveState = ({ includeInRound = true, includeHistory = true } = {}) => packMultiRoundSave({
+  difficulty: props.multiRoundDifficulty,
+  common: buildCommonSaveState(),
+  includeInRound,
+  includeHistory,
+  multiRound: {
+    currentRoundIndex: multiRoundRun.currentRoundIndex.value,
+    timerRemainingSeconds: multiRoundRun.timerRemainingSeconds.value,
+    resolvedRounds: multiRoundRun.resolvedRounds.value,
+    completedRounds: multiRoundRun.completedRounds.value,
+    personalModifiers: multiRoundRun.personalModifiers.value,
+    rewardChoices: multiRoundRun.rewardChoices.value,
+    pendingStartingScore: pendingMultiRoundStartingScore.value,
+    runEnded: multiRoundRun.runEnded.value,
+    failureSummary: multiRoundRun.failureSummary.value,
+    finalWordSpent: multiRoundFinalWordSpent.value,
+    timedModeTimerStarted: timedModeTimerStarted.value
+  }
+});
+
+const saveCurrentMultiRoundLocal = () => {
+  if (!isMultiRoundMode.value || props.isMultiplayer || multiRoundRun.runEnded.value) {
+    return false;
+  }
+
+  return saveLocalGame(SAVE_MODES.MULTI_ROUND, buildMultiRoundSaveState());
+};
+
+const saveCurrentMultiRoundCheckpoint = () => {
+  if (!isMultiRoundMode.value || props.isMultiplayer || multiRoundRun.runEnded.value) {
+    return false;
+  }
+
+  const localSave = buildMultiRoundSaveState();
+  const cloudSave = buildMultiRoundSaveState({
+    includeInRound: false,
+    includeHistory: false
+  });
+  saveLocalGame(SAVE_MODES.MULTI_ROUND, localSave);
+  void saveCloudGame(SAVE_MODES.MULTI_ROUND, cloudSave);
+  return true;
+};
+
+const clearMultiRoundSaves = () => {
+  clearLocalGameSave(SAVE_MODES.MULTI_ROUND);
+  void clearCloudGameSave(SAVE_MODES.MULTI_ROUND);
+};
 const roundModifierEffects = computed(() => {
   return activeRoundModifiers.value.reduce((effects, modifier) => {
     const rules = modifier.rules || {};
@@ -1212,20 +1279,23 @@ const completeMultiRoundRound = () => {
   });
 
   pendingMultiRoundStartingScore.value = startingScore;
+  const rewardChoices = multiRoundRun.generateRewardChoices();
+  saveCurrentMultiRoundCheckpoint();
   playUiSound(tileReplaceSound);
   localMessage.value = 'Round complete.';
   window.clearTimeout(multiRoundRewardTimeoutId);
   multiRoundRewardTimeoutId = window.setTimeout(() => {
-    const rewardChoices = multiRoundRun.generateRewardChoices();
     if (!rewardChoices.length) {
       const advanced = multiRoundRun.goToNextRound({ startingScore });
       pendingMultiRoundStartingScore.value = 0;
       if (!advanced) {
+        clearMultiRoundSaves();
         localMessage.value = 'Run complete!';
         return;
       }
 
       resetMultiRoundBoardForNextRound(startingScore);
+      saveCurrentMultiRoundLocal();
       localMessage.value = `Next round starts with ${startingScore} points from saved time.`;
       return;
     }
@@ -1240,6 +1310,7 @@ const failMultiRoundRun = () => {
     score: playerScores.value.host || 0,
     secondsRemaining: Math.max(0, multiRoundRun.timerRemainingSeconds.value)
   });
+  clearMultiRoundSaves();
   localMessage.value = 'Run failed.';
 };
 
@@ -1307,12 +1378,14 @@ const handleMultiRoundRewardChoice = (rewardKey) => {
   pendingMultiRoundStartingScore.value = 0;
 
   if (!advanced) {
+    clearMultiRoundSaves();
     playUiSound(tileReplaceSound);
     localMessage.value = 'Run complete!';
     return;
   }
 
   resetMultiRoundBoardForNextRound(startingScore);
+  saveCurrentMultiRoundLocal();
   focusControllerTile(0);
   localMessage.value = `Next round starts with ${startingScore} points from saved time.`;
 };
@@ -1498,6 +1571,10 @@ const handleSubmit = async () => {
   }
 
   if (isMultiRoundMode.value) {
+    if (SAVE_ON_WORD_SUBMIT) {
+      saveCurrentMultiRoundLocal();
+    }
+
     if (playerScores.value.host >= multiRoundRun.currentTargetScore.value) {
       completeMultiRoundRound();
       return;
@@ -2610,6 +2687,7 @@ onBeforeUnmount(() => {
 });
 
 const resetAndGoHome = () => {
+  saveCurrentMultiRoundLocal();
   isPaused.value = false;
   stopBotLoop();
   stopSoloTimer();
