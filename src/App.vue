@@ -83,7 +83,7 @@
   </template>
   
 <script setup>
-import { ref, shallowRef, onMounted, onBeforeUnmount, computed, nextTick } from "vue";
+import { ref, shallowRef, onMounted, onBeforeUnmount, computed, nextTick, watch } from "vue";
 import Game from "/src/states/game/Game.vue";
 import MultiplayerScreen from "./states/game/MultiplayerScreen.vue";
 import MultiRoundScreen from "./states/game/MultiRoundScreen.vue";
@@ -302,6 +302,7 @@ const showFeedback = ref(false)
   const zoom = ref(parseFloat(localStorage.getItem('zoom') ?? getAutoUiZoom()))
   const gameZoom = ref(parseFloat(localStorage.getItem('gameZoom') ?? 1))
   const shopZoom = ref(parseFloat(localStorage.getItem('shopZoom') ?? 1))
+  const screenWidth = ref(window.innerWidth || window.screen?.width || 1920)
   
   function setZoom(val) {
     if(val){
@@ -312,6 +313,14 @@ const showFeedback = ref(false)
     let root = document.getElementById('game-root') || document.documentElement
     root.style.zoom = val
   }
+
+  const handleScreenWidthChange = () => {
+    screenWidth.value = window.innerWidth || window.screen?.width || 1920
+  }
+
+  watch(screenWidth, () => {
+    setZoom(getAutoUiZoom())
+  })
 
 
   function setgameZoom(val) {
@@ -675,6 +684,7 @@ const simulateTab = (reverse = false) => {
     }
     setZoom(zoom.value)
     setgameZoom(gameZoom.value)
+    window.addEventListener('resize', handleScreenWidthChange)
 
 
     setTimeout(() => {
@@ -734,6 +744,7 @@ const simulateTab = (reverse = false) => {
 
   onBeforeUnmount(() => {
     stopUserSync?.();
+    window.removeEventListener('resize', handleScreenWidthChange);
     window.removeEventListener("gamepadconnected", onGamepadConnected);
     window.removeEventListener("gamepaddisconnected", onGamepadDisconnected);
     cancelAnimationFrame(gamepadAnimationFrameId);
