@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.0.41 - 2026-04-30
+
+Start: 12:55 EDT
+Stop: 13:45 EDT
+
+- Added compact past-game profile storage under `gameData/pstgms` and local key `wordis:pstgms`.
+- Added mode-level save/show toggles for past games.
+- Added lazy past-game sync that merges local and cloud records when the Past Games profile tab opens.
+- Saved multi-round wins, failed runs, round summaries, selected rewards, elapsed time, scores, and best word summaries.
+- Saved bot match summaries with score, machine score, duration, and best words.
+- Added a Profile modal Past Games tab view with mode tabs and controller navigation.
+- Added Wordis-specific and reusable past-game documentation.
+- Verified the changes with `npm run build`.
+
 ## 0.0.40 - 2026-04-30
 
 Start: 11:47 EDT
