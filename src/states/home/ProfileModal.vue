@@ -1,33 +1,106 @@
 <template>
   <div class="profile-modal-backdrop animated-fade-in">
-    <div class="profile-modal animated-slide-up">
+    <div ref="modalRef" class="profile-modal animated-slide-up">
       <button ref="closeButton" class="profile-close" @click="emit('close')">&times;</button>
       <h2>Profile</h2>
 
-      <div class="profile-details">
-        <span>Signed in as</span>
-        <strong>{{ user?.email || 'Wordis player' }}</strong>
+      <div class="profile-tabs">
+        <button
+          type="button"
+          class="profile-tab-button"
+          :class="{ active: activeView === 'account' }"
+          @click="activeView = 'account'"
+        >
+          Account
+        </button>
+        <button
+          v-if="!hidePastGames"
+          type="button"
+          class="profile-tab-button"
+          :class="{ active: activeView === 'past' }"
+          @click="openPastGames"
+        >
+          Past Games
+        </button>
       </div>
 
-      <label class="sync-toggle">
-        <input
-          type="checkbox"
-          :checked="savedGameSyncEnabled"
-          @change="emit('savedGameSyncChange', $event.target.checked)"
-        />
-        <span>Sync saved games</span>
-      </label>
+      <div v-if="activeView === 'account'">
+        <div class="profile-details">
+          <span>Signed in as</span>
+          <strong>{{ user?.email || 'Wordis player' }}</strong>
+        </div>
 
-      <div class="profile-actions">
-        <button ref="logoutButton" class="profile-button danger" @click="emit('logout')">Log Out</button>
-        <button ref="doneButton" class="profile-button" @click="emit('close')">Done</button>
+        <label class="sync-toggle">
+          <input
+            type="checkbox"
+            :checked="savedGameSyncEnabled"
+            @change="emit('savedGameSyncChange', $event.target.checked)"
+          />
+          <span>Sync saved games</span>
+        </label>
+
+        <div class="profile-actions">
+          <button ref="logoutButton" class="profile-button danger" @click="emit('logout')">Log Out</button>
+          <button ref="doneButton" class="profile-button" @click="emit('close')">Done</button>
+        </div>
       </div>
+
+      <div v-else class="past-games-view">
+        <div class="past-games-tabs">
+          <button
+            v-for="mode in visibleModes"
+            :key="mode.mode"
+            type="button"
+            class="past-mode-tab"
+            :class="{ active: selectedMode === mode.mode }"
+            @click="selectedMode = mode.mode"
+          >
+            {{ mode.label }}
+          </button>
+        </div>
+
+        <p class="sync-status">{{ syncStatus }}</p>
+
+        <div v-if="activeGames.length" class="past-games-list">
+          <article v-for="game in activeGames" :key="game.id" class="past-game-card">
+            <div class="past-game-heading">
+              <strong>{{ formatResult(game.rs) }}</strong>
+              <span>{{ formatDate(game.ca) }}</span>
+            </div>
+            <div class="past-game-stats">
+              <span>Score {{ game.sc || 0 }}</span>
+              <span v-if="game.os !== undefined">Machine {{ game.os || 0 }}</span>
+              <span>{{ formatDuration(game.dur) }}</span>
+            </div>
+            <p v-if="game.bw" class="best-word">
+              Best word: {{ game.bw.w }} · {{ game.bw.sc }} pts<span v-if="game.bw.rn"> · R{{ game.bw.rn }}</span>
+            </p>
+            <div v-if="game.rds?.length" class="round-list">
+              <span
+                v-for="round in game.rds"
+                :key="`${game.id}-${round.rn}`"
+                class="round-pill"
+              >
+                R{{ round.rn }} {{ round.sc }}/{{ round.trg }} · {{ formatDuration(round.su) }}
+              </span>
+            </div>
+          </article>
+        </div>
+        <p v-else class="empty-games">No games saved for this mode yet.</p>
+      </div>
+
     </div>
   </div>
 </template>
 
 <script setup>
-import { onBeforeUnmount, onMounted, ref } from 'vue';
+import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue';
+import { hidePastGames } from '../../../globalVariables.js';
+import {
+  getPastGamesByMode,
+  getVisiblePastGameModes,
+  syncPastGames
+} from '../../userstate/pastGames.js';
 
 defineProps({
   user: Object,
@@ -38,13 +111,99 @@ const emit = defineEmits(['close', 'logout', 'savedGameSyncChange']);
 const closeButton = ref(null);
 const logoutButton = ref(null);
 const doneButton = ref(null);
+const modalRef = ref(null);
+const activeView = ref('account');
+const visibleModes = getVisiblePastGameModes();
+const selectedMode = ref(visibleModes[0]?.mode || '');
+const pastGamesVersion = ref(0);
+const syncStatus = ref('Sync when opened.');
+const isSyncingPastGames = ref(false);
 
-const focusTargets = [closeButton, logoutButton, doneButton];
+const activeGames = computed(() => {
+  pastGamesVersion.value;
+  return selectedMode.value ? getPastGamesByMode(selectedMode.value) : [];
+});
+
+const getFocusTargets = () => {
+  if (!modalRef.value) {
+    return [];
+  }
+
+  return Array.from(modalRef.value.querySelectorAll('button:not(:disabled), input:not(:disabled)'))
+    .filter((target) => target.offsetParent !== null);
+};
 
 const focusTarget = (index) => {
-  const availableTargets = focusTargets.filter((target) => target.value);
+  const availableTargets = getFocusTargets();
+  if (!availableTargets.length) {
+    return;
+  }
+
   const targetIndex = (index + availableTargets.length) % availableTargets.length;
-  availableTargets[targetIndex]?.value?.focus();
+  availableTargets[targetIndex]?.focus();
+};
+
+const openPastGames = async () => {
+  activeView.value = 'past';
+  if (!selectedMode.value && visibleModes.length) {
+    selectedMode.value = visibleModes[0].mode;
+  }
+
+  syncStatus.value = 'Syncing past games...';
+  isSyncingPastGames.value = true;
+
+  try {
+    const result = await syncPastGames();
+    syncStatus.value = result.skipped
+      ? 'Showing local games.'
+      : `Synced ${result.downloaded} down, ${result.uploaded} up.`;
+  } catch (error) {
+    console.warn('Past game sync failed.', error);
+    syncStatus.value = 'Showing local games.';
+  } finally {
+    isSyncingPastGames.value = false;
+    pastGamesVersion.value += 1;
+    nextTick(() => focusTarget(0));
+  }
+};
+
+const formatDate = (timestamp) => {
+  if (!timestamp) {
+    return '';
+  }
+
+  return new Intl.DateTimeFormat(undefined, {
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit'
+  }).format(new Date(timestamp));
+};
+
+const formatDuration = (seconds = 0) => {
+  const safeSeconds = Math.max(0, Math.round(Number(seconds) || 0));
+  const minutes = Math.floor(safeSeconds / 60);
+  const remainingSeconds = String(safeSeconds % 60).padStart(2, '0');
+  return `${minutes}:${remainingSeconds}`;
+};
+
+const formatResult = (result = '') => {
+  if (result === 'won') return 'Won';
+  if (result === 'failed') return 'Failed Run';
+  if (result === 'lost') return 'Lost';
+  return 'Game';
+};
+
+const cycleMode = (direction) => {
+  if (activeView.value !== 'past' || !visibleModes.length) {
+    return false;
+  }
+
+  const currentIndex = visibleModes.findIndex((mode) => mode.mode === selectedMode.value);
+  const nextIndex = (currentIndex + direction + visibleModes.length) % visibleModes.length;
+  selectedMode.value = visibleModes[nextIndex].mode;
+  pastGamesVersion.value += 1;
+  return true;
 };
 
 const handleKeyDown = (event) => {
@@ -54,12 +213,19 @@ const handleKeyDown = (event) => {
     return;
   }
 
+  if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
+    if (cycleMode(event.key === 'ArrowRight' ? 1 : -1)) {
+      event.preventDefault();
+    }
+    return;
+  }
+
   if (event.key !== 'ArrowDown' && event.key !== 'ArrowUp') {
     return;
   }
 
-  const availableTargets = focusTargets.filter((target) => target.value);
-  const currentIndex = availableTargets.findIndex((target) => target.value === document.activeElement);
+  const availableTargets = getFocusTargets();
+  const currentIndex = availableTargets.findIndex((target) => target === document.activeElement);
   const nextIndex = event.key === 'ArrowDown' ? currentIndex + 1 : currentIndex - 1;
   event.preventDefault();
   focusTarget(currentIndex === -1 ? 0 : nextIndex);
@@ -77,7 +243,6 @@ onBeforeUnmount(() => {
 
 <style scoped>
 .profile-modal-backdrop {
-  visibility: hidden;
   position: fixed;
   inset: 0;
   z-index: 10000;
@@ -88,9 +253,10 @@ onBeforeUnmount(() => {
 }
 
 .profile-modal {
-  visibility: hidden;
   position: relative;
-  width: min(420px, calc(100vw - 32px));
+  width: min(620px, calc(100vw - 32px));
+  max-height: calc(100vh - 32px);
+  overflow-y: auto;
   border: 4px solid #f7d35d;
   border-radius: 8px;
   padding: 28px;
@@ -124,6 +290,32 @@ h2 {
   margin-bottom: 22px;
   font-size: 10px;
   line-height: 1.6;
+}
+
+.profile-tabs,
+.past-games-tabs {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 18px;
+  flex-wrap: wrap;
+}
+
+.profile-tab-button,
+.past-mode-tab {
+  min-height: 38px;
+  border: 2px solid rgba(255, 255, 255, 0.12);
+  border-radius: 6px;
+  color: #fff;
+  background: rgba(255, 255, 255, 0.08);
+  font-family: inherit;
+  font-size: 9px;
+  cursor: pointer;
+}
+
+.profile-tab-button.active,
+.past-mode-tab.active {
+  color: #111827;
+  background: #f7d35d;
 }
 
 .profile-details strong {
@@ -169,8 +361,61 @@ h2 {
 }
 
 .profile-button:focus-visible,
-.profile-close:focus-visible {
+.profile-close:focus-visible,
+.profile-tab-button:focus-visible,
+.past-mode-tab:focus-visible {
   outline: 3px solid rgba(130, 253, 238, 0.9);
   outline-offset: 3px;
+}
+
+.sync-status,
+.empty-games {
+  font-size: 10px;
+  line-height: 1.5;
+  opacity: 0.78;
+}
+
+.past-games-list {
+  display: grid;
+  gap: 12px;
+}
+
+.past-game-card {
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  font-size: 10px;
+  line-height: 1.5;
+}
+
+.past-game-heading,
+.past-game-stats,
+.round-list {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.past-game-heading {
+  justify-content: space-between;
+}
+
+.past-game-heading strong {
+  color: #f7d35d;
+}
+
+.best-word {
+  margin: 0;
+  color: #9ff0ff;
+}
+
+.round-pill {
+  padding: 5px 7px;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.18);
 }
 </style>
