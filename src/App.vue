@@ -309,11 +309,6 @@ const showFeedback = ref(false)
   function setZoom(val) {
     let root = document.getElementById('game-root') || document.documentElement
 
-    if (typeof val === 'number' && Math.abs((zoom.value ?? 0) - val) <= ZOOM_UPDATE_THRESHOLD) {
-      root.style.zoom = zoom.value
-      return
-    }
-
     if(val){
       zoom.value = val
       localStorage.setItem('zoom', val)
@@ -327,7 +322,11 @@ const showFeedback = ref(false)
   }
 
   watch(screenWidth, () => {
-    setZoom(getAutoUiZoom())
+    const nextZoom = getAutoUiZoom()
+    if (Math.abs((zoom.value ?? 0) - nextZoom) <= ZOOM_UPDATE_THRESHOLD) {
+      return
+    }
+    setZoom(nextZoom)
   })
 
 
