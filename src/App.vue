@@ -98,7 +98,7 @@ import { hideGoogleTranslateIframesAfterDelay,hideGoogleTranslateExtras } from "
 import Feedback from "./states/home/Feedback.vue";
 import Banner from "/src/assets/Banner.vue";
 import Settings from '/src/assets/Settings.vue'
-// import { initUserSync, logoutCleanup } from "./syncUserState";
+import { initUserSync, logoutCleanup, syncUserState } from "./userstate/syncUserState.js";
 import { signOut } from "firebase/auth";
 import AuthPrompt from "/src/assets/AuthPrompt.vue";
 import { auth as firebaseAuth, firebaseEnabled } from "./firebaseClient.js";
@@ -118,6 +118,7 @@ const showStreamerModal = ref(false);
 const loadingAuth = ref(true);
 const showAuthModal = ref(false);
 const AUTH_PROMPT_SEEN_KEY = "userAgreed";
+let stopUserSync = null;
 
 if (streamerCode) {
   showStreamerModal.value = true;
@@ -147,7 +148,7 @@ const showFeedback = ref(false)
       console.warn('Firebase auth is unavailable; skipping logout.');
       return;
     }
-    logoutCleanup(); // clears localStorage
+    await logoutCleanup();
     await signOut(firebaseAuth);
     setTimeout(() => {
       reloader.value++;
@@ -348,8 +349,9 @@ const showFeedback = ref(false)
     showAuthModal.value = true;
   };
 
-  const userLoggedIn = () => {
+  const userLoggedIn = async () => {
     showAuthModal.value = false
+    await syncUserState({ force: true });
     setTimeout(() => {
       reloader.value++
     }, 200);
@@ -658,6 +660,7 @@ const simulateTab = (reverse = false) => {
 
   onMounted( () => {
     console.log('isfirebase enabled'+ firebaseEnabled)
+    stopUserSync = initUserSync(showFirstRunAuthPrompt);
     showFirstRunAuthPrompt();
     if(!localStorage.getItem('nativeControllerSupport')){ 
       localStorage.setItem('nativeControllerSupport', true)
@@ -730,6 +733,7 @@ const simulateTab = (reverse = false) => {
   });
 
   onBeforeUnmount(() => {
+    stopUserSync?.();
     window.removeEventListener("gamepadconnected", onGamepadConnected);
     window.removeEventListener("gamepaddisconnected", onGamepadDisconnected);
     cancelAnimationFrame(gamepadAnimationFrameId);

@@ -43,7 +43,7 @@
       
     <!-- Start Game -->
     <div class="home-buttons animated-fade-in">
-      <button class="disabled" disabled ref="button2" @click="showProfile = true">Profile</button>
+      <button ref="button2" @click="handleProfileClick">Profile</button>
       <button class="play" ref="button1" @click="showType">Play</button>
       <button class="settings" ref="button3" @click="showSettings">Settings</button>
     </div>
@@ -59,6 +59,14 @@
     </div>
   </div>
   <Feedback v-if="showFeedback" @close="showFeedback = false" />
+  <ProfileModal
+    v-if="showProfile"
+    :user="user"
+    :savedGameSyncEnabled="savedGameSyncEnabled"
+    @close="showProfile = false"
+    @logout="handleProfileLogout"
+    @savedGameSyncChange="handleSavedGameSyncChange"
+  />
  <PWA @close="showPWA = false" v-if="showPWA && isMobile && !wavedash"></PWA>
   <Credit v-if="showCredits" @close="showCredits = false"></Credit>
   <div class="streamer-text" v-if="isStreamer">Streamer Access</div>
@@ -79,9 +87,11 @@
   import { getPreferredLanguage } from "../game/language.js";
   import IntroScreen from "./IntroScreen.vue";
   import Credit from './Credits.vue'
+  import ProfileModal from './ProfileModal.vue';
   import { auth, firebaseEnabled } from "../../firebaseClient.js";
   import { db } from "../../main.js";
   import { push, get, query, orderByChild, equalTo, ref as dbRef } from "firebase/database";
+  import { isSavedGameSyncEnabled, setSavedGameSyncEnabled } from "../../userstate/syncUserState.js";
   
   const props = defineProps({
     monsterRoster: Array, // Expecting an array of monster objects [{ id, actionUsed, ready }]
@@ -118,7 +128,8 @@
   const showCredits = ref(false);
   const hasSeenPWA = ref(JSON.parse(localStorage.getItem('hasSeenPWA')) || false);
   const showPWA = ref(!hasSeenPWA.value);
-  const user = ref(true);
+  const user = ref(null);
+  const savedGameSyncEnabled = ref(isSavedGameSyncEnabled());
   const transitionAction = ref('')
   const transitionURL = new URL('../../assets/images/homeScreen.png', import.meta.url).href;
 
@@ -182,6 +193,25 @@
 
   const showSettings = () => {
     emit("showSettings");
+  };
+
+  const handleProfileClick = () => {
+    if (!user.value) {
+      emit('logIn');
+      return;
+    }
+
+    showProfile.value = true;
+  };
+
+  const handleProfileLogout = () => {
+    showProfile.value = false;
+    emit('logOut');
+  };
+
+  const handleSavedGameSyncChange = (enabled) => {
+    setSavedGameSyncEnabled(enabled);
+    savedGameSyncEnabled.value = enabled;
   };
 
   const handleSteamClick = async () => {
@@ -264,7 +294,7 @@ const isControllerTargetVisible = (element) => {
   return element.offsetParent !== null && style.visibility !== 'hidden' && style.display !== 'none';
 };
 
-const getHomeTargets = () => [button1, button3, button4]
+const getHomeTargets = () => [button2, button1, button3, button4]
   .map((button) => button.value)
   .filter(isControllerTargetVisible);
 
@@ -308,7 +338,7 @@ const cycleIndex = (currentIndex, direction, total) => {
 };
 
 const handleKeyDown = (e) => {
-  if (showIntro.value || props.settingsShowing || showFeedback.value || showCredits.value || showPWA.value) {
+  if (showIntro.value || props.settingsShowing || showFeedback.value || showProfile.value || showCredits.value || showPWA.value) {
     return;
   }
 

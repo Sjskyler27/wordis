@@ -179,7 +179,7 @@ export const initUserSync = (showAuthPrompt) => {
     }
 
     try {
-      await syncUserState({ force: true, user });
+      await syncUserState({ user });
     } catch (error) {
       console.warn('Initial user sync failed.', error);
     }

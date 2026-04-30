@@ -29,6 +29,7 @@
   import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from "firebase/auth";
   import { auth } from "../main.js"
   import { firebaseEnabled } from "../firebaseClient.js";
+  import { initializeNewUser } from "../userstate/initializeNewUser.js";
 // import { syncFromDB, syncStatsFromDB } from "../syncUserState.js";
   
   const emit = defineEmits(["close", "loggedIn"]);
@@ -77,10 +78,11 @@
         if (!firebaseEnabled || !auth) {
             throw new Error("Account features are unavailable right now.");
         }
-        await createUserWithEmailAndPassword(auth, email.value, password.value);
+        const credential = await createUserWithEmailAndPassword(auth, email.value, password.value);
+        await initializeNewUser(credential.user);
         localStorage.setItem("userAgreed", true);
         visible.value = false;
-        emit("close");
+        emit("loggedIn");
     } catch (err) {
         error.value = err.message;
     }
@@ -97,8 +99,6 @@
             throw new Error("Account features are unavailable right now.");
         }
         await signInWithEmailAndPassword(auth, email.value, password.value);
-        // syncFromDB(auth.currentUser.uid)
-        // syncStatsFromDB(auth.currentUser.uid)
         localStorage.setItem("userAgreed", true);
         visible.value = false;
         emit("loggedIn");
