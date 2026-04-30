@@ -77,6 +77,7 @@ onBeforeUnmount(() => {
 
 <style scoped>
 .profile-modal-backdrop {
+  visibility: hidden;
   position: fixed;
   inset: 0;
   z-index: 10000;
@@ -87,6 +88,7 @@ onBeforeUnmount(() => {
 }
 
 .profile-modal {
+  visibility: hidden;
   position: relative;
   width: min(420px, calc(100vw - 32px));
   border: 4px solid #f7d35d;

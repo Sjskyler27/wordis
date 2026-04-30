@@ -43,7 +43,7 @@
       
     <!-- Start Game -->
     <div class="home-buttons animated-fade-in">
-      <button ref="button2" @click="handleProfileClick">Profile</button>
+      <button class="profile-button"  ref="button2" @click="handleProfileClick">Profile</button>
       <button class="play" ref="button1" @click="showType">Play</button>
       <button class="settings" ref="button3" @click="showSettings">Settings</button>
     </div>
@@ -294,7 +294,7 @@ const isControllerTargetVisible = (element) => {
   return element.offsetParent !== null && style.visibility !== 'hidden' && style.display !== 'none';
 };
 
-const getHomeTargets = () => [button2, button1, button3, button4]
+const getHomeTargets = () => [button1, button3, button4]
   .map((button) => button.value)
   .filter(isControllerTargetVisible);
 
@@ -338,7 +338,7 @@ const cycleIndex = (currentIndex, direction, total) => {
 };
 
 const handleKeyDown = (e) => {
-  if (showIntro.value || props.settingsShowing || showFeedback.value || showProfile.value || showCredits.value || showPWA.value) {
+  if (showIntro.value || props.settingsShowing || showFeedback.value || showCredits.value || showPWA.value) {
     return;
   }
 
@@ -850,6 +850,9 @@ font-family: 'Times New Roman', serif;
       height: 90px;
       width: 275px;
       border-color: rgba(176, 255, 238, 0.44);
+    }
+    .profile-button{
+      background: #6c345ac7;
     }
     .profile{
       background: linear-gradient(180deg, rgba(255, 189, 101, 0.92), rgba(171, 72, 52, 0.9));

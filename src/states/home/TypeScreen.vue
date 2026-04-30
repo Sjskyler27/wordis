@@ -250,6 +250,9 @@ const close = () => emit("close");
 
 <style lang="scss" scoped>
 @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+.modal{
+  visibility: hidden;
+}
 
   #background-layer {
     position: absolute;

@@ -139,6 +139,7 @@
   
   <style scoped>
   .modal {
+    visibility: hidden;
     position: fixed;
     inset: 0;
     background:
@@ -152,6 +153,7 @@
   }
   
   .modal-content {
+    visibility: hidden;
     position: relative;
     background:
       linear-gradient(180deg, rgba(78, 25, 43, 0.97), rgba(42, 15, 40, 0.97)),
