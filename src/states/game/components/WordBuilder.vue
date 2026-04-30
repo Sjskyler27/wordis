@@ -24,7 +24,14 @@
             class="score-pop-slot"
             :style="{ gridColumn: index + 1 }"
           >
-            <div class="built-tile scoring score-pop-clone" :style="getTileStyle(tile, index)">
+            <div
+              class="built-tile scoring score-pop-clone"
+              :class="{
+                'built-tile-twin': tile.status === 'twinTile',
+                'built-tile-twin-active': hasTwinMatch(tile)
+              }"
+              :style="getTileStyle(tile, index)"
+            >
               <span v-if="!getTileUi(tile).hideBadge && tile.status !== 'normal'" class="tile-modifier" :style="getBadgeStyle(tile)">
                 {{ getTileBadge(tile) }}
               </span>
@@ -71,6 +78,8 @@
                 'built-tile-muted-consonant': isZeroedConsonantSlot(slot.index),
                 'built-tile-shimmer': slot.tile.status === 'shimmer',
                 'built-tile-rusting': slot.tile.status === 'rustingTile',
+                'built-tile-twin': slot.tile.status === 'twinTile',
+                'built-tile-twin-active': hasTwinMatch(slot.tile),
                 'built-tile-controller-focus': controllerFocusedBuiltTileId === slot.tile.id
               }"
               :style="getTileStyle(slot.tile, slot.index)"
@@ -483,10 +492,21 @@ const getBuiltTileScore = (tile, index) => {
     side: props.currentWordSide,
     scores: props.currentPlayerScores,
     positionIndex: index,
+    wordTiles: props.selectedTiles,
     ...props.scoreOptions
   });
 };
 const getTileLetter = (tile) => (tile?.baseLetter || tile?.letter || '').toUpperCase();
+const hasTwinMatch = (tile) => {
+  if (tile?.status !== 'twinTile') {
+    return false;
+  }
+
+  const letter = getTileLetter(tile);
+  return Boolean(letter) && props.selectedTiles.some((selectedTile) => {
+    return selectedTile.id !== tile.id && getTileLetter(selectedTile) === letter;
+  });
+};
 const isBannedLetter = (tile) => {
   const bannedLetters = new Set(props.scoreOptions?.roundModifierEffects?.bannedLetters || []);
   return bannedLetters.has(getTileLetter(tile));
@@ -511,6 +531,7 @@ const zeroedConsonantIndex = computed(() => {
       side: props.currentWordSide,
       scores: props.currentPlayerScores,
       positionIndex: index,
+      wordTiles: props.selectedTiles,
       ...props.scoreOptions
     });
 
@@ -828,7 +849,8 @@ button:focus{
 }
 
 .built-tile-shimmer,
-.built-tile-rusting {
+.built-tile-rusting,
+.built-tile-twin {
   isolation: isolate;
   overflow: hidden;
 }
@@ -871,7 +893,8 @@ button:focus{
 }
 
 .built-tile-shimmer .tile-letter,
-.built-tile-rusting .tile-letter {
+.built-tile-rusting .tile-letter,
+.built-tile-twin .tile-letter {
   position: relative;
   z-index: 2;
 }
@@ -885,13 +908,53 @@ button:focus{
 
 
 .built-tile-shimmer .tile-score,
-.built-tile-rusting .tile-score {
+.built-tile-rusting .tile-score,
+.built-tile-twin .tile-score {
   z-index: 5;
 }
 
 .built-tile-shimmer .tile-modifier,
-.built-tile-rusting .tile-modifier {
+.built-tile-rusting .tile-modifier,
+.built-tile-twin .tile-modifier {
   z-index: 6;
+}
+
+.built-tile-twin::before,
+.built-tile-twin::after {
+  content: '';
+  position: absolute;
+  inset: 10%;
+  z-index: 1;
+  border-radius: 12px;
+  pointer-events: none;
+  opacity: 0.38;
+  border: 3px solid rgba(236, 255, 247, 0.84);
+  transform: translate(-5px, -3px);
+}
+
+.built-tile-twin::after {
+  opacity: 0.26;
+  border-color: rgba(26, 95, 89, 0.7);
+  transform: translate(5px, 3px);
+}
+
+.built-tile-twin-active {
+  filter: saturate(1.18) brightness(1.08);
+}
+
+.built-tile-twin-active::before,
+.built-tile-twin-active::after {
+  opacity: 0.76;
+  animation: twin-link-pulse 980ms ease-in-out infinite alternate;
+}
+
+@keyframes twin-link-pulse {
+  from {
+    transform: translate(-5px, -3px) scale(0.98);
+  }
+  to {
+    transform: translate(-3px, -2px) scale(1.04);
+  }
 }
 
 .built-tile-banned-letter::before {

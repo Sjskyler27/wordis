@@ -107,6 +107,22 @@ const createModifierDefinitions = ({ bloodTilePositionValues }) => ({
         badgeColor: '#274577'
       }
     },
+    twinTile: {
+      badge: 'TWIN',
+      description: 'Scores +15 when this word contains another tile with the same letter.',
+      effects: {
+        twinLetterBonus: 15
+      },
+      canApply: ({ letter, baseScore }) => (letter || '').length === 1 && baseScore <= 6,
+      rarityWeight: 0.24,
+      ui: {
+        tileBackground: 'linear-gradient(180deg, #ecfff7 0%, #83dfc2 52%, #2f8f86 100%)',
+        tileShadow: 'inset 0 -4px 0 rgba(19, 92, 82, 0.26), 0 12px 20px rgba(25, 65, 76, 0.2), 0 0 0 1px rgba(169, 255, 228, 0.42)',
+        textColor: '#102d30',
+        badgeBackground: 'rgba(235, 255, 248, 0.95)',
+        badgeColor: '#20776d'
+      }
+    },
     bloodTile: {
       badge: 'BLD',
       description: 'Scores by position instead of face value. Later positions score higher.',

@@ -18,7 +18,7 @@ const {
 } = modifierDefinitionsApi || {};
 
 
-const GOOD_MODIFIERS = ['gold', 'firsttile', 'royalPear', 'bankTile', 'gainboon', 'gainattack'];
+const GOOD_MODIFIERS = ['gold', 'firsttile', 'royalPear', 'twinTile', 'bankTile', 'gainboon', 'gainattack'];
 const BAD_MODIFIERS = ['zeroTile', 'mustuse', 'locked3', 'burningTile', 'rustingTile'];
 const NEUTRAL_MODIFIERS = ['yinYang', 'ghostTile','bloodTile', 'wild', 'shimmer'];
 
@@ -804,6 +804,20 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
     const positionBonusByIndex = getModifierDefinition(tile?.status).effects.positionBonusByIndex || {};
     return positionBonusByIndex[positionKey] || 0;
   };
+  const hasTwinLetterInWord = (tile, wordTiles = []) => {
+    if (!tile || tile.status !== 'twinTile') {
+      return false;
+    }
+
+    const letter = (tile.baseLetter || tile.letter || '').toUpperCase();
+    return Boolean(letter) && wordTiles.some((wordTile) => {
+      return wordTile.id !== tile.id && (wordTile.baseLetter || wordTile.letter || '').toUpperCase() === letter;
+    });
+  };
+  const getTwinLetterBonus = (tile, options = {}) => {
+    const bonus = getModifierDefinition(tile?.status).effects.twinLetterBonus || 0;
+    return bonus && hasTwinLetterInWord(tile, options.wordTiles || []) ? bonus : 0;
+  };
   const isVowelLetter = (letter = '') => ['A', 'E', 'I', 'O', 'U'].includes((letter || '').toUpperCase());
   const getPersonalTileScore = (tile, options = {}) => {
     const personalModifierEffects = options.personalModifierEffects || options.personalModifiers || {};
@@ -813,6 +827,7 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
       + (tile?.bonusScore || 0)
       + getLeadAwareModifierScore(tile, options)
       + getPositionAwareModifierScore(tile, options)
+      + getTwinLetterBonus(tile, options)
       + (modifierScoreBonus[tile?.status] || 0)
     );
 
@@ -989,7 +1004,10 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
         return highest;
       }
 
-      const score = tileScore(tile, options);
+      const score = tileScore(tile, {
+        ...options,
+        wordTiles: tiles
+      });
       if (!highest || score > highest.score) {
         return { index, score };
       }
@@ -1036,7 +1054,10 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
         return total;
       }
 
-      return total + tileScore(tile, options);
+      return total + tileScore(tile, {
+        ...options,
+        wordTiles: tiles
+      });
     }, 0);
     const positionBonus = tiles.reduce((total, tile, index) => {
       const definition = getModifierDefinition(tile?.status);
