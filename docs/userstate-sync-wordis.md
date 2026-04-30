@@ -26,6 +26,7 @@ Realtime Database may omit empty child objects in the console until a real compl
 
 - `src/userstate/initializeNewUser.js`: Ensures `users/${uid}` exists after sign-up or login.
 - `src/userstate/syncUserState.js`: Handles up/down sync for saved games and bot difficulty progress.
+- `src/userstate/pastGames.js`: Saves completed game summaries and lazily syncs profile history.
 - `src/states/game/save-state.js`: Owns save validation, local save keys, and import/export helpers.
 
 The old `src/syncUserState.js` remains a reference only. New user-state behavior should live under `src/userstate`.
@@ -74,3 +75,9 @@ Sync stores the highest unlocked difficulty in:
 ```
 
 When local and remote differ, the higher ranked difficulty wins.
+
+## Past Games
+
+Completed game summaries live under `gameData/pstgms/${mode}/${gameId}` and local storage key `wordis:pstgms`.
+
+Past games are not synced on login. They sync when the player opens the Past Games tab in the profile modal. See `docs/past-games-wordis.md` for the record shape.

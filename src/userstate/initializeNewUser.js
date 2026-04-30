@@ -3,7 +3,8 @@ import { db, firebaseEnabled } from '../firebaseClient.js';
 
 export const createBlankUserState = () => ({
   gameData: {
-    completedGames: {}
+    completedGames: {},
+    pstgms: {}
   }
 });
 
@@ -24,9 +25,13 @@ export const initializeNewUser = async (user) => {
   const patch = {};
 
   if (!existing.gameData) {
-    patch.gameData = { completedGames: {} };
+    patch.gameData = createBlankUserState().gameData;
   } else if (!existing.gameData.completedGames) {
     patch['gameData/completedGames'] = {};
+  }
+
+  if (existing.gameData && !existing.gameData.pstgms) {
+    patch['gameData/pstgms'] = {};
   }
 
   if (Object.keys(patch).length) {

@@ -12,6 +12,7 @@ Use one root user node per auth user:
     "$uid": {
       "gameData": {
         "completedGames": {},
+        "pstgms": {},
         "progression": {}
       },
       "saves": {}
@@ -81,3 +82,7 @@ Before sign-out:
 4. Sign out through Firebase Auth.
 
 Avoid clearing global install settings unless those settings truly belong to the signed-out user.
+
+## Profile History
+
+Large profile history such as past games should usually sync lazily. A good trigger is opening a Past Games or Match History screen. Group records by mode under a compact path such as `gameData/pstgms/${mode}/${gameId}` and resolve conflicts with `updatedAt` or a compact `uat` timestamp.
