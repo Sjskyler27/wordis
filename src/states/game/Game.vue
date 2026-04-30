@@ -966,7 +966,8 @@ const backgroundProgress = computed(() => {
   }
 
   if (isMultiRoundMode.value) {
-    return clamp01((playerScores.value.host || 0) / Math.max(1, multiRoundRun.currentTargetScore.value));
+    const roundTimeLimit = Math.max(1, multiRoundRun.currentRoundTimeLimit.value || 1);
+    return clamp01(1 - (multiRoundRun.timerRemainingSeconds.value / roundTimeLimit));
   }
 
   const highestScore = Math.max(playerScores.value.host || 0, playerScores.value.opponent || 0);
