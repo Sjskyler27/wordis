@@ -262,6 +262,7 @@ import {
 } from './save-state.js';
 import TutorialOverlay from './components/TutorialOverlay.vue';
 import WordBuilder from './components/WordBuilder.vue';
+import { getMultiRoundBackgroundPalette } from './multiround/multi-round-background-palettes.js';
 import { botDifficulty } from './play-config.js';
 import {
   PAST_GAME_MODES,
@@ -1166,33 +1167,32 @@ const backgroundProgress = computed(() => {
   const highestScore = Math.max(playerScores.value.host || 0, playerScores.value.opponent || 0);
   return clamp01(highestScore / WINNING_SCORE);
 });
+const createBackgroundPaletteStyle = (palette, intensity, progress) => {
+  return {
+    '--bg-corner': mixHexColor(palette.corner[0], palette.corner[1], intensity),
+    '--bg-top': mixHexColor(palette.top[0], palette.top[1], intensity),
+    '--bg-mid': mixHexColor(palette.mid[0], palette.mid[1], intensity),
+    '--bg-bottom': mixHexColor(palette.bottom[0], palette.bottom[1], intensity),
+    '--bg-glow-alpha': `${palette.glowAlpha[0] + ((palette.glowAlpha[1] - palette.glowAlpha[0]) * intensity)}`,
+    '--bg-shape-far-opacity': `${palette.shapeFarOpacity[0] + ((palette.shapeFarOpacity[1] - palette.shapeFarOpacity[0]) * progress)}`,
+    '--bg-shape-near-opacity': `${palette.shapeNearOpacity[0] + ((palette.shapeNearOpacity[1] - palette.shapeNearOpacity[0]) * progress)}`,
+    '--bg-saturate': `${palette.saturate[0] + ((palette.saturate[1] - palette.saturate[0]) * progress)}`
+  };
+};
 const backgroundMoodStyle = computed(() => {
   const progress = backgroundProgress.value;
   const intensity = progress * progress;
 
-  if (isBotMode.value) {
-    return {
-      '--bg-corner': mixHexColor('#435b68', '#6a7f88', intensity),
-      '--bg-top': mixHexColor('#283c4e', '#334b5d', intensity),
-      '--bg-mid': mixHexColor('#1c2c3d', '#24384a', intensity),
-      '--bg-bottom': mixHexColor('#101720', '#091018', intensity),
-      '--bg-glow-alpha': `${0.16 + (intensity * 0.06)}`,
-      '--bg-shape-far-opacity': `${0.1 + (progress * 0.08)}`,
-      '--bg-shape-near-opacity': `${0.08 + (progress * 0.08)}`,
-      '--bg-saturate': `${0.86 + (progress * 0.08)}`
-    };
+  if (isMultiRoundMode.value) {
+    const paletteKey = multiRoundRun.currentRound.value?.resolvedBackgroundPaletteKey || 'main';
+    return createBackgroundPaletteStyle(getMultiRoundBackgroundPalette(paletteKey), intensity, progress);
   }
 
-  return {
-    '--bg-corner': mixHexColor('#e9b248', '#ff7b5c', intensity),
-    '--bg-top': mixHexColor('#c79129', '#d25b3f', intensity),
-    '--bg-mid': mixHexColor('#ff8658', '#a53149', intensity),
-    '--bg-bottom': mixHexColor('#76347c', '#24061f', intensity),
-    '--bg-glow-alpha': `${0.26 - (intensity * 0.1)}`,
-    '--bg-shape-far-opacity': `${0.18 + (progress * 0.1)}`,
-    '--bg-shape-near-opacity': `${0.14 + (progress * 0.1)}`,
-    '--bg-saturate': `${1.03 + (progress * 0.16)}`
-  };
+  if (isBotMode.value) {
+    return createBackgroundPaletteStyle(getMultiRoundBackgroundPalette('bot'), intensity, progress);
+  }
+
+  return createBackgroundPaletteStyle(getMultiRoundBackgroundPalette('main'), intensity, progress);
 });
 const triggerInvalidWordShake = () => {
   invalidWordPulse.value += 1;

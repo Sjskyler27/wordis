@@ -10,6 +10,7 @@ export const NORMAL_MULTI_ROUND_ROUNDS = [
     label: 'Round 1',
     targetScore: 100,
     timeSeconds: 100,
+    backgroundPalette: 'main',
     modifierBudget: {},
     rewardTiers: [MULTI_ROUND_REWARD_TIERS.COMMON],
     startingScoreBonusMultiplier: 0.55
@@ -19,6 +20,7 @@ export const NORMAL_MULTI_ROUND_ROUNDS = [
     label: 'Round 2',
     targetScore: 120,
     timeSeconds: 105,
+    backgroundPalette: 'random-extra',
     modifierBudget: {
       [MULTI_ROUND_MODIFIER_DIFFICULTIES.EASY]: 1
     },
@@ -43,6 +45,7 @@ export const NORMAL_MULTI_ROUND_ROUNDS = [
     label: 'Round 4',
     targetScore: 145,
     timeSeconds: 120,
+    backgroundPalette: 2,
     modifierBudget: {
       [MULTI_ROUND_MODIFIER_DIFFICULTIES.MEDIUM]: 1
     },
@@ -57,6 +60,7 @@ export const NORMAL_MULTI_ROUND_ROUNDS = [
     label: 'Round 5',
     targetScore: 160,
     timeSeconds: 125,
+    backgroundPalette: 5,
     modifierBudget: {
       [MULTI_ROUND_MODIFIER_DIFFICULTIES.EASY]: 1,
       [MULTI_ROUND_MODIFIER_DIFFICULTIES.MEDIUM]: 1
@@ -84,6 +88,7 @@ export const NORMAL_MULTI_ROUND_ROUNDS = [
     label: 'Round 7',
     targetScore: 190,
     timeSeconds: 140,
+    backgroundPalette: 1,
     modifierBudget: {
       [MULTI_ROUND_MODIFIER_DIFFICULTIES.MEDIUM]: 1
     },
@@ -98,6 +103,7 @@ export const NORMAL_MULTI_ROUND_ROUNDS = [
     label: 'Round 8',
     targetScore: 205,
     timeSeconds: 145,
+    backgroundPalette: 'random-extra',
     modifierBudget: {
       [MULTI_ROUND_MODIFIER_DIFFICULTIES.EASY]: 1,
       [MULTI_ROUND_MODIFIER_DIFFICULTIES.HARD]: 1
@@ -127,6 +133,7 @@ export const NORMAL_MULTI_ROUND_ROUNDS = [
     targetScore: 240,
     timeSeconds: 165,
     isChallenge: true,
+    isFinalRound: true,
     modifierBudget: {
       [MULTI_ROUND_MODIFIER_DIFFICULTIES.MEDIUM]: 1,
       [MULTI_ROUND_MODIFIER_DIFFICULTIES.HARD]: 2

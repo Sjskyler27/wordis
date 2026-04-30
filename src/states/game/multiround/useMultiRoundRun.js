@@ -1,5 +1,6 @@
 import { computed, ref } from 'vue';
 import { MULTI_ROUND_ROUNDS } from './multi-round-rounds-hard.js';
+import { MULTI_ROUND_EXTRA_BACKGROUND_PALETTE_COUNT } from './multi-round-background-palettes.js';
 import {
   PERSONAL_MODIFIER_DEFINITIONS,
   getPersonalModifierDefinition
@@ -18,6 +19,27 @@ const chooseRandomEntry = (entries = []) => {
   }
 
   return entries[Math.floor(Math.random() * entries.length)] || null;
+};
+
+const resolveBackgroundPaletteKey = (round = {}) => {
+  if (round.isFinalRound) {
+    return 'final';
+  }
+
+  if (round.isChallenge) {
+    return 'challenge';
+  }
+
+  if (round.backgroundPalette === 'random-extra') {
+    return `extra-${Math.floor(Math.random() * MULTI_ROUND_EXTRA_BACKGROUND_PALETTE_COUNT)}`;
+  }
+
+  if (Number.isInteger(round.backgroundPalette)) {
+    const safeIndex = Math.max(0, Math.min(MULTI_ROUND_EXTRA_BACKGROUND_PALETTE_COUNT - 1, round.backgroundPalette));
+    return `extra-${safeIndex}`;
+  }
+
+  return round.backgroundPalette || 'main';
 };
 
 const getCantCombineWith = (modifierKey) => {
@@ -101,7 +123,8 @@ const resolveRounds = (rounds = MULTI_ROUND_ROUNDS) => {
 
     return {
       ...applyRoundEffects(round, resolvedModifierKeys),
-      resolvedModifierKeys
+      resolvedModifierKeys,
+      resolvedBackgroundPaletteKey: resolveBackgroundPaletteKey(round)
     };
   });
 };

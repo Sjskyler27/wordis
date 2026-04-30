@@ -1,4 +1,5 @@
 import { isTestingMode } from '../testing.js';
+import { MULTI_ROUND_EXTRA_BACKGROUND_PALETTE_COUNT } from './multi-round-background-palettes.js';
 
 export const MULTI_ROUND_REWARD_TIERS = {
   COMMON: 'common',
@@ -18,6 +19,8 @@ export const createRound = ({
   targetScore,
   timeSeconds,
   isChallenge = false,
+  isFinalRound = false,
+  backgroundPalette = 'main',
   modifierBudget = {},
   rewardTiers = [MULTI_ROUND_REWARD_TIERS.COMMON],
   startingScoreBonusMultiplier = 0.5
@@ -27,6 +30,8 @@ export const createRound = ({
   targetScore: isTestingMode ? 15 : targetScore,
   timeSeconds: isTestingMode ? 20 : timeSeconds,
   isChallenge,
+  isFinalRound,
+  backgroundPalette,
   modifierBudget,
   rewardTiers,
   startingScoreBonusMultiplier
@@ -38,6 +43,7 @@ export const HARD_MULTI_ROUND_ROUNDS = [
     label: 'Round 1',
     targetScore: 120,
     timeSeconds: 90,
+    backgroundPalette: 'main',
     modifierBudget: {},
     rewardTiers: [MULTI_ROUND_REWARD_TIERS.COMMON]
   }),
@@ -46,6 +52,7 @@ export const HARD_MULTI_ROUND_ROUNDS = [
     label: 'Round 2',
     targetScore: 140,
     timeSeconds: 95,
+    backgroundPalette: 'random-extra',
     modifierBudget: {
       [MULTI_ROUND_MODIFIER_DIFFICULTIES.EASY]: 1
     },
@@ -68,6 +75,7 @@ export const HARD_MULTI_ROUND_ROUNDS = [
     label: 'Round 4',
     targetScore: 160,
     timeSeconds: 110,
+    backgroundPalette: 0,
     modifierBudget: {
       [MULTI_ROUND_MODIFIER_DIFFICULTIES.MEDIUM]: 1
     },
@@ -81,6 +89,7 @@ export const HARD_MULTI_ROUND_ROUNDS = [
     label: 'Round 5',
     targetScore: 180,
     timeSeconds: 120,
+    backgroundPalette: 1,
     modifierBudget: {
       [MULTI_ROUND_MODIFIER_DIFFICULTIES.EASY]: 1,
       [MULTI_ROUND_MODIFIER_DIFFICULTIES.MEDIUM]: 1
@@ -106,6 +115,7 @@ export const HARD_MULTI_ROUND_ROUNDS = [
     label: 'Round 7',
     targetScore: 150,
     timeSeconds: 120,
+    backgroundPalette: 2,
     modifierBudget: {
       [MULTI_ROUND_MODIFIER_DIFFICULTIES.MEDIUM]: 1,
       [MULTI_ROUND_MODIFIER_DIFFICULTIES.HARD]: 1
@@ -120,6 +130,7 @@ export const HARD_MULTI_ROUND_ROUNDS = [
     label: 'Round 8',
     targetScore: 180,
     timeSeconds: 130,
+    backgroundPalette: 'random-extra',
     modifierBudget: {
       [MULTI_ROUND_MODIFIER_DIFFICULTIES.EASY]: 1,
       [MULTI_ROUND_MODIFIER_DIFFICULTIES.HARD]: 1
@@ -146,6 +157,7 @@ export const HARD_MULTI_ROUND_ROUNDS = [
     label: 'Round 10',
     targetScore: 210,
     timeSeconds: 150,
+    backgroundPalette: 3,
     modifierBudget: {
       [MULTI_ROUND_MODIFIER_DIFFICULTIES.HARD]: 2
     },
@@ -159,6 +171,7 @@ export const HARD_MULTI_ROUND_ROUNDS = [
     label: 'Round 11',
     targetScore: 240,
     timeSeconds: 150,
+    backgroundPalette: 4,
     modifierBudget: {
       [MULTI_ROUND_MODIFIER_DIFFICULTIES.MEDIUM]: 2,
       [MULTI_ROUND_MODIFIER_DIFFICULTIES.HARD]: 1
@@ -185,6 +198,7 @@ export const HARD_MULTI_ROUND_ROUNDS = [
     targetScore: 300,
     timeSeconds: 180,
     isChallenge: true,
+    isFinalRound: true,
     modifierBudget: {
       [MULTI_ROUND_MODIFIER_DIFFICULTIES.MEDIUM]: 1,
       [MULTI_ROUND_MODIFIER_DIFFICULTIES.HARD]: 3
@@ -194,3 +208,5 @@ export const HARD_MULTI_ROUND_ROUNDS = [
 ];
 
 export const MULTI_ROUND_ROUNDS = HARD_MULTI_ROUND_ROUNDS;
+export const MULTI_ROUND_RANDOM_EXTRA_PALETTE = 'random-extra';
+export const MULTI_ROUND_MAX_EXTRA_PALETTE_INDEX = MULTI_ROUND_EXTRA_BACKGROUND_PALETTE_COUNT - 1;
