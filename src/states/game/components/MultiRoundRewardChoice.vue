@@ -3,6 +3,22 @@
     <section class="reward-choice-panel animated-slide-up">
       <span class="reward-kicker">Round Complete</span>
       <strong>Choose a modifier</strong>
+      <div v-if="upcomingRound" class="upcoming-round-preview">
+        <span class="upcoming-round-kicker">Next Round</span>
+        <strong>{{ upcomingRound.label }}</strong>
+        <div class="upcoming-round-modifiers">
+          <template v-if="upcomingRound.visibleModifierKeys?.length">
+            <span
+              v-for="modifierKey in upcomingRound.visibleModifierKeys"
+              :key="`${upcomingRound.id}-${modifierKey}`"
+              class="upcoming-round-modifier"
+            >
+              {{ getModifierLabel(modifierKey) }}
+            </span>
+          </template>
+          <span v-else class="upcoming-round-empty">No round modifiers</span>
+        </div>
+      </div>
       <div class="reward-choice-grid">
         <button
           v-for="(reward, index) in rewards"
@@ -23,10 +39,16 @@
 </template>
 
 <script setup>
+import { getRoundModifierDefinition } from '../multiround/round-modifier-definitions.js';
+
 defineProps({
   rewards: {
     type: Array,
     required: true
+  },
+  upcomingRound: {
+    type: Object,
+    default: null
   },
   controllerFocusedRewardIndex: {
     type: Number,
@@ -35,6 +57,18 @@ defineProps({
 });
 
 defineEmits(['choose']);
+
+const formatModifierKey = (modifierKey = '') => {
+  return modifierKey
+    .split('_')
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(' ');
+};
+
+const getModifierLabel = (modifierKey = '') => {
+  return getRoundModifierDefinition(modifierKey)?.label || formatModifierKey(modifierKey);
+};
 </script>
 
 <style scoped>
@@ -88,6 +122,47 @@ defineEmits(['choose']);
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 14px;
   margin-top: 18px;
+}
+
+.upcoming-round-preview {
+  margin-top: 18px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: rgba(31, 10, 25, 0.52);
+  border: 1px solid rgba(255, 220, 144, 0.14);
+}
+
+.upcoming-round-kicker {
+  display: inline-block;
+  font-size: 0.68rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  opacity: 0.72;
+}
+
+.upcoming-round-preview strong {
+  display: block;
+  margin-top: 6px;
+  font-size: 1rem;
+  color: #fff0c2;
+}
+
+.upcoming-round-modifiers {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.upcoming-round-modifier,
+.upcoming-round-empty {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  font-size: 0.76rem;
 }
 
 .reward-card {

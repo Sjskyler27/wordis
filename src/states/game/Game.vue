@@ -167,6 +167,7 @@
       <MultiRoundRewardChoice
         v-if="isMultiRoundMode && isMultiRoundRewardChoiceOpen"
         :rewards="multiRoundRewardChoices"
+        :upcoming-round="upcomingMultiRoundPreview"
         :controller-focused-reward-index="controllerRegion === 'reward' ? controllerRewardCursorIndex : -1"
         @choose="handleMultiRoundRewardChoice"
       />
@@ -651,6 +652,13 @@ const multiRoundProgressRounds = computed(() => multiRoundRun.visibleProgressRou
 const personalModifiersForDrawer = computed(() => multiRoundRun.personalModifiers.value);
 const multiRoundRewardChoices = computed(() => multiRoundRun.rewardChoices.value);
 const isMultiRoundRewardChoiceOpen = computed(() => multiRoundRun.rewardChoiceOpen.value);
+const upcomingMultiRoundPreview = computed(() => {
+  if (!isMultiRoundMode.value) {
+    return null;
+  }
+
+  return multiRoundRun.visibleProgressRounds.value[multiRoundRun.currentRoundIndex.value + 1] || null;
+});
 const BOT_WINNING_SCORES = {
   easy: 100,
   normal: 150,
