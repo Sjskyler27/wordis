@@ -89,6 +89,38 @@
         </div>
        </button>
 
+       <button
+        v-if="hasBotMatchSave"
+        tabindex="-1"
+        class="menu-option continue-option"
+        ref="continueBotButton"
+        @click="emit('continue', SAVE_MODES.BOT_MATCH)"
+        @keydown.space.prevent="emit('continue', SAVE_MODES.BOT_MATCH)"
+        @keydown.enter.prevent="emit('continue', SAVE_MODES.BOT_MATCH)"
+        >
+        <div class="menu-text">
+          <h3>Continue Machine Learning</h3>
+          <br>
+          <p>Resume your saved bot match.</p>
+        </div>
+       </button>
+
+       <button
+        v-if="hasMultiRoundSave"
+        tabindex="-1"
+        class="menu-option continue-option"
+        ref="continueMultiRoundButton"
+        @click="emit('continue', SAVE_MODES.MULTI_ROUND)"
+        @keydown.space.prevent="emit('continue', SAVE_MODES.MULTI_ROUND)"
+        @keydown.enter.prevent="emit('continue', SAVE_MODES.MULTI_ROUND)"
+        >
+        <div class="menu-text">
+          <h3>Continue Balatro Style</h3>
+          <br>
+          <p>Resume your saved multi-round run.</p>
+        </div>
+       </button>
+
     </div>
   </div>
 </template>
@@ -96,6 +128,7 @@
 <script setup>
 import { defineProps, defineEmits, onMounted, onBeforeUnmount ,ref, computed, nextTick} from "vue";
 import { freePlayUnlock,draftingDuelUnlock,dailyChallengeUnlock, draftcomingSoon, dailyComingSoon } from "../../../globalVariables";
+import { SAVE_MODES, hasLocalGameSave } from "../game/save-state.js";
 const props = defineProps({
   isStreamer: Boolean
 });
@@ -114,7 +147,11 @@ const machineLearningButton = ref(null)
 const multiRoundButton = ref(null)
 const multiplayerButton = ref(null)
 const quickPracticeButton = ref(null)
+const continueBotButton = ref(null)
+const continueMultiRoundButton = ref(null)
 const isAdmin = (localStorage.getItem('isA') || 'null') === import.meta.env.VITE_AD_C;
+const hasBotMatchSave = ref(hasLocalGameSave(SAVE_MODES.BOT_MATCH));
+const hasMultiRoundSave = ref(hasLocalGameSave(SAVE_MODES.MULTI_ROUND));
 
 
 
@@ -145,19 +182,28 @@ const controllerButtons = [
   machineLearningButton,
   multiRoundButton,
   multiplayerButton,
-  quickPracticeButton
+  quickPracticeButton,
+  continueBotButton,
+  continueMultiRoundButton
 ];
 const getControllerTargets = () => controllerButtons.filter((button) => button.value);
+const syncSaveButtons = () => {
+  hasBotMatchSave.value = hasLocalGameSave(SAVE_MODES.BOT_MATCH);
+  hasMultiRoundSave.value = hasLocalGameSave(SAVE_MODES.MULTI_ROUND);
+};
 onMounted(() => {
   nextTick(() => {
     updateFocus();
   });
 
+  syncSaveButtons();
   window.addEventListener("keydown", handleKeyDown);
+  window.addEventListener("wordis:saves-changed", syncSaveButtons);
 });
 
 onBeforeUnmount(() => {
   window.removeEventListener("keydown", handleKeyDown);
+  window.removeEventListener("wordis:saves-changed", syncSaveButtons);
 });
 
 

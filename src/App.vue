@@ -23,6 +23,7 @@
       :shopZoom="shopZoom"
       :isMultiplayer="isMultiplayer"
       :playMode="playMode"
+      :continueSave="continueSave"
       :overtimeEnabled="overtimeEnabled"
       v-model:botDifficulty="botDifficulty"
       :multiRoundDifficulty="multiRoundDifficulty"
@@ -88,6 +89,7 @@ import MultiplayerScreen from "./states/game/MultiplayerScreen.vue";
 import MultiRoundScreen from "./states/game/MultiRoundScreen.vue";
 import { resetGame as resetMultiplayerGame } from "./states/game/multiplayer.js";
 import { playMode, botDifficulty, multiRoundDifficulty, overtimeEnabled, updatePlayConfig, PLAY_MODES } from "./states/game/play-config.js";
+import { SAVE_MODES, loadLocalGame } from "./states/game/save-state.js";
 import TypeScreen from "./states/home/TypeScreen.vue";
 import StartScreen from "./states/home/StartScreen.vue";
 import Admin from "./admin/Admin.vue";
@@ -235,6 +237,7 @@ const showFeedback = ref(false)
   const seed = ref(localStorage.getItem("seed"));
   const gameEnded = ref(localStorage.getItem("gameEnded"));
   const isMultiplayer = ref(false);
+  const continueSave = ref(null);
   const currentStateKey = computed(() => {
     const stateName = currentState.value?.__name || currentState.value?.name || 'state';
     const modeName = isMultiplayer.value ? 'multiplayer' : 'singleplayer';
@@ -353,9 +356,29 @@ const showFeedback = ref(false)
   }
 
 
-const continueGame = () => {  
+const continueGame = (mode) => {  
     hideGoogleTranslate.value = true
     hideGoogleTranslateIframesAfterDelay();
+    if (mode === SAVE_MODES.MULTI_ROUND || mode === SAVE_MODES.BOT_MATCH) {
+      const save = loadLocalGame(mode);
+      if (!save) {
+        displayMessage('No save found.');
+        return;
+      }
+
+      continueSave.value = save;
+      isMultiplayer.value = false;
+      updatePlayConfig({
+        mode: mode === SAVE_MODES.MULTI_ROUND ? PLAY_MODES.MULTI_ROUND : PLAY_MODES.BOT_MATCH,
+        difficulty: mode === SAVE_MODES.BOT_MATCH ? (save.d || botDifficulty.value) : botDifficulty.value,
+        multiRound: mode === SAVE_MODES.MULTI_ROUND ? (save.d || multiRoundDifficulty.value) : multiRoundDifficulty.value
+      });
+      resetMultiplayerGame();
+      currentState.value = Game;
+      reloader.value += 1;
+      return;
+    }
+
     if(localStorage.getItem('inShop') === 'true'){
       currentState.value = Shop;
     }
@@ -377,6 +400,7 @@ const continueGame = () => {
     hideGoogleTranslate.value = false
     console.log('takeing you home')
     showSettings.value=false
+    continueSave.value = null;
     currentState.value = StartScreen;
   };
 
@@ -388,6 +412,7 @@ const continueGame = () => {
     if (isMultiplayer.value) {
       updatePlayConfig({ mode: PLAY_MODES.MULTIPLAYER });
     }
+    continueSave.value = null;
     currentState.value = Game;
   };
   const goToType = () => {
@@ -395,6 +420,7 @@ const continueGame = () => {
     hideGoogleTranslateIframesAfterDelay();
     hideGoogleTranslate.value = true
     console.log('set hide',hideGoogleTranslate.value)
+    continueSave.value = null;
     currentState.value = TypeScreen;
   };
   const goToAdmin = () => {
@@ -410,6 +436,7 @@ const continueGame = () => {
     hideGoogleTranslateExtras()
     hideGoogleTranslateIframesAfterDelay();
     hideGoogleTranslate.value = true
+    continueSave.value = null;
     currentState.value = MultiRoundScreen;
     isMultiplayer.value = false;
   };
@@ -419,6 +446,7 @@ const continueGame = () => {
     hideGoogleTranslateIframesAfterDelay();
     hideGoogleTranslate.value = true
     isMultiplayer.value = false;
+    continueSave.value = null;
     updatePlayConfig({
       mode: options.mode || PLAY_MODES.TIMED_SOLO,
       difficulty: options.difficulty || botDifficulty.value,
@@ -433,6 +461,7 @@ const continueGame = () => {
     hideGoogleTranslateIframesAfterDelay();
     hideGoogleTranslate.value = true;
     showSettings.value = false;
+    continueSave.value = null;
     resetMultiplayerGame();
     reloader.value += 1;
     currentState.value = Game;

@@ -257,7 +257,8 @@ import {
   packBotMatchSave,
   packMultiRoundSave,
   saveCloudGame,
-  saveLocalGame
+  saveLocalGame,
+  unpackSave
 } from './save-state.js';
 import TutorialOverlay from './components/TutorialOverlay.vue';
 import WordBuilder from './components/WordBuilder.vue';
@@ -269,6 +270,10 @@ const props = defineProps({
   playMode: {
     type: String,
     default: 'timed_solo'
+  },
+  continueSave: {
+    type: Object,
+    default: null
   },
   botDifficulty: {
     type: String,
@@ -2376,6 +2381,85 @@ const startTimedModeTimerAfterFirstTileClicked = () => {
   startMultiRoundTimer();
 };
 
+const restoreCommonSaveState = (common = {}) => {
+  playerScores.value = common.scores || { host: 0, opponent: 0 };
+  playerTiles.value = common.tiles || { host: [], opponent: [] };
+  playerCards.value = common.cards || {
+    host: { boons: [], attacks: [] },
+    opponent: { boons: [], attacks: [] }
+  };
+  wordHistory.value = common.wordHistory || { host: [], opponent: [] };
+  submittedWords.value = common.submittedWords || { host: '', opponent: '' };
+  rackClears.value = common.rackClears || { host: 0, opponent: 0 };
+
+  const hostScore = wordHistory.value.host?.[0]?.score || 0;
+  const opponentScore = wordHistory.value.opponent?.[0]?.score || 0;
+  lastWordScores.value = {
+    host: hostScore,
+    opponent: opponentScore
+  };
+  lastWordBreakdowns.value = {
+    host: {
+      wordScore: hostScore,
+      burnPenalty: 0,
+      netScore: hostScore
+    },
+    opponent: {
+      wordScore: opponentScore,
+      burnPenalty: 0,
+      netScore: opponentScore
+    }
+  };
+  clearSelectionForSide('host');
+  clearSelectionForSide('opponent');
+  resetActionMode();
+};
+
+const restoreContinueSave = (rawSave) => {
+  const save = unpackSave(rawSave);
+  if (!save) {
+    return;
+  }
+
+  restoreCommonSaveState(save.common);
+
+  if (save.m === SAVE_MODES.MULTI_ROUND) {
+    const multiRoundSave = save.mr || {};
+    multiRoundRun.restoreRunState({
+      resolvedRounds: multiRoundSave.rr,
+      currentRoundIndex: multiRoundSave.i,
+      timerRemainingSeconds: multiRoundSave.t,
+      completedRounds: multiRoundSave.cr,
+      personalModifiers: multiRoundSave.pm,
+      rewardChoices: multiRoundSave.rc,
+      startingScoreBonus: multiRoundSave.pe,
+      runEnded: multiRoundSave.end,
+      failureSummary: multiRoundSave.fs
+    });
+    pendingMultiRoundStartingScore.value = multiRoundSave.pe || 0;
+    multiRoundFinalWordSpent.value = Boolean(multiRoundSave.fw);
+    timedModeTimerStarted.value = Boolean(multiRoundSave.ts);
+    isMultiRoundTimerPausedByAttack.value = false;
+    localMessage.value = 'Multi-round save restored.';
+    if (multiRoundRun.rewardChoiceOpen.value) {
+      stopMultiRoundTimer();
+    } else {
+      startMultiRoundTimer();
+    }
+    return;
+  }
+
+  if (save.m === SAVE_MODES.BOT_MATCH) {
+    const overtime = save.bt?.o || {};
+    singlePlayerOvertimePendingSide.value = overtime.p || null;
+    singlePlayerOvertimeFinalWordSubmitted.value = Boolean(overtime.f);
+    timedModeTimerStarted.value = false;
+    localMessage.value = 'Bot match save restored.';
+    stopBotLoop();
+    startBotLoopAfterTutorial();
+  }
+};
+
 watch(() => props.playMode, (nextMode) => {
   if (nextMode === 'multi_round') {
     multiRoundRun.resetRun();
@@ -2401,6 +2485,10 @@ watch(() => props.playMode, (nextMode) => {
   }
 
   stopSoloTimer();
+}, { immediate: true });
+
+watch(() => props.continueSave, (save) => {
+  restoreContinueSave(save);
 }, { immediate: true });
 
 watch(effectiveGameEnded, (ended) => {
