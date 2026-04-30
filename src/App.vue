@@ -285,7 +285,8 @@ const showFeedback = ref(false)
       { width: 860, zoom: 0.5 },
       { width: 1280, zoom: 0.65 },
       { width: 1700, zoom: 0.8 },
-      { width: 1920, zoom: 0.96 }
+      { width: 1920, zoom: 0.96 },
+      { width: 2220, zoom: 1.27 },
     ];
 
     if (width <= stops[0].width) return stops[0].zoom;
