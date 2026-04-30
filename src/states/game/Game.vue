@@ -263,6 +263,12 @@ import {
 import TutorialOverlay from './components/TutorialOverlay.vue';
 import WordBuilder from './components/WordBuilder.vue';
 import { botDifficulty } from './play-config.js';
+import {
+  PAST_GAME_MODES,
+  buildBestWordSummary,
+  makePastGameId,
+  savePastGame
+} from '../../userstate/pastGames.js';
 
 const props = defineProps({
   isMobile: Boolean,
@@ -308,6 +314,8 @@ const emit = defineEmits([
   'update:botDifficulty'
 ]);
 const localMessage = ref('');
+const gameStartedAt = Date.now();
+const savedPastGameIds = ref(new Set());
 const isPaused = ref(false);
 const activeBoonCardId = ref(null);
 const invalidWordPulse = ref(0);
@@ -822,6 +830,96 @@ const multiRoundHistorySummary = computed(() => {
     personalModifiers: multiRoundRun.personalModifiers.value
   };
 });
+
+const getSecondsUsed = (timeSeconds = 0, secondsRemaining = 0) => {
+  return Math.max(0, Math.round(Number(timeSeconds || 0) - Number(secondsRemaining || 0)));
+};
+
+const packPastGameRound = (round = {}) => ({
+  rn: round.roundNumber || 0,
+  id: round.roundId || '',
+  lb: round.roundLabel || '',
+  trg: round.targetScore || 0,
+  sc: round.score || 0,
+  ts: round.timeSeconds || 0,
+  sr: Math.max(0, Math.round(Number(round.secondsRemaining || 0))),
+  su: getSecondsUsed(round.timeSeconds, round.secondsRemaining),
+  sb: round.startingScoreBonus || 0,
+  mods: round.activeRoundModifierKeys || [],
+  rw: round.selectedRewardKey || null,
+  rwl: round.selectedRewardLabel || ''
+});
+
+const packPastGameRewards = (rounds = []) => rounds
+  .filter((round) => round.selectedRewardKey)
+  .map((round) => ({
+    rn: round.roundNumber || 0,
+    k: round.selectedRewardKey,
+    lb: round.selectedRewardLabel || ''
+  }));
+
+const markPastGameSaved = (id) => {
+  savedPastGameIds.value = new Set([...savedPastGameIds.value, id]);
+};
+
+const saveMultiRoundPastGame = (result) => {
+  const saveKey = `${PAST_GAME_MODES.MULTI_ROUND}:${result}`;
+  const id = makePastGameId(PAST_GAME_MODES.MULTI_ROUND);
+  if (savedPastGameIds.value.has(saveKey)) {
+    return;
+  }
+
+  const completedRounds = multiRoundRun.completedRounds.value || [];
+  const failedRound = multiRoundRun.failureSummary.value;
+  const bestWord = buildBestWordSummary(wordHistory.value.host || []);
+  const createdAt = Date.now();
+
+  markPastGameSaved(saveKey);
+  void savePastGame({
+    v: 1,
+    id,
+    m: PAST_GAME_MODES.MULTI_ROUND,
+    d: props.multiRoundDifficulty,
+    rs: result,
+    ca: createdAt,
+    uat: createdAt,
+    dur: Math.max(0, Math.round((createdAt - gameStartedAt) / 1000)),
+    sc: result === 'failed' ? (failedRound?.score || 0) : (completedRounds.at(-1)?.score || 0),
+    bw: bestWord,
+    rds: completedRounds.map(packPastGameRound),
+    fr: failedRound ? packPastGameRound(failedRound) : null,
+    rwds: packPastGameRewards(completedRounds)
+  });
+};
+
+const saveBotMatchPastGame = () => {
+  const saveKey = PAST_GAME_MODES.BOT_MATCH;
+  const id = makePastGameId(PAST_GAME_MODES.BOT_MATCH);
+  if (savedPastGameIds.value.has(saveKey)) {
+    return;
+  }
+
+  const createdAt = Date.now();
+  const hostScore = playerScores.value.host || 0;
+  const opponentScore = playerScores.value.opponent || 0;
+
+  markPastGameSaved(saveKey);
+  void savePastGame({
+    v: 1,
+    id,
+    m: PAST_GAME_MODES.BOT_MATCH,
+    d: props.botDifficulty,
+    rs: hostScore > opponentScore ? 'won' : 'lost',
+    ca: createdAt,
+    uat: createdAt,
+    dur: Math.max(0, Math.round((createdAt - gameStartedAt) / 1000)),
+    sc: hostScore,
+    os: opponentScore,
+    bw: buildBestWordSummary(wordHistory.value.host || []),
+    obw: buildBestWordSummary(wordHistory.value.opponent || [])
+  });
+};
+
 const WINNING_SCORE = isTestingMode ? 40 : 250;
 const winningSide = computed(() => {
   if (isOvertimeActive.value) {
@@ -1317,6 +1415,7 @@ const completeMultiRoundRound = () => {
       const advanced = multiRoundRun.goToNextRound({ startingScore });
       pendingMultiRoundStartingScore.value = 0;
       if (!advanced) {
+        saveMultiRoundPastGame('won');
         clearMultiRoundSaves();
         localMessage.value = 'Run complete!';
         return;
@@ -1338,6 +1437,7 @@ const failMultiRoundRun = () => {
     score: playerScores.value.host || 0,
     secondsRemaining: Math.max(0, multiRoundRun.timerRemainingSeconds.value)
   });
+  saveMultiRoundPastGame('failed');
   clearMultiRoundSaves();
   localMessage.value = 'Run failed.';
 };
@@ -1406,6 +1506,7 @@ const handleMultiRoundRewardChoice = (rewardKey) => {
   pendingMultiRoundStartingScore.value = 0;
 
   if (!advanced) {
+    saveMultiRoundPastGame('won');
     clearMultiRoundSaves();
     playUiSound(tileReplaceSound);
     localMessage.value = 'Run complete!';
@@ -1599,6 +1700,19 @@ const handleSubmit = async () => {
   }
 
   if (isMultiRoundMode.value) {
+    if (wordHistory.value.host?.[0]) {
+      wordHistory.value = {
+        ...wordHistory.value,
+        host: [
+          {
+            ...wordHistory.value.host[0],
+            rn: multiRoundRun.currentRoundNumber.value
+          },
+          ...wordHistory.value.host.slice(1)
+        ]
+      };
+    }
+
     if (SAVE_ON_WORD_SUBMIT) {
       saveCurrentMultiRoundLocal();
     }
@@ -2494,6 +2608,7 @@ watch(() => props.continueSave, (save) => {
 watch(effectiveGameEnded, (ended) => {
   if (ended) {
     if (isBotMode.value) {
+      saveBotMatchPastGame();
       clearBotMatchSave();
     }
 
