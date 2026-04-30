@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.0.39 - 2026-04-30
+
+Start: 10:20 EDT
+Stop: 11:03 EDT
+
+- Added Wordis-specific save-state implementation notes and a reusable save-state guide for similar games.
+- Added compact local save infrastructure for multi-round and bot match saves with schema versioning.
+- Added optional Firebase cloud checkpoint saving behind `VITE_ENABLE_CLOUD_SAVES`.
+- Saved multi-round progress locally on word submit, after round transitions, and before leaving the game.
+- Saved multi-round cloud checkpoints after completed rounds before reward selection, without in-round data.
+- Saved bot match progress locally on word submit and before leaving the game.
+- Cleared matching saves immediately on bot match end and multi-round run end.
+- Added separate type-screen continue buttons for saved bot match and multi-round runs.
+- Restored saved racks, scores, cards, history, multi-round progress, reward choices, and bot match overtime state.
+- Verified the changes with `npm run build`.
+
 ## 0.0.38 - 2026-04-29
 
 Start: 13:30 EDT
