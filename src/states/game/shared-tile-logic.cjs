@@ -10,7 +10,8 @@ const {
   CARD_DEFINITIONS,
   BOON_CARD_KEYS,
   ATTACK_CARD_KEYS,
-  TIMED_SOLO_ATTACK_CARD_KEYS
+  TIMED_SOLO_ATTACK_CARD_KEYS,
+  MULTI_ROUND_ATTACK_CARD_KEYS
 } = cardDefinitionsApi || {};
 const {
   createModifierDefinitions
@@ -1126,6 +1127,10 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
 
       if (options.deck === 'timed_solo') {
         return TIMED_SOLO_ATTACK_CARD_KEYS;
+      }
+
+      if (options.deck === 'multi_round') {
+        return MULTI_ROUND_ATTACK_CARD_KEYS;
       }
 
       return ATTACK_CARD_KEYS.filter((cardKey) => {

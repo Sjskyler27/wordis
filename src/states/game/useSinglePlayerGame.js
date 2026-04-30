@@ -21,6 +21,7 @@ import {
 } from './tile-logic.js';
 import { isTestingMode } from './testing.js';
 import { BOT_DIFFICULTIES } from './play-config.js';
+import { getRoundModifierDefinition } from './multiround/round-modifier-definitions.js';
 
 export const useSinglePlayerGame = ({
   isMultiplayer,
@@ -42,6 +43,8 @@ export const useSinglePlayerGame = ({
   wordHistory,
   onTimedSoloPauseTime,
   onTimedSoloGainTime,
+  onMultiRoundRerollNextRoundModifiers,
+  onMultiRoundReduceTargetScore,
   onBotPreparing,
   personalModifierEffects,
   roundModifierEffects
@@ -79,7 +82,13 @@ export const useSinglePlayerGame = ({
     hard: 13250
   };
   const modifierProfile = () => (isTimedSoloMode.value || isMultiRoundMode?.value) ? 'solo' : 'bot';
-  const attackDeck = () => (isTimedSoloMode.value || isMultiRoundMode?.value) ? 'timed_solo' : 'duel';
+  const attackDeck = () => {
+    if (isMultiRoundMode?.value) {
+      return 'multi_round';
+    }
+
+    return isTimedSoloMode.value ? 'timed_solo' : 'duel';
+  };
   const shouldDrawAttacks = () => true; // may set to false for multiplayer if too rough
   const getHeldCards = (side, kind) => {
     const handKey = kind === 'boon' ? 'boons' : 'attacks';
@@ -750,6 +759,15 @@ export const useSinglePlayerGame = ({
     const opponentSide = side === 'host' ? 'opponent' : 'host';
     const hand = playerCards.value[side]?.attacks || [];
     const card = hand.find((entry) => entry.id === cardId);
+    const restoreAttackCard = () => {
+      playerCards.value = {
+        ...playerCards.value,
+        [side]: {
+          ...playerCards.value[side],
+          attacks: hand
+        }
+      };
+    };
     if (!card) {
       localMessage.value = 'That attack is no longer available.';
       return false;
@@ -767,6 +785,46 @@ export const useSinglePlayerGame = ({
         attacks: keepTestingHand(hand, cardId)
       }
     };
+
+    if (card.multiRoundOnly && !isMultiRoundMode?.value) {
+      localMessage.value = 'That attack only works in multi-round.';
+      restoreAttackCard();
+      return false;
+    }
+
+    if (card.effectType === 'reroll_next_round_modifier') {
+      const nextRound = onMultiRoundRerollNextRoundModifiers?.();
+      if (!nextRound) {
+        localMessage.value = 'There is no next round to reroll.';
+        restoreAttackCard();
+        return false;
+      }
+
+      const rolledModifierLabels = (nextRound.resolvedModifierKeys || [])
+        .map((modifierKey) => getRoundModifierDefinition(modifierKey)?.label || modifierKey)
+        .filter(Boolean);
+
+      return {
+        success: true,
+        message: rolledModifierLabels.length
+          ? `Rerolled next round: ${rolledModifierLabels.join(', ')}.`
+          : 'Rerolled next round: no modifiers.'
+      };
+    }
+
+    if (card.effectType === 'reduce_round_target') {
+      const result = onMultiRoundReduceTargetScore?.(card.amount || 10);
+      if (!result) {
+        localMessage.value = 'There is no round target to lower.';
+        restoreAttackCard();
+        return false;
+      }
+
+      return {
+        success: true,
+        message: `Round target lowered to ${result.newTarget}.`
+      };
+    }
 
     if (card.effectType === 'pause_time') {
       onTimedSoloPauseTime?.();
@@ -807,13 +865,7 @@ export const useSinglePlayerGame = ({
 
     if (card.modifier === 'mustuse' && playerTiles.value[opponentSide].some((tile) => tile.status === 'mustuse')) {
       localMessage.value = 'That board already has a MUST tile.';
-      playerCards.value = {
-        ...playerCards.value,
-        [side]: {
-          ...playerCards.value[side],
-          attacks: hand
-        }
-      };
+      restoreAttackCard();
       return false;
     }
 
@@ -821,13 +873,7 @@ export const useSinglePlayerGame = ({
     const targetTiles = playerTiles.value[opponentSide].filter((tile) => !tile.locked && tile.status === 'normal');
     if (!targetTiles.length) {
       localMessage.value = 'No target tiles available.';
-      playerCards.value = {
-        ...playerCards.value,
-        [side]: {
-          ...playerCards.value[side],
-          attacks: hand
-        }
-      };
+      restoreAttackCard();
       return false;
     }
 

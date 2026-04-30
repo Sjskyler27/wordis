@@ -614,6 +614,8 @@ const {
       }
     }
   },
+  onMultiRoundRerollNextRoundModifiers: () => multiRoundRun.rerollNextRoundModifiers(),
+  onMultiRoundReduceTargetScore: (amount) => multiRoundRun.reduceCurrentTargetScore(amount),
   onBotPreparing: triggerBotCogBoost,
   personalModifierEffects,
   roundModifierEffects
@@ -1577,6 +1579,9 @@ const useAttackCard = (card) => {
   if (result?.success) {
     localMessage.value = result.message || `Played ${card.label}.`;
     resetActionMode();
+    if (isMultiRoundMode.value && card.effectType === 'reduce_round_target' && playerScores.value.host >= multiRoundRun.currentTargetScore.value) {
+      completeMultiRoundRound();
+    }
   }
 };
 

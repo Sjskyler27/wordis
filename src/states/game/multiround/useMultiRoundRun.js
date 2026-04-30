@@ -36,14 +36,17 @@ const canAddRoundModifier = (modifierKey, selectedKeys = []) => {
   });
 };
 
-const resolveModifierBudget = (modifierBudget = {}) => {
+const resolveModifierBudget = (modifierBudget = {}, excludedModifierKeys = []) => {
   const resolvedKeys = [];
+  const excludedKeys = new Set(excludedModifierKeys);
 
   Object.entries(modifierBudget).forEach(([difficulty, count]) => {
     const pool = ROUND_MODIFIER_KEYS_BY_DIFFICULTY[difficulty] || [];
 
     for (let index = 0; index < normalizeBudgetCount(count); index += 1) {
-      const availableKeys = pool.filter((modifierKey) => canAddRoundModifier(modifierKey, resolvedKeys));
+      const availableKeys = pool.filter((modifierKey) => {
+        return !excludedKeys.has(modifierKey) && canAddRoundModifier(modifierKey, resolvedKeys);
+      });
       const key = chooseRandomEntry(availableKeys);
       if (!key) {
         break;
@@ -279,6 +282,53 @@ export const useMultiRoundRun = ({ rounds = MULTI_ROUND_ROUNDS } = {}) => {
     startingScoreBonus.value = Math.max(0, Math.floor(Number(score) || 0));
   };
 
+  const rerollNextRoundModifiers = () => {
+    const nextRoundIndex = currentRoundIndex.value + 1;
+    if (nextRoundIndex >= resolvedRounds.value.length) {
+      return null;
+    }
+
+    const baseRound = rounds[nextRoundIndex] || resolvedRounds.value[nextRoundIndex];
+    const currentModifierKeys = resolvedRounds.value[nextRoundIndex]?.resolvedModifierKeys || [];
+    const excludedModifierKeys = new Set(currentModifierKeys);
+    const generatedModifierKeys = resolveModifierBudget(baseRound.modifierBudget || {}, currentModifierKeys);
+    const resolvedModifierKeys = resolveCompatibleModifierKeys([
+      ...(baseRound.roundModifierKeys || []).filter((modifierKey) => !excludedModifierKeys.has(modifierKey)),
+      ...generatedModifierKeys,
+      ...FORCE_TEST_ROUND_MODIFIER_KEYS.filter((modifierKey) => !excludedModifierKeys.has(modifierKey))
+    ]);
+    const nextRound = {
+      ...applyRoundEffects(baseRound, resolvedModifierKeys),
+      resolvedModifierKeys
+    };
+
+    resolvedRounds.value = resolvedRounds.value.map((round, index) => {
+      return index === nextRoundIndex ? nextRound : round;
+    });
+
+    return nextRound;
+  };
+
+  const reduceCurrentTargetScore = (amount = 10) => {
+    const round = currentRound.value;
+    if (!round) {
+      return null;
+    }
+
+    const oldTarget = Math.max(1, round.targetScore || 1);
+    const newTarget = Math.max(1, oldTarget - Math.max(0, Math.floor(Number(amount) || 0)));
+    resolvedRounds.value = resolvedRounds.value.map((entry, index) => {
+      return index === currentRoundIndex.value
+        ? { ...entry, targetScore: newTarget }
+        : entry;
+    });
+
+    return {
+      oldTarget,
+      newTarget
+    };
+  };
+
   const addPersonalModifier = (modifierKey) => {
     const definition = getPersonalModifierDefinition(modifierKey);
     if (!definition) {
@@ -437,6 +487,8 @@ export const useMultiRoundRun = ({ rounds = MULTI_ROUND_ROUNDS } = {}) => {
     resetRun,
     setTimerRemainingSeconds,
     setStartingScoreBonus,
+    rerollNextRoundModifiers,
+    reduceCurrentTargetScore,
     addPersonalModifier,
     generateRewardChoices,
     selectRewardChoice,

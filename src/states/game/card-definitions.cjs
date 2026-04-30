@@ -222,6 +222,37 @@ const CARD_DEFINITIONS = {
       cardBackground: 'linear-gradient(180deg, rgba(95, 196, 124, 0.98), rgba(35, 112, 73, 0.96))',
       cardBadgeBackground: 'rgba(18, 71, 43, 0.42)'
     }
+  },
+  attack_reroll_next_round_modifier: {
+    kind: 'attack',
+    label: 'Reroll Round',
+    description: "Reroll the next round's modifiers.",
+    rarityWeight: 0.82,
+    effectType: 'reroll_next_round_modifier',
+    multiRoundOnly: true,
+    ui: {
+      cardGlow: 'rgba(255, 224, 151, 0.26)',
+      cardEdge: 'rgba(255, 229, 177, 0.36)',
+      cardPattern: 'rgba(255, 243, 214, 0.12)',
+      cardBackground: 'linear-gradient(180deg, rgba(207, 146, 71, 0.98), rgba(122, 66, 36, 0.96))',
+      cardBadgeBackground: 'rgba(82, 42, 22, 0.42)'
+    }
+  },
+  attack_reduce_round_target: {
+    kind: 'attack',
+    label: 'Lower Target',
+    description: 'Lower the current round target by 10 points.',
+    rarityWeight: 0.28,
+    effectType: 'reduce_round_target',
+    amount: 10,
+    multiRoundOnly: true,
+    ui: {
+      cardGlow: 'rgba(188, 235, 255, 0.26)',
+      cardEdge: 'rgba(205, 242, 255, 0.36)',
+      cardPattern: 'rgba(233, 249, 255, 0.12)',
+      cardBackground: 'linear-gradient(180deg, rgba(75, 152, 189, 0.98), rgba(31, 80, 126, 0.96))',
+      cardBadgeBackground: 'rgba(17, 51, 79, 0.42)'
+    }
   }
 };
 
@@ -243,12 +274,18 @@ const ATTACK_CARD_KEYS = [
 ];
 
 const TIMED_SOLO_ATTACK_CARD_KEYS = ['attack_pause_time', 'attack_gain_time', 'attack_reduce_bad_modifiers'];
+const MULTI_ROUND_ATTACK_CARD_KEYS = [
+  ...TIMED_SOLO_ATTACK_CARD_KEYS,
+  'attack_reroll_next_round_modifier',
+  'attack_reduce_round_target'
+];
 
 const cardDefinitionsApi = {
   CARD_DEFINITIONS,
   BOON_CARD_KEYS,
   ATTACK_CARD_KEYS,
-  TIMED_SOLO_ATTACK_CARD_KEYS
+  TIMED_SOLO_ATTACK_CARD_KEYS,
+  MULTI_ROUND_ATTACK_CARD_KEYS
 };
 
 if (typeof globalThis !== 'undefined') {
