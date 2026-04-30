@@ -20,9 +20,9 @@ export const MULTI_ROUND_BACKGROUND_PALETTES = {
     saturate: [0.86, 0.94]
   },
   challenge: {
-    corner: ['#4df1d5', '#ffd36c'],
-    top: ['#10bfa4', '#ff9957'],
-    mid: ['#14778f', '#cf4d5e'],
+    corner: ['#4df1d5', '#6a7f88'],
+    top: ['#10bfa4', '#4071d5'],
+    mid: ['#14778f', '#00708f'],
     bottom: ['#25174d', '#12071f'],
     glowAlpha: [0.24, 0.17],
     shapeFarOpacity: [0.16, 0.28],
