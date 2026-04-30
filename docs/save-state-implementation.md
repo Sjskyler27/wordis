@@ -18,11 +18,12 @@ Use one local save key per mode:
 - `wordis:save:mr` for multi-round.
 - `wordis:save:bt` for bot match.
 
-Cloud multi-round saves should live under:
+Cloud saves are synced by the user-state module and should live under:
 
-- `users/${uid}/svgms/mr`
+- `users/${uid}/svgms/mr` for multi-round.
+- `users/${uid}/svgms/bt` for bot match.
 
-Bot match is local only for now. It should still use a shape close to multiplayer so multiplayer save support can build from it later.
+Bot match uses the same local-first save shape so account sync can compare timestamps across devices.
 
 ## Environment Toggles
 

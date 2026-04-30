@@ -20,6 +20,11 @@ const CLOUD_SAVE_PATHS = {
   [SAVE_MODES.MULTI_ROUND]: 'mr'
 };
 
+export const SYNCABLE_SAVE_MODES = [
+  SAVE_MODES.MULTI_ROUND,
+  SAVE_MODES.BOT_MATCH
+];
+
 const safeParse = (raw) => {
   if (!raw) {
     return null;
@@ -38,6 +43,8 @@ const isCompatibleSave = (save, mode) => {
 };
 
 export const getLocalSaveKey = (mode) => LOCAL_SAVE_KEYS[mode] || `wordis:save:${mode}`;
+export const getCloudSaveKey = (mode) => CLOUD_SAVE_PATHS[mode] || mode;
+export const isCompatibleGameSave = isCompatibleSave;
 
 export const saveLocalGame = (mode, save) => {
   if (!mode || !save) {
@@ -60,6 +67,24 @@ export const loadLocalGame = (mode) => {
 };
 
 export const hasLocalGameSave = (mode) => Boolean(loadLocalGame(mode));
+
+export const loadLocalGameSaves = () => {
+  return SYNCABLE_SAVE_MODES.reduce((saves, mode) => {
+    const save = loadLocalGame(mode);
+    if (save) {
+      saves[mode] = save;
+    }
+    return saves;
+  }, {});
+};
+
+export const importLocalGameSave = (mode, save) => {
+  if (!isCompatibleSave(save, mode)) {
+    return false;
+  }
+
+  return saveLocalGame(mode, save);
+};
 
 export const clearLocalGameSave = (mode) => {
   localStorage.removeItem(getLocalSaveKey(mode));

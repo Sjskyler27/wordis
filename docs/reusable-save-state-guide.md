@@ -23,6 +23,8 @@ Create a dedicated save module with functions like:
 - `saveCloud(mode, data, context)`.
 - `loadCloud(mode, context)`.
 - `clearCloud(mode, context)`.
+- `listLocalSaves()`.
+- `importLocalSave(mode, save)`.
 - `packGameState(mode, state, options)`.
 - `unpackGameState(save)`.
 
@@ -63,6 +65,8 @@ Cloud saves should usually include:
 - Enough data to resume at a safe checkpoint.
 
 Avoid frequent cloud writes during live play unless the game truly needs cross-device mid-action resume.
+
+When a separate account sync module owns cloud user state, keep the save module focused on validation, local storage, and pack/unpack helpers. The sync module can then compare timestamps and decide whether to upload or import a save.
 
 ## Save Timing
 
