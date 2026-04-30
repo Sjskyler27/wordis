@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.0.40 - 2026-04-30
+
+Start: 11:47 EDT
+Stop: 12:29 EDT
+
+- Added Wordis user-state sync docs and a reusable Firebase user-state guide.
+- Added save-state helpers so account sync can list, validate, and import local saves by mode.
+- Added `src/userstate` with first-login user initialization, ten-minute account sync, saved-game up/down timestamp comparison, and bot difficulty progression sync.
+- Added a per-device saved-game sync toggle.
+- Re-enabled the start-screen Profile button, prompting auth for signed-out players and showing a profile modal with logout for signed-in players.
+- Wired signup, login, app startup, online events, and logout cleanup into the new user-state sync flow.
+- Verified the changes with `npm run build`.
+
 ## 0.0.39 - 2026-04-30
 
 Start: 10:20 EDT
