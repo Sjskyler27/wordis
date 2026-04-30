@@ -27,6 +27,7 @@
             <div
               class="built-tile scoring score-pop-clone"
               :class="{
+                'built-tile-lightning': tile.status === 'lightningTile',
                 'built-tile-twin': tile.status === 'twinTile',
                 'built-tile-twin-active': hasTwinMatch(tile)
               }"
@@ -78,6 +79,7 @@
                 'built-tile-muted-consonant': isZeroedConsonantSlot(slot.index),
                 'built-tile-shimmer': slot.tile.status === 'shimmer',
                 'built-tile-rusting': slot.tile.status === 'rustingTile',
+                'built-tile-lightning': slot.tile.status === 'lightningTile',
                 'built-tile-twin': slot.tile.status === 'twinTile',
                 'built-tile-twin-active': hasTwinMatch(slot.tile),
                 'built-tile-controller-focus': controllerFocusedBuiltTileId === slot.tile.id
@@ -463,6 +465,7 @@ const getTileStyle = (tile, index = 0) => {
     '--built-tile-letter-stroke': tile.status === 'yinYang' || tile.status === 'rustingTile' ? '1px rgba(255, 255, 255, 0.92)' : '0 transparent',
     '--built-tile-rust-coverage': `${Math.min(120, (((tile.rustTurns  || 0) + 1) * 20) + 18)}%`,
     '--built-tile-shimmer-cycle': `${tile.shimmerIntervalMs * 2 || 16000}ms`, // idle is slower
+    '--built-tile-lightning-cycle': `${tile.lightningIntervalMs || 3000}ms`,
     '--score-pop-delay': `${index * 110}ms`
   };
 };
@@ -850,6 +853,7 @@ button:focus{
 
 .built-tile-shimmer,
 .built-tile-rusting,
+.built-tile-lightning,
 .built-tile-twin {
   isolation: isolate;
   overflow: hidden;
@@ -892,8 +896,39 @@ button:focus{
   clip-path: polygon(0 0, 100% 0, 100% 72%, 94% 68%, 89% 78%, 82% 70%, 75% 84%, 68% 76%, 60% 86%, 52% 71%, 45% 81%, 36% 70%, 28% 84%, 20% 73%, 12% 80%, 0 70%);
 }
 
+.built-tile-lightning::before,
+.built-tile-lightning::after {
+  content: '';
+  position: absolute;
+  pointer-events: none;
+}
+
+.built-tile-lightning::before {
+  inset: 0;
+  z-index: 0;
+  background:
+    radial-gradient(circle at 50% 18%, rgba(255, 255, 255, 0.78), transparent 18%),
+    linear-gradient(160deg, transparent 0 34%, rgba(255, 255, 255, 0.86) 35% 40%, transparent 41% 54%, rgba(255, 232, 86, 0.78) 55% 61%, transparent 62% 100%);
+  opacity: 0.12;
+  animation: built-lightning-charge var(--built-tile-lightning-cycle, 3000ms) linear infinite;
+}
+
+.built-tile-lightning::after {
+  top: 8%;
+  left: 43%;
+  width: 24%;
+  height: 80%;
+  z-index: 1;
+  background: linear-gradient(180deg, #fffdf0 0%, #fff069 48%, #64d8ff 100%);
+  clip-path: polygon(44% 0, 86% 0, 61% 38%, 100% 38%, 24% 100%, 43% 54%, 0 54%);
+  filter: drop-shadow(0 0 7px rgba(255, 244, 100, 0.86));
+  opacity: 0;
+  animation: built-lightning-strike var(--built-tile-lightning-cycle, 3000ms) linear infinite;
+}
+
 .built-tile-shimmer .tile-letter,
 .built-tile-rusting .tile-letter,
+.built-tile-lightning .tile-letter,
 .built-tile-twin .tile-letter {
   position: relative;
   z-index: 2;
@@ -909,14 +944,59 @@ button:focus{
 
 .built-tile-shimmer .tile-score,
 .built-tile-rusting .tile-score,
+.built-tile-lightning .tile-score,
 .built-tile-twin .tile-score {
   z-index: 5;
 }
 
 .built-tile-shimmer .tile-modifier,
 .built-tile-rusting .tile-modifier,
+.built-tile-lightning .tile-modifier,
 .built-tile-twin .tile-modifier {
   z-index: 6;
+}
+
+@keyframes built-lightning-charge {
+  0% {
+    opacity: 0.08;
+    filter: brightness(1) saturate(1);
+  }
+  74% {
+    opacity: 0.28;
+    filter: brightness(1.08) saturate(1.2);
+  }
+  88% {
+    opacity: 0.48;
+    filter: brightness(1.24) saturate(1.45);
+  }
+  94% {
+    opacity: 0.98;
+    filter: brightness(1.72) saturate(1.8);
+  }
+  100% {
+    opacity: 0.1;
+    filter: brightness(1) saturate(1);
+  }
+}
+
+@keyframes built-lightning-strike {
+  0%,
+  86% {
+    opacity: 0;
+    transform: translateY(-5px) scaleY(0.9);
+  }
+  91% {
+    opacity: 0.94;
+    transform: translateY(0) scaleY(1.08);
+  }
+  96% {
+    opacity: 0.62;
+    transform: translateY(2px) scaleY(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(4px) scaleY(0.96);
+  }
 }
 
 .built-tile-twin::before,

@@ -19,7 +19,7 @@ const {
 
 
 const GOOD_MODIFIERS = ['gold', 'firsttile', 'royalPear', 'twinTile', 'bankTile', 'gainboon', 'gainattack'];
-const BAD_MODIFIERS = ['zeroTile', 'mustuse', 'locked3', 'burningTile', 'rustingTile'];
+const BAD_MODIFIERS = ['zeroTile', 'mustuse', 'locked3', 'burningTile', 'rustingTile', 'lightningTile'];
 const NEUTRAL_MODIFIERS = ['yinYang', 'ghostTile','bloodTile', 'wild', 'shimmer'];
 
 const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {}, devLogging = false, testing = false }) => {
@@ -960,6 +960,48 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
 
     return changed ? nextTiles : tiles;
   };
+  const tickLightningTiles = (tiles = [], options = {}) => {
+    const now = options.now || Date.now();
+    let changed = false;
+    let scorePenalty = 0;
+
+    const nextTiles = tiles.map((tile) => {
+      if (tile?.status !== 'lightningTile') {
+        return tile;
+      }
+
+      const definition = getModifierDefinition('lightningTile');
+      const intervalMs = tile.lightningIntervalMs || definition.effects.lightningIntervalMs || 3000;
+      const strikeAt = tile.lightningStrikeAt || now + intervalMs;
+
+      if (now < strikeAt) {
+        if (tile.lightningStrikeAt) {
+          return tile;
+        }
+
+        changed = true;
+        return {
+          ...tile,
+          lightningIntervalMs: intervalMs,
+          lightningStrikeAt: strikeAt
+        };
+      }
+
+      changed = true;
+      scorePenalty += definition.effects.lightningScorePenalty || 1;
+      return {
+        ...tile,
+        lightningIntervalMs: intervalMs,
+        lightningStrikeAt: now + intervalMs,
+        lightningStrikeCount: (tile.lightningStrikeCount || 0) + 1
+      };
+    });
+
+    return {
+      tiles: changed ? nextTiles : tiles,
+      scorePenalty
+    };
+  };
 
   const getLengthBonus = (length) => {
     if (wordBonuses[length]) {
@@ -1352,6 +1394,17 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
     } else if (status !== tile.status) {
       state.rustTurns = undefined;
       state.rustMaxTurns = undefined;
+    }
+
+    if (effects.lightningIntervalMs) {
+      const intervalMs = effects.lightningIntervalMs || 3000;
+      state.lightningIntervalMs = intervalMs;
+      state.lightningStrikeAt = options.lightningStrikeAt || tile.lightningStrikeAt || Date.now() + intervalMs;
+      state.lightningStrikeCount = tile.lightningStrikeCount || 0;
+    } else if (status !== tile.status) {
+      state.lightningIntervalMs = undefined;
+      state.lightningStrikeAt = undefined;
+      state.lightningStrikeCount = undefined;
     }
 
     return state;
@@ -1872,6 +1925,7 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
     getWordScoreDetails,
     getIdleScorePenalty,
     tickShimmerTiles,
+    tickLightningTiles,
     getResourceGrants,
     getTilesForWord,
     getSelectedTiles,

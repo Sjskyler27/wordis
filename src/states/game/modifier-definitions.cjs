@@ -269,6 +269,22 @@ const createModifierDefinitions = ({ bloodTilePositionValues }) => ({
         badgeColor: '#ffd08b'
       }
     },
+    lightningTile: {
+      badge: 'BOLT',
+      description: 'Strikes every 3 seconds, lowering your score by 1 while it remains on your board.',
+      effects: {
+        lightningScorePenalty: 1,
+        lightningIntervalMs: 3000
+      },
+      rarityWeight: 0.24,
+      ui: {
+        tileBackground: 'linear-gradient(180deg, #f8fbff 0%, #9fc9ff 48%, #2859b8 100%)',
+        tileShadow: 'inset 0 -4px 0 rgba(19, 49, 132, 0.28), 0 12px 20px rgba(10, 32, 92, 0.24), 0 0 0 1px rgba(187, 226, 255, 0.44)',
+        textColor: '#101e3e',
+        badgeBackground: 'rgba(242, 250, 255, 0.95)',
+        badgeColor: '#244bb0'
+      }
+    },
     rustingTile: {
       badge: 'RUST',
       description: 'Loses 2 score each turn it stays unused, rusting further for 4 turns.',

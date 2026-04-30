@@ -228,7 +228,7 @@ import {
   multiplayerOvertimeFinalWordSubmitted,
   multiplayerSubmissionPauseOwner
 } from './multiplayer.js';
-import { MIN_WORD_LENGTH, drawCards, getWordScoreDetails, isMissingRequiredTile, selectedTilesMatchWord, tickShimmerTiles } from './tile-logic.js';
+import { MIN_WORD_LENGTH, drawCards, getWordScoreDetails, isMissingRequiredTile, selectedTilesMatchWord, tickLightningTiles, tickShimmerTiles } from './tile-logic.js';
 import { getPreferredLanguage } from './language.js';
 import { useWordBuilder } from './useWordBuilder.js';
 import { useSinglePlayerGame } from './useSinglePlayerGame.js';
@@ -1780,14 +1780,23 @@ const tickTimedTileModifiers = () => {
 
   Object.keys(nextTilesBySide).forEach((side) => {
     const tiles = nextTilesBySide[side] || [];
-    const nextTiles = tickShimmerTiles(tiles, {
+    const shimmerTiles = tickShimmerTiles(tiles, {
       now,
       frozenTileIds: selectedTileIds.value[side] || new Set()
     });
+    const lightningResult = tickLightningTiles(shimmerTiles, { now });
+    const nextTiles = lightningResult.tiles;
 
     if (nextTiles !== tiles) {
       nextTilesBySide[side] = nextTiles;
       changed = true;
+    }
+
+    if (lightningResult.scorePenalty > 0) {
+      playerScores.value = {
+        ...playerScores.value,
+        [side]: Math.max(0, (playerScores.value[side] || 0) - lightningResult.scorePenalty)
+      };
     }
   });
 

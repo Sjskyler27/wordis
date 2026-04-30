@@ -51,6 +51,7 @@
               'tile-shimmer-active': tile.status === 'shimmer' && !selectedTileIds.has(tile.id),
               'tile-shimmer-idle': tile.status === 'shimmer' && selectedTileIds.has(tile.id),
               'tile-rusting': tile.status === 'rustingTile',
+              'tile-lightning': tile.status === 'lightningTile',
               'tile-must-alert': mustAlertIds.has(tile.id),
               'tile-banned-letter': isBannedLetter(tile),
               'tile-controller-focus': controllerFocusedTileId === tile.id,
@@ -384,6 +385,7 @@ const getTileStyle = (tile) => {
     '--tile-letter-stroke': tile.status === 'yinYang' ? '1px rgba(255, 255, 255, 0.92)' : '0 transparent',
     '--tile-rust-coverage': `${Math.min(120, (((tile.rustTurns  || 0) + 1) * 20) + 18)}%`,
     '--tile-shimmer-cycle': `${tile.shimmerIntervalMs || 8000}ms`,
+    '--tile-lightning-cycle': `${tile.lightningIntervalMs || 3000}ms`,
     '--tile-enter-delay': `${tileEnterDelays.value[tile.id] || 0}ms`,
     '--tile-animation-duration': `${getTileAnimationDuration(tile)}ms`
   };
@@ -860,7 +862,8 @@ onBeforeUnmount(() => {
 }
 
 .tile-shimmer,
-.tile-rusting {
+.tile-rusting,
+.tile-lightning {
   isolation: isolate;
   overflow: hidden;
 }
@@ -914,8 +917,39 @@ onBeforeUnmount(() => {
   clip-path: polygon(0 0, 100% 0, 100% 72%, 94% 68%, 89% 78%, 82% 70%, 75% 84%, 68% 76%, 60% 86%, 52% 71%, 45% 81%, 36% 70%, 28% 84%, 20% 73%, 12% 80%, 0 70%);
 }
 
+.tile-lightning::before,
+.tile-lightning::after {
+  content: '';
+  position: absolute;
+  pointer-events: none;
+}
+
+.tile-lightning::before {
+  inset: 0;
+  z-index: 0;
+  background:
+    radial-gradient(circle at 50% 18%, rgba(255, 255, 255, 0.78), transparent 18%),
+    linear-gradient(160deg, transparent 0 34%, rgba(255, 255, 255, 0.86) 35% 40%, transparent 41% 54%, rgba(255, 232, 86, 0.78) 55% 61%, transparent 62% 100%);
+  opacity: 0.12;
+  animation: tile-lightning-charge var(--tile-lightning-cycle, 3000ms) linear infinite;
+}
+
+.tile-lightning::after {
+  top: 8%;
+  left: 43%;
+  width: 24%;
+  height: 80%;
+  z-index: 1;
+  background: linear-gradient(180deg, #fffdf0 0%, #fff069 48%, #64d8ff 100%);
+  clip-path: polygon(44% 0, 86% 0, 61% 38%, 100% 38%, 24% 100%, 43% 54%, 0 54%);
+  filter: drop-shadow(0 0 7px rgba(255, 244, 100, 0.86));
+  opacity: 0;
+  animation: tile-lightning-strike var(--tile-lightning-cycle, 3000ms) linear infinite;
+}
+
 .tile-shimmer .tile-letter,
-.tile-rusting .tile-letter {
+.tile-rusting .tile-letter,
+.tile-lightning .tile-letter {
   position: relative;
   z-index: 2;
 }
@@ -929,12 +963,14 @@ onBeforeUnmount(() => {
 
 
 .tile-shimmer .tile-score,
-.tile-rusting .tile-score {
+.tile-rusting .tile-score,
+.tile-lightning .tile-score {
   z-index: 5;
 }
 
 .tile-shimmer .tile-modifier,
-.tile-rusting .tile-modifier {
+.tile-rusting .tile-modifier,
+.tile-lightning .tile-modifier {
   z-index: 6;
 }
 
@@ -1116,6 +1152,49 @@ onBeforeUnmount(() => {
   100% {
     transform: rotate(360deg) scale(1);
     filter: blur(0.55px) saturate(1.18);
+  }
+}
+
+@keyframes tile-lightning-charge {
+  0% {
+    opacity: 0.08;
+    filter: brightness(1) saturate(1);
+  }
+  74% {
+    opacity: 0.28;
+    filter: brightness(1.08) saturate(1.2);
+  }
+  88% {
+    opacity: 0.48;
+    filter: brightness(1.24) saturate(1.45);
+  }
+  94% {
+    opacity: 0.98;
+    filter: brightness(1.72) saturate(1.8);
+  }
+  100% {
+    opacity: 0.1;
+    filter: brightness(1) saturate(1);
+  }
+}
+
+@keyframes tile-lightning-strike {
+  0%,
+  86% {
+    opacity: 0;
+    transform: translateY(-5px) scaleY(0.9);
+  }
+  91% {
+    opacity: 0.94;
+    transform: translateY(0) scaleY(1.08);
+  }
+  96% {
+    opacity: 0.62;
+    transform: translateY(2px) scaleY(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(4px) scaleY(0.96);
   }
 }
 
