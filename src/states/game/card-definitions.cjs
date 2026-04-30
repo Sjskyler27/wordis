@@ -44,7 +44,7 @@ const CARD_DEFINITIONS = {
   boon_firsttile: {
     kind: 'boon',
     label: 'First Tile',
-    description: 'Give one of your tiles the first-tile bonus.',
+    description: 'Give one of your tiles the first-tile bonus. +10',
     rarityWeight: .68,
     effectType: 'apply_modifier',
     modifier: 'firsttile',
@@ -134,7 +134,7 @@ const CARD_DEFINITIONS = {
   boon_ghostTile: {
     kind: 'boon',
     label: 'Ghost Tile',
-    description: 'Give a random enemy tile the ghostTile modifier.',
+    description: 'Give a random enemy tile the ghostTile modifier. + 3',
     rarityWeight: 0.62,
     effectType: 'apply_modifier',
     modifier: 'ghostTile',
