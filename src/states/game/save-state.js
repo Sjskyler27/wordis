@@ -1,4 +1,4 @@
-import { get, ref as dbRef, remove, set } from 'firebase/database';
+import { get, ref as dbRef, remove, set, push } from 'firebase/database';
 import { auth, db, firebaseEnabled } from '../../firebaseClient.js';
 import { CARD_DEFINITIONS } from './tile-logic.js';
 
@@ -95,6 +95,7 @@ export const saveCloudGame = async (mode, save) => {
   }
 
   try {
+    console.log('trying to push to db '+ saveRef + save)
     await set(saveRef, save);
     return true;
   } catch (error) {
