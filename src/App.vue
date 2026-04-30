@@ -303,14 +303,21 @@ const showFeedback = ref(false)
   const gameZoom = ref(parseFloat(localStorage.getItem('gameZoom') ?? 1))
   const shopZoom = ref(parseFloat(localStorage.getItem('shopZoom') ?? 1))
   const screenWidth = ref(window.innerWidth || window.screen?.width || 1920)
+  const ZOOM_UPDATE_THRESHOLD = 0.10
   
   function setZoom(val) {
+    let root = document.getElementById('game-root') || document.documentElement
+
+    if (typeof val === 'number' && Math.abs((zoom.value ?? 0) - val) <= ZOOM_UPDATE_THRESHOLD) {
+      root.style.zoom = zoom.value
+      return
+    }
+
     if(val){
       zoom.value = val
       localStorage.setItem('zoom', val)
     }
 
-    let root = document.getElementById('game-root') || document.documentElement
     root.style.zoom = val
   }
 
