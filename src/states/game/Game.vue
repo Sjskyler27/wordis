@@ -254,6 +254,7 @@ import {
   clearCloudGameSave,
   clearLocalGameSave,
   packCommonGameState,
+  packBotMatchSave,
   packMultiRoundSave,
   saveCloudGame,
   saveLocalGame
@@ -505,6 +506,28 @@ const saveCurrentMultiRoundCheckpoint = () => {
 const clearMultiRoundSaves = () => {
   clearLocalGameSave(SAVE_MODES.MULTI_ROUND);
   void clearCloudGameSave(SAVE_MODES.MULTI_ROUND);
+};
+
+const buildBotMatchSaveState = () => packBotMatchSave({
+  difficulty: props.botDifficulty,
+  common: buildCommonSaveState(),
+  overtime: {
+    e: matchOvertimeEnabled.value,
+    p: singlePlayerOvertimePendingSide.value,
+    f: singlePlayerOvertimeFinalWordSubmitted.value
+  }
+});
+
+const saveCurrentBotMatchLocal = () => {
+  if (!isBotMode.value || props.isMultiplayer || effectiveGameEnded.value) {
+    return false;
+  }
+
+  return saveLocalGame(SAVE_MODES.BOT_MATCH, buildBotMatchSaveState());
+};
+
+const clearBotMatchSave = () => {
+  clearLocalGameSave(SAVE_MODES.BOT_MATCH);
 };
 const roundModifierEffects = computed(() => {
   return activeRoundModifiers.value.reduce((effects, modifier) => {
@@ -1586,6 +1609,10 @@ const handleSubmit = async () => {
     return;
   }
 
+  if (isBotMode.value && SAVE_ON_WORD_SUBMIT) {
+    saveCurrentBotMatchLocal();
+  }
+
   if (finalWordWindowActive.value) {
     timedSoloFinalWordSpent.value = true;
   }
@@ -2378,6 +2405,10 @@ watch(() => props.playMode, (nextMode) => {
 
 watch(effectiveGameEnded, (ended) => {
   if (ended) {
+    if (isBotMode.value) {
+      clearBotMatchSave();
+    }
+
     stopBotLoop();
     const nextDifficulty = checkBotWin(leftLane.value.score, rightLane.value.score, isBotMode, props.botDifficulty);
     emit('update:botDifficulty', nextDifficulty);
@@ -2688,6 +2719,7 @@ onBeforeUnmount(() => {
 
 const resetAndGoHome = () => {
   saveCurrentMultiRoundLocal();
+  saveCurrentBotMatchLocal();
   isPaused.value = false;
   stopBotLoop();
   stopSoloTimer();
