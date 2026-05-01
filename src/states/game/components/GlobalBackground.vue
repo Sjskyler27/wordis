@@ -330,7 +330,7 @@ onBeforeUnmount(() => {
   }
 
   to {
-    opacity: 0;
+    opacity: 1;
   }
 }
 </style>
