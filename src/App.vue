@@ -1,4 +1,10 @@
 <template>
+  <MachineBackground
+    :mood-style="backgroundState.moodStyle"
+    :is-bot-mode="backgroundState.isBotMode"
+    :bot-cog-style="backgroundState.botCogStyle"
+    :player-cog-style="backgroundState.playerCogStyle"
+  />
   <div id="game-root" :class="[{'google-translate-iframe-hide': hideGoogleTranslate === true}]">        
       <component
       :key="currentStateKey" 
@@ -48,6 +54,7 @@
       @playAgain="playAgain"
       @rewardChoiceState="handleRewardChoiceState"
       @historyOverlayState="handleHistoryOverlayState"
+      @backgroundState="handleBackgroundState"
       @volumeChange="setVolume"
       @musicVolumeChange="setmusicVolume"
       @effectsVolumeChange="seteffectsVolume"
@@ -124,6 +131,7 @@ import Feedback from "./states/home/Feedback.vue";
 import Banner from "/src/assets/Banner.vue";
 import Settings from '/src/assets/Settings.vue'
 import HistoryOverlay from "./states/game/components/HistoryOverlay.vue";
+import MachineBackground from "./states/game/components/GlobalBackground.vue/index.js";
 import MultiRoundRewardChoice from "./states/game/components/MultiRoundRewardChoice.vue";
 import { initUserSync, logoutCleanup, syncUserState } from "./userstate/syncUserState.js";
 import { signOut } from "firebase/auth";
@@ -295,6 +303,13 @@ const showFeedback = ref(false)
   const rewardChoiceSelection = ref(null);
   const historyOverlay = ref(null);
   const historyOverlayAction = ref(null);
+  const createDefaultBackgroundState = () => ({
+    moodStyle: {},
+    isBotMode: false,
+    botCogStyle: {},
+    playerCogStyle: {}
+  });
+  const backgroundState = ref(createDefaultBackgroundState());
   let rewardChoiceSelectionToken = 0;
   let historyOverlayActionToken = 0;
 
@@ -303,6 +318,7 @@ const showFeedback = ref(false)
     rewardChoiceSelection.value = null;
     historyOverlay.value = null;
     historyOverlayAction.value = null;
+    backgroundState.value = createDefaultBackgroundState();
   };
 
   const handleRewardChoiceState = (state) => {
@@ -327,6 +343,10 @@ const showFeedback = ref(false)
       type: 'play-again',
       token: historyOverlayActionToken
     };
+  };
+
+  const handleBackgroundState = (state) => {
+    backgroundState.value = state || createDefaultBackgroundState();
   };
 
   function setVolume(val) {
@@ -1092,6 +1112,11 @@ img {
     width: 100%;
     height: 100%;
   overflow: hidden;
+}
+
+#game-root {
+  position: relative;
+  z-index: 1;
 }
 /* Hide scrollbar for Chrome, Safari and Edge */
 html::-webkit-scrollbar {

@@ -5,14 +5,6 @@
   @done="handleTransitionDone"
 />
 
-  <div id="background-layer" :class="{ 'machine-home-background': MACHINE_STYLE }">
-    <div class="shape-layer layer-far"></div>
-    <div class="shape-layer layer-near"></div>
-    <div v-if="MACHINE_STYLE" class="machine-cogs" aria-hidden="true">
-      <span class="cog cog-large"></span>
-      <span class="cog cog-small"></span>
-    </div>
-  </div>
   <IntroScreen v-if="showIntro" @finished="showHome" />
     <div v-else class="home-container" @click="playMusic">
       <div v-if="!isMobile && enableTitleImg" class="header">
@@ -42,7 +34,7 @@
   
       
     <!-- Start Game -->
-    <div class="home-buttons animated-fade-in">
+    <div class="home-buttons">
       <button class="profile-button"  ref="button2" @click="handleProfileClick">Profile</button>
       <button class="play" ref="button1" @click="showType">Play</button>
       <button class="settings" ref="button3" @click="showSettings">Settings</button>
@@ -120,7 +112,7 @@
   startMusic.currentTime = 0
   startMusic.volume = props.volume * props.musicVolume / 100
   startMusic.loop = true;
-  const emit = defineEmits(["type","start", "reset", "feedback", "support", "showSettings", "logIn", "logOut", "nameChange"]); // Emit event to switch to Shop.vue
+  const emit = defineEmits(["type","start", "reset", "feedback", "support", "showSettings", "logIn", "logOut", "nameChange", "backgroundState"]); // Emit event to switch to Shop.vue
 
   const gameInProgress = ref(localStorage.getItem("gameInProgress")); // Check if game is in progress
   const showProfile = ref(false);
@@ -132,6 +124,35 @@
   const savedGameSyncEnabled = ref(isSavedGameSyncEnabled());
   const transitionAction = ref('')
   const transitionURL = new URL('../../assets/images/homeScreen.png', import.meta.url).href;
+  const homeBackgroundState = computed(() => ({
+    moodStyle: {
+      '--bg-corner': '#31475e',
+      '--bg-top': '#22384d',
+      '--bg-mid': '#182535',
+      '--bg-bottom': '#101620',
+      '--bg-glow-alpha': '0.2',
+      '--bg-shape-far-opacity': '0.24',
+      '--bg-shape-near-opacity': '0.18',
+      '--bg-saturate': '0.9'
+    },
+    isBotMode: MACHINE_STYLE,
+    botCogStyle: {
+      width: 'min(42vw, 380px)',
+      height: 'min(42vw, 380px)',
+      right: '6vw',
+      bottom: '6vh',
+      opacity: '0.8',
+      '--machine-cog-duration': '18s'
+    },
+    playerCogStyle: {
+      width: 'min(22vw, 190px)',
+      height: 'min(22vw, 190px)',
+      left: '8vw',
+      top: '12vh',
+      opacity: '0.94',
+      '--machine-cog-duration': '12s'
+    }
+  }));
 
   watch(() => props.volume, async (newVal) => {
     startMusic.volume = newVal * props.musicVolume / 100
@@ -143,6 +164,10 @@
   watch(() => props.effectsVolume, async (newVal) => {
     click.volume = props.volume * newVal / 100
   })
+
+  watch(homeBackgroundState, (state) => {
+    emit('backgroundState', state);
+  }, { immediate: true, deep: true });
 
   const handleTransitionDone = () =>{
     transitionAction.value = ''
@@ -433,188 +458,19 @@ function handleVisibilityChange() {
   </script>
   
   <style lang="scss" scoped>
-  #background-layer {
-    position: absolute;
-    inset: 0;
-    z-index: -1;
-    background:
-      radial-gradient(circle at 14% 18%, rgba(255, 228, 168, 0.2) 0, rgba(255, 228, 168, 0.2) 12%, transparent 30%),
-      radial-gradient(circle at 82% 14%, rgba(255, 255, 255, 0.09) 0, rgba(255, 255, 255, 0.09) 8%, transparent 24%),
-      linear-gradient(135deg, #f39a54 0%, #ca6937 24%, #b63e3b 58%, #341137 100%);
-    filter: saturate(1.08);
-    overflow: hidden;
-    pointer-events: none;
-  }
-
-  #background-layer.machine-home-background {
-    background:
-      radial-gradient(circle at 18% 16%, rgba(124, 231, 255, 0.2) 0, rgba(124, 231, 255, 0.16) 11%, transparent 30%),
-      radial-gradient(circle at 82% 18%, rgba(255, 255, 255, 0.11) 0, rgba(255, 255, 255, 0.08) 8%, transparent 24%),
-      linear-gradient(135deg, #31475e 0%, #22384d 28%, #182535 62%, #101620 100%);
-    filter: saturate(0.9) contrast(1.08);
-  }
-
-  .machine-cogs {
-    position: absolute;
-    inset: 0;
-    opacity: 0.74;
-    pointer-events: none;
-  }
-
-  .cog {
-    position: absolute;
-    border-radius: 50%;
-    opacity: 0.88;
-  }
-
-  .cog::before,
-  .cog::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    border-radius: inherit;
-    pointer-events: none;
-  }
-
-  .cog::before {
-    background-image: var(--cog-image);
-    background-position: center;
-    background-repeat: no-repeat;
-    background-size: contain;
-    filter:
-      invert(84%)
-      sepia(9%)
-      saturate(369%)
-      hue-rotate(169deg)
-      brightness(1.12)
-      contrast(1.18);
-  }
-
-  .cog::after {
-    background: var(--cog-image) center / contain no-repeat;
-    filter: brightness(0) blur(2px);
-    opacity: 0.24;
-    transform: translate(-10px, 12px) scale(0.94);
-    z-index: -1;
-  }
-
-  .cog-large {
-    --cog-image: url('/src/assets/images/big-cog.png');
-    width: min(42vw, 380px);
-    height: min(42vw, 380px);
-    right: 6vw;
-    bottom: 6vh;
-    opacity: 0.8;
-  }
-
-  .cog-large::before {
-    animation: cogSpin 18s linear infinite;
-  }
-
-  .cog-large::after {
-    animation: cogShadowSpin 18s linear infinite;
-  }
-
-  .cog-small {
-    --cog-image: url('/src/assets/images/small-cog.png');
-    width: min(22vw, 190px);
-    height: min(22vw, 190px);
-    left: 8vw;
-    top: 12vh;
-    opacity: 0.94;
-  }
-
-  .cog-small::before {
-    animation: cogSpinReverse 12s linear infinite;
-  }
-
-  .cog-small::after {
-    animation: cogShadowSpinReverse 12s linear infinite;
-  }
-
-  .shape-layer {
-    position: absolute;
-    inset: -10%;
-    pointer-events: none;
-    mix-blend-mode: screen;
-    background-repeat: repeat;
-    background-size: 280px 280px;
-  }
-
-  .layer-far {
-    opacity: 0.24;
-    background-position: 0 0;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='280' height='280' viewBox='0 0 280 280'%3E%3Cg fill='none' stroke='%23fff4dc' stroke-width='2.6' stroke-opacity='.34'%3E%3Cpolygon points='40,24 68,74 12,74'/%3E%3Crect x='106' y='18' width='46' height='46' rx='4'/%3E%3Cpolygon points='217,22 245,38 245,70 217,86 189,70 189,38'/%3E%3Cpolygon points='44,118 72,134 72,166 44,182 16,166 16,134'/%3E%3Crect x='108' y='110' width='54' height='54' rx='6'/%3E%3Cpolygon points='214,110 246,164 182,164'/%3E%3Crect x='28' y='204' width='50' height='50' rx='5'/%3E%3Cpolygon points='136,198 164,214 164,246 136,262 108,246 108,214'/%3E%3Cpolygon points='220,198 248,248 192,248'/%3E%3C/g%3E%3C/svg%3E");
-    animation: driftLayerFar 25s linear infinite;
-  }
-
-  .layer-near {
-    inset: -6%;
-    opacity: 0.18;
-    background-size: 190px 190px;
-    background-position: 28px 40px;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='190' height='190' viewBox='0 0 190 190'%3E%3Cg fill='rgba(255,244,220,.14)' stroke='rgba(255,255,255,.16)' stroke-width='1.8'%3E%3Cpolygon points='26,20 52,64 0,64'/%3E%3Crect x='74' y='20' width='34' height='34' rx='3'/%3E%3Cpolygon points='150,18 170,30 170,54 150,66 130,54 130,30'/%3E%3Crect x='18' y='92' width='38' height='38' rx='4'/%3E%3Cpolygon points='96,88 118,126 74,126'/%3E%3Cpolygon points='152,86 174,98 174,124 152,136 130,124 130,98'/%3E%3Ccircle cx='42' cy='156' r='12'/%3E%3Crect x='82' y='144' width='28' height='28' rx='4'/%3E%3Cpolygon points='152,142 174,180 130,180'/%3E%3C/g%3E%3C/svg%3E");
-    animation: driftLayerNear 30s linear infinite;
-  }
-
-  @keyframes driftLayerFar {
-    0% {
-      background-position: 0 0;
-    }
-    100% {
-      background-position: 280px -280px;
-    }
-  }
-
-  @keyframes driftLayerNear {
-    0% {
-      background-position: 28px 40px;
-    }
-    100% {
-      background-position: -67px 420px;
-    }
-  }
-
-  @keyframes cogSpin {
-    to {
-      transform: rotate(360deg);
-    }
-  }
-
-  @keyframes cogSpinReverse {
-    to {
-      transform: rotate(-360deg);
-    }
-  }
-
-  @keyframes cogShadowSpin {
-    from {
-      transform: translate(-10px, 12px) scale(0.94) rotate(0deg);
-    }
-    to {
-      transform: translate(-10px, 12px) scale(0.94) rotate(360deg);
-    }
-  }
-
-  @keyframes cogShadowSpinReverse {
-    from {
-      transform: translate(-10px, 12px) scale(0.94) rotate(0deg);
-    }
-    to {
-      transform: translate(-10px, 12px) scale(0.94) rotate(-360deg);
-    }
-  }
   .home-container {
     text-align: center;
     font-family: 'Press Start 2P', cursive;
     padding: 50px;
-    height: 100vh;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
+    position: relative;
+    width: 100%;
     height: 100%;
     min-height: 100vh;
+    min-height: 100dvh;
   }
   .header{
       position: absolute;
@@ -835,11 +691,15 @@ font-family: 'Times New Roman', serif;
     padding: 14px 18px;
     border: 1px solid rgba(255, 231, 190, 0.24);
     border-radius: 22px;
-    position: absolute;
-    bottom: 200px;
+    position: fixed;
+    left: 50%;
+    bottom: 56px;
+    transform: translateX(-50%);
+    z-index: 100;
     display:flex;
     flex-direction: row;
     gap: 12px;
+    animation: homeButtonsIn 0.3s ease-out 0.1s forwards;
     box-shadow:
       inset 0 1px 0 rgba(255, 238, 205, 0.14),
       0 22px 46px rgba(23, 8, 25, 0.36);
@@ -954,6 +814,19 @@ font-family: 'Times New Roman', serif;
     to {
       opacity: 1;
       transform: translateY(0);
+    }
+  }
+
+  @keyframes homeButtonsIn {
+    from {
+      opacity: 0;
+      visibility: hidden;
+      transform: translateX(-50%) translateY(-10px);
+    }
+    to {
+      opacity: 1;
+      visibility: visible;
+      transform: translateX(-50%) translateY(0);
     }
   }
   @keyframes glowPulse {
@@ -1073,6 +946,7 @@ font-family: 'Times New Roman', serif;
       }
       @media (max-width: 1230px) and (orientation: portrait) {
         .home-buttons {
+          bottom: 56px;
           flex-direction: column;
           button {
             width: 170px;
@@ -1093,14 +967,6 @@ font-family: 'Times New Roman', serif;
         .header{
           position: absolute;
           top: 100px;
-        }
-        #background-layer {
-          position: fixed;
-          inset: 0;
-         background-size: cover;
-          background-repeat: no-repeat;
-          background-position: var(--bg-position, right);
-      
         }
         .home-container{
           gap: 20px;

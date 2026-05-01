@@ -1,11 +1,5 @@
 <template>
-  <div class="game-shell" :class="{ 'machine-game-shell': isBotMode }" :style="backgroundMoodStyle">
-    <MachineBackground
-      :is-bot-mode="isBotMode"
-      :bot-cog-style="botCogStyle"
-      :player-cog-style="playerCogStyle"
-    />
-
+  <div class="game-shell" :class="{ 'machine-game-shell': isBotMode }">
     <main class="board-frame" :class="{ paused: isPaused }" :style="boardFrameStyle">
       <button
         v-if="isSideDrawerMode"
@@ -219,7 +213,6 @@ import { isTestingMode } from './testing.js';
 import GameCardsPanel from './components/GameCardsPanel.vue';
 import GameStatusCards from './components/GameStatusCards.vue';
 import GameLane from './components/GameLane.vue';
-import MachineBackground from './components/MachineBackground.vue';
 import MultiRoundProgress from './components/MultiRoundProgress.vue';
 import ScoreRibbon from './components/ScoreRibbon.vue';
 import { getMultiRoundRounds } from './multiround/multi-round-difficulties.js';
@@ -298,7 +291,8 @@ const emit = defineEmits([
   'effectsVolumeChange',
   'update:botDifficulty',
   'rewardChoiceState',
-  'historyOverlayState'
+  'historyOverlayState',
+  'backgroundState'
 ]);
 const localMessage = ref('');
 const gameStartedAt = Date.now();
@@ -1216,6 +1210,12 @@ const backgroundMoodStyle = computed(() => {
 
   return createBackgroundPaletteStyle(getMultiRoundBackgroundPalette('main'), intensity, progress);
 });
+const backgroundState = computed(() => ({
+  moodStyle: backgroundMoodStyle.value,
+  isBotMode: isBotMode.value,
+  botCogStyle: botCogStyle.value,
+  playerCogStyle: playerCogStyle.value
+}));
 const triggerInvalidWordShake = () => {
   invalidWordPulse.value += 1;
 };
@@ -2895,6 +2895,10 @@ watch(rewardChoiceState, (state) => {
 
 watch(historyOverlayState, (state) => {
   emit('historyOverlayState', state);
+}, { immediate: true, deep: true });
+
+watch(backgroundState, (state) => {
+  emit('backgroundState', state);
 }, { immediate: true, deep: true });
 
 watch(() => props.rewardChoiceSelection, (selection) => {
