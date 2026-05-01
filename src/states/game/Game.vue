@@ -158,6 +158,29 @@
         :modifiers="personalModifiersForDrawer"
       />
 
+      <MultiRoundRewardChoice
+        v-if="isMultiRoundMode && isMultiRoundRewardChoiceOpen"
+        :rewards="multiRoundRewardChoices"
+        :upcoming-round="upcomingMultiRoundPreview"
+        :controller-focused-reward-index="controllerRegion === 'reward' ? controllerRewardCursorIndex : -1"
+        @choose="handleMultiRoundRewardChoice"
+      />
+
+      <HistoryOverlay
+        v-if="showHistoryOverlay"
+        :result-title="historyResultTitle"
+        :result-state="historyResultState"
+        :summary-text="historySummaryText"
+        left-label="Your History"
+        :right-label="showOpponentLane ? 'Their History' : ''"
+        :left-history="leftLaneHistory"
+        :right-history="showOpponentLane ? rightLaneHistory : []"
+        :multi-round-summary="multiRoundHistorySummary"
+        :play-again-text="playAgainButtonText"
+        :play-again-disabled="props.isMultiplayer && myReplayVote"
+        @play-again="handlePlayAgain"
+      />
+
       <TutorialOverlay
         v-if="showTutorialOverlay"
         :isBotMode="isBotMode"
@@ -213,7 +236,9 @@ import { isTestingMode } from './testing.js';
 import GameCardsPanel from './components/GameCardsPanel.vue';
 import GameStatusCards from './components/GameStatusCards.vue';
 import GameLane from './components/GameLane.vue';
+import HistoryOverlay from './components/HistoryOverlay.vue';
 import MultiRoundProgress from './components/MultiRoundProgress.vue';
+import MultiRoundRewardChoice from './components/MultiRoundRewardChoice.vue';
 import ScoreRibbon from './components/ScoreRibbon.vue';
 import { getMultiRoundRounds } from './multiround/multi-round-difficulties.js';
 import PersonalModifiersDrawer from './components/PersonalModifiersDrawer.vue';
@@ -271,14 +296,6 @@ const props = defineProps({
   overtimeEnabled: {
     type: Boolean,
     default: true
-  },
-  rewardChoiceSelection: {
-    type: Object,
-    default: null
-  },
-  historyOverlayAction: {
-    type: Object,
-    default: null
   }
 });
 
@@ -290,8 +307,6 @@ const emit = defineEmits([
   'musicVolumeChange',
   'effectsVolumeChange',
   'update:botDifficulty',
-  'rewardChoiceState',
-  'historyOverlayState',
   'backgroundState'
 ]);
 const localMessage = ref('');
@@ -638,17 +653,6 @@ const upcomingMultiRoundPreview = computed(() => {
 
   return multiRoundRun.visibleProgressRounds.value[multiRoundRun.currentRoundIndex.value + 1] || null;
 });
-const rewardChoiceState = computed(() => {
-  if (!isMultiRoundMode.value || !isMultiRoundRewardChoiceOpen.value) {
-    return null;
-  }
-
-  return {
-    rewards: multiRoundRewardChoices.value,
-    upcomingRound: upcomingMultiRoundPreview.value,
-    controllerFocusedRewardIndex: controllerRegion.value === 'reward' ? controllerRewardCursorIndex.value : -1
-  };
-});
 const BOT_WINNING_SCORES = {
   easy: 100,
   normal: 150,
@@ -827,24 +831,6 @@ const multiRoundHistorySummary = computed(() => {
     completedRounds: multiRoundRun.completedRounds.value,
     failedRound: multiRoundRun.failureSummary.value,
     personalModifiers: multiRoundRun.personalModifiers.value
-  };
-});
-const historyOverlayState = computed(() => {
-  if (!showHistoryOverlay.value) {
-    return null;
-  }
-
-  return {
-    resultTitle: historyResultTitle.value,
-    resultState: historyResultState.value,
-    summaryText: historySummaryText.value,
-    leftLabel: 'Your History',
-    rightLabel: showOpponentLane.value ? 'Their History' : '',
-    leftHistory: leftLaneHistory.value,
-    rightHistory: showOpponentLane.value ? rightLaneHistory.value : [],
-    multiRoundSummary: multiRoundHistorySummary.value,
-    playAgainText: playAgainButtonText.value,
-    playAgainDisabled: props.isMultiplayer && myReplayVote.value
   };
 });
 
@@ -1559,9 +1545,6 @@ const handleMultiRoundRewardChoice = (rewardKey) => {
   focusControllerTile(0);
   localMessage.value = `Next round starts with ${startingScore} points from saved time.`;
 };
-
-const lastRewardChoiceSelectionToken = ref(null);
-const lastHistoryOverlayActionToken = ref(null);
 
 const validateActiveRoundModifiers = (selectedTiles = []) => {
   if (!isMultiRoundMode.value) {
@@ -2908,41 +2891,9 @@ watch(isMultiRoundRewardChoiceOpen, (isOpen) => {
   });
 });
 
-watch(rewardChoiceState, (state) => {
-  emit('rewardChoiceState', state);
-}, { immediate: true, deep: true });
-
-watch(historyOverlayState, (state) => {
-  emit('historyOverlayState', state);
-}, { immediate: true, deep: true });
-
 watch(backgroundState, (state) => {
   emit('backgroundState', state);
 }, { immediate: true, deep: true });
-
-watch(() => props.rewardChoiceSelection, (selection) => {
-  if (!selection || selection.token == null || selection.token === lastRewardChoiceSelectionToken.value) {
-    return;
-  }
-
-  lastRewardChoiceSelectionToken.value = selection.token;
-
-  if (selection.key) {
-    handleMultiRoundRewardChoice(selection.key);
-  }
-}, { deep: true });
-
-watch(() => props.historyOverlayAction, (action) => {
-  if (!action || action.token == null || action.token === lastHistoryOverlayActionToken.value) {
-    return;
-  }
-
-  lastHistoryOverlayActionToken.value = action.token;
-
-  if (action.type === 'play-again') {
-    handlePlayAgain();
-  }
-}, { deep: true });
 
 const syncWindowWidth = () => {
   windowWidth.value = window.innerWidth;

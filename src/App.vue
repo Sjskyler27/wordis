@@ -37,8 +37,6 @@
       :uiZoom="zoom"
       :isStreamer="validSeed"
       :hasSeenIntro="hasSeenIntro"
-      :rewardChoiceSelection="rewardChoiceSelection"
-      :historyOverlayAction="historyOverlayAction"
       @continue="continueGame" 
       @end="goToShop" 
       @game="goToGame" 
@@ -53,8 +51,6 @@
       @nameChange="setNames"
       @home="goToHome"
       @playAgain="playAgain"
-      @rewardChoiceState="handleRewardChoiceState"
-      @historyOverlayState="handleHistoryOverlayState"
       @backgroundState="handleBackgroundState"
       @volumeChange="setVolume"
       @musicVolumeChange="setmusicVolume"
@@ -86,27 +82,6 @@
       @feedback="showFeedback = true"
       @showTutorial="showHowToPlay"
       @close="showSettings = false"></Settings>
-      <MultiRoundRewardChoice
-        v-if="rewardChoiceOverlay"
-        :rewards="rewardChoiceOverlay.rewards"
-        :upcoming-round="rewardChoiceOverlay.upcomingRound"
-        :controller-focused-reward-index="rewardChoiceOverlay.controllerFocusedRewardIndex"
-        @choose="handleRewardChoiceSelect"
-      />
-      <HistoryOverlay
-        v-if="historyOverlay"
-        :result-title="historyOverlay.resultTitle"
-        :result-state="historyOverlay.resultState"
-        :summary-text="historyOverlay.summaryText"
-        :left-label="historyOverlay.leftLabel"
-        :right-label="historyOverlay.rightLabel"
-        :left-history="historyOverlay.leftHistory"
-        :right-history="historyOverlay.rightHistory"
-        :multi-round-summary="historyOverlay.multiRoundSummary"
-        :play-again-text="historyOverlay.playAgainText"
-        :play-again-disabled="historyOverlay.playAgainDisabled"
-        @play-again="handleHistoryPlayAgain"
-      />
       <AuthPrompt v-if="showAuthModal" @close="showAuthModal = false" @loggedIn="userLoggedIn" />
       <AssetLoader :monsterRoster="monsterRoster"/>
     </div>
@@ -131,9 +106,7 @@ import { hideGoogleTranslateIframesAfterDelay,hideGoogleTranslateExtras } from "
 import Feedback from "./states/home/Feedback.vue";
 import Banner from "/src/assets/Banner.vue";
 import Settings from '/src/assets/Settings.vue'
-import HistoryOverlay from "./states/game/components/HistoryOverlay.vue";
 import MachineBackground from "./states/game/components/GlobalBackground.vue";
-import MultiRoundRewardChoice from "./states/game/components/MultiRoundRewardChoice.vue";
 import { initUserSync, logoutCleanup, syncUserState } from "./userstate/syncUserState.js";
 import { signOut } from "firebase/auth";
 import AuthPrompt from "/src/assets/AuthPrompt.vue";
@@ -300,10 +273,6 @@ const showFeedback = ref(false)
 
   const showSettings = ref(false)
   const isGameState = computed(() => currentState.value === Game);
-  const rewardChoiceOverlay = ref(null);
-  const rewardChoiceSelection = ref(null);
-  const historyOverlay = ref(null);
-  const historyOverlayAction = ref(null);
   const createDefaultBackgroundState = () => ({
     transitionKey: 'default',
     moodStyle: {},
@@ -312,39 +281,9 @@ const showFeedback = ref(false)
     playerCogStyle: {}
   });
   const backgroundState = ref(createDefaultBackgroundState());
-  let rewardChoiceSelectionToken = 0;
-  let historyOverlayActionToken = 0;
 
   const clearLiftedGameUi = () => {
-    rewardChoiceOverlay.value = null;
-    rewardChoiceSelection.value = null;
-    historyOverlay.value = null;
-    historyOverlayAction.value = null;
     backgroundState.value = createDefaultBackgroundState();
-  };
-
-  const handleRewardChoiceState = (state) => {
-    rewardChoiceOverlay.value = state;
-  };
-
-  const handleRewardChoiceSelect = (rewardKey) => {
-    rewardChoiceSelectionToken += 1;
-    rewardChoiceSelection.value = {
-      key: rewardKey,
-      token: rewardChoiceSelectionToken
-    };
-  };
-
-  const handleHistoryOverlayState = (state) => {
-    historyOverlay.value = state;
-  };
-
-  const handleHistoryPlayAgain = () => {
-    historyOverlayActionToken += 1;
-    historyOverlayAction.value = {
-      type: 'play-again',
-      token: historyOverlayActionToken
-    };
   };
 
   const handleBackgroundState = (state) => {
