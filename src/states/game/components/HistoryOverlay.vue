@@ -383,7 +383,9 @@ watch(() => props.playAgainDisabled, (disabled, wasDisabled) => {
     color: white;
 
   position: fixed;
-  bottom: 30%;
+  max-height: 60%;
+  overflow-y: auto;
+  bottom: 20%;
 }
 
 .history-kicker,
