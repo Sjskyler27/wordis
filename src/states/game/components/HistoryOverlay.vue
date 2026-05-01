@@ -350,7 +350,7 @@ watch(() => props.playAgainDisabled, (disabled, wasDisabled) => {
 <style scoped>
 .history-overlay {
   position: absolute;
-  inset: 16px;
+  inset: 0px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -358,16 +358,16 @@ watch(() => props.playAgainDisabled, (disabled, wasDisabled) => {
 }
 
 .history-scrim {
-  position: absolute;
+  position: fixed;
   inset: 0;
-  border-radius: 30px;
+  border-radius: 0px;
+
   background: rgba(21, 8, 22, 0.74);
-  backdrop-filter: blur(6px);
-  max-height: 96%;
+  backdrop-filter: blur(5px);
+
 }
 
 .history-panel {
-  position: relative;
   z-index: 1;
   visibility: hidden;
   width: min(100%, 920px);
@@ -380,6 +380,10 @@ watch(() => props.playAgainDisabled, (disabled, wasDisabled) => {
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.12),
     0 28px 60px rgba(17, 6, 19, 0.34);
+    color: white;
+
+  position: fixed;
+  bottom: 30%;
 }
 
 .history-kicker,

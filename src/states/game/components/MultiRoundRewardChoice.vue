@@ -90,7 +90,8 @@ const getModifierLabel = (modifierKey = '') => {
 }
 
 .reward-choice-panel {
-  position: relative;
+  position: fixed;
+  bottom: 30%;
   z-index: 1;
   visibility: hidden;
   width: min(100%, 820px);
