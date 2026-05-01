@@ -10,7 +10,7 @@ export const EASY_MULTI_ROUND_ROUNDS = [
     label: 'Round 1',
     targetScore: 70,
     timeSeconds: 110,
-    backgroundPalette: 'main',
+    backgroundPalette: 'random-extra',
     modifierBudget: {},
     rewardTiers: [MULTI_ROUND_REWARD_TIERS.COMMON],
     startingScoreBonusMultiplier: 0.6
