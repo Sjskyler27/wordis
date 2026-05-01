@@ -906,9 +906,6 @@ button:focus{
 .built-tile-lightning::before {
   inset: 0;
   z-index: 0;
-  background:
-    radial-gradient(circle at 50% 18%, rgba(255, 255, 255, 0.78), transparent 18%),
-    linear-gradient(160deg, transparent 0 34%, rgba(255, 255, 255, 0.86) 35% 40%, transparent 41% 54%, rgba(255, 232, 86, 0.78) 55% 61%, transparent 62% 100%);
   opacity: 0.12;
   animation: built-lightning-charge var(--built-tile-lightning-cycle, 3000ms) linear infinite;
 }
@@ -918,7 +915,7 @@ button:focus{
   left: 43%;
   width: 24%;
   height: 80%;
-  z-index: 1;
+  z-index: 100;
   background: linear-gradient(180deg, #fffdf0 0%, #fff069 48%, #64d8ff 100%);
   clip-path: polygon(44% 0, 86% 0, 61% 38%, 100% 38%, 24% 100%, 43% 54%, 0 54%);
   filter: drop-shadow(0 0 7px rgba(255, 244, 100, 0.86));
