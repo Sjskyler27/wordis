@@ -2927,7 +2927,7 @@ onMounted(() => {
     playerCogTargetSpeed.value = Math.max(1, playerCogTargetSpeed.value - 0.12);
     rampPlayerCogSpeed();
   }, 500);
-  roundModifierTickIntervalId = window.setInterval(tickTimedGameEffects, 250);
+  roundModifierTickIntervalId = window.setInterval(tickTimedGameEffects, 100);
   window.addEventListener('resize', syncWindowWidth);
   window.addEventListener('keydown', handleKeydown);
   window.addEventListener('wordis:show-tutorial', showTutorialFromSettings);

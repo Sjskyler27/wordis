@@ -409,17 +409,6 @@ const hasSelectedTwinMatch = (tile) => {
   });
 };
 
-const getLightningAnimationDelay = (tile) => {
-  const intervalMs = tile.lightningIntervalMs || 3000;
-  const strikeAt = tile.lightningStrikeAt || 0;
-  if (!strikeAt || !intervalMs) {
-    return '0ms';
-  }
-
-  const remainingMs = Math.max(0, strikeAt - Date.now());
-  return `${remainingMs - intervalMs}ms`;
-};
-
 const getTileStyle = (tile) => {
   const ui = getTileUi(tile);
 
@@ -433,7 +422,6 @@ const getTileStyle = (tile) => {
     '--tile-rust-coverage': `${Math.min(120, (((tile.rustTurns  || 0) + 1) * 20) + 18)}%`,
     '--tile-shimmer-cycle': `${tile.shimmerIntervalMs || 8000}ms`,
     '--tile-lightning-cycle': `${tile.lightningIntervalMs || 3000}ms`,
-    '--tile-lightning-delay': getLightningAnimationDelay(tile),
     '--tile-enter-delay': `${tileEnterDelays.value[tile.id] || 0}ms`,
     '--tile-animation-duration': `${getTileAnimationDuration(tile)}ms`
   };
@@ -1061,6 +1049,18 @@ onBeforeUnmount(() => {
 
 .tile-twin-active {
   filter: saturate(1.12) brightness(1.04);
+  animation: tile-twin-complete-glow 1600ms ease-in-out infinite;
+}
+
+.tile-twin-active::after {
+  background:
+    linear-gradient(115deg, transparent 10%, rgba(255, 255, 255, 0.68) 34%, rgba(154, 255, 229, 0.24) 46%, transparent 66%);
+  background-size: 230% 100%;
+  box-shadow:
+    inset 0 2px 0 rgba(255, 255, 255, 0.38),
+    inset 0 -4px 0 rgba(14, 76, 75, 0.16),
+    0 0 18px rgba(99, 236, 209, 0.36);
+  animation: tile-twin-complete-shimmer 1600ms ease-in-out infinite;
 }
 
 .tile-shimmer .tile-letter,
@@ -1299,32 +1299,32 @@ onBeforeUnmount(() => {
 
 @keyframes tile-lightning-spark {
   0%,
-  18%,
+  14%,
   100% {
     opacity: 0;
     transform: scale(0.62);
   }
-  24% {
+  20% {
     opacity: 1;
     transform: scale(1.05);
     filter: brightness(1.4) saturate(1.35);
   }
-  32% {
+  28%,
+  96% {
     opacity: 0.72;
     transform: scale(0.92);
     filter: brightness(1.12) saturate(1.15);
   }
-  88%,
   99% {
-    opacity: 0.72;
-    transform: scale(0.92);
-    filter: brightness(1.12) saturate(1.15);
+    opacity: 0.9;
+    transform: scale(1);
+    filter: brightness(1.36) saturate(1.35);
   }
 }
 
 @keyframes tile-lightning-spark-right {
   0%,
-  44%,
+  42%,
   100% {
     opacity: 0;
     transform: scale(0.62);
@@ -1334,36 +1334,58 @@ onBeforeUnmount(() => {
     transform: scale(1.05);
     filter: brightness(1.4) saturate(1.35);
   }
-  58% {
+  58%,
+  96% {
     opacity: 0.72;
     transform: scale(0.92);
     filter: brightness(1.12) saturate(1.15);
   }
-  88%,
   99% {
-    opacity: 0.72;
-    transform: scale(0.92);
-    filter: brightness(1.12) saturate(1.15);
+    opacity: 0.9;
+    transform: scale(1);
+    filter: brightness(1.36) saturate(1.35);
   }
 }
 
 @keyframes tile-lightning-strike {
   0%,
-  86% {
+  94% {
     opacity: 0;
     transform: translateY(-5px) scaleY(0.9);
   }
-  91% {
+  97% {
     opacity: 0.94;
     transform: translateY(0) scaleY(1.08);
   }
-  96% {
-    opacity: 0.62;
+  100% {
+    opacity: 0.82;
     transform: translateY(2px) scaleY(1);
   }
+}
+
+@keyframes tile-twin-complete-glow {
+  0%,
   100% {
-    opacity: 0;
-    transform: translateY(4px) scaleY(0.96);
+    box-shadow: var(--tile-shadow, inset 0 -4px 0 rgba(0, 0, 0, 0.12), 0 10px 18px rgba(45, 10, 24, 0.16));
+  }
+  50% {
+    box-shadow:
+      inset 0 0 0 2px rgba(214, 255, 245, 0.52),
+      inset 0 -4px 0 rgba(14, 76, 75, 0.16),
+      0 0 18px rgba(97, 232, 204, 0.5),
+      var(--tile-shadow, inset 0 -4px 0 rgba(0, 0, 0, 0.12), 0 10px 18px rgba(45, 10, 24, 0.16));
+  }
+}
+
+@keyframes tile-twin-complete-shimmer {
+  0%,
+  100% {
+    background-position: 180% 0;
+    opacity: 0.22;
+  }
+  50% {
+    background-position: 10% 0;
+    opacity: 0.82;
   }
 }
 
