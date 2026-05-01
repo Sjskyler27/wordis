@@ -98,7 +98,7 @@
     deviceId: String,
   });
 
-  const MACHINE_STYLE = true;
+  const MACHINE_STYLE = false;
   const showIntro = ref(!props.hasSeenIntro);
   const demoDate = new Date('2025-10-01T00:00:00Z')
   const isDemo = false
@@ -126,17 +126,7 @@
   const transitionURL = new URL('../../assets/images/homeScreen.png', import.meta.url).href;
   const homeBackgroundState = computed(() => ({
     transitionKey: 'start-screen',
-    moodStyle: {
-      '--bg-corner': '#31475e',
-      '--bg-top': '#22384d',
-      '--bg-mid': '#182535',
-      '--bg-bottom': '#101620',
-      '--bg-glow-alpha': '0.2',
-      '--bg-shape-far-opacity': '0.24',
-      '--bg-shape-near-opacity': '0.18',
-      '--bg-saturate': '0.9'
-    },
-    isBotMode: MACHINE_STYLE,
+    isBotMode: false,
     botCogStyle: {
       width: 'min(42vw, 380px)',
       height: 'min(42vw, 380px)',
