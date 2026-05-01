@@ -1051,6 +1051,12 @@ img {
     font-family: 'Press Start 2P', cursive;
     cursor: pointer;
   }
+  .center-line{
+    background-image: linear-gradient(#000, #000);
+  background-size: 2px 100%;
+  background-repeat: no-repeat;
+  background-position: center center;
+  }
 
   /* Active effect: Slightly increase size */
   button:active {

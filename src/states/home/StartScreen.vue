@@ -15,7 +15,7 @@
         <img src="/src/assets/images/logos/title.png" alt="title img">
         <h2>Brave the Depths of the Mysterious Dungeon</h2>
       </div>
-      <div v-else class="header">
+      <div v-else class="headers">
         <div class="title">
           <div>
             <h1 class="shadow">WORDIS</h1>
@@ -34,7 +34,7 @@
   
       
     <!-- Start Game -->
-    <div class="home-buttons">
+    <div class="home-buttons animated-fade-in">
       <button class="profile-button"  ref="button2" @click="handleProfileClick">Profile</button>
       <button class="play" ref="button1" @click="showType">Play</button>
       <button class="settings" ref="button3" @click="showSettings">Settings</button>
@@ -463,9 +463,13 @@ function handleVisibilityChange() {
     min-height: 100vh;
     min-height: 100dvh;
   }
-  .header{
+  .headers{
       position: absolute;
       top: 150px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: max-content;
+      max-width: calc(100vw - 48px);
     img{
       justify-self: center;
         width: 90%;
@@ -524,6 +528,8 @@ font-family: 'Times New Roman', serif;
       
       
     }
+
+    animation: homeButtonsIn 0.3s ease-out 0.1s forwards;
   }
   .login-button {
     position: fixed;
@@ -683,14 +689,17 @@ font-family: 'Times New Roman', serif;
     border: 1px solid rgba(255, 231, 190, 0.24);
     border-radius: 22px;
     position: fixed;
-    left: 50%;
-    bottom: 56px;
-    transform: translateX(-50%);
     z-index: 100;
     display:flex;
     flex-direction: row;
+
+
+position: fixed;
+
+
+  bottom: 20%;
+
     gap: 12px;
-    animation: homeButtonsIn 0.3s ease-out 0.1s forwards;
     box-shadow:
       inset 0 1px 0 rgba(255, 238, 205, 0.14),
       0 22px 46px rgba(23, 8, 25, 0.36);
@@ -812,11 +821,13 @@ font-family: 'Times New Roman', serif;
     from {
       opacity: 0;
       visibility: hidden;
-      transform: translateX(-50%) translateY(-10px);
+      left: 50%;
+      transform: translateX(-57%) translateY(-10px);
     }
     to {
       opacity: 1;
       visibility: visible;
+      left: 50%;
       transform: translateX(-50%) translateY(0);
     }
   }
@@ -884,6 +895,10 @@ font-family: 'Times New Roman', serif;
         }
         .header{
           position: inherit;
+          left: auto;
+          transform: none;
+          width: auto;
+          max-width: none;
           margin: 10px;
           .base {
             font-size: 4rem;
@@ -937,7 +952,7 @@ font-family: 'Times New Roman', serif;
       }
       @media (max-width: 1230px) and (orientation: portrait) {
         .home-buttons {
-          bottom: 56px;
+          bottom: 20%;
           flex-direction: column;
           button {
             width: 170px;
@@ -958,6 +973,10 @@ font-family: 'Times New Roman', serif;
         .header{
           position: absolute;
           top: 100px;
+          left: 50%;
+          transform: translateX(-50%);
+          width: max-content;
+          max-width: calc(100vw - 24px);
         }
         .home-container{
           gap: 20px;
