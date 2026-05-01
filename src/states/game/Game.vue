@@ -164,14 +164,6 @@
         :modifiers="personalModifiersForDrawer"
       />
 
-      <MultiRoundRewardChoice
-        v-if="isMultiRoundMode && isMultiRoundRewardChoiceOpen"
-        :rewards="multiRoundRewardChoices"
-        :upcoming-round="upcomingMultiRoundPreview"
-        :controller-focused-reward-index="controllerRegion === 'reward' ? controllerRewardCursorIndex : -1"
-        @choose="handleMultiRoundRewardChoice"
-      />
-
       <HistoryOverlay
         v-if="showHistoryOverlay"
         :result-title="historyResultTitle"
@@ -245,7 +237,6 @@ import GameLane from './components/GameLane.vue';
 import HistoryOverlay from './components/HistoryOverlay.vue';
 import MachineBackground from './components/MachineBackground.vue';
 import MultiRoundProgress from './components/MultiRoundProgress.vue';
-import MultiRoundRewardChoice from './components/MultiRoundRewardChoice.vue';
 import ScoreRibbon from './components/ScoreRibbon.vue';
 import { getMultiRoundRounds } from './multiround/multi-round-difficulties.js';
 import PersonalModifiersDrawer from './components/PersonalModifiersDrawer.vue';
@@ -303,6 +294,10 @@ const props = defineProps({
   overtimeEnabled: {
     type: Boolean,
     default: true
+  },
+  rewardChoiceSelection: {
+    type: Object,
+    default: null
   }
 });
 
@@ -313,7 +308,8 @@ const emit = defineEmits([
   'volumeChange',
   'musicVolumeChange',
   'effectsVolumeChange',
-  'update:botDifficulty'
+  'update:botDifficulty',
+  'rewardChoiceState'
 ]);
 const localMessage = ref('');
 const gameStartedAt = Date.now();
@@ -658,6 +654,17 @@ const upcomingMultiRoundPreview = computed(() => {
   }
 
   return multiRoundRun.visibleProgressRounds.value[multiRoundRun.currentRoundIndex.value + 1] || null;
+});
+const rewardChoiceState = computed(() => {
+  if (!isMultiRoundMode.value || !isMultiRoundRewardChoiceOpen.value) {
+    return null;
+  }
+
+  return {
+    rewards: multiRoundRewardChoices.value,
+    upcomingRound: upcomingMultiRoundPreview.value,
+    controllerFocusedRewardIndex: controllerRegion.value === 'reward' ? controllerRewardCursorIndex.value : -1
+  };
 });
 const BOT_WINNING_SCORES = {
   easy: 100,
@@ -1526,6 +1533,8 @@ const handleMultiRoundRewardChoice = (rewardKey) => {
   focusControllerTile(0);
   localMessage.value = `Next round starts with ${startingScore} points from saved time.`;
 };
+
+const lastRewardChoiceSelectionToken = ref(null);
 
 const validateActiveRoundModifiers = (selectedTiles = []) => {
   if (!isMultiRoundMode.value) {
@@ -2871,6 +2880,22 @@ watch(isMultiRoundRewardChoiceOpen, (isOpen) => {
     focusControllerReward(0);
   });
 });
+
+watch(rewardChoiceState, (state) => {
+  emit('rewardChoiceState', state);
+}, { immediate: true, deep: true });
+
+watch(() => props.rewardChoiceSelection, (selection) => {
+  if (!selection || selection.token == null || selection.token === lastRewardChoiceSelectionToken.value) {
+    return;
+  }
+
+  lastRewardChoiceSelectionToken.value = selection.token;
+
+  if (selection.key) {
+    handleMultiRoundRewardChoice(selection.key);
+  }
+}, { deep: true });
 
 const syncWindowWidth = () => {
   windowWidth.value = window.innerWidth;

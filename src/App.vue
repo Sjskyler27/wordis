@@ -30,6 +30,7 @@
       :uiZoom="zoom"
       :isStreamer="validSeed"
       :hasSeenIntro="hasSeenIntro"
+      :rewardChoiceSelection="rewardChoiceSelection"
       @continue="continueGame" 
       @end="goToShop" 
       @game="goToGame" 
@@ -44,6 +45,7 @@
       @nameChange="setNames"
       @home="goToHome"
       @playAgain="playAgain"
+      @rewardChoiceState="handleRewardChoiceState"
       @volumeChange="setVolume"
       @musicVolumeChange="setmusicVolume"
       @effectsVolumeChange="seteffectsVolume"
@@ -74,6 +76,13 @@
       @feedback="showFeedback = true"
       @showTutorial="showHowToPlay"
       @close="showSettings = false"></Settings>
+      <MultiRoundRewardChoice
+        v-if="rewardChoiceOverlay"
+        :rewards="rewardChoiceOverlay.rewards"
+        :upcoming-round="rewardChoiceOverlay.upcomingRound"
+        :controller-focused-reward-index="rewardChoiceOverlay.controllerFocusedRewardIndex"
+        @choose="handleRewardChoiceSelect"
+      />
       <AuthPrompt v-if="showAuthModal" @close="showAuthModal = false" @loggedIn="userLoggedIn" />
       <AssetLoader :monsterRoster="monsterRoster"/>
     </div>
@@ -98,6 +107,7 @@ import { hideGoogleTranslateIframesAfterDelay,hideGoogleTranslateExtras } from "
 import Feedback from "./states/home/Feedback.vue";
 import Banner from "/src/assets/Banner.vue";
 import Settings from '/src/assets/Settings.vue'
+import MultiRoundRewardChoice from "./states/game/components/MultiRoundRewardChoice.vue";
 import { initUserSync, logoutCleanup, syncUserState } from "./userstate/syncUserState.js";
 import { signOut } from "firebase/auth";
 import AuthPrompt from "/src/assets/AuthPrompt.vue";
@@ -264,6 +274,26 @@ const showFeedback = ref(false)
 
   const showSettings = ref(false)
   const isGameState = computed(() => currentState.value === Game);
+  const rewardChoiceOverlay = ref(null);
+  const rewardChoiceSelection = ref(null);
+  let rewardChoiceSelectionToken = 0;
+
+  const clearLiftedGameUi = () => {
+    rewardChoiceOverlay.value = null;
+    rewardChoiceSelection.value = null;
+  };
+
+  const handleRewardChoiceState = (state) => {
+    rewardChoiceOverlay.value = state;
+  };
+
+  const handleRewardChoiceSelect = (rewardKey) => {
+    rewardChoiceSelectionToken += 1;
+    rewardChoiceSelection.value = {
+      key: rewardKey,
+      token: rewardChoiceSelectionToken
+    };
+  };
 
   function setVolume(val) {
     volume.value = val
@@ -418,6 +448,7 @@ const continueGame = (mode) => {
     hideGoogleTranslate.value = false
     console.log('takeing you home')
     showSettings.value=false
+    clearLiftedGameUi();
     continueSave.value = null;
     currentState.value = StartScreen;
   };
@@ -430,6 +461,7 @@ const continueGame = (mode) => {
     if (isMultiplayer.value) {
       updatePlayConfig({ mode: PLAY_MODES.MULTIPLAYER });
     }
+    clearLiftedGameUi();
     continueSave.value = null;
     currentState.value = Game;
   };
@@ -438,6 +470,7 @@ const continueGame = (mode) => {
     hideGoogleTranslateIframesAfterDelay();
     hideGoogleTranslate.value = true
     console.log('set hide',hideGoogleTranslate.value)
+    clearLiftedGameUi();
     continueSave.value = null;
     currentState.value = TypeScreen;
   };
@@ -446,6 +479,7 @@ const continueGame = (mode) => {
   };
   const goTomultiplayerScreen = () => {
     updatePlayConfig({ mode: PLAY_MODES.MULTIPLAYER });
+    clearLiftedGameUi();
     currentState.value = MultiplayerScreen;
     isMultiplayer.value = true;
   };
@@ -454,6 +488,7 @@ const continueGame = (mode) => {
     hideGoogleTranslateExtras()
     hideGoogleTranslateIframesAfterDelay();
     hideGoogleTranslate.value = true
+    clearLiftedGameUi();
     continueSave.value = null;
     currentState.value = MultiRoundScreen;
     isMultiplayer.value = false;
@@ -464,6 +499,7 @@ const continueGame = (mode) => {
     hideGoogleTranslateIframesAfterDelay();
     hideGoogleTranslate.value = true
     isMultiplayer.value = false;
+    clearLiftedGameUi();
     continueSave.value = null;
     updatePlayConfig({
       mode: options.mode || PLAY_MODES.TIMED_SOLO,
@@ -479,6 +515,7 @@ const continueGame = (mode) => {
     hideGoogleTranslateIframesAfterDelay();
     hideGoogleTranslate.value = true;
     showSettings.value = false;
+    clearLiftedGameUi();
     continueSave.value = null;
     resetMultiplayerGame();
     reloader.value += 1;
@@ -755,6 +792,12 @@ const simulateTab = (reverse = false) => {
     window.removeEventListener("gamepadconnected", onGamepadConnected);
     window.removeEventListener("gamepaddisconnected", onGamepadDisconnected);
     cancelAnimationFrame(gamepadAnimationFrameId);
+  });
+
+  watch(currentState, () => {
+    if (currentState.value !== Game) {
+      clearLiftedGameUi();
+    }
   });
   </script>
 
