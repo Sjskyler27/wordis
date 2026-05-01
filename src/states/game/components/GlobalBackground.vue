@@ -34,7 +34,7 @@ const props = defineProps({
   }
 });
 
-const BACKGROUND_TRANSITION_MS = 5000;
+const BACKGROUND_TRANSITION_MS = 2000;
 const COLOR_KEYS = ['--bg-corner', '--bg-top', '--bg-mid', '--bg-bottom'];
 const NUMBER_KEYS = ['--bg-glow-alpha', '--bg-shape-far-opacity', '--bg-shape-near-opacity', '--bg-saturate'];
 const DEFAULT_MOOD_STYLE = {
