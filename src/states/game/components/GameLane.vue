@@ -52,6 +52,8 @@
               'tile-shimmer-idle': tile.status === 'shimmer' && selectedTileIds.has(tile.id),
               'tile-rusting': tile.status === 'rustingTile',
               'tile-lightning': tile.status === 'lightningTile',
+              'tile-twin': tile.status === 'twinTile',
+              'tile-twin-active': hasSelectedTwinMatch(tile),
               'tile-must-alert': mustAlertIds.has(tile.id),
               'tile-banned-letter': isBannedLetter(tile),
               'tile-controller-focus': controllerFocusedTileId === tile.id,
@@ -65,6 +67,8 @@
             @mousemove="updateTooltipPosition($event)"
             @mouseleave="hideTooltip"
           >
+            <span v-if="tile.status === 'lightningTile'" class="tile-lightning-spark spark-left" aria-hidden="true"></span>
+            <span v-if="tile.status === 'lightningTile'" class="tile-lightning-spark spark-right" aria-hidden="true"></span>
             <span v-if="!getTileUi(tile).hideBadge && tile.status !== 'normal'" class="tile-modifier" :style="getBadgeStyle(tile)">
               {{ getTileBadge(tile) }}
             </span>
@@ -214,6 +218,32 @@ const hideTooltip = () => {
   hoveredTile.value = null;
 };
 
+const getLightningAnimationSync = (tile, event) => {
+  if (tile?.status !== 'lightningTile') {
+    return null;
+  }
+
+  const intervalMs = tile.lightningIntervalMs || 3000;
+  const animations = event?.currentTarget?.getAnimations?.() || [];
+  const lightningAnimation = animations.find((animation) => animation.animationName === 'tile-lightning-charge');
+  const currentTime = Number(lightningAnimation?.currentTime || 0);
+  if (currentTime > 0 && intervalMs > 0) {
+    return {
+      lightningAnimationDelayMs: -(currentTime % intervalMs)
+    };
+  }
+
+  const strikeAt = tile.lightningStrikeAt || 0;
+  if (!strikeAt || !intervalMs) {
+    return null;
+  }
+
+  const remainingMs = Math.max(0, strikeAt - Date.now());
+  return {
+    lightningAnimationDelayMs: remainingMs - intervalMs
+  };
+};
+
 const toggleMobileInspect = () => {
   mobileInspectEnabled.value = !mobileInspectEnabled.value;
 
@@ -244,7 +274,10 @@ const handleTileClick = (tile, event) => {
     return;
   }
 
-  emit('tile-click', tile);
+  emit('tile-click', {
+    tile,
+    animationSync: getLightningAnimationSync(tile, event)
+  });
 };
 
 watch(() => mobileInspectEnabled.value, (isEnabled) => {
@@ -365,6 +398,28 @@ const getShimmerCycleClass = (tile) => {
   return (tile.shimmerCycleIndex || 0) % 2 === 0 ? 'tile-shimmer-cycle-even' : 'tile-shimmer-cycle-odd';
 };
 
+const hasSelectedTwinMatch = (tile) => {
+  if (tile?.status !== 'twinTile' || !props.selectedTileIds.has(tile.id)) {
+    return false;
+  }
+
+  const letter = getTileLetter(tile);
+  return Boolean(letter) && props.tiles.some((rackTile) => {
+    return rackTile.id !== tile.id && props.selectedTileIds.has(rackTile.id) && getTileLetter(rackTile) === letter;
+  });
+};
+
+const getLightningAnimationDelay = (tile) => {
+  const intervalMs = tile.lightningIntervalMs || 3000;
+  const strikeAt = tile.lightningStrikeAt || 0;
+  if (!strikeAt || !intervalMs) {
+    return '0ms';
+  }
+
+  const remainingMs = Math.max(0, strikeAt - Date.now());
+  return `${remainingMs - intervalMs}ms`;
+};
+
 const getTileStyle = (tile) => {
   const ui = getTileUi(tile);
 
@@ -378,6 +433,7 @@ const getTileStyle = (tile) => {
     '--tile-rust-coverage': `${Math.min(120, (((tile.rustTurns  || 0) + 1) * 20) + 18)}%`,
     '--tile-shimmer-cycle': `${tile.shimmerIntervalMs || 8000}ms`,
     '--tile-lightning-cycle': `${tile.lightningIntervalMs || 3000}ms`,
+    '--tile-lightning-delay': getLightningAnimationDelay(tile),
     '--tile-enter-delay': `${tileEnterDelays.value[tile.id] || 0}ms`,
     '--tile-animation-duration': `${getTileAnimationDuration(tile)}ms`
   };
@@ -855,7 +911,8 @@ onBeforeUnmount(() => {
 
 .tile-shimmer,
 .tile-rusting,
-.tile-lightning {
+.tile-lightning,
+.tile-twin {
   isolation: isolate;
   overflow: hidden;
 }
@@ -921,6 +978,7 @@ onBeforeUnmount(() => {
   z-index: 0;
   opacity: 0.12;
   animation: tile-lightning-charge var(--tile-lightning-cycle, 3000ms) linear infinite;
+  animation-delay: var(--tile-lightning-delay, 0ms);
 }
 
 .tile-lightning::after {
@@ -934,11 +992,81 @@ onBeforeUnmount(() => {
   filter: drop-shadow(0 0 7px rgba(255, 244, 100, 0.86));
   opacity: 0;
   animation: tile-lightning-strike var(--tile-lightning-cycle, 3000ms) linear infinite;
+  animation-delay: var(--tile-lightning-delay, 0ms);
+}
+
+.tile-lightning-spark {
+  position: absolute;
+  bottom: 7%;
+  width: 18%;
+  aspect-ratio: 1;
+  z-index: 4;
+  border-radius: 50%;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 42% 38%, #ffffff 0 18%, #fff57e 28%, #6ee7ff 56%, rgba(68, 101, 255, 0.16) 78%, transparent 100%);
+  box-shadow:
+    0 0 7px rgba(255, 244, 115, 0.84),
+    0 0 13px rgba(89, 220, 255, 0.56);
+  opacity: 0;
+  transform: scale(0.62);
+  animation: tile-lightning-spark var(--tile-lightning-cycle, 3000ms) linear infinite;
+  animation-delay: var(--tile-lightning-delay, 0ms);
+}
+
+.tile-lightning-spark.spark-left {
+  left: 10%;
+}
+
+.tile-lightning-spark.spark-right {
+  right: 10%;
+  animation-name: tile-lightning-spark-right;
+}
+
+.tile-twin {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.34) 0%, rgba(255, 255, 255, 0) 42%),
+    linear-gradient(90deg, #9df4dc 0 50%, #f4efe5 50% 100%);
+}
+
+.tile-twin::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 50% 52%, #f4efe5 0 15%, transparent 15.5%),
+    linear-gradient(180deg, #d9fff4 0%, #62dfc3 54%, #2f9d94 100%) left / 50% 100% no-repeat,
+    linear-gradient(180deg, #fffef8 0%, #f2ebe0 70%, #d9cec0 100%) right / 50% 100% no-repeat;
+}
+
+.tile-twin::after {
+  content: '';
+  position: absolute;
+  inset: 4px;
+  z-index: 1;
+  border-radius: 12px;
+  pointer-events: none;
+  box-shadow:
+    inset 0 2px 0 rgba(255, 255, 255, 0.34),
+    inset 0 -4px 0 rgba(14, 76, 75, 0.16);
+}
+
+.tile-twin-active::before {
+  background:
+    linear-gradient(180deg, #d9fff4 0%, #62dfc3 54%, #2f9d94 100%) left / 50% 100% no-repeat,
+    linear-gradient(180deg, #d9fff4 0%, #62dfc3 54%, #2f9d94 100%) right / 50% 100% no-repeat;
+}
+
+.tile-twin-active {
+  filter: saturate(1.12) brightness(1.04);
 }
 
 .tile-shimmer .tile-letter,
 .tile-rusting .tile-letter,
-.tile-lightning .tile-letter {
+.tile-lightning .tile-letter,
+.tile-twin .tile-letter {
   position: relative;
   z-index: 2;
 }
@@ -953,13 +1081,15 @@ onBeforeUnmount(() => {
 
 .tile-shimmer .tile-score,
 .tile-rusting .tile-score,
-.tile-lightning .tile-score {
+.tile-lightning .tile-score,
+.tile-twin .tile-score {
   z-index: 5;
 }
 
 .tile-shimmer .tile-modifier,
 .tile-rusting .tile-modifier,
-.tile-lightning .tile-modifier {
+.tile-lightning .tile-modifier,
+.tile-twin .tile-modifier {
   z-index: 6;
 }
 
@@ -1164,6 +1294,56 @@ onBeforeUnmount(() => {
   100% {
     opacity: 0.1;
     filter: brightness(1) saturate(1);
+  }
+}
+
+@keyframes tile-lightning-spark {
+  0%,
+  18%,
+  100% {
+    opacity: 0;
+    transform: scale(0.62);
+  }
+  24% {
+    opacity: 1;
+    transform: scale(1.05);
+    filter: brightness(1.4) saturate(1.35);
+  }
+  32% {
+    opacity: 0.72;
+    transform: scale(0.92);
+    filter: brightness(1.12) saturate(1.15);
+  }
+  88%,
+  99% {
+    opacity: 0.72;
+    transform: scale(0.92);
+    filter: brightness(1.12) saturate(1.15);
+  }
+}
+
+@keyframes tile-lightning-spark-right {
+  0%,
+  44%,
+  100% {
+    opacity: 0;
+    transform: scale(0.62);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.05);
+    filter: brightness(1.4) saturate(1.35);
+  }
+  58% {
+    opacity: 0.72;
+    transform: scale(0.92);
+    filter: brightness(1.12) saturate(1.15);
+  }
+  88%,
+  99% {
+    opacity: 0.72;
+    transform: scale(0.92);
+    filter: brightness(1.12) saturate(1.15);
   }
 }
 

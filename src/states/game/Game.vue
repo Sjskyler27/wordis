@@ -2258,7 +2258,9 @@ const moveControllerTileFocus = (direction) => {
   focusControllerTile(nextIndex);
 };
 
-const handleTileClickWithCards = (tile, side) => {
+const handleTileClickWithCards = (payload, side) => {
+  const tile = payload?.tile || payload;
+  const animationSync = payload?.animationSync || null;
   // start timer as soon as user starts playing
   startTimedModeTimerAfterFirstTileClicked()
   if (effectiveGameEnded.value) {
@@ -2285,7 +2287,7 @@ const handleTileClickWithCards = (tile, side) => {
     return;
   }
 
-  const result = handleTileClick(tile);
+  const result = handleTileClick(tile, { animationSync });
   if (result === 'added') {
     playUiSound(tilePickupSound);
   } else if (result === 'removed') {

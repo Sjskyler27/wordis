@@ -33,6 +33,8 @@
               }"
               :style="getTileStyle(tile, index)"
             >
+              <span v-if="tile.status === 'lightningTile'" class="built-tile-lightning-spark spark-left" aria-hidden="true"></span>
+              <span v-if="tile.status === 'lightningTile'" class="built-tile-lightning-spark spark-right" aria-hidden="true"></span>
               <span v-if="!getTileUi(tile).hideBadge && tile.status !== 'normal'" class="tile-modifier" :style="getBadgeStyle(tile)">
                 {{ getTileBadge(tile) }}
               </span>
@@ -91,6 +93,8 @@
               @mousemove="updateTooltipPosition($event)"
               @mouseleave="hideTooltip"
             >
+              <span v-if="slot.tile.status === 'lightningTile'" class="built-tile-lightning-spark spark-left" aria-hidden="true"></span>
+              <span v-if="slot.tile.status === 'lightningTile'" class="built-tile-lightning-spark spark-right" aria-hidden="true"></span>
               <span v-if="!getTileUi(slot.tile).hideBadge && slot.tile.status !== 'normal'" class="tile-modifier" :style="getBadgeStyle(slot.tile)">
                 {{ getTileBadge(slot.tile) }}
               </span>
@@ -466,6 +470,7 @@ const getTileStyle = (tile, index = 0) => {
     '--built-tile-rust-coverage': `${Math.min(120, (((tile.rustTurns  || 0) + 1) * 20) + 18)}%`,
     '--built-tile-shimmer-cycle': `${tile.shimmerIntervalMs * 2 || 16000}ms`, // idle is slower
     '--built-tile-lightning-cycle': `${tile.lightningIntervalMs || 3000}ms`,
+    '--built-tile-lightning-delay': getLightningAnimationDelay(tile),
     '--score-pop-delay': `${index * 110}ms`
   };
 };
@@ -509,6 +514,20 @@ const hasTwinMatch = (tile) => {
   return Boolean(letter) && props.selectedTiles.some((selectedTile) => {
     return selectedTile.id !== tile.id && getTileLetter(selectedTile) === letter;
   });
+};
+const getLightningAnimationDelay = (tile) => {
+  if (Number.isFinite(tile?.lightningAnimationDelayMs)) {
+    return `${tile.lightningAnimationDelayMs}ms`;
+  }
+
+  const intervalMs = tile.lightningIntervalMs || 3000;
+  const strikeAt = tile.lightningStrikeAt || 0;
+  if (!strikeAt || !intervalMs) {
+    return '0ms';
+  }
+
+  const remainingMs = Math.max(0, strikeAt - Date.now());
+  return `${remainingMs - intervalMs}ms`;
 };
 const isBannedLetter = (tile) => {
   const bannedLetters = new Set(props.scoreOptions?.roundModifierEffects?.bannedLetters || []);
@@ -908,6 +927,7 @@ button:focus{
   z-index: 0;
   opacity: 0.12;
   animation: built-lightning-charge var(--built-tile-lightning-cycle, 3000ms) linear infinite;
+  animation-delay: var(--built-tile-lightning-delay, 0ms);
 }
 
 .built-tile-lightning::after {
@@ -921,6 +941,75 @@ button:focus{
   filter: drop-shadow(0 0 7px rgba(255, 244, 100, 0.86));
   opacity: 0;
   animation: built-lightning-strike var(--built-tile-lightning-cycle, 3000ms) linear infinite;
+  animation-delay: var(--built-tile-lightning-delay, 0ms);
+}
+
+.built-tile-lightning-spark {
+  position: absolute;
+  bottom: 7%;
+  width: 18%;
+  aspect-ratio: 1;
+  z-index: 4;
+  border-radius: 50%;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 42% 38%, #ffffff 0 18%, #fff57e 28%, #6ee7ff 56%, rgba(68, 101, 255, 0.16) 78%, transparent 100%);
+  box-shadow:
+    0 0 7px rgba(255, 244, 115, 0.84),
+    0 0 13px rgba(89, 220, 255, 0.56);
+  opacity: 0;
+  transform: scale(0.62);
+  animation: built-lightning-spark var(--built-tile-lightning-cycle, 3000ms) linear infinite;
+  animation-delay: var(--built-tile-lightning-delay, 0ms);
+}
+
+.built-tile-lightning-spark.spark-left {
+  left: 10%;
+}
+
+.built-tile-lightning-spark.spark-right {
+  right: 10%;
+  animation-name: built-lightning-spark-right;
+}
+
+.built-tile-twin {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.34) 0%, rgba(255, 255, 255, 0) 42%),
+    linear-gradient(90deg, #9df4dc 0 50%, #f4efe5 50% 100%);
+}
+
+.built-tile-twin::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 50% 52%, #f4efe5 0 15%, transparent 15.5%),
+    linear-gradient(180deg, #d9fff4 0%, #62dfc3 54%, #2f9d94 100%) left / 50% 100% no-repeat,
+    linear-gradient(180deg, #fffef8 0%, #f2ebe0 70%, #d9cec0 100%) right / 50% 100% no-repeat;
+}
+
+.built-tile-twin::after {
+  content: '';
+  position: absolute;
+  inset: 4px;
+  z-index: 1;
+  border-radius: 12px;
+  pointer-events: none;
+  box-shadow:
+    inset 0 2px 0 rgba(255, 255, 255, 0.34),
+    inset 0 -4px 0 rgba(14, 76, 75, 0.16);
+}
+
+.built-tile-twin-active {
+  filter: saturate(1.12) brightness(1.04);
+}
+
+.built-tile-twin-active::before {
+  background:
+    linear-gradient(180deg, #d9fff4 0%, #62dfc3 54%, #2f9d94 100%) left / 50% 100% no-repeat,
+    linear-gradient(180deg, #d9fff4 0%, #62dfc3 54%, #2f9d94 100%) right / 50% 100% no-repeat;
 }
 
 .built-tile-shimmer .tile-letter,
@@ -976,6 +1065,56 @@ button:focus{
   }
 }
 
+@keyframes built-lightning-spark {
+  0%,
+  18%,
+  100% {
+    opacity: 0;
+    transform: scale(0.62);
+  }
+  24% {
+    opacity: 1;
+    transform: scale(1.05);
+    filter: brightness(1.4) saturate(1.35);
+  }
+  32% {
+    opacity: 0.72;
+    transform: scale(0.92);
+    filter: brightness(1.12) saturate(1.15);
+  }
+  88%,
+  99% {
+    opacity: 0.72;
+    transform: scale(0.92);
+    filter: brightness(1.12) saturate(1.15);
+  }
+}
+
+@keyframes built-lightning-spark-right {
+  0%,
+  44%,
+  100% {
+    opacity: 0;
+    transform: scale(0.62);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.05);
+    filter: brightness(1.4) saturate(1.35);
+  }
+  58% {
+    opacity: 0.72;
+    transform: scale(0.92);
+    filter: brightness(1.12) saturate(1.15);
+  }
+  88%,
+  99% {
+    opacity: 0.72;
+    transform: scale(0.92);
+    filter: brightness(1.12) saturate(1.15);
+  }
+}
+
 @keyframes built-lightning-strike {
   0%,
   86% {
@@ -993,44 +1132,6 @@ button:focus{
   100% {
     opacity: 0;
     transform: translateY(4px) scaleY(0.96);
-  }
-}
-
-.built-tile-twin::before,
-.built-tile-twin::after {
-  content: '';
-  position: absolute;
-  inset: 10%;
-  z-index: 1;
-  border-radius: 12px;
-  pointer-events: none;
-  opacity: 0.38;
-  border: 3px solid rgba(236, 255, 247, 0.84);
-  transform: translate(-5px, -3px);
-}
-
-.built-tile-twin::after {
-  opacity: 0.26;
-  border-color: rgba(26, 95, 89, 0.7);
-  transform: translate(5px, 3px);
-}
-
-.built-tile-twin-active {
-  filter: saturate(1.18) brightness(1.08);
-}
-
-.built-tile-twin-active::before,
-.built-tile-twin-active::after {
-  opacity: 0.76;
-  animation: twin-link-pulse 980ms ease-in-out infinite alternate;
-}
-
-@keyframes twin-link-pulse {
-  from {
-    transform: translate(-5px, -3px) scale(0.98);
-  }
-  to {
-    transform: translate(-3px, -2px) scale(1.04);
   }
 }
 

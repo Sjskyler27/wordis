@@ -25,6 +25,10 @@ export const useWordBuilder = ({ mySide, myTiles, playerScores, scoreOptions }) 
     host: [],
     opponent: []
   });
+  const selectedTileAnimationSync = ref({
+    host: {},
+    opponent: {}
+  });
 
   const selectedTileIds = computed(() => ({
     host: new Set(selectedTileSlots.value.host),
@@ -39,7 +43,11 @@ export const useWordBuilder = ({ mySide, myTiles, playerScores, scoreOptions }) 
     const tilesById = new Map(myTiles.value.map((tile) => [tile.id, tile]));
 
     return selectedTileSlots.value[mySide.value]
-      .map((tileId) => tilesById.get(tileId))
+      .map((tileId) => {
+        const tile = tilesById.get(tileId);
+        const animationSync = selectedTileAnimationSync.value[mySide.value]?.[tileId];
+        return tile && animationSync ? { ...tile, ...animationSync } : tile;
+      })
       .filter(Boolean);
   });
 
@@ -75,7 +83,7 @@ export const useWordBuilder = ({ mySide, myTiles, playerScores, scoreOptions }) 
     { length: 9, bonus: getLengthBonus(9), difference: getDifference(9), rewardLabel: formatMilestoneReward(9) }
   ]));
 
-  const handleTileClick = (tile) => {
+  const handleTileClick = (tile, options = {}) => {
     const side = mySide.value;
     if (tile.locked) {
       return null;
@@ -97,6 +105,15 @@ export const useWordBuilder = ({ mySide, myTiles, playerScores, scoreOptions }) 
       ...selectedTileSlots.value,
       [side]: [...selectedTileSlots.value[side], tile.id]
     };
+    if (options.animationSync) {
+      selectedTileAnimationSync.value = {
+        ...selectedTileAnimationSync.value,
+        [side]: {
+          ...selectedTileAnimationSync.value[side],
+          [tile.id]: options.animationSync
+        }
+      };
+    }
     return 'added';
   };
 
@@ -127,6 +144,14 @@ export const useWordBuilder = ({ mySide, myTiles, playerScores, scoreOptions }) 
       ...selectedTileSlots.value,
       [side]: nextSlots
     };
+    if (selectedTileAnimationSync.value[side]?.[tileId]) {
+      const nextAnimationSync = { ...selectedTileAnimationSync.value[side] };
+      delete nextAnimationSync[tileId];
+      selectedTileAnimationSync.value = {
+        ...selectedTileAnimationSync.value,
+        [side]: nextAnimationSync
+      };
+    }
     return true;
   };
 
@@ -138,6 +163,10 @@ export const useWordBuilder = ({ mySide, myTiles, playerScores, scoreOptions }) 
     selectedTileSlots.value = {
       ...selectedTileSlots.value,
       [side]: []
+    };
+    selectedTileAnimationSync.value = {
+      ...selectedTileAnimationSync.value,
+      [side]: {}
     };
     return true;
   };
@@ -173,6 +202,17 @@ export const useWordBuilder = ({ mySide, myTiles, playerScores, scoreOptions }) 
       ...selectedTileSlots.value,
       [side]: selectedTileSlots.value[side].map((tileId) => (tileId === fromTileId ? toTileId : tileId))
     };
+
+    const sideAnimationSync = selectedTileAnimationSync.value[side] || {};
+    if (sideAnimationSync[fromTileId]) {
+      const nextAnimationSync = { ...sideAnimationSync };
+      nextAnimationSync[toTileId] = nextAnimationSync[fromTileId];
+      delete nextAnimationSync[fromTileId];
+      selectedTileAnimationSync.value = {
+        ...selectedTileAnimationSync.value,
+        [side]: nextAnimationSync
+      };
+    }
 
     savedTileSlots.value = {
       ...savedTileSlots.value,
