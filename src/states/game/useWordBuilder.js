@@ -29,6 +29,10 @@ export const useWordBuilder = ({ mySide, myTiles, playerScores, scoreOptions }) 
     host: {},
     opponent: {}
   });
+  const wordStartedAt = ref({
+    host: 0,
+    opponent: 0
+  });
 
   const selectedTileIds = computed(() => ({
     host: new Set(selectedTileSlots.value.host),
@@ -56,9 +60,14 @@ export const useWordBuilder = ({ mySide, myTiles, playerScores, scoreOptions }) 
   });
 
   const currentWordLength = computed(() => selectedTilesForCurrentSide.value.length);
+  const currentWordElapsedSeconds = computed(() => {
+    const startedAt = wordStartedAt.value[mySide.value] || 0;
+    return startedAt ? Math.max(0, (Date.now() - startedAt) / 1000) : 0;
+  });
   const currentScoreDetails = computed(() => getWordScoreDetails(selectedTilesForCurrentSide.value, {
     side: mySide.value,
     scores: playerScores.value,
+    wordElapsedSeconds: currentWordElapsedSeconds.value,
     ...(scoreOptions?.value || {})
   }));
   const currentIdlePenalty = computed(() => {
@@ -105,6 +114,12 @@ export const useWordBuilder = ({ mySide, myTiles, playerScores, scoreOptions }) 
       ...selectedTileSlots.value,
       [side]: [...selectedTileSlots.value[side], tile.id]
     };
+    if (!wordStartedAt.value[side]) {
+      wordStartedAt.value = {
+        ...wordStartedAt.value,
+        [side]: Date.now()
+      };
+    }
     if (options.animationSync) {
       selectedTileAnimationSync.value = {
         ...selectedTileAnimationSync.value,
@@ -144,6 +159,12 @@ export const useWordBuilder = ({ mySide, myTiles, playerScores, scoreOptions }) 
       ...selectedTileSlots.value,
       [side]: nextSlots
     };
+    if (!nextSlots.length) {
+      wordStartedAt.value = {
+        ...wordStartedAt.value,
+        [side]: 0
+      };
+    }
     if (selectedTileAnimationSync.value[side]?.[tileId]) {
       const nextAnimationSync = { ...selectedTileAnimationSync.value[side] };
       delete nextAnimationSync[tileId];
@@ -163,6 +184,10 @@ export const useWordBuilder = ({ mySide, myTiles, playerScores, scoreOptions }) 
     selectedTileSlots.value = {
       ...selectedTileSlots.value,
       [side]: []
+    };
+    wordStartedAt.value = {
+      ...wordStartedAt.value,
+      [side]: 0
     };
     selectedTileAnimationSync.value = {
       ...selectedTileAnimationSync.value,
@@ -226,6 +251,7 @@ export const useWordBuilder = ({ mySide, myTiles, playerScores, scoreOptions }) 
     selectedTilesForCurrentSide,
     currentWordDisplay,
     currentWordLength,
+    currentWordElapsedSeconds,
     currentLengthBonus,
     currentFirstTileBonus,
     currentLetterTotal,

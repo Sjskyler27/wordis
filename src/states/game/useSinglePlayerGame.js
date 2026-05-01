@@ -462,7 +462,7 @@ export const useSinglePlayerGame = ({
     scheduleBotLoop();
   };
 
-  const submitSinglePlayerWord = (word) => {
+  const submitSinglePlayerWord = (word, options = {}) => {
     //
     ensureSinglePlayerState();
     if (submissionPauseOwner.value === 'opponent') {
@@ -475,7 +475,8 @@ export const useSinglePlayerGame = ({
       side: 'host',
       scores: playerScores.value,
       personalModifierEffects: getPersonalModifierEffects(),
-      roundModifierEffects: getRoundModifierEffects()
+      roundModifierEffects: getRoundModifierEffects(),
+      wordElapsedSeconds: options.wordElapsedSeconds
     });
     const idlePenalty = getIdleScorePenalty(playerTiles.value.host, selectedTiles.map((tile) => tile.id), {
       roundModifierEffects: getRoundModifierEffects()

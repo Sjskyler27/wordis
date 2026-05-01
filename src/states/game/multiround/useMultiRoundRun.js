@@ -244,6 +244,9 @@ export const useMultiRoundRun = ({ rounds = MULTI_ROUND_ROUNDS } = {}) => {
       Object.entries(definitionEffects.lengthTimeBonus || {}).forEach(([length, seconds]) => {
         effects.lengthTimeBonus[length] = (effects.lengthTimeBonus[length] || 0) + (seconds * stacks);
       });
+      if (definitionEffects.timedWordMultiplier) {
+        effects.timedWordMultipliers.push(definitionEffects.timedWordMultiplier);
+      }
       Object.entries(definitionEffects.modifierOddsBonus || {}).forEach(([key, bonus]) => {
         effects.modifierOddsBonus[key] = (effects.modifierOddsBonus[key] || 0) + (bonus * stacks);
       });
@@ -262,6 +265,7 @@ export const useMultiRoundRun = ({ rounds = MULTI_ROUND_ROUNDS } = {}) => {
       lengthScoreBonus: {},
       lengthScoreMultiplier: {},
       lengthTimeBonus: {},
+      timedWordMultipliers: [],
       modifierOddsBonus: {},
       blockedModifiers: [],
       badChanceMultiplier: 1,

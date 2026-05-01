@@ -622,6 +622,7 @@ const {
   selectedTilesForCurrentSide,
   currentWordDisplay,
   currentWordLength,
+  currentWordElapsedSeconds,
   currentLengthBonus,
   currentFirstTileBonus,
   currentLetterTotal,
@@ -1726,7 +1727,9 @@ const handleSubmit = async () => {
   }
   isMultiRoundTimerPausedByAttack.value = false;
 
-  const submitted = submitSinglePlayerWord(resolvedWord);
+  const submitted = submitSinglePlayerWord(resolvedWord, {
+    wordElapsedSeconds: currentWordElapsedSeconds.value
+  });
   if (!submitted) {
     return;
   }

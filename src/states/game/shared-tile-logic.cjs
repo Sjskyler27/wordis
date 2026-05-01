@@ -825,6 +825,22 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
   };
   const isVoidZeroedTile = (tile, wordTiles = []) => tile?.status !== 'voidTile' && hasVoidTileInWord(wordTiles);
   const isVowelLetter = (letter = '') => ['A', 'E', 'I', 'O', 'U'].includes((letter || '').toUpperCase());
+  const getTimedWordTierIndex = (elapsedSeconds = 0, config = {}) => {
+    const graceSeconds = Math.max(0, Number(config.graceSeconds) || 0);
+    const intervalSeconds = Math.max(0.001, Number(config.intervalSeconds) || 1);
+    const effectiveSeconds = Math.max(0, (Number(elapsedSeconds) || 0) - graceSeconds);
+
+    return Math.max(0, Math.floor(effectiveSeconds / intervalSeconds));
+  };
+  const getTimedWordMultiplier = (elapsedSeconds = 0, personalModifierEffects = {}) => {
+    return (personalModifierEffects.timedWordMultipliers || []).reduce((highestMultiplier, config) => {
+      const multipliers = Array.isArray(config?.multipliers) ? config.multipliers : [];
+      const tierIndex = getTimedWordTierIndex(elapsedSeconds, config);
+      const multiplier = multipliers[tierIndex] ?? config?.finalMultiplier ?? 1;
+
+      return Math.max(highestMultiplier, Number(multiplier) || 1);
+    }, 1);
+  };
   const getPersonalTileScore = (tile, options = {}) => {
     if (isVoidZeroedTile(tile, options.wordTiles || [])) {
       return 0;
@@ -1161,7 +1177,8 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
     }, 1);
     const wordMultiplier = baseWordMultiplier * comboWordMultiplier;
     const personalLengthMultiplier = lengthScoreMultiplier[tiles.length] || lengthScoreMultiplier[String(tiles.length)] || 1;
-    const total = (letterTotal + lengthBonus) * wordMultiplier * personalLengthMultiplier;
+    const timedWordMultiplier = getTimedWordMultiplier(options.wordElapsedSeconds, personalModifierEffects);
+    const total = (letterTotal + lengthBonus) * wordMultiplier * personalLengthMultiplier * timedWordMultiplier;
 
     return {
       baseLetterTotal,
@@ -1169,7 +1186,7 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
       firstTileBonus,
       letterTotal,
       lengthBonus,
-      wordMultiplier,
+      wordMultiplier: wordMultiplier * timedWordMultiplier,
       total
     };
   };

@@ -261,6 +261,24 @@ export const PERSONAL_MODIFIER_DEFINITIONS = {
       roundTimeSecondsBonus: 5
     }
   },
+  speedy: {
+    key: 'speedy',
+    label: 'Speedy',
+    description: 'Fast words gain up to a 1.5x score multiplier.',
+    rarity: 0.24,
+    tier: PERSONAL_MODIFIER_TIERS.EPIC,
+    tags: ['score', 'speed'],
+    maxStacks: 1,
+    start_with: 0,
+    effects: {
+      timedWordMultiplier: {
+        graceSeconds: 1,
+        intervalSeconds: 1,
+        multipliers: [1.5, 1.4, 1.3, 1.2, 1.1, 1],
+        finalMultiplier: 1
+      }
+    }
+  },
   // good_ceiling: {
   //   key: 'good_ceiling',
   //   label: 'Good Ceiling',
