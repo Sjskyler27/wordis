@@ -1,24 +1,6 @@
 <template>
   <div id="background-layer">
-    <div
-      v-if="previousLayer"
-      class="background-scene background-scene-previous"
-      :class="{ 'background-scene-fading-out': isTransitioning }"
-      :style="previousLayer.moodStyle"
-    >
-      <div class="shape-layer layer-far"></div>
-      <div class="shape-layer layer-near"></div>
-      <div v-if="previousLayer.isBotMode" class="machine-game-cogs" aria-hidden="true">
-        <span class="machine-cog cog machine-cog-large" :style="previousLayer.botCogStyle"></span>
-        <span class="machine-cog cog machine-cog-small" :style="previousLayer.playerCogStyle"></span>
-      </div>
-    </div>
-
-    <div
-      class="background-scene background-scene-current"
-      :class="{ 'background-scene-fading-in': isTransitioning }"
-      :style="moodStyle"
-    >
+    <div class="background-scene" :style="displayMoodStyle">
       <div class="shape-layer layer-far"></div>
       <div class="shape-layer layer-near"></div>
       <div v-if="isBotMode" class="machine-game-cogs" aria-hidden="true">
@@ -52,28 +34,139 @@ const props = defineProps({
   }
 });
 
-const BACKGROUND_TRANSITION_MS = 700;
+const BACKGROUND_TRANSITION_MS = 5000;
+const COLOR_KEYS = ['--bg-corner', '--bg-top', '--bg-mid', '--bg-bottom'];
+const NUMBER_KEYS = ['--bg-glow-alpha', '--bg-shape-far-opacity', '--bg-shape-near-opacity', '--bg-saturate'];
+const DEFAULT_MOOD_STYLE = {
+  '--bg-corner': '#f39a54',
+  '--bg-top': '#ca6937',
+  '--bg-mid': '#b63e3b',
+  '--bg-bottom': '#341137',
+  '--bg-glow-alpha': '0.2',
+  '--bg-shape-far-opacity': '0.24',
+  '--bg-shape-near-opacity': '0.18',
+  '--bg-saturate': '1.08'
+};
 
-const previousLayer = ref(null);
-const isTransitioning = ref(false);
-let transitionTimeoutId = null;
+const clamp01 = (value) => Math.max(0, Math.min(1, value));
+const displayMoodStyle = ref({ ...DEFAULT_MOOD_STYLE, ...(props.moodStyle || {}) });
 
-const snapshotCurrentLayer = () => ({
-  moodStyle: { ...(props.moodStyle || {}) },
-  isBotMode: Boolean(props.isBotMode),
-  botCogStyle: { ...(props.botCogStyle || {}) },
-  playerCogStyle: { ...(props.playerCogStyle || {}) }
-});
-
-const serializeLayer = (layer) => JSON.stringify({
-  moodStyle: layer.moodStyle || {},
-  isBotMode: Boolean(layer.isBotMode),
-  botCogStyle: layer.botCogStyle || {},
-  playerCogStyle: layer.playerCogStyle || {}
-});
-
-let lastLayerSignature = serializeLayer(snapshotCurrentLayer());
+let animationFrameId = null;
 let lastTransitionKey = props.transitionKey || 'default';
+
+const parseHexColor = (value, fallback) => {
+  const normalizedValue = typeof value === 'string' ? value.trim() : '';
+  const normalizedFallback = typeof fallback === 'string' ? fallback.trim() : '#000000';
+  const source = /^#([0-9a-f]{6})$/i.test(normalizedValue) ? normalizedValue : normalizedFallback;
+  return [
+    Number.parseInt(source.slice(1, 3), 16),
+    Number.parseInt(source.slice(3, 5), 16),
+    Number.parseInt(source.slice(5, 7), 16)
+  ];
+};
+
+const mixHexColor = (startColor, endColor, progress) => {
+  const startChannels = parseHexColor(startColor, '#000000');
+  const endChannels = parseHexColor(endColor, '#000000');
+
+  return `#${startChannels.map((channel, index) => {
+    const mixedChannel = Math.round(channel + ((endChannels[index] - channel) * progress));
+    return mixedChannel.toString(16).padStart(2, '0');
+  }).join('')}`;
+};
+
+const mixNumber = (startValue, endValue, progress) => {
+  const from = Number.parseFloat(startValue);
+  const to = Number.parseFloat(endValue);
+  if (!Number.isFinite(from) || !Number.isFinite(to)) {
+    return `${Number.isFinite(to) ? to : from}`;
+  }
+
+  return `${from + ((to - from) * progress)}`;
+};
+
+const normalizeMoodStyle = (style = {}) => {
+  const normalized = { ...DEFAULT_MOOD_STYLE };
+
+  for (const key of COLOR_KEYS) {
+    normalized[key] = typeof style[key] === 'string' ? style[key] : normalized[key];
+  }
+
+  for (const key of NUMBER_KEYS) {
+    normalized[key] = style[key] != null ? `${style[key]}` : normalized[key];
+  }
+
+  return normalized;
+};
+
+const serializeMoodStyle = (style) => JSON.stringify(normalizeMoodStyle(style));
+
+const clearAnimationFrame = () => {
+  if (animationFrameId !== null) {
+    window.cancelAnimationFrame(animationFrameId);
+    animationFrameId = null;
+  }
+};
+
+const applyMoodStyleImmediately = (nextMoodStyle, reason, meta = {}) => {
+  clearAnimationFrame();
+  displayMoodStyle.value = normalizeMoodStyle(nextMoodStyle);
+  console.log('background:global-apply-no-transition', {
+    reason,
+    ...meta,
+    appliedMoodStyle: displayMoodStyle.value
+  });
+};
+
+const transitionMoodStyle = (fromMoodStyle, toMoodStyle, transitionMeta) => {
+  clearAnimationFrame();
+  const normalizedFrom = normalizeMoodStyle(fromMoodStyle);
+  const normalizedTo = normalizeMoodStyle(toMoodStyle);
+
+  if (serializeMoodStyle(normalizedFrom) === serializeMoodStyle(normalizedTo)) {
+    applyMoodStyleImmediately(normalizedTo, 'transition-target-matched-current', transitionMeta);
+    return;
+  }
+
+  console.log('background:global-transition-start', {
+    ...transitionMeta,
+    durationMs: BACKGROUND_TRANSITION_MS,
+    fromMoodStyle: normalizedFrom,
+    toMoodStyle: normalizedTo
+  });
+
+  const startedAt = performance.now();
+
+  const step = (now) => {
+    const progress = clamp01((now - startedAt) / BACKGROUND_TRANSITION_MS);
+    const interpolatedMoodStyle = {};
+
+    for (const key of COLOR_KEYS) {
+      interpolatedMoodStyle[key] = mixHexColor(normalizedFrom[key], normalizedTo[key], progress);
+    }
+
+    for (const key of NUMBER_KEYS) {
+      interpolatedMoodStyle[key] = mixNumber(normalizedFrom[key], normalizedTo[key], progress);
+    }
+
+    displayMoodStyle.value = interpolatedMoodStyle;
+
+    if (progress >= 1) {
+      displayMoodStyle.value = normalizedTo;
+      animationFrameId = null;
+      console.log('background:global-transition-end', {
+        ...transitionMeta,
+        durationMs: BACKGROUND_TRANSITION_MS,
+        finalMoodStyle: normalizedTo
+      });
+      return;
+    }
+
+    animationFrameId = window.requestAnimationFrame(step);
+  };
+
+  animationFrameId = window.requestAnimationFrame(step);
+};
 
 watch(
   () => [
@@ -84,40 +177,50 @@ watch(
     props.playerCogStyle
   ],
   () => {
-    const nextLayer = snapshotCurrentLayer();
-    const nextSignature = serializeLayer(nextLayer);
     const nextTransitionKey = props.transitionKey || 'default';
-    const visualChanged = nextSignature !== lastLayerSignature;
+    const nextMoodStyle = normalizeMoodStyle(props.moodStyle);
+    const currentMoodStyle = normalizeMoodStyle(displayMoodStyle.value);
+    const visualChanged = serializeMoodStyle(nextMoodStyle) !== serializeMoodStyle(currentMoodStyle);
     const transitionKeyChanged = nextTransitionKey !== lastTransitionKey;
+    const previousTransitionKey = lastTransitionKey;
+
+    console.log('background:global-watch', {
+      previousTransitionKey,
+      nextTransitionKey,
+      visualChanged,
+      transitionKeyChanged,
+      previousMoodStyle: currentMoodStyle,
+      nextMoodStyle
+    });
 
     if (!visualChanged && !transitionKeyChanged) {
+      console.log('background:global-skip-no-change', {
+        transitionKey: nextTransitionKey
+      });
       return;
     }
 
-    window.clearTimeout(transitionTimeoutId);
-
     if (transitionKeyChanged && visualChanged) {
-      previousLayer.value = JSON.parse(lastLayerSignature);
-      isTransitioning.value = true;
-      transitionTimeoutId = window.setTimeout(() => {
-        previousLayer.value = null;
-        isTransitioning.value = false;
-        transitionTimeoutId = null;
-      }, BACKGROUND_TRANSITION_MS);
+      transitionMoodStyle(currentMoodStyle, nextMoodStyle, {
+        previousTransitionKey,
+        nextTransitionKey
+      });
     } else {
-      previousLayer.value = null;
-      isTransitioning.value = false;
-      transitionTimeoutId = null;
+      applyMoodStyleImmediately(nextMoodStyle, 'same-scene-update', {
+        previousTransitionKey,
+        nextTransitionKey,
+        visualChanged,
+        transitionKeyChanged
+      });
     }
 
-    lastLayerSignature = nextSignature;
     lastTransitionKey = nextTransitionKey;
   },
   { deep: true }
 );
 
 onBeforeUnmount(() => {
-  window.clearTimeout(transitionTimeoutId);
+  clearAnimationFrame();
 });
 </script>
 
@@ -137,22 +240,6 @@ onBeforeUnmount(() => {
     radial-gradient(circle at 82% 14%, rgba(255, 255, 255, 0.09) 0, rgba(255, 255, 255, 0.09) 8%, transparent 24%),
     linear-gradient(135deg, var(--bg-corner, #f39a54) 0%, var(--bg-top, #ca6937) 24%, var(--bg-mid, #b63e3b) 58%, var(--bg-bottom, #341137) 100%);
   filter: saturate(var(--bg-saturate, 1.08));
-}
-
-.background-scene-current {
-  opacity: 1;
-}
-
-.background-scene-previous {
-  opacity: 1;
-}
-
-.background-scene-fading-in {
-  animation: backgroundFadeIn 700ms ease-out forwards;
-}
-
-.background-scene-fading-out {
-  animation: backgroundFadeOut 700ms ease-out forwards;
 }
 
 .shape-layer {
@@ -314,23 +401,4 @@ onBeforeUnmount(() => {
   }
 }
 
-@keyframes backgroundFadeIn {
-  from {
-    opacity: 0;
-  }
-
-  to {
-    opacity: 1;
-  }
-}
-
-@keyframes backgroundFadeOut {
-  from {
-    opacity: 1;
-  }
-
-  to {
-    opacity: 1;
-  }
-}
 </style>
