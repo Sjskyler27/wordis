@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.0.42 - 2026-05-01
+MAJOR CHANGES
+- pulled background out of every component and put it top level out side of app zoom. 
+- added watcher for app width and auto update app zoom based off of width. 
+- lifted history and choice overlay out cause i thought it would fix zoom issues, put them back and just updated style to fixed, dumb ai.
+- fixed no events on choice overlay. fixed button select to use global button highlight
+- made the transition between background collors smooth over 2 seconds 
+- the show tile info is fixed to top left for now 
+
 ## 0.0.41 - 2026-04-30
 
 Start: 12:55 EDT
