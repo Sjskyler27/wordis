@@ -15,7 +15,7 @@
         <img src="/src/assets/images/logos/title.png" alt="title img">
         <h2>Brave the Depths of the Mysterious Dungeon</h2>
       </div>
-      <div v-else class="headers">
+      <div v-else class="headers animated-fade-in">
         <div class="title">
           <div>
             <h1 class="shadow">WORDIS</h1>
@@ -298,7 +298,7 @@ const discordLink = ref(null);
 const coffeeLink = ref(null);
 
 const controllerRegion = ref('home');
-const homeCursorIndex = ref(0);
+const homeCursorIndex = ref(1);
 const linkCursorIndex = ref(0);
 
 const isControllerTargetVisible = (element) => {
@@ -333,7 +333,10 @@ const focusPlayButton = () => {
   nextTick(() => {
     const targets = getHomeTargets();
     const playIndex = targets.findIndex((target) => target === button1.value);
-    focusHomeTarget(playIndex >= 0 ? playIndex : 0);
+    console.log('play index'+ playIndex)
+    setTimeout(() => {
+      focusHomeTarget(1);
+    }, 250); // this is needed to wait for the animation to bring it visible there is probbably a better way
   });
 };
 
@@ -465,9 +468,12 @@ function handleVisibilityChange() {
     min-height: 100dvh;
   }
   .headers{
-      position: absolute;
-      top: 150px;
-      left: 50%;
+    visibility: hidden;
+      
+position: fixed;
+
+
+  top: 20%;
       transform: translateX(-50%);
       width: max-content;
       max-width: calc(100vw - 48px);
@@ -529,8 +535,6 @@ font-family: 'Times New Roman', serif;
       
       
     }
-
-    animation: homeButtonsIn 0.3s ease-out 0.1s forwards;
   }
   .login-button {
     position: fixed;
@@ -894,6 +898,10 @@ position: fixed;
         .title{
           column-gap: 25px !important;
         }
+         .headers{
+         
+        top: 10%;
+        }
         .header{
           position: inherit;
           left: auto;
@@ -949,6 +957,10 @@ position: fixed;
 
       }
       @media (max-width: 1230px) and (orientation: landscape) {
+         .headers{
+         
+        top: 10%;
+        }
 
       }
       @media (max-width: 1230px) and (orientation: portrait) {
@@ -971,13 +983,9 @@ position: fixed;
           left: 8px;
           top: 8px;
         }
-        .header{
-          position: absolute;
-          top: 100px;
-          left: 50%;
-          transform: translateX(-50%);
-          width: max-content;
-          max-width: calc(100vw - 24px);
+        .headers{
+         
+        top: 30%;
         }
         .home-container{
           gap: 20px;
