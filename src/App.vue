@@ -1,6 +1,7 @@
 <template>
   <MachineBackground
     :mood-style="backgroundState.moodStyle"
+    :transition-key="backgroundState.transitionKey"
     :is-bot-mode="backgroundState.isBotMode"
     :bot-cog-style="backgroundState.botCogStyle"
     :player-cog-style="backgroundState.playerCogStyle"
@@ -131,7 +132,7 @@ import Feedback from "./states/home/Feedback.vue";
 import Banner from "/src/assets/Banner.vue";
 import Settings from '/src/assets/Settings.vue'
 import HistoryOverlay from "./states/game/components/HistoryOverlay.vue";
-import MachineBackground from "./states/game/components/GlobalBackground.vue/index.js";
+import MachineBackground from "./states/game/components/GlobalBackground.vue";
 import MultiRoundRewardChoice from "./states/game/components/MultiRoundRewardChoice.vue";
 import { initUserSync, logoutCleanup, syncUserState } from "./userstate/syncUserState.js";
 import { signOut } from "firebase/auth";
@@ -304,6 +305,7 @@ const showFeedback = ref(false)
   const historyOverlay = ref(null);
   const historyOverlayAction = ref(null);
   const createDefaultBackgroundState = () => ({
+    transitionKey: 'default',
     moodStyle: {},
     isBotMode: false,
     botCogStyle: {},

@@ -1,19 +1,45 @@
 <template>
-  <div id="background-layer" :style="moodStyle">
-    <div class="shape-layer layer-far"></div>
-    <div class="shape-layer layer-near"></div>
-    <div v-if="isBotMode" class="machine-game-cogs" aria-hidden="true">
-      <span class="machine-cog cog machine-cog-large" :style="botCogStyle"></span>
-      <span class="machine-cog cog machine-cog-small" :style="playerCogStyle"></span>
+  <div id="background-layer">
+    <div
+      v-if="previousLayer"
+      class="background-scene background-scene-previous"
+      :class="{ 'background-scene-fading-out': isTransitioning }"
+      :style="previousLayer.moodStyle"
+    >
+      <div class="shape-layer layer-far"></div>
+      <div class="shape-layer layer-near"></div>
+      <div v-if="previousLayer.isBotMode" class="machine-game-cogs" aria-hidden="true">
+        <span class="machine-cog cog machine-cog-large" :style="previousLayer.botCogStyle"></span>
+        <span class="machine-cog cog machine-cog-small" :style="previousLayer.playerCogStyle"></span>
+      </div>
+    </div>
+
+    <div
+      class="background-scene background-scene-current"
+      :class="{ 'background-scene-fading-in': isTransitioning }"
+      :style="moodStyle"
+    >
+      <div class="shape-layer layer-far"></div>
+      <div class="shape-layer layer-near"></div>
+      <div v-if="isBotMode" class="machine-game-cogs" aria-hidden="true">
+        <span class="machine-cog cog machine-cog-large" :style="botCogStyle"></span>
+        <span class="machine-cog cog machine-cog-small" :style="playerCogStyle"></span>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup>
-defineProps({
+import { onBeforeUnmount, ref, watch } from 'vue';
+
+const props = defineProps({
   moodStyle: {
     type: Object,
     default: () => ({})
+  },
+  transitionKey: {
+    type: String,
+    default: 'default'
   },
   isBotMode: Boolean,
   botCogStyle: {
@@ -25,6 +51,74 @@ defineProps({
     default: () => ({})
   }
 });
+
+const BACKGROUND_TRANSITION_MS = 700;
+
+const previousLayer = ref(null);
+const isTransitioning = ref(false);
+let transitionTimeoutId = null;
+
+const snapshotCurrentLayer = () => ({
+  moodStyle: { ...(props.moodStyle || {}) },
+  isBotMode: Boolean(props.isBotMode),
+  botCogStyle: { ...(props.botCogStyle || {}) },
+  playerCogStyle: { ...(props.playerCogStyle || {}) }
+});
+
+const serializeLayer = (layer) => JSON.stringify({
+  moodStyle: layer.moodStyle || {},
+  isBotMode: Boolean(layer.isBotMode),
+  botCogStyle: layer.botCogStyle || {},
+  playerCogStyle: layer.playerCogStyle || {}
+});
+
+let lastLayerSignature = serializeLayer(snapshotCurrentLayer());
+let lastTransitionKey = props.transitionKey || 'default';
+
+watch(
+  () => [
+    props.transitionKey,
+    props.moodStyle,
+    props.isBotMode,
+    props.botCogStyle,
+    props.playerCogStyle
+  ],
+  () => {
+    const nextLayer = snapshotCurrentLayer();
+    const nextSignature = serializeLayer(nextLayer);
+    const nextTransitionKey = props.transitionKey || 'default';
+    const visualChanged = nextSignature !== lastLayerSignature;
+    const transitionKeyChanged = nextTransitionKey !== lastTransitionKey;
+
+    if (!visualChanged && !transitionKeyChanged) {
+      return;
+    }
+
+    window.clearTimeout(transitionTimeoutId);
+
+    if (transitionKeyChanged && visualChanged) {
+      previousLayer.value = JSON.parse(lastLayerSignature);
+      isTransitioning.value = true;
+      transitionTimeoutId = window.setTimeout(() => {
+        previousLayer.value = null;
+        isTransitioning.value = false;
+        transitionTimeoutId = null;
+      }, BACKGROUND_TRANSITION_MS);
+    } else {
+      previousLayer.value = null;
+      isTransitioning.value = false;
+      transitionTimeoutId = null;
+    }
+
+    lastLayerSignature = nextSignature;
+    lastTransitionKey = nextTransitionKey;
+  },
+  { deep: true }
+);
+
+onBeforeUnmount(() => {
+  window.clearTimeout(transitionTimeoutId);
+});
 </script>
 
 <style scoped lang="scss">
@@ -32,12 +126,33 @@ defineProps({
   position: fixed;
   inset: 0;
   z-index: -1;
+  overflow: hidden;
+}
+
+.background-scene {
+  position: absolute;
+  inset: 0;
   background:
     radial-gradient(circle at 14% 18%, rgba(255, 228, 168, var(--bg-glow-alpha, 0.2)) 0, rgba(255, 228, 168, var(--bg-glow-alpha, 0.2)) 12%, transparent 30%),
     radial-gradient(circle at 82% 14%, rgba(255, 255, 255, 0.09) 0, rgba(255, 255, 255, 0.09) 8%, transparent 24%),
     linear-gradient(135deg, var(--bg-corner, #f39a54) 0%, var(--bg-top, #ca6937) 24%, var(--bg-mid, #b63e3b) 58%, var(--bg-bottom, #341137) 100%);
   filter: saturate(var(--bg-saturate, 1.08));
-  overflow: hidden;
+}
+
+.background-scene-current {
+  opacity: 1;
+}
+
+.background-scene-previous {
+  opacity: 1;
+}
+
+.background-scene-fading-in {
+  animation: backgroundFadeIn 700ms ease-out forwards;
+}
+
+.background-scene-fading-out {
+  animation: backgroundFadeOut 700ms ease-out forwards;
 }
 
 .shape-layer {
@@ -196,6 +311,26 @@ defineProps({
   }
   to {
     transform: translate(-12px, 14px) scale(0.94) rotate(-360deg);
+  }
+}
+
+@keyframes backgroundFadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes backgroundFadeOut {
+  from {
+    opacity: 1;
+  }
+
+  to {
+    opacity: 0;
   }
 }
 </style>

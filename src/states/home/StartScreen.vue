@@ -125,6 +125,7 @@
   const transitionAction = ref('')
   const transitionURL = new URL('../../assets/images/homeScreen.png', import.meta.url).href;
   const homeBackgroundState = computed(() => ({
+    transitionKey: 'start-screen',
     moodStyle: {
       '--bg-corner': '#31475e',
       '--bg-top': '#22384d',

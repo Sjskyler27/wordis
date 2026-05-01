@@ -1210,7 +1210,26 @@ const backgroundMoodStyle = computed(() => {
 
   return createBackgroundPaletteStyle(getMultiRoundBackgroundPalette('main'), intensity, progress);
 });
+const backgroundTransitionKey = computed(() => {
+  if (isMultiRoundMode.value) {
+    const round = multiRoundRun.currentRound.value;
+    const roundIdentity = round?.roundId || round?.id || multiRoundRun.currentRoundIndex.value || 'round';
+    const paletteKey = round?.resolvedBackgroundPaletteKey || 'main';
+    return `multi-round:${roundIdentity}:${paletteKey}`;
+  }
+
+  if (props.isMultiplayer) {
+    return 'multiplayer';
+  }
+
+  if (isBotMode.value) {
+    return 'bot-match';
+  }
+
+  return `solo:${props.playMode || 'timed_solo'}`;
+});
 const backgroundState = computed(() => ({
+  transitionKey: backgroundTransitionKey.value,
   moodStyle: backgroundMoodStyle.value,
   isBotMode: isBotMode.value,
   botCogStyle: botCogStyle.value,
