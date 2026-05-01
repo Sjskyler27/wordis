@@ -2689,7 +2689,6 @@ const handleKeydown = (event) => {
 
   if (isMultiRoundRewardChoiceOpen.value) {
     if (!multiRoundRewardChoices.value.length) {
-      event.preventDefault();
       return;
     }
 

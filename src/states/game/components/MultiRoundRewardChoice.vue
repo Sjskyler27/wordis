@@ -79,6 +79,7 @@ const getModifierLabel = (modifierKey = '') => {
   display: flex;
   align-items: center;
   justify-content: center;
+  pointer-events: none;
 }
 
 .reward-choice-scrim {
@@ -91,7 +92,9 @@ const getModifierLabel = (modifierKey = '') => {
 
 .reward-choice-panel {
   position: fixed;
-  bottom: 30%;
+  max-height: 40%;
+  height: 40%;
+  bottom: 20%;
   z-index: 1;
   visibility: hidden;
   width: min(100%, 820px);
@@ -101,6 +104,7 @@ const getModifierLabel = (modifierKey = '') => {
   background: rgba(72, 22, 48, 0.96);
   border: 2px solid rgba(255, 220, 144, 0.22);
   box-shadow: 0 24px 50px rgba(20, 6, 18, 0.34);
+  pointer-events: auto;
 }
 
 .reward-kicker {
@@ -191,19 +195,10 @@ const getModifierLabel = (modifierKey = '') => {
 
 .reward-card:hover,
 .reward-card:focus-visible {
-  outline: none;
   transform: translateY(-3px);
-  border-color: rgba(255, 236, 187, 0.62);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18), 0 18px 28px rgba(20, 6, 18, 0.28);
-}
+ }
 
-.reward-card-controller-focus {
-  outline: 4px solid rgba(130, 253, 238, 0.88);
-  outline-offset: 3px;
-  transform: translateY(-3px);
-  border-color: rgba(223, 255, 250, 0.78);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18), 0 0 0 5px rgba(29, 109, 117, 0.24), 0 18px 28px rgba(20, 6, 18, 0.28);
-}
+
 
 .reward-card span {
   display: inline-block;
