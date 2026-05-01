@@ -279,6 +279,24 @@ export const PERSONAL_MODIFIER_DEFINITIONS = {
       }
     }
   },
+  speedy_addition: {
+    key: 'speedy_addition',
+    label: 'Speedy Addition',
+    description: 'Fast words gain up to +10 score.',
+    rarity: 0.48,
+    tier: PERSONAL_MODIFIER_TIERS.RARE,
+    tags: ['score', 'speed'],
+    maxStacks: 1,
+    start_with: 0,
+    effects: {
+      timedWordScoreBonus: {
+        graceSeconds: 1,
+        intervalSeconds: 1,
+        bonuses: [10, 8, 6, 4, 2, 0],
+        finalBonus: 0
+      }
+    }
+  },
   // good_ceiling: {
   //   key: 'good_ceiling',
   //   label: 'Good Ceiling',

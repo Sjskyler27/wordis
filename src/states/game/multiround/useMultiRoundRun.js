@@ -247,6 +247,9 @@ export const useMultiRoundRun = ({ rounds = MULTI_ROUND_ROUNDS } = {}) => {
       if (definitionEffects.timedWordMultiplier) {
         effects.timedWordMultipliers.push(definitionEffects.timedWordMultiplier);
       }
+      if (definitionEffects.timedWordScoreBonus) {
+        effects.timedWordScoreBonuses.push(definitionEffects.timedWordScoreBonus);
+      }
       Object.entries(definitionEffects.modifierOddsBonus || {}).forEach(([key, bonus]) => {
         effects.modifierOddsBonus[key] = (effects.modifierOddsBonus[key] || 0) + (bonus * stacks);
       });
@@ -266,6 +269,7 @@ export const useMultiRoundRun = ({ rounds = MULTI_ROUND_ROUNDS } = {}) => {
       lengthScoreMultiplier: {},
       lengthTimeBonus: {},
       timedWordMultipliers: [],
+      timedWordScoreBonuses: [],
       modifierOddsBonus: {},
       blockedModifiers: [],
       badChanceMultiplier: 1,

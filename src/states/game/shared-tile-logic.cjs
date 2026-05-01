@@ -841,6 +841,15 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
       return Math.max(highestMultiplier, Number(multiplier) || 1);
     }, 1);
   };
+  const getTimedWordScoreBonus = (elapsedSeconds = 0, personalModifierEffects = {}) => {
+    return (personalModifierEffects.timedWordScoreBonuses || []).reduce((totalBonus, config) => {
+      const bonuses = Array.isArray(config?.bonuses) ? config.bonuses : [];
+      const tierIndex = getTimedWordTierIndex(elapsedSeconds, config);
+      const bonus = bonuses[tierIndex] ?? config?.finalBonus ?? 0;
+
+      return totalBonus + (Number(bonus) || 0);
+    }, 0);
+  };
   const getPersonalTileScore = (tile, options = {}) => {
     if (isVoidZeroedTile(tile, options.wordTiles || [])) {
       return 0;
@@ -1178,7 +1187,8 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
     const wordMultiplier = baseWordMultiplier * comboWordMultiplier;
     const personalLengthMultiplier = lengthScoreMultiplier[tiles.length] || lengthScoreMultiplier[String(tiles.length)] || 1;
     const timedWordMultiplier = getTimedWordMultiplier(options.wordElapsedSeconds, personalModifierEffects);
-    const total = (letterTotal + lengthBonus) * wordMultiplier * personalLengthMultiplier * timedWordMultiplier;
+    const timedWordScoreBonus = getTimedWordScoreBonus(options.wordElapsedSeconds, personalModifierEffects);
+    const total = ((letterTotal + lengthBonus) * wordMultiplier * personalLengthMultiplier * timedWordMultiplier) + timedWordScoreBonus;
 
     return {
       baseLetterTotal,
