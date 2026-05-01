@@ -65,6 +65,7 @@
       :effectsVolume="effectsVolume" 
       :zoom="zoom"
       :gameZoom="gameZoom"
+      :joystickSensitivity="joystickSensitivity"
       :nativeControllerSupport="nativeControllerSupport"
       :canShowHowToPlay="isGameState"
       :names="names"
@@ -73,6 +74,7 @@
       @effectsVolumeChange="seteffectsVolume"
       @zoomChange="setZoom"
       @gameZoomChange="setgameZoom"
+      @joystickSensitivityChange="setJoystickSensitivity"
       @shopZoomChange="setshopZoom"
       @nativeControllerChange="setNativeControllerSupport"
       @nameChange="setNames"
@@ -148,6 +150,7 @@ const createStableId = () => {
 const cacheSeed = ref(localStorage.getItem("cacheSeed") || null);
 const validSeed = ref(false);
 const showFeedback = ref(false)
+const DEFAULT_JOYSTICK_SENSITIVITY = 30;
 
 
 
@@ -267,6 +270,7 @@ const showFeedback = ref(false)
   const musicVolume = ref(Number(localStorage.getItem('musicVolume') ?? 5))
   const effectsVolume = ref(Number(localStorage.getItem('effectsVolume') ?? 5))
   const nativeControllerSupport = ref(JSON.parse(localStorage.getItem('nativeControllerSupport')))
+  const joystickSensitivity = ref(Number(localStorage.getItem('joystickSensitivity') ?? DEFAULT_JOYSTICK_SENSITIVITY))
   const now = new Date();
   const lockContent = computed(() => (new Date() > demoDate || isDemo) && !validSeed);
   const versionNumber = ref(pkg.version)
@@ -371,6 +375,11 @@ const showFeedback = ref(false)
       gameZoom.value = val
       localStorage.setItem('gameZoom', val)
     }
+  }
+
+  function setJoystickSensitivity(val) {
+    joystickSensitivity.value = val
+    localStorage.setItem('joystickSensitivity', val)
   }
 
 
@@ -586,7 +595,6 @@ const buttonMap = {
   const axisCooldowns = [];
   const COOLDOWN_FRAMES = 1; // Tune as needed
   const AXIS_DEADZONE = 0.55;
-  const AXIS_REPEAT_FRAMES = 26;
   let gamepadAnimationFrameId = 0;
 
   const getJoystickDirection = (gamepad) => {
@@ -621,7 +629,7 @@ const buttonMap = {
 
     if (direction !== previousDirection || cooldown === 0) {
       dispatchKey(direction);
-      axisCooldowns[gamepadIndex] = AXIS_REPEAT_FRAMES;
+      axisCooldowns[gamepadIndex] = joystickSensitivity.value;
     } else {
       axisCooldowns[gamepadIndex] = Math.max(0, cooldown - 1);
     }
@@ -725,6 +733,9 @@ const simulateTab = (reverse = false) => {
     if(!localStorage.getItem('nativeControllerSupport')){ 
       localStorage.setItem('nativeControllerSupport', true)
       nativeControllerSupport.value = true;
+    }
+    if(!localStorage.getItem('joystickSensitivity')){
+      localStorage.setItem('joystickSensitivity', DEFAULT_JOYSTICK_SENSITIVITY)
     }
 
     checkGamepadInput();

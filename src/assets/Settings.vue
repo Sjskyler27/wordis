@@ -61,6 +61,10 @@
             Native Controller: {{ nativeControllerSupport }}
           </button>
         </div>
+        <div class="setting">
+          <label for="joystickSensitivity">Joystick Sensitivity</label>
+          <input id="joystickSensitivity" type="range" min="10" max="60" step="1" :value="joystickSensitivitySliderValue" @input="onJoystickSensitivityInput" />
+        </div>
       </section>
 
       <button class="invisible" @focus="button4.focus()" ref="button0" />
@@ -69,7 +73,7 @@
 </template>
 
 <script setup>
-import { defineProps, defineEmits, ref, onMounted, onBeforeUnmount } from "vue";
+import { defineProps, defineEmits, ref, onMounted, onBeforeUnmount, computed } from "vue";
 import Feedback from "../states/home/Feedback.vue";
 import { hideControllerSupport } from "../../globalVariables";
 
@@ -80,6 +84,7 @@ const props = defineProps({
   zoom: Number,
   gameZoom: Number,
   shopZoom: Number,
+  joystickSensitivity: Number,
   nativeControllerSupport: Boolean,
   canShowHowToPlay: Boolean,
 });
@@ -92,6 +97,7 @@ const emit = defineEmits([
   "zoomChange",
   "gameZoomChange",
   "shopZoomChange",
+  "joystickSensitivityChange",
   "reset",
   "NativeControllerChange",
   "home",
@@ -100,6 +106,11 @@ const emit = defineEmits([
 ]);
 
 const activeTab = ref("game");
+const JOYSTICK_SENSITIVITY_MIN = 10;
+const JOYSTICK_SENSITIVITY_MAX = 60;
+const joystickSensitivitySliderValue = computed(() => (
+  JOYSTICK_SENSITIVITY_MAX + JOYSTICK_SENSITIVITY_MIN - props.joystickSensitivity
+));
 
 const button1 = ref(null);
 const button2 = ref(null);
@@ -146,6 +157,10 @@ const oneffectsVolumeInput = (e) => emit("effectsVolumeChange", Number(e.target.
 const onZoomInput = (e) => emit("zoomChange", parseFloat(e.target.value));
 const ongameZoomInput = (e) => emit("gameZoomChange", parseFloat(e.target.value));
 const onshopZoomInput = (e) => emit("shopZoomChange", parseFloat(e.target.value));
+const onJoystickSensitivityInput = (e) => {
+  const nextValue = JOYSTICK_SENSITIVITY_MAX + JOYSTICK_SENSITIVITY_MIN - Number(e.target.value);
+  emit("joystickSensitivityChange", nextValue);
+};
 </script>
 
 <style scoped lang="scss">

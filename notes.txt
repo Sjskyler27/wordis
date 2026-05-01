@@ -272,3 +272,5 @@ score in word builder should account for the burns
 mlutiplayer is still using api client and breaks if wrong word
 
 an attack that allows you to re roll the next rounds modifier 
+
+only show sense if controller connected
