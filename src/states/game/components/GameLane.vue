@@ -75,16 +75,14 @@
             <span class="tile-letter">{{ tile.letter }}</span>
           </button>
         </Transition>
+        <TileHoverTooltip
+          :tile="hoveredTile"
+          :visible="canShowTooltip"
+          :dismissible="props.isMobile && mobileInspectEnabled"
+          @close="hideTooltip"
+        />
       </div>
     </div>
-    <TileHoverTooltip
-      :tile="hoveredTile"
-      :visible="canShowTooltip"
-      :x="tooltipPosition.x"
-      :y="tooltipPosition.y"
-      :dismissible="props.isMobile && mobileInspectEnabled"
-      @close="hideTooltip"
-    />
   </section>
 </template>
 
@@ -192,10 +190,7 @@ const showTooltipLater = (tile, event) => {
     return;
   }
 
-  tooltipPosition.value = {
-    x: event.clientX,
-    y: event.clientY
-  };
+  setTooltipPositionFromElement(event?.currentTarget);
   window.clearTimeout(tooltipTimeoutId);
   isTooltipVisible.value = false;
   tooltipTimeoutId = window.setTimeout(() => {
@@ -210,10 +205,7 @@ const updateTooltipPosition = (event) => {
     return;
   }
 
-  tooltipPosition.value = {
-    x: event.clientX,
-    y: event.clientY
-  };
+  setTooltipPositionFromElement(event?.currentTarget);
 };
 
 const hideTooltip = () => {
