@@ -452,7 +452,6 @@ function handleVisibilityChange() {
   .home-container {
     text-align: center;
     font-family: 'Press Start 2P', cursive;
-    padding: 50px;
     display: flex;
     flex-direction: column;
     align-items: center;
