@@ -276,6 +276,10 @@ const props = defineProps({
     type: Object,
     default: null
   },
+  initialMultiRoundBackgroundPaletteKey: {
+    type: String,
+    default: ''
+  },
   botDifficulty: {
     type: String,
     default: 'normal'
@@ -1186,7 +1190,10 @@ const backgroundMoodStyle = computed(() => {
   const intensity = progress * progress;
 
   if (isMultiRoundMode.value) {
-    const paletteKey = multiRoundRun.currentRound.value?.resolvedBackgroundPaletteKey || 'main';
+    const isFirstRound = multiRoundRun.currentRoundIndex.value === 0;
+    const paletteKey = (isFirstRound && props.initialMultiRoundBackgroundPaletteKey)
+      || multiRoundRun.currentRound.value?.resolvedBackgroundPaletteKey
+      || 'main';
     return createBackgroundPaletteStyle(getMultiRoundBackgroundPalette(paletteKey), intensity, progress);
   }
 
@@ -1198,9 +1205,11 @@ const backgroundMoodStyle = computed(() => {
 });
 const backgroundTransitionKey = computed(() => {
   if (isMultiRoundMode.value) {
-    const round = multiRoundRun.currentRound.value;
-    const roundIdentity = round?.roundId || round?.id || multiRoundRun.currentRoundIndex.value || 'round';
-    const paletteKey = round?.resolvedBackgroundPaletteKey || 'main';
+    const isFirstRound = multiRoundRun.currentRoundIndex.value === 0;
+    const paletteKey = (isFirstRound && props.initialMultiRoundBackgroundPaletteKey)
+      || multiRoundRun.currentRound.value?.resolvedBackgroundPaletteKey
+      || 'main';
+    const roundIdentity = multiRoundRun.currentRoundIndex.value + 1;
     return `multi-round:${roundIdentity}:${paletteKey}`;
   }
 

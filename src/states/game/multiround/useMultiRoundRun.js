@@ -21,7 +21,7 @@ const chooseRandomEntry = (entries = []) => {
   return entries[Math.floor(Math.random() * entries.length)] || null;
 };
 
-const resolveBackgroundPaletteKey = (round = {}) => {
+export const resolveBackgroundPaletteKey = (round = {}) => {
   if (round.isFinalRound) {
     return 'final';
   }

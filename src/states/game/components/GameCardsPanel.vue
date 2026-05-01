@@ -1,10 +1,11 @@
 <template>
   <div class="bonus-card accent-purple">
-    <span v-if="!isMobile" class="bonus-kicker">Cards</span>
+    <span v-if="!isMobile" class="bonus-kicker">Cards </span>
     <strong>{{ cardSummary }}</strong>
-    <p v-if="activeBoonCard">
+    <span v-if="activeBoonCard">
       {{ activeBoonCard.label }} is ready. Select a tile!
-    </p>
+    </span>
+    <span v-else> &#x200b;</span>
     <div class="card-hand">
       <button
         v-for="(cardGroup, index) in groupedBoonCards"

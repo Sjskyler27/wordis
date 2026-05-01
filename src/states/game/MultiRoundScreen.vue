@@ -170,6 +170,8 @@
 import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue';
 import { PERSONAL_MODIFIER_DEFINITIONS } from './multiround/personal-modifier-definitions.js';
 import { ROUND_MODIFIER_DEFINITIONS } from './multiround/round-modifier-definitions.js';
+import { getMultiRoundRounds } from './multiround/multi-round-difficulties.js';
+import { resolveBackgroundPaletteKey } from './multiround/useMultiRoundRun.js';
 
 const emit = defineEmits(['singleplayer', 'type']);
 const selectedDifficulty = ref(localStorage.getItem('multiRoundDifficulty') || 'normal');
@@ -211,6 +213,10 @@ const difficulties = [
 
 const selectedDifficultyDetails = computed(() => {
   return difficulties.find((difficulty) => difficulty.value === selectedDifficulty.value) || difficulties[1];
+});
+const firstRoundBackgroundPaletteKey = computed(() => {
+  const rounds = getMultiRoundRounds(selectedDifficulty.value);
+  return resolveBackgroundPaletteKey(rounds[0] || {});
 });
 const personalTierRank = {
   common: 1,
@@ -272,7 +278,8 @@ const startMultiRound = () => {
   window.setTimeout(() => {
     emit('singleplayer', {
       mode: 'multi_round',
-      multiRoundDifficulty: selectedDifficulty.value
+      multiRoundDifficulty: selectedDifficulty.value,
+      initialMultiRoundBackgroundPaletteKey: firstRoundBackgroundPaletteKey.value
     });
   }, 560);
 };

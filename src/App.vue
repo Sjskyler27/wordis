@@ -31,6 +31,7 @@
       :isMultiplayer="isMultiplayer"
       :playMode="playMode"
       :continueSave="continueSave"
+      :initialMultiRoundBackgroundPaletteKey="initialMultiRoundBackgroundPaletteKey"
       :overtimeEnabled="overtimeEnabled"
       v-model:botDifficulty="botDifficulty"
       :multiRoundDifficulty="multiRoundDifficulty"
@@ -273,6 +274,7 @@ const showFeedback = ref(false)
 
   const showSettings = ref(false)
   const isGameState = computed(() => currentState.value === Game);
+  const initialMultiRoundBackgroundPaletteKey = ref('');
   const createDefaultBackgroundState = () => ({
     transitionKey: 'default',
     moodStyle: {},
@@ -283,6 +285,7 @@ const showFeedback = ref(false)
   const backgroundState = ref(createDefaultBackgroundState());
 
   const clearLiftedGameUi = () => {
+    initialMultiRoundBackgroundPaletteKey.value = '';
     backgroundState.value = createDefaultBackgroundState();
   };
 
@@ -495,6 +498,7 @@ const continueGame = (mode) => {
     hideGoogleTranslate.value = true
     isMultiplayer.value = false;
     clearLiftedGameUi();
+    initialMultiRoundBackgroundPaletteKey.value = options.initialMultiRoundBackgroundPaletteKey || '';
     continueSave.value = null;
     updatePlayConfig({
       mode: options.mode || PLAY_MODES.TIMED_SOLO,
