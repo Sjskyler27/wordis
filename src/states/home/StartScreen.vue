@@ -310,7 +310,7 @@ const isControllerTargetVisible = (element) => {
   return element.offsetParent !== null && style.visibility !== 'hidden' && style.display !== 'none';
 };
 
-const getHomeTargets = () => [button1, button3, button4]
+const getHomeTargets = () => [button2, button1, button3, button4]
   .map((button) => button.value)
   .filter(isControllerTargetVisible);
 
@@ -331,7 +331,9 @@ const focusHomeTarget = (nextIndex = homeCursorIndex.value) => {
 const focusPlayButton = () => {
   controllerRegion.value = 'home';
   nextTick(() => {
-    focusHomeTarget(0);
+    const targets = getHomeTargets();
+    const playIndex = targets.findIndex((target) => target === button1.value);
+    focusHomeTarget(playIndex >= 0 ? playIndex : 0);
   });
 };
 
@@ -354,7 +356,7 @@ const cycleIndex = (currentIndex, direction, total) => {
 };
 
 const handleKeyDown = (e) => {
-  if (showIntro.value || props.settingsShowing || showFeedback.value || showCredits.value || showPWA.value) {
+  if (showIntro.value || props.settingsShowing || showProfile.value || showFeedback.value || showCredits.value || showPWA.value) {
     return;
   }
 
