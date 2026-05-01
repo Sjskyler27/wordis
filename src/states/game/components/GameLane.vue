@@ -54,6 +54,7 @@
               'tile-lightning': tile.status === 'lightningTile',
               'tile-twin': tile.status === 'twinTile',
               'tile-twin-active': hasSelectedTwinMatch(tile),
+              'tile-void': tile.status === 'voidTile',
               'tile-must-alert': mustAlertIds.has(tile.id),
               'tile-banned-letter': isBannedLetter(tile),
               'tile-controller-focus': controllerFocusedTileId === tile.id,
@@ -900,7 +901,8 @@ onBeforeUnmount(() => {
 .tile-shimmer,
 .tile-rusting,
 .tile-lightning,
-.tile-twin {
+.tile-twin,
+.tile-void {
   isolation: isolate;
   overflow: hidden;
 }
@@ -1063,12 +1065,51 @@ onBeforeUnmount(() => {
   animation: tile-twin-complete-shimmer 1600ms ease-in-out infinite;
 }
 
+.tile-void {
+  background: radial-gradient(circle at 50% 50%, #02030a 0%, #050817 44%, #11182d 72%, #02030a 100%);
+  box-shadow:
+    inset 0 -4px 0 rgba(0, 0, 0, 0.56),
+    0 12px 24px rgba(2, 4, 14, 0.34),
+    0 0 0 1px rgba(125, 156, 255, 0.22);
+}
+
+.tile-void::before,
+.tile-void::after {
+  content: '';
+  position: absolute;
+  pointer-events: none;
+}
+
+.tile-void::before {
+  inset: 9%;
+  z-index: 0;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 50% 50%, #000000 0 18%, rgba(8, 10, 28, 0.96) 19% 28%, transparent 29%),
+    conic-gradient(from 0deg, rgba(129, 102, 255, 0.08), rgba(77, 234, 255, 0.78), rgba(210, 127, 255, 0.5), rgba(20, 22, 48, 0.18), rgba(129, 102, 255, 0.08));
+  filter: saturate(1.35) contrast(1.12);
+  animation: tile-void-vortex 2200ms linear infinite;
+}
+
+.tile-void::after {
+  inset: 25%;
+  z-index: 1;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 50% 50%, #000000 0 34%, rgba(1, 2, 8, 0.78) 35% 54%, transparent 56%);
+  box-shadow:
+    0 0 18px rgba(92, 221, 255, 0.42),
+    inset 0 0 16px rgba(0, 0, 0, 0.94);
+  animation: tile-void-pulse 1400ms ease-in-out infinite;
+}
+
 .tile-shimmer .tile-letter,
 .tile-rusting .tile-letter,
 .tile-lightning .tile-letter,
-.tile-twin .tile-letter {
+.tile-twin .tile-letter,
+.tile-void .tile-letter {
   position: relative;
-  z-index: 2;
+  z-index: 3;
 }
 .tile-rusting{
   --tile-letter-stroke: 1px rgba(255, 255, 255, 0.92);
@@ -1082,14 +1123,16 @@ onBeforeUnmount(() => {
 .tile-shimmer .tile-score,
 .tile-rusting .tile-score,
 .tile-lightning .tile-score,
-.tile-twin .tile-score {
+.tile-twin .tile-score,
+.tile-void .tile-score {
   z-index: 5;
 }
 
 .tile-shimmer .tile-modifier,
 .tile-rusting .tile-modifier,
 .tile-lightning .tile-modifier,
-.tile-twin .tile-modifier {
+.tile-twin .tile-modifier,
+.tile-void .tile-modifier {
   z-index: 6;
 }
 
@@ -1386,6 +1429,30 @@ onBeforeUnmount(() => {
   50% {
     background-position: 10% 0;
     opacity: 0.82;
+  }
+}
+
+@keyframes tile-void-vortex {
+  0% {
+    transform: rotate(0deg) scale(1);
+  }
+  50% {
+    transform: rotate(180deg) scale(1.06);
+  }
+  100% {
+    transform: rotate(360deg) scale(1);
+  }
+}
+
+@keyframes tile-void-pulse {
+  0%,
+  100% {
+    transform: scale(0.92);
+    opacity: 0.9;
+  }
+  50% {
+    transform: scale(1.08);
+    opacity: 1;
   }
 }
 

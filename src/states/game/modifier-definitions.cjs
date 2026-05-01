@@ -157,6 +157,22 @@ const createModifierDefinitions = ({ bloodTilePositionValues }) => ({
         badgeColor: '#123444'
       }
     },
+    voidTile: {
+      badge: 'VOID',
+      description: 'Sets every other tile in the word to 0 and gives itself +12.',
+      effects: {
+        voidSelfBonus: 12
+      },
+      canApply: ({ letter }) => (letter || '').length === 1,
+      rarityWeight: 0.18,
+      ui: {
+        tileBackground: 'radial-gradient(circle at 50% 50%, #01030a 0%, #050816 42%, #10172a 68%, #02040c 100%)',
+        tileShadow: 'inset 0 -4px 0 rgba(0, 0, 0, 0.48), 0 12px 24px rgba(2, 4, 14, 0.34), 0 0 0 1px rgba(125, 156, 255, 0.22)',
+        textColor: '#f8fbff',
+        badgeBackground: 'rgba(8, 10, 22, 0.94)',
+        badgeColor: '#b7c9ff'
+      }
+    },
     bankTile: {
       badge: 'BANK',
       description: 'Gains +1 bonus score each turn it stays unused.',

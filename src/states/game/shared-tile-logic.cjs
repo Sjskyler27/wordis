@@ -20,7 +20,7 @@ const {
 
 const GOOD_MODIFIERS = ['gold', 'firsttile', 'royalPear', 'twinTile', 'bankTile', 'gainboon', 'gainattack'];
 const BAD_MODIFIERS = ['zeroTile', 'mustuse', 'locked3', 'burningTile', 'rustingTile', 'lightningTile'];
-const NEUTRAL_MODIFIERS = ['yinYang', 'ghostTile','bloodTile', 'wild', 'shimmer'];
+const NEUTRAL_MODIFIERS = ['yinYang', 'ghostTile','bloodTile', 'wild', 'shimmer', 'voidTile'];
 
 const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {}, devLogging = false, testing = false }) => {
   const isDevLoggingEnabled = () => typeof devLogging === 'function' ? Boolean(devLogging()) : Boolean(devLogging);
@@ -818,8 +818,18 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
     const bonus = getModifierDefinition(tile?.status).effects.twinLetterBonus || 0;
     return bonus && hasTwinLetterInWord(tile, options.wordTiles || []) ? bonus : 0;
   };
+  const hasVoidTileInWord = (wordTiles = []) => wordTiles.some((wordTile) => wordTile?.status === 'voidTile');
+  const getVoidTileBonus = (tile, options = {}) => {
+    const bonus = getModifierDefinition(tile?.status).effects.voidSelfBonus || 0;
+    return bonus && hasVoidTileInWord(options.wordTiles || []) ? bonus : 0;
+  };
+  const isVoidZeroedTile = (tile, wordTiles = []) => tile?.status !== 'voidTile' && hasVoidTileInWord(wordTiles);
   const isVowelLetter = (letter = '') => ['A', 'E', 'I', 'O', 'U'].includes((letter || '').toUpperCase());
   const getPersonalTileScore = (tile, options = {}) => {
+    if (isVoidZeroedTile(tile, options.wordTiles || [])) {
+      return 0;
+    }
+
     const personalModifierEffects = options.personalModifierEffects || options.personalModifiers || {};
     const modifierScoreBonus = personalModifierEffects.modifierScoreBonus || {};
     let score = (
@@ -828,6 +838,7 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
       + getLeadAwareModifierScore(tile, options)
       + getPositionAwareModifierScore(tile, options)
       + getTwinLetterBonus(tile, options)
+      + getVoidTileBonus(tile, options)
       + (modifierScoreBonus[tile?.status] || 0)
     );
 
@@ -1102,6 +1113,10 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
       });
     }, 0);
     const positionBonus = tiles.reduce((total, tile, index) => {
+      if (isVoidZeroedTile(tile, tiles)) {
+        return total;
+      }
+
       const definition = getModifierDefinition(tile?.status);
       const positionKey = `pos${index + 1}`;
       const positionBonusByIndex = definition.effects.positionBonusByIndex || {};
@@ -1109,6 +1124,9 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
     }, 0);
     const firstTileBonus = tiles.reduce((total, tile, index) => {
       if (index !== 0) {
+        return total;
+      }
+      if (isVoidZeroedTile(tile, tiles)) {
         return total;
       }
 

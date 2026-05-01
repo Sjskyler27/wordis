@@ -28,6 +28,7 @@
               class="built-tile scoring score-pop-clone"
               :class="{
                 'built-tile-lightning': tile.status === 'lightningTile',
+                'built-tile-void': tile.status === 'voidTile',
                 'built-tile-twin': tile.status === 'twinTile',
                 'built-tile-twin-active': hasTwinMatch(tile)
               }"
@@ -82,6 +83,7 @@
                 'built-tile-shimmer': slot.tile.status === 'shimmer',
                 'built-tile-rusting': slot.tile.status === 'rustingTile',
                 'built-tile-lightning': slot.tile.status === 'lightningTile',
+                'built-tile-void': slot.tile.status === 'voidTile',
                 'built-tile-twin': slot.tile.status === 'twinTile',
                 'built-tile-twin-active': hasTwinMatch(slot.tile),
                 'built-tile-controller-focus': controllerFocusedBuiltTileId === slot.tile.id
@@ -873,7 +875,8 @@ button:focus{
 .built-tile-shimmer,
 .built-tile-rusting,
 .built-tile-lightning,
-.built-tile-twin {
+.built-tile-twin,
+.built-tile-void {
   isolation: isolate;
   overflow: hidden;
 }
@@ -1024,12 +1027,51 @@ button:focus{
     linear-gradient(180deg, #d9fff4 0%, #62dfc3 54%, #2f9d94 100%) right / 50% 100% no-repeat;
 }
 
+.built-tile-void {
+  background: radial-gradient(circle at 50% 50%, #02030a 0%, #050817 44%, #11182d 72%, #02030a 100%);
+  box-shadow:
+    inset 0 -4px 0 rgba(0, 0, 0, 0.56),
+    0 12px 24px rgba(2, 4, 14, 0.34),
+    0 0 0 1px rgba(125, 156, 255, 0.22);
+}
+
+.built-tile-void::before,
+.built-tile-void::after {
+  content: '';
+  position: absolute;
+  pointer-events: none;
+}
+
+.built-tile-void::before {
+  inset: 9%;
+  z-index: 0;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 50% 50%, #000000 0 18%, rgba(8, 10, 28, 0.96) 19% 28%, transparent 29%),
+    conic-gradient(from 0deg, rgba(129, 102, 255, 0.08), rgba(77, 234, 255, 0.78), rgba(210, 127, 255, 0.5), rgba(20, 22, 48, 0.18), rgba(129, 102, 255, 0.08));
+  filter: saturate(1.35) contrast(1.12);
+  animation: built-void-vortex 2200ms linear infinite;
+}
+
+.built-tile-void::after {
+  inset: 25%;
+  z-index: 1;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 50% 50%, #000000 0 34%, rgba(1, 2, 8, 0.78) 35% 54%, transparent 56%);
+  box-shadow:
+    0 0 18px rgba(92, 221, 255, 0.42),
+    inset 0 0 16px rgba(0, 0, 0, 0.94);
+  animation: built-void-pulse 1400ms ease-in-out infinite;
+}
+
 .built-tile-shimmer .tile-letter,
 .built-tile-rusting .tile-letter,
 .built-tile-lightning .tile-letter,
-.built-tile-twin .tile-letter {
+.built-tile-twin .tile-letter,
+.built-tile-void .tile-letter {
   position: relative;
-  z-index: 2;
+  z-index: 3;
 }
 .built-tile-rusting{
   --tile-letter-stroke: 1px rgba(255, 255, 255, 0.92);
@@ -1043,14 +1085,16 @@ button:focus{
 .built-tile-shimmer .tile-score,
 .built-tile-rusting .tile-score,
 .built-tile-lightning .tile-score,
-.built-tile-twin .tile-score {
+.built-tile-twin .tile-score,
+.built-tile-void .tile-score {
   z-index: 5;
 }
 
 .built-tile-shimmer .tile-modifier,
 .built-tile-rusting .tile-modifier,
 .built-tile-lightning .tile-modifier,
-.built-tile-twin .tile-modifier {
+.built-tile-twin .tile-modifier,
+.built-tile-void .tile-modifier {
   z-index: 6;
 }
 
@@ -1166,6 +1210,30 @@ button:focus{
   50% {
     background-position: 10% 0;
     opacity: 0.82;
+  }
+}
+
+@keyframes built-void-vortex {
+  0% {
+    transform: rotate(0deg) scale(1);
+  }
+  50% {
+    transform: rotate(180deg) scale(1.06);
+  }
+  100% {
+    transform: rotate(360deg) scale(1);
+  }
+}
+
+@keyframes built-void-pulse {
+  0%,
+  100% {
+    transform: scale(0.92);
+    opacity: 0.9;
+  }
+  50% {
+    transform: scale(1.08);
+    opacity: 1;
   }
 }
 
