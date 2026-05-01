@@ -31,6 +31,7 @@
       :isStreamer="validSeed"
       :hasSeenIntro="hasSeenIntro"
       :rewardChoiceSelection="rewardChoiceSelection"
+      :historyOverlayAction="historyOverlayAction"
       @continue="continueGame" 
       @end="goToShop" 
       @game="goToGame" 
@@ -46,6 +47,7 @@
       @home="goToHome"
       @playAgain="playAgain"
       @rewardChoiceState="handleRewardChoiceState"
+      @historyOverlayState="handleHistoryOverlayState"
       @volumeChange="setVolume"
       @musicVolumeChange="setmusicVolume"
       @effectsVolumeChange="seteffectsVolume"
@@ -83,6 +85,20 @@
         :controller-focused-reward-index="rewardChoiceOverlay.controllerFocusedRewardIndex"
         @choose="handleRewardChoiceSelect"
       />
+      <HistoryOverlay
+        v-if="historyOverlay"
+        :result-title="historyOverlay.resultTitle"
+        :result-state="historyOverlay.resultState"
+        :summary-text="historyOverlay.summaryText"
+        :left-label="historyOverlay.leftLabel"
+        :right-label="historyOverlay.rightLabel"
+        :left-history="historyOverlay.leftHistory"
+        :right-history="historyOverlay.rightHistory"
+        :multi-round-summary="historyOverlay.multiRoundSummary"
+        :play-again-text="historyOverlay.playAgainText"
+        :play-again-disabled="historyOverlay.playAgainDisabled"
+        @play-again="handleHistoryPlayAgain"
+      />
       <AuthPrompt v-if="showAuthModal" @close="showAuthModal = false" @loggedIn="userLoggedIn" />
       <AssetLoader :monsterRoster="monsterRoster"/>
     </div>
@@ -107,6 +123,7 @@ import { hideGoogleTranslateIframesAfterDelay,hideGoogleTranslateExtras } from "
 import Feedback from "./states/home/Feedback.vue";
 import Banner from "/src/assets/Banner.vue";
 import Settings from '/src/assets/Settings.vue'
+import HistoryOverlay from "./states/game/components/HistoryOverlay.vue";
 import MultiRoundRewardChoice from "./states/game/components/MultiRoundRewardChoice.vue";
 import { initUserSync, logoutCleanup, syncUserState } from "./userstate/syncUserState.js";
 import { signOut } from "firebase/auth";
@@ -276,11 +293,16 @@ const showFeedback = ref(false)
   const isGameState = computed(() => currentState.value === Game);
   const rewardChoiceOverlay = ref(null);
   const rewardChoiceSelection = ref(null);
+  const historyOverlay = ref(null);
+  const historyOverlayAction = ref(null);
   let rewardChoiceSelectionToken = 0;
+  let historyOverlayActionToken = 0;
 
   const clearLiftedGameUi = () => {
     rewardChoiceOverlay.value = null;
     rewardChoiceSelection.value = null;
+    historyOverlay.value = null;
+    historyOverlayAction.value = null;
   };
 
   const handleRewardChoiceState = (state) => {
@@ -292,6 +314,18 @@ const showFeedback = ref(false)
     rewardChoiceSelection.value = {
       key: rewardKey,
       token: rewardChoiceSelectionToken
+    };
+  };
+
+  const handleHistoryOverlayState = (state) => {
+    historyOverlay.value = state;
+  };
+
+  const handleHistoryPlayAgain = () => {
+    historyOverlayActionToken += 1;
+    historyOverlayAction.value = {
+      type: 'play-again',
+      token: historyOverlayActionToken
     };
   };
 
