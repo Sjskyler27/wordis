@@ -1229,7 +1229,7 @@ onBeforeUnmount(() => {
 
 .tile-bag {
   background:
-    radial-gradient(circle at 50% 18%, rgba(255, 226, 173, 0.42) 0 12%, transparent 13%),
+    repeating-linear-gradient(180deg, rgba(72, 42, 18, 0.24) 0 4px, transparent 4px 13px),
     linear-gradient(180deg, #d9b280 0%, #9a6a37 58%, #5d3418 100%);
   box-shadow:
     inset 0 -4px 0 rgba(58, 31, 11, 0.34),
@@ -1240,49 +1240,45 @@ onBeforeUnmount(() => {
 .tile-bag::before {
   content: '';
   position: absolute;
-  inset: 16% 18% 12%;
+  inset: 0%;
   z-index: 0;
-  border-radius: 48% 48% 34% 34%;
+  border-radius: 10px;
   pointer-events: none;
   background:
-    linear-gradient(180deg, rgba(255, 228, 181, 0.2), transparent 40%),
-    repeating-linear-gradient(90deg, rgba(84, 48, 19, 0.18) 0 3px, rgba(255, 224, 176, 0.1) 3px 6px),
-    linear-gradient(180deg, #c48c54 0%, #7b4a24 100%);
+    radial-gradient(circle at 18% 44%, rgba(242, 214, 34, 0.722) 0 3px, transparent 4px),
+    radial-gradient(circle at 18% 56%, rgba(242, 214, 34, 0.722)  0 3px, transparent 4px),
+    radial-gradient(circle at 82% 44%, rgba(242, 214, 34, 0.722)  0 3px, transparent 4px),
+    radial-gradient(circle at 82% 56%, rgba(242, 214, 34, 0.722)  0 3px, transparent 4px),
+    linear-gradient(90deg, transparent 0 11%, rgba(64, 35, 13, 0.72) 11% 18%, transparent 18% 82%, rgba(64, 35, 13, 0.72) 82% 89%, transparent 89% 100%),
+    repeating-linear-gradient(180deg, rgba(80, 45, 18, 0.28) 0 4px, transparent 4px 14px),
+    linear-gradient(180deg, rgba(234, 188, 121, 0.2), rgba(90, 51, 22, 0.22));
   box-shadow:
     inset 0 0 0 2px rgba(67, 39, 17, 0.36),
-    inset 0 9px 0 rgba(76, 42, 14, 0.34);
+    inset 12px 0 0 rgba(81, 45, 16, 0.2),
+    inset -12px 0 0 rgba(81, 45, 16, 0.2);
 }
 
-.tile-bag::after {
-  content: '';
-  position: absolute;
-  left: 27%;
-  right: 27%;
-  top: 26%;
-  height: 8px;
-  z-index: 1;
-  border-radius: 999px;
-  pointer-events: none;
-  background: #4a2a12;
-  box-shadow: 0 0 0 2px rgba(226, 180, 112, 0.24);
-}
 
 .tile-adjacent-blocked:not(.tile-in-use) {
   cursor: not-allowed;
-  filter: grayscale(0.42) brightness(0.64) saturate(0.62);
+  filter: saturate(0.72) brightness(0.82);
 }
 
 .tile-adjacent-blocked:not(.tile-in-use)::after {
   content: '';
   position: absolute;
-  inset: 10%;
+  inset: 0%;
   z-index: 7;
   border-radius: 12px;
   pointer-events: none;
   background:
-    linear-gradient(38deg, transparent 0 43%, rgba(28, 16, 7, 0.86) 44% 56%, transparent 57% 100%),
-    linear-gradient(-38deg, transparent 0 43%, rgba(28, 16, 7, 0.86) 44% 56%, transparent 57% 100%);
-  box-shadow: inset 0 0 0 3px rgba(28, 16, 7, 0.72);
+    repeating-linear-gradient(180deg, rgba(68, 39, 16, 0.32) 0 4px, transparent 4px 13px),
+    linear-gradient(90deg, transparent 0 11%, rgba(64, 35, 13, 0.38) 11% 18%, transparent 18% 82%, rgba(64, 35, 13, 0.38) 82% 89%, transparent 89% 100%),
+    linear-gradient(180deg, rgba(215, 169, 102, 0.38), rgba(85, 48, 19, 0.34));
+  box-shadow:
+    inset 0 0 0 2px rgba(79, 47, 20, 0.38),
+    inset 10px 0 0 rgba(70, 40, 16, 0.22),
+    inset -10px 0 0 rgba(70, 40, 16, 0.22);
 }
 
 .tile-leecher {
