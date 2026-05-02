@@ -250,4 +250,9 @@ const getCardStyle = (card) => {
 }
 
 
+@media (max-width: 1000px) {
+.card-hand{
+  max-height: 95%;
+}
+}
 </style>

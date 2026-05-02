@@ -311,10 +311,6 @@ body {
     box-shadow: 0 12px 28px rgba(30, 8, 22, 0.22);
     transition: transform 180ms ease, background 180ms ease, color 180ms ease;
   }
-  .accent-purple{
-    overflow: hidden;
-    overflow-y: auto;
-  }
 
   .side-drawer-handle.open {
     left: min(340px, calc(100vw - 220px));
