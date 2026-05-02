@@ -44,7 +44,6 @@
             :class="{
               opponent: side === 'opponent',
               active: isActive,
-              'tile-in-use': selectedTileIds.has(tile.id),
               'tile-saved': savedTileIds.has(tile.id),
               'tile-locked': tile.locked,
               'tile-shimmer': tile.status === 'shimmer',
@@ -62,6 +61,7 @@
               'tile-adjacent-blocked': isAdjacentBlockedTile(tile),
               'tile-must-alert': mustAlertIds.has(tile.id),
               'tile-banned-letter': isBannedLetter(tile),
+              'tile-in-use': selectedTileIds.has(tile.id),
               'tile-controller-focus': controllerFocusedTileId === tile.id,
               [getShimmerCycleClass(tile)]: !!getShimmerCycleClass(tile),
               [getTileAnimationClass(tile)]: !!getTileAnimationClass(tile)
@@ -933,23 +933,6 @@ onBeforeUnmount(() => {
   outline-color: rgba(75, 199, 176, 0.85);
 }
 
-.tile-in-use {
-  box-shadow:
-    inset 0 0 0 9999px rgba(0, 0, 0, 0.38), /* soft dark overlay */
-    inset 0 4px 10px rgba(38, 20, 12, 0.32),
-    inset 0 -2px 0 rgba(255, 255, 255, 0.18);
-  transform: translateY(2px) scale(0.98);
-}
-
-.tile-in-use:hover,
-.tile-in-use:focus,
-.tile-in-use:focus-visible {
-  box-shadow:
-    inset 0 0 0 9999px rgba(0, 0, 0, 0.38), /* soft dark overlay */
-    inset 0 4px 10px rgba(38, 20, 12, 0.22),
-    inset 0 -2px 0 rgba(255, 255, 255, 0.18) !important;
-  transform: translateY(1px) scale(0.98);
-}
 
 .tile-locked {
   cursor: not-allowed;
@@ -1488,6 +1471,23 @@ onBeforeUnmount(() => {
 
 .tile-anim-rust-spread {
   animation: tile-rust-spread var(--tile-animation-duration, 680ms) ease-out;
+}
+.tile-in-use {
+  box-shadow:
+    inset 0 0 0 9999px rgba(0, 0, 0, 0.38), /* soft dark overlay */
+    inset 0 4px 10px rgba(38, 20, 12, 0.32),
+    inset 0 -2px 0 rgba(255, 255, 255, 0.18);
+  transform: translateY(2px) scale(0.98);
+}
+
+.tile-in-use:hover,
+.tile-in-use:focus,
+.tile-in-use:focus-visible {
+  box-shadow:
+    inset 0 0 0 9999px rgba(0, 0, 0, 0.38), /* soft dark overlay */
+    inset 0 4px 10px rgba(38, 20, 12, 0.22),
+    inset 0 -2px 0 rgba(255, 255, 255, 0.18) !important;
+  transform: translateY(1px) scale(0.98);
 }
 
 @keyframes must-tile-flash {
