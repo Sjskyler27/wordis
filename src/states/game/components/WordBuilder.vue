@@ -30,6 +30,8 @@
                 'built-tile-lightning': tile.status === 'lightningTile',
                 'built-tile-void': tile.status === 'voidTile',
                 'built-tile-barricade': tile.status === 'barricadeTile',
+                'built-tile-leecher': tile.status === 'leecherTile',
+                'built-tile-leecher-drained': tile.leecherDrained,
                 'built-tile-twin': tile.status === 'twinTile',
                 'built-tile-twin-active': hasTwinMatch(tile)
               }"
@@ -86,6 +88,8 @@
                 'built-tile-lightning': slot.tile.status === 'lightningTile',
                 'built-tile-void': slot.tile.status === 'voidTile',
                 'built-tile-barricade': slot.tile.status === 'barricadeTile',
+                'built-tile-leecher': slot.tile.status === 'leecherTile',
+                'built-tile-leecher-drained': slot.tile.leecherDrained,
                 'built-tile-twin': slot.tile.status === 'twinTile',
                 'built-tile-twin-active': hasTwinMatch(slot.tile),
                 'built-tile-controller-focus': controllerFocusedBuiltTileId === slot.tile.id
@@ -879,7 +883,8 @@ button:focus{
 .built-tile-lightning,
 .built-tile-twin,
 .built-tile-void,
-.built-tile-barricade {
+.built-tile-barricade,
+.built-tile-leecher {
   isolation: isolate;
   overflow: hidden;
 }
@@ -1108,14 +1113,48 @@ button:focus{
     0 3px 0 rgba(80, 47, 5, 0.46);
 }
 
+.built-tile-leecher {
+  background:
+    radial-gradient(circle at 50% 42%, rgba(217, 255, 179, 0.62) 0 11%, transparent 12%),
+    linear-gradient(180deg, #e2ffcf 0%, #83d65a 48%, #276c35 100%);
+  box-shadow:
+    inset 0 -4px 0 rgba(19, 84, 35, 0.34),
+    0 12px 22px rgba(23, 84, 46, 0.24),
+    0 0 0 1px rgba(184, 255, 150, 0.42);
+}
+
+.built-tile-leecher::before {
+  content: '';
+  position: absolute;
+  inset: 12%;
+  z-index: 0;
+  border-radius: 50%;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 50% 50%, rgba(31, 105, 48, 0.95) 0 18%, transparent 19%),
+    conic-gradient(from 20deg, transparent 0 7%, rgba(35, 93, 42, 0.72) 7% 14%, transparent 14% 24%, rgba(35, 93, 42, 0.72) 24% 31%, transparent 31% 48%, rgba(35, 93, 42, 0.72) 48% 56%, transparent 56% 70%, rgba(35, 93, 42, 0.72) 70% 78%, transparent 78% 100%);
+  animation: built-leecher-pulse 1700ms ease-in-out infinite;
+}
+
+.built-tile-leecher-drained:not(.built-tile-leecher) {
+  filter: grayscale(0.45) brightness(0.74) saturate(0.64);
+  box-shadow:
+    inset 0 0 0 3px rgba(44, 92, 50, 0.38),
+    var(--built-tile-shadow, inset 0 -3px 0 rgba(0, 0, 0, 0.16));
+}
+
 .built-tile-shimmer .tile-letter,
 .built-tile-rusting .tile-letter,
 .built-tile-lightning .tile-letter,
 .built-tile-twin .tile-letter,
 .built-tile-void .tile-letter,
-.built-tile-barricade .tile-letter {
+.built-tile-barricade .tile-letter,
+.built-tile-leecher .tile-letter {
   position: relative;
   z-index: 3;
+}
+
+.built-tile-barricade .tile-letter {
   text-shadow:
     0 2px 0 rgba(255, 235, 132, 0.5),
     0 0 6px rgba(255, 249, 190, 0.34);
@@ -1134,7 +1173,8 @@ button:focus{
 .built-tile-lightning .tile-score,
 .built-tile-twin .tile-score,
 .built-tile-void .tile-score,
-.built-tile-barricade .tile-score {
+.built-tile-barricade .tile-score,
+.built-tile-leecher .tile-score {
   z-index: 5;
 }
 
@@ -1143,7 +1183,8 @@ button:focus{
 .built-tile-lightning .tile-modifier,
 .built-tile-twin .tile-modifier,
 .built-tile-void .tile-modifier,
-.built-tile-barricade .tile-modifier {
+.built-tile-barricade .tile-modifier,
+.built-tile-leecher .tile-modifier {
   z-index: 6;
 }
 
@@ -1289,6 +1330,18 @@ button:focus{
   50% {
     transform: scale(1.08);
     opacity: 1;
+  }
+}
+
+@keyframes built-leecher-pulse {
+  0%,
+  100% {
+    transform: scale(0.92) rotate(0deg);
+    opacity: 0.72;
+  }
+  50% {
+    transform: scale(1.08) rotate(16deg);
+    opacity: 0.95;
   }
 }
 

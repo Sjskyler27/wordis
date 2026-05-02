@@ -17,6 +17,7 @@ const {
   MIN_WORD_LENGTH,
   getCardDefinition,
   getWordScoreDetails,
+  applyRackManipulationEffects,
   getIdleScorePenalty,
   getResourceGrants,
   getSelectedTiles,
@@ -504,7 +505,11 @@ const submitWord = async (roomCode, clientId, word, tileIds, languageCode = 'en'
     return { success: false, error: `Words must use at least ${MIN_WORD_LENGTH} tiles` };
   }
 
-  const selectedTiles = getSelectedTiles(state.tiles[side], tileIds);
+  const rackTilesForScoring = applyRackManipulationEffects(state.tiles[side], {
+    side,
+    scores: state.scores
+  });
+  const selectedTiles = getSelectedTiles(rackTilesForScoring, tileIds);
   if (!selectedTiles || !selectedTiles.length) {
     return { success: false, error: 'Word must be built from your selected tiles' };
   }

@@ -18,7 +18,7 @@ const {
 } = modifierDefinitionsApi || {};
 
 
-const GOOD_MODIFIERS = ['gold', 'firsttile', 'royalPear', 'twinTile', 'bankTile', 'gainboon', 'gainattack'];
+const GOOD_MODIFIERS = ['gold', 'firsttile', 'royalPear', 'twinTile', 'bankTile', 'gainboon', 'gainattack', 'leecherTile'];
 const BAD_MODIFIERS = ['zeroTile', 'mustuse', 'locked3', 'burningTile', 'rustingTile', 'lightningTile', 'barricadeTile', 'bagTile'];
 const NEUTRAL_MODIFIERS = ['yinYang', 'ghostTile','bloodTile', 'wild', 'shimmer', 'voidTile'];
 
@@ -31,6 +31,7 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
 
   const MIN_WORD_LENGTH = 4;
   const RACK_SIZE = 20;
+  const RACK_COLUMNS = 5;
   const DUPLICATE_PENALTY = 0.38;
   const MIN_DUPLICATE_WEIGHT = 0.18;
   const BASE_GOOD_MODIFIER_CHANCE = 0.08;
@@ -854,6 +855,9 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
     if (isVoidZeroedTile(tile, options.wordTiles || [])) {
       return 0;
     }
+    if (tile?.leecherDrained) {
+      return 0;
+    }
 
     const personalModifierEffects = options.personalModifierEffects || options.personalModifiers || {};
     const modifierScoreBonus = personalModifierEffects.modifierScoreBonus || {};
@@ -864,6 +868,7 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
       + getPositionAwareModifierScore(tile, options)
       + getTwinLetterBonus(tile, options)
       + getVoidTileBonus(tile, options)
+      + (tile?.leecherAbsorbedScore || 0)
       + (modifierScoreBonus[tile?.status] || 0)
     );
 
@@ -877,6 +882,95 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
   const tileScore = (tile, options = {}) => (
     getPersonalTileScore(tile, options) * (tile?.multiplier || 1)
   );
+  const clearRackManipulationScoreState = (tile = {}) => {
+    if (!tile?.leecherDrained && !tile?.leecherAbsorbedScore) {
+      return tile;
+    }
+
+    const {
+      leecherDrained,
+      leecherAbsorbedScore,
+      ...rest
+    } = tile;
+    return rest;
+  };
+  const getAdjacentRackIndexes = (index, tilesLength = 0, columnCount = RACK_COLUMNS) => {
+    const row = Math.floor(index / columnCount);
+    const col = index % columnCount;
+    const indexes = [];
+
+    for (let rowDelta = -1; rowDelta <= 1; rowDelta += 1) {
+      for (let colDelta = -1; colDelta <= 1; colDelta += 1) {
+        if (!rowDelta && !colDelta) {
+          continue;
+        }
+
+        const nextRow = row + rowDelta;
+        const nextCol = col + colDelta;
+        const nextIndex = (nextRow * columnCount) + nextCol;
+        if (nextRow >= 0 && nextCol >= 0 && nextCol < columnCount && nextIndex >= 0 && nextIndex < tilesLength) {
+          indexes.push(nextIndex);
+        }
+      }
+    }
+
+    return indexes;
+  };
+  const applyRackManipulationEffects = (tiles = [], options = {}) => {
+    if (!Array.isArray(tiles) || !tiles.length) {
+      return tiles;
+    }
+
+    const leecherScoresById = new Map();
+    const drainedTileIds = new Set();
+    const baseTiles = tiles.map(clearRackManipulationScoreState);
+    const selectedTileIds = options.selectedTileIds || new Set();
+
+    baseTiles.forEach((tile, index) => {
+      if (tile?.status !== 'leecherTile') {
+        return;
+      }
+      if (selectedTileIds.has(tile.id) && tile.leechesAdjacentWhileSelected === false) {
+        return;
+      }
+
+      const absorbedScore = getAdjacentRackIndexes(index, baseTiles.length)
+        .reduce((total, adjacentIndex) => {
+          const adjacentTile = baseTiles[adjacentIndex];
+          if (!adjacentTile?.id || adjacentTile.id === tile.id) {
+            return total;
+          }
+
+          drainedTileIds.add(adjacentTile.id);
+          return total + Math.max(0, tileScore(adjacentTile, {
+            ...options,
+            wordTiles: []
+          }));
+        }, 0);
+
+      if (absorbedScore) {
+        leecherScoresById.set(tile.id, absorbedScore);
+      }
+    });
+
+    if (!leecherScoresById.size && !drainedTileIds.size) {
+      return tiles;
+    }
+
+    return baseTiles.map((tile) => {
+      const leecherAbsorbedScore = leecherScoresById.get(tile?.id) || 0;
+      const leecherDrained = drainedTileIds.has(tile?.id) && tile?.status !== 'leecherTile';
+      if (!leecherAbsorbedScore && !leecherDrained) {
+        return tile;
+      }
+
+      return {
+        ...tile,
+        leecherDrained: leecherDrained || undefined,
+        leecherAbsorbedScore: leecherAbsorbedScore || undefined
+      };
+    });
+  };
   const tickIdleTile = (tile, options = {}) => {
     const definition = getModifierDefinition(tile?.status);
     const personalModifierEffects = options.personalModifierEffects || options.personalModifiers || {};
@@ -1458,6 +1552,12 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
       state.blocksAdjacentWhileSelected = undefined;
     }
 
+    if (effects.leechesAdjacentRackScores) {
+      state.leechesAdjacentWhileSelected = effects.leechesAdjacentWhileSelected ?? true;
+    } else if (status !== tile.status) {
+      state.leechesAdjacentWhileSelected = undefined;
+    }
+
     return state;
   };
 
@@ -1973,6 +2073,7 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
     getDifference,
     getMilestoneReward,
     getTilesScore,
+    applyRackManipulationEffects,
     getWordScoreDetails,
     getIdleScorePenalty,
     tickShimmerTiles,

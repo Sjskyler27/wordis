@@ -10,6 +10,7 @@ import {
   createRack,
   drawCards,
   BAD_TILES,
+  applyRackManipulationEffects,
   getTilesForWord,
   getResourceGrants,
   replaceTileWithModifier,
@@ -341,7 +342,12 @@ export const useSinglePlayerGame = ({
     }
 
     const botTiles = playerTiles.value.opponent || [];
-    const botWord = getBotWord(botTiles, [
+    const botTilesForScoring = applyRackManipulationEffects(botTiles, {
+      side: 'opponent',
+      scores: playerScores.value,
+      personalModifierEffects: getPersonalModifierEffects()
+    });
+    const botWord = getBotWord(botTilesForScoring, [
       ...wordHistory.value.host,
       ...wordHistory.value.opponent
     ], botDifficulty.value);
@@ -352,7 +358,7 @@ export const useSinglePlayerGame = ({
     }
 
     const normalizedBotWord = botWord.toUpperCase();
-    const selectedBotTiles = getTilesForWord(botTiles, normalizedBotWord);
+    const selectedBotTiles = getTilesForWord(botTilesForScoring, normalizedBotWord);
     if (!selectedBotTiles.length || selectedBotTiles.length < MIN_WORD_LENGTH) {
       clearBotRack(botTiles);
       return;

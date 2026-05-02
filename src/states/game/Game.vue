@@ -223,7 +223,7 @@ import {
   multiplayerOvertimeFinalWordSubmitted,
   multiplayerSubmissionPauseOwner
 } from './multiplayer.js';
-import { MIN_WORD_LENGTH, drawCards, getWordScoreDetails, isMissingRequiredTile, selectedTilesMatchWord, tickLightningTiles, tickShimmerTiles } from './tile-logic.js';
+import { MIN_WORD_LENGTH, applyRackManipulationEffects, drawCards, getWordScoreDetails, isMissingRequiredTile, selectedTilesMatchWord, tickLightningTiles, tickShimmerTiles } from './tile-logic.js';
 import { getPreferredLanguage } from './language.js';
 import { useWordBuilder } from './useWordBuilder.js';
 import { useSinglePlayerGame } from './useSinglePlayerGame.js';
@@ -451,11 +451,23 @@ const mySide = computed(() => {
   return 'host';
 });
 
-const myTiles = computed(() => playerTiles.value[mySide.value] || []);
+const personalModifierEffects = computed(() => isMultiRoundMode.value ? multiRoundRun.activePersonalModifierEffects.value : {});
+const rackManipulatedPlayerTiles = computed(() => ({
+  host: applyRackManipulationEffects(playerTiles.value.host || [], {
+    side: 'host',
+    scores: playerScores.value,
+    personalModifierEffects: personalModifierEffects.value
+  }),
+  opponent: applyRackManipulationEffects(playerTiles.value.opponent || [], {
+    side: 'opponent',
+    scores: playerScores.value,
+    personalModifierEffects: personalModifierEffects.value
+  })
+}));
+const myTiles = computed(() => rackManipulatedPlayerTiles.value[mySide.value] || []);
 const controllerFocusedTileId = computed(() => myTiles.value[controllerTileCursorIndex.value]?.id || '');
 const controllerFocusedBuiltTileId = computed(() => selectedTilesForCurrentSide.value[controllerBuilderCursorIndex.value]?.id || '');
 const opponentSide = computed(() => (mySide.value === 'host' ? 'opponent' : 'host'));
-const personalModifierEffects = computed(() => isMultiRoundMode.value ? multiRoundRun.activePersonalModifierEffects.value : {});
 const activeRoundModifiers = computed(() => isMultiRoundMode.value ? multiRoundRun.activeRoundModifiers.value : []);
 const activeRoundModifiersWithCountdowns = computed(() => {
   return activeRoundModifiers.value.map((modifier) => ({
@@ -609,7 +621,7 @@ const buildLane = (side, label) => ({
   score: playerScores.value[side],
   lastWordScore: lastWordScores.value[side],
   lastWordBreakdown: lastWordBreakdowns.value[side] || createEmptyLastWordBreakdown(),
-  tiles: playerTiles.value[side],
+  tiles: rackManipulatedPlayerTiles.value[side] || [],
   isActive: mySide.value === side,
   selectedTileIds: selectedTileIds.value[side],
   savedTileIds: savedTileIds.value[side],

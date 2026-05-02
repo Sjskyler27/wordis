@@ -192,6 +192,23 @@ const createModifierDefinitions = ({ bloodTilePositionValues }) => ({
         badgeColor: '#0a8b63'
       }
     },
+    leecherTile: {
+      badge: 'LEECH',
+      description: 'Sets adjacent rack tiles to 0 and absorbs their values into this tile until it is played.',
+      effects: {
+        leechesAdjacentRackScores: true,
+        leechesAdjacentWhileSelected: true
+      },
+      canApply: ({ letter, baseScore }) => (letter || '').length === 1 && baseScore <= 6,
+      rarityWeight: 0.16,
+      ui: {
+        tileBackground: 'linear-gradient(180deg, #e2ffcf 0%, #83d65a 48%, #276c35 100%)',
+        tileShadow: 'inset 0 -4px 0 rgba(19, 84, 35, 0.34), 0 12px 22px rgba(23, 84, 46, 0.24), 0 0 0 1px rgba(184, 255, 150, 0.42)',
+        textColor: '#092817',
+        badgeBackground: 'rgba(231, 255, 218, 0.94)',
+        badgeColor: '#216c32'
+      }
+    },
     yinYang: {
       badge: 'YIN',
       description: 'Changes value by the score gap: stronger when behind, weaker when ahead.',

@@ -57,6 +57,8 @@
               'tile-void': tile.status === 'voidTile',
               'tile-barricade': tile.status === 'barricadeTile',
               'tile-bag': tile.status === 'bagTile',
+              'tile-leecher': tile.status === 'leecherTile',
+              'tile-leecher-drained': tile.leecherDrained,
               'tile-adjacent-blocked': isAdjacentBlockedTile(tile),
               'tile-must-alert': mustAlertIds.has(tile.id),
               'tile-banned-letter': isBannedLetter(tile),
@@ -960,7 +962,8 @@ onBeforeUnmount(() => {
 .tile-twin,
 .tile-void,
 .tile-barricade,
-.tile-bag {
+.tile-bag,
+.tile-leecher {
   isolation: isolate;
   overflow: hidden;
 }
@@ -1282,13 +1285,44 @@ onBeforeUnmount(() => {
   box-shadow: inset 0 0 0 3px rgba(28, 16, 7, 0.72);
 }
 
+.tile-leecher {
+  background:
+    radial-gradient(circle at 50% 42%, rgba(217, 255, 179, 0.62) 0 11%, transparent 12%),
+    linear-gradient(180deg, #e2ffcf 0%, #83d65a 48%, #276c35 100%);
+  box-shadow:
+    inset 0 -4px 0 rgba(19, 84, 35, 0.34),
+    0 12px 22px rgba(23, 84, 46, 0.24),
+    0 0 0 1px rgba(184, 255, 150, 0.42);
+}
+
+.tile-leecher::before {
+  content: '';
+  position: absolute;
+  inset: 12%;
+  z-index: 0;
+  border-radius: 50%;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 50% 50%, rgba(31, 105, 48, 0.95) 0 18%, transparent 19%),
+    conic-gradient(from 20deg, transparent 0 7%, rgba(35, 93, 42, 0.72) 7% 14%, transparent 14% 24%, rgba(35, 93, 42, 0.72) 24% 31%, transparent 31% 48%, rgba(35, 93, 42, 0.72) 48% 56%, transparent 56% 70%, rgba(35, 93, 42, 0.72) 70% 78%, transparent 78% 100%);
+  animation: tile-leecher-pulse 1700ms ease-in-out infinite;
+}
+
+.tile-leecher-drained:not(.tile-leecher) {
+  filter: grayscale(0.45) brightness(0.74) saturate(0.64);
+  box-shadow:
+    inset 0 0 0 3px rgba(44, 92, 50, 0.38),
+    var(--tile-shadow, inset 0 -4px 0 rgba(0, 0, 0, 0.12), 0 10px 18px rgba(45, 10, 24, 0.16));
+}
+
 .tile-shimmer .tile-letter,
 .tile-rusting .tile-letter,
 .tile-lightning .tile-letter,
 .tile-twin .tile-letter,
 .tile-void .tile-letter,
 .tile-barricade .tile-letter,
-.tile-bag .tile-letter {
+.tile-bag .tile-letter,
+.tile-leecher .tile-letter {
   position: relative;
   z-index: 3;
 }
@@ -1313,7 +1347,8 @@ onBeforeUnmount(() => {
 .tile-twin .tile-score,
 .tile-void .tile-score,
 .tile-barricade .tile-score,
-.tile-bag .tile-score {
+.tile-bag .tile-score,
+.tile-leecher .tile-score {
   z-index: 5;
 }
 
@@ -1323,7 +1358,8 @@ onBeforeUnmount(() => {
 .tile-twin .tile-modifier,
 .tile-void .tile-modifier,
 .tile-barricade .tile-modifier,
-.tile-bag .tile-modifier {
+.tile-bag .tile-modifier,
+.tile-leecher .tile-modifier {
   z-index: 6;
 }
 
@@ -1650,6 +1686,18 @@ onBeforeUnmount(() => {
   50% {
     transform: scale(1.08);
     opacity: 1;
+  }
+}
+
+@keyframes tile-leecher-pulse {
+  0%,
+  100% {
+    transform: scale(0.92) rotate(0deg);
+    opacity: 0.72;
+  }
+  50% {
+    transform: scale(1.08) rotate(16deg);
+    opacity: 0.95;
   }
 }
 
