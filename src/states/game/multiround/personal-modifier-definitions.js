@@ -263,7 +263,7 @@ export const PERSONAL_MODIFIER_DEFINITIONS = {
   },
   speedy: {
     key: 'speedy',
-    label: 'Speedy',
+    label: 'Speedy Multiplier',
     description: 'Fast words gain up to a 1.5x score multiplier.',
     rarity: 0.24,
     tier: PERSONAL_MODIFIER_TIERS.EPIC,

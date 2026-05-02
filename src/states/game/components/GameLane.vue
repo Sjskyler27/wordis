@@ -455,9 +455,32 @@ const getSpeedyAdditionLabel = () => {
 
   return `Speed +${Math.max(0, Number(currentBonus) || 0)} · 0 in ${secondsToZero}s`;
 };
+const getSpeedyMultiplierLabel = () => {
+  if (!props.isActive) {
+    return '';
+  }
+
+  const configs = props.scoreOptions?.personalModifierEffects?.timedWordMultipliers || [];
+  const config = configs[0];
+  const multipliers = Array.isArray(config?.multipliers) ? config.multipliers : [];
+  if (!config || !multipliers.length) {
+    return '';
+  }
+
+  const elapsedSeconds = props.scoreOptions?.wordElapsedSeconds || 0;
+  const tierIndex = getTimedWordTierIndex(elapsedSeconds, config);
+  const currentMultiplier = Number(multipliers[tierIndex] ?? config.finalMultiplier ?? 1) || 1;
+  const finalMultiplier = Number(config.finalMultiplier) || 1;
+  const finalTierIndex = multipliers.findIndex((multiplier) => Number(multiplier) <= finalMultiplier);
+  const finalAt = Math.max(0, Number(config.graceSeconds) || 0) + Math.max(0, finalTierIndex) * Math.max(0.001, Number(config.intervalSeconds) || 1);
+  const secondsToFinal = finalTierIndex >= 0 ? Math.max(0, Math.ceil(finalAt - elapsedSeconds)) : 0;
+
+  return `Speed x${currentMultiplier.toFixed(1)} · x${finalMultiplier.toFixed(1)} in ${secondsToFinal}s`;
+};
 const boardEffectLabel = computed(() => {
   const effects = props.scoreOptions?.roundModifierEffects || {};
   const speedyAdditionLabel = getSpeedyAdditionLabel();
+  const speedyMultiplierLabel = getSpeedyMultiplierLabel();
   const labels = [];
 
   if (effects.chaoticBoardIntervalMs) {
@@ -470,6 +493,9 @@ const boardEffectLabel = computed(() => {
 
   if (speedyAdditionLabel) {
     labels.push(speedyAdditionLabel);
+  }
+  if (speedyMultiplierLabel) {
+    labels.push(speedyMultiplierLabel);
   }
 
   return labels.join(' · ');
