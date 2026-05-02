@@ -1,12 +1,12 @@
 <template>
   <div class="score-ribbon">
     <div class="score-box host" :class="hostScoreClass">
-      <span>pts:</span>
+      <span class="box-label">pts:</span>
       <strong>{{ scoreRibbonScoreLabel }}</strong>
     </div>
     <div class="score-divider">VS</div>
     <div class="score-box opponent" :class="opponentScoreClass">
-      <span>{{ showClock ? 'Time:' : 'Their Board' }}</span>
+      <span class="badge">{{ showClock ? 'Time:' : 'Their Board' }}</span>
       <strong>{{ showClock ? clockScoreRibbonLabel : rightScore }}</strong>
     </div>
   </div>
@@ -196,7 +196,7 @@ defineProps({
   }
 }
 
-@media (max-width: 680px) {
+@media (max-width: 980px) {
   .score-ribbon {
     position: fixed;
     top: 18px;
@@ -214,7 +214,7 @@ defineProps({
   .score-box {
     position: absolute;
     top: 0;
-    min-width: 220px;
+    min-width: 20px;
     max-width: min(32vw, 280px);
     pointer-events: auto;
   }
@@ -225,6 +225,9 @@ defineProps({
 
   .score-box.opponent {
     right: 0;
+  }
+  .box-label{
+    display: none;
   }
 }
 </style>
