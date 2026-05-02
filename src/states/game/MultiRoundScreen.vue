@@ -33,6 +33,7 @@
               type="button"
               class="difficulty-chip"
               :class="{ active: selectedDifficulty === difficulty.value }"
+              :data-difficulty="difficulty.value"
               @click="selectedDifficulty = difficulty.value"
             >
               {{ difficulty.label }}
@@ -307,6 +308,12 @@ const syncControllerFocusIndex = () => {
   }
 };
 
+const focusSelectedDifficulty = () => {
+  const targets = getControllerTargets();
+  const selectedDifficultyIndex = targets.findIndex((element) => element.dataset.difficulty === selectedDifficulty.value);
+  setControllerFocus(selectedDifficultyIndex >= 0 ? selectedDifficultyIndex : 0);
+};
+
 const handleControllerKeyDown = (event) => {
   if (event.key === 'Escape') {
     event.preventDefault();
@@ -336,7 +343,7 @@ const handleControllerKeyDown = (event) => {
 
 onMounted(() => {
   window.addEventListener('keydown', handleControllerKeyDown);
-  nextTick(() => setControllerFocus(0));
+  nextTick(focusSelectedDifficulty);
 });
 
 onBeforeUnmount(() => {

@@ -278,3 +278,8 @@ only show sense if controller connected
 slight bug where a wild could be an s and it is disabled 
 
 bug where the shmr could be an S and it is spinning void S could likely be sucking the disabled sign
+
+twin tile and other tiles are not able to be in use style cause of layering afters
+
+the game needs to pause all functions when the app is out of focus its running 
+
