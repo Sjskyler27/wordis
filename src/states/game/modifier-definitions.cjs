@@ -317,6 +317,23 @@ const createModifierDefinitions = ({ bloodTilePositionValues }) => ({
         badgeColor: '#ffe476'
       }
     },
+    bagTile: {
+      badge: 'BAG',
+      description: 'Makes all adjacent rack tiles unplayable while this tile stays in the rack.',
+      effects: {
+        blocksAdjacentRackTiles: true,
+        blocksAdjacentWhileSelected: false
+      },
+      rarityWeight: 0.18,
+      canApply: ({ baseScore }) => baseScore <= 5,
+      ui: {
+        tileBackground: 'linear-gradient(180deg, #d9b280 0%, #9a6a37 58%, #5d3418 100%)',
+        tileShadow: 'inset 0 -4px 0 rgba(58, 31, 11, 0.34), 0 12px 22px rgba(67, 39, 18, 0.24), 0 0 0 1px rgba(226, 180, 112, 0.34)',
+        textColor: '#221308',
+        badgeBackground: 'rgba(51, 29, 11, 0.9)',
+        badgeColor: '#ffd79b'
+      }
+    },
     rustingTile: {
       badge: 'RUST',
       description: 'Loses 2 score each turn it stays unused, rusting further for 4 turns.',

@@ -56,6 +56,8 @@
               'tile-twin-active': hasSelectedTwinMatch(tile),
               'tile-void': tile.status === 'voidTile',
               'tile-barricade': tile.status === 'barricadeTile',
+              'tile-bag': tile.status === 'bagTile',
+              'tile-adjacent-blocked': isAdjacentBlockedTile(tile),
               'tile-must-alert': mustAlertIds.has(tile.id),
               'tile-banned-letter': isBannedLetter(tile),
               'tile-controller-focus': controllerFocusedTileId === tile.id,
@@ -220,6 +222,54 @@ const hideTooltip = () => {
   hoveredTile.value = null;
 };
 
+const RACK_COLUMNS = 5;
+
+const getAdjacentRackIndexes = (index, tilesLength = props.tiles.length) => {
+  const row = Math.floor(index / RACK_COLUMNS);
+  const col = index % RACK_COLUMNS;
+  const indexes = [];
+
+  for (let rowDelta = -1; rowDelta <= 1; rowDelta += 1) {
+    for (let colDelta = -1; colDelta <= 1; colDelta += 1) {
+      if (!rowDelta && !colDelta) {
+        continue;
+      }
+
+      const nextRow = row + rowDelta;
+      const nextCol = col + colDelta;
+      const nextIndex = (nextRow * RACK_COLUMNS) + nextCol;
+      if (nextRow >= 0 && nextCol >= 0 && nextCol < RACK_COLUMNS && nextIndex >= 0 && nextIndex < tilesLength) {
+        indexes.push(nextIndex);
+      }
+    }
+  }
+
+  return indexes;
+};
+
+const adjacentBlockedTileIds = computed(() => {
+  const blockedIds = new Set();
+  props.tiles.forEach((tile, index) => {
+    if (tile?.status !== 'bagTile') {
+      return;
+    }
+    if (props.selectedTileIds.has(tile.id) && tile.blocksAdjacentWhileSelected === false) {
+      return;
+    }
+
+    getAdjacentRackIndexes(index).forEach((blockedIndex) => {
+      const blockedTile = props.tiles[blockedIndex];
+      if (blockedTile?.id && blockedTile.id !== tile.id) {
+        blockedIds.add(blockedTile.id);
+      }
+    });
+  });
+
+  return blockedIds;
+});
+
+const isAdjacentBlockedTile = (tile) => adjacentBlockedTileIds.value.has(tile?.id);
+
 const getLightningAnimationSync = (tile, event) => {
   if (tile?.status !== 'lightningTile') {
     return null;
@@ -273,6 +323,11 @@ const handleTileClick = (tile, event) => {
     setTooltipPositionFromElement(event.currentTarget);
     hoveredTile.value = tile;
     isTooltipVisible.value = true;
+    return;
+  }
+
+  if (isAdjacentBlockedTile(tile)) {
+    hideTooltip();
     return;
   }
 
@@ -904,7 +959,8 @@ onBeforeUnmount(() => {
 .tile-lightning,
 .tile-twin,
 .tile-void,
-.tile-barricade {
+.tile-barricade,
+.tile-bag {
   isolation: isolate;
   overflow: hidden;
 }
@@ -1168,12 +1224,71 @@ onBeforeUnmount(() => {
     0 3px 0 rgba(80, 47, 5, 0.46);
 }
 
+.tile-bag {
+  background:
+    radial-gradient(circle at 50% 18%, rgba(255, 226, 173, 0.42) 0 12%, transparent 13%),
+    linear-gradient(180deg, #d9b280 0%, #9a6a37 58%, #5d3418 100%);
+  box-shadow:
+    inset 0 -4px 0 rgba(58, 31, 11, 0.34),
+    0 12px 22px rgba(67, 39, 18, 0.24),
+    0 0 0 1px rgba(226, 180, 112, 0.34);
+}
+
+.tile-bag::before {
+  content: '';
+  position: absolute;
+  inset: 16% 18% 12%;
+  z-index: 0;
+  border-radius: 48% 48% 34% 34%;
+  pointer-events: none;
+  background:
+    linear-gradient(180deg, rgba(255, 228, 181, 0.2), transparent 40%),
+    repeating-linear-gradient(90deg, rgba(84, 48, 19, 0.18) 0 3px, rgba(255, 224, 176, 0.1) 3px 6px),
+    linear-gradient(180deg, #c48c54 0%, #7b4a24 100%);
+  box-shadow:
+    inset 0 0 0 2px rgba(67, 39, 17, 0.36),
+    inset 0 9px 0 rgba(76, 42, 14, 0.34);
+}
+
+.tile-bag::after {
+  content: '';
+  position: absolute;
+  left: 27%;
+  right: 27%;
+  top: 26%;
+  height: 8px;
+  z-index: 1;
+  border-radius: 999px;
+  pointer-events: none;
+  background: #4a2a12;
+  box-shadow: 0 0 0 2px rgba(226, 180, 112, 0.24);
+}
+
+.tile-adjacent-blocked:not(.tile-in-use) {
+  cursor: not-allowed;
+  filter: grayscale(0.42) brightness(0.64) saturate(0.62);
+}
+
+.tile-adjacent-blocked:not(.tile-in-use)::after {
+  content: '';
+  position: absolute;
+  inset: 10%;
+  z-index: 7;
+  border-radius: 12px;
+  pointer-events: none;
+  background:
+    linear-gradient(38deg, transparent 0 43%, rgba(28, 16, 7, 0.86) 44% 56%, transparent 57% 100%),
+    linear-gradient(-38deg, transparent 0 43%, rgba(28, 16, 7, 0.86) 44% 56%, transparent 57% 100%);
+  box-shadow: inset 0 0 0 3px rgba(28, 16, 7, 0.72);
+}
+
 .tile-shimmer .tile-letter,
 .tile-rusting .tile-letter,
 .tile-lightning .tile-letter,
 .tile-twin .tile-letter,
 .tile-void .tile-letter,
-.tile-barricade .tile-letter {
+.tile-barricade .tile-letter,
+.tile-bag .tile-letter {
   position: relative;
   z-index: 3;
 }
@@ -1197,7 +1312,8 @@ onBeforeUnmount(() => {
 .tile-lightning .tile-score,
 .tile-twin .tile-score,
 .tile-void .tile-score,
-.tile-barricade .tile-score {
+.tile-barricade .tile-score,
+.tile-bag .tile-score {
   z-index: 5;
 }
 
@@ -1206,7 +1322,8 @@ onBeforeUnmount(() => {
 .tile-lightning .tile-modifier,
 .tile-twin .tile-modifier,
 .tile-void .tile-modifier,
-.tile-barricade .tile-modifier {
+.tile-barricade .tile-modifier,
+.tile-bag .tile-modifier {
   z-index: 6;
 }
 

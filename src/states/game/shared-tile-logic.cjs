@@ -19,7 +19,7 @@ const {
 
 
 const GOOD_MODIFIERS = ['gold', 'firsttile', 'royalPear', 'twinTile', 'bankTile', 'gainboon', 'gainattack'];
-const BAD_MODIFIERS = ['zeroTile', 'mustuse', 'locked3', 'burningTile', 'rustingTile', 'lightningTile', 'barricadeTile'];
+const BAD_MODIFIERS = ['zeroTile', 'mustuse', 'locked3', 'burningTile', 'rustingTile', 'lightningTile', 'barricadeTile', 'bagTile'];
 const NEUTRAL_MODIFIERS = ['yinYang', 'ghostTile','bloodTile', 'wild', 'shimmer', 'voidTile'];
 
 const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {}, devLogging = false, testing = false }) => {
@@ -1450,6 +1450,12 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
       state.lightningIntervalMs = undefined;
       state.lightningStrikeAt = undefined;
       state.lightningStrikeCount = undefined;
+    }
+
+    if (effects.blocksAdjacentRackTiles) {
+      state.blocksAdjacentWhileSelected = effects.blocksAdjacentWhileSelected ?? true;
+    } else if (status !== tile.status) {
+      state.blocksAdjacentWhileSelected = undefined;
     }
 
     return state;
