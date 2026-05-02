@@ -30,7 +30,7 @@
             v-for="modifierKey in round.visibleModifierKeys"
             :key="`${round.id}-${modifierKey}`"
           >
-            {{ getModifierLabel(modifierKey) }}
+            <span class="modifier-label">{{ getModifierLabel(modifierKey) }}: </span>{{ getModifierDescription(modifierKey) }}
           </span>
         </div>
       </li>
@@ -41,6 +41,7 @@
 <script setup>
 import { computed } from 'vue';
 import { getRoundModifierDefinition } from '../multiround/round-modifier-definitions.js';
+import { getModifierDescription } from '../tile-logic.js';
 
 const props = defineProps({
   rounds: {
@@ -187,7 +188,10 @@ const getRoundLabel = (round) => {
   border-color: rgba(255, 255, 255, 0.82);
   box-shadow: inset 0 2px 8px rgba(255, 255, 255, 0.18), 0 0 0 4px rgba(255, 126, 84, 0.22), 0 10px 20px rgba(37, 8, 24, 0.32);
 }
-
+.modifier-label{
+  font-weight: 700;
+  color: #ffb05f;
+}
 .round-number {
   display: block;
   width: 100%;
@@ -201,8 +205,8 @@ const getRoundLabel = (round) => {
   position: absolute;
   top: 48px;
   left: 50%;
-  min-width: 150px;
-  padding: 10px;
+  min-width: 250px;
+  padding: 14px;
   border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 8px;
   color: #fff7e8;
@@ -217,7 +221,7 @@ const getRoundLabel = (round) => {
 .round-tooltip strong,
 .round-tooltip span {
   display: block;
-  font-size: 0.72rem;
+  font-size: 1.2rem;
 }
 
 .round-marker:hover + .round-tooltip,
