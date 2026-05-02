@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.0.44 - 2026-05-02
+- fixed the in use layer to be on top of all tiles 
+- auto focus the current dificulty on the actual dificulty 
+
 ## 0.0.43 - 2026-05-02
 - added new tiles: 
 leacher neutral: leach adj tiles and gain value
