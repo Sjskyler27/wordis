@@ -301,6 +301,22 @@ const createModifierDefinitions = ({ bloodTilePositionValues }) => ({
         badgeColor: '#244bb0'
       }
     },
+    barricadeTile: {
+      badge: 'STOP',
+      description: 'Barricade tile. While it is in your rack, you cannot play cards.',
+      effects: {
+        disablesCardsWhileInRack: true
+      },
+      rarityWeight: 0.34,
+      canApply: ({ baseScore }) => baseScore <= 5,
+      ui: {
+        tileBackground: 'linear-gradient(180deg, #ff0476 0%, #f00822 54%, #9b5e05 100%)',
+        tileShadow: 'inset 0 -4px 0 rgba(86, 45, 4, 0.34), 0 12px 20px rgba(92, 55, 5, 0.22), 0 0 0 1px rgba(255, 226, 106, 0.42)',
+        textColor: '#fff1dd',
+        badgeBackground: 'rgba(43, 28, 3, 0.92)',
+        badgeColor: '#ffe476'
+      }
+    },
     rustingTile: {
       badge: 'RUST',
       description: 'Loses 2 score each turn it stays unused, rusting further for 4 turns.',

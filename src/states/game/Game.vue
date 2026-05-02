@@ -801,7 +801,18 @@ const isMySubmissionPaused = computed(() => Boolean(submissionPauseOwner.value) 
 const isSubmissionPauseActive = computed(() => Boolean(submissionPauseOwner.value));
 
 const myCards = computed(() => playerCards.value[mySide.value] || { boons: [], attacks: [] });
-const cardControlsDisabled = computed(() => isMultiRoundMode.value && roundModifierEffects.value.cardsDisabled);
+const hasBarricadeTileInRack = computed(() => myTiles.value.some((tile) => tile?.status === 'barricadeTile'));
+const cardDisabledReason = computed(() => {
+  if (hasBarricadeTileInRack.value) {
+    return 'Barricade is blocking your cards.';
+  }
+  if (isMultiRoundMode.value && roundModifierEffects.value.cardsDisabled) {
+    return 'Cards cannot be played this round.';
+  }
+
+  return '';
+});
+const cardControlsDisabled = computed(() => Boolean(cardDisabledReason.value));
 const {
   groupedBoonCards,
   groupedAttackCards,
@@ -1782,7 +1793,7 @@ const resetActionMode = () => {
 
 const selectBoonCard = (card) => {
   if (cardControlsDisabled.value) {
-    localMessage.value = 'Cards cannot be played this round.';
+    localMessage.value = cardDisabledReason.value;
     return;
   }
 
@@ -1815,7 +1826,7 @@ const selectBoonCard = (card) => {
 
 const useAttackCard = (card) => {
   if (cardControlsDisabled.value) {
-    localMessage.value = 'Cards cannot be played this round.';
+    localMessage.value = cardDisabledReason.value;
     return;
   }
 
@@ -2271,6 +2282,12 @@ const handleTileClickWithCards = (payload, side) => {
   }
 
   if (activeBoonCard.value) {
+    if (cardControlsDisabled.value) {
+      localMessage.value = cardDisabledReason.value;
+      resetActionMode();
+      return;
+    }
+
     if (side !== mySide.value) {
       localMessage.value = 'Boons can only target your own tiles.';
       return;
@@ -2304,6 +2321,12 @@ const handleBuiltTileClick = (tile) => {
   }
 
   if (activeBoonCard.value) {
+    if (cardControlsDisabled.value) {
+      localMessage.value = cardDisabledReason.value;
+      resetActionMode();
+      return;
+    }
+
     if (props.isMultiplayer) {
       useMultiplayerBoon({ cardId: activeBoonCard.value.id, tileId: tile.id });
       localMessage.value = `Played ${activeBoonCard.value.label} on your tile.`;

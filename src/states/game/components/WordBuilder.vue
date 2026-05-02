@@ -29,6 +29,7 @@
               :class="{
                 'built-tile-lightning': tile.status === 'lightningTile',
                 'built-tile-void': tile.status === 'voidTile',
+                'built-tile-barricade': tile.status === 'barricadeTile',
                 'built-tile-twin': tile.status === 'twinTile',
                 'built-tile-twin-active': hasTwinMatch(tile)
               }"
@@ -84,6 +85,7 @@
                 'built-tile-rusting': slot.tile.status === 'rustingTile',
                 'built-tile-lightning': slot.tile.status === 'lightningTile',
                 'built-tile-void': slot.tile.status === 'voidTile',
+                'built-tile-barricade': slot.tile.status === 'barricadeTile',
                 'built-tile-twin': slot.tile.status === 'twinTile',
                 'built-tile-twin-active': hasTwinMatch(slot.tile),
                 'built-tile-controller-focus': controllerFocusedBuiltTileId === slot.tile.id
@@ -876,7 +878,8 @@ button:focus{
 .built-tile-rusting,
 .built-tile-lightning,
 .built-tile-twin,
-.built-tile-void {
+.built-tile-void,
+.built-tile-barricade {
   isolation: isolate;
   overflow: hidden;
 }
@@ -1065,13 +1068,43 @@ button:focus{
   animation: built-void-pulse 1400ms ease-in-out infinite;
 }
 
+.built-tile-barricade {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.24), transparent 36%),
+    repeating-linear-gradient(135deg, #2a220a 0 12%, #2a220a 12% 22%, #ffd84c 22% 36%, #ffd84c 36% 48%),
+    linear-gradient(180deg, #ffe476 0%, #f0b822 58%, #9b5e05 100%);
+  box-shadow:
+    inset 0 -4px 0 rgba(86, 45, 4, 0.34),
+    0 12px 20px rgba(92, 55, 5, 0.22),
+    0 0 0 1px rgba(255, 226, 106, 0.42);
+}
+
+.built-tile-barricade::before {
+  content: '';
+  position: absolute;
+  inset: 12% 5%;
+  z-index: 0;
+  border-radius: 10px;
+  pointer-events: none;
+  background:
+    linear-gradient(90deg, transparent 0 8%, rgba(255, 245, 166, 0.76) 8% 12%, transparent 12% 88%, rgba(255, 245, 166, 0.76) 88% 92%, transparent 92% 100%),
+    repeating-linear-gradient(135deg, rgba(35, 26, 7, 0.92) 0 10px, rgba(35, 26, 7, 0.92) 10px 18px, rgba(255, 220, 68, 0.96) 18px 32px, rgba(255, 220, 68, 0.96) 32px 42px);
+  box-shadow:
+    inset 0 0 0 2px rgba(47, 30, 4, 0.78),
+    0 3px 0 rgba(80, 47, 5, 0.46);
+}
+
 .built-tile-shimmer .tile-letter,
 .built-tile-rusting .tile-letter,
 .built-tile-lightning .tile-letter,
 .built-tile-twin .tile-letter,
-.built-tile-void .tile-letter {
+.built-tile-void .tile-letter,
+.built-tile-barricade .tile-letter {
   position: relative;
   z-index: 3;
+  text-shadow:
+    0 2px 0 rgba(255, 235, 132, 0.5),
+    0 0 6px rgba(255, 249, 190, 0.34);
 }
 .built-tile-rusting{
   --tile-letter-stroke: 1px rgba(255, 255, 255, 0.92);
@@ -1086,7 +1119,8 @@ button:focus{
 .built-tile-rusting .tile-score,
 .built-tile-lightning .tile-score,
 .built-tile-twin .tile-score,
-.built-tile-void .tile-score {
+.built-tile-void .tile-score,
+.built-tile-barricade .tile-score {
   z-index: 5;
 }
 
@@ -1094,7 +1128,8 @@ button:focus{
 .built-tile-rusting .tile-modifier,
 .built-tile-lightning .tile-modifier,
 .built-tile-twin .tile-modifier,
-.built-tile-void .tile-modifier {
+.built-tile-void .tile-modifier,
+.built-tile-barricade .tile-modifier {
   z-index: 6;
 }
 
