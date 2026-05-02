@@ -1309,10 +1309,25 @@ onBeforeUnmount(() => {
 }
 
 .tile-leecher-drained:not(.tile-leecher) {
-  filter: grayscale(0.45) brightness(0.74) saturate(0.64);
+  filter: grayscale(0.05) brightness(0.90) saturate(0.99);
   box-shadow:
-    inset 0 0 0 3px rgba(44, 92, 50, 0.38),
-    var(--tile-shadow, inset 0 -4px 0 rgba(0, 0, 0, 0.12), 0 10px 18px rgba(45, 10, 24, 0.16));
+    inset 0 0 0 7px rgba(44, 92, 50, 0.38),
+    var(--tile-shadow, inset 0 -4px 0 rgba(0, 0, 0, 0.92), 0 10px 18px rgba(45, 10, 24, 0.16));
+}
+
+.tile-leecher-drained:not(.tile-leecher)::before{
+  content: '';
+  position: absolute;
+  left: 70%;
+  right: 05%;
+  top: 18%;
+  height: 5px;
+  border-radius: 999px;
+  background: rgba(213, 31, 55, 0.94);
+  box-shadow: 0 0 0 2px rgba(255, 231, 220, 0.62), 0 6px 12px rgba(88, 5, 18, 0.26);
+  pointer-events: none;
+  transform: translateY(-85%) rotate(-38deg);
+  z-index: 4;
 }
 
 .tile-shimmer .tile-letter,
