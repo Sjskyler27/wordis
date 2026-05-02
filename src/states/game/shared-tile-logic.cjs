@@ -2028,7 +2028,10 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
             ...profile.badModifiers,
             ...(profile.neutralModifiers || [])
           ]);
-      const modifierStatuses = Object.keys(MODIFIER_DEFINITIONS).filter((status) => status !== 'normal' && allowedStatuses.has(status));
+      const modifierStatuses = Object.keys(MODIFIER_DEFINITIONS).filter((status) => {
+        const definition = getModifierDefinition(status);
+        return status !== 'normal' && allowedStatuses.has(status) && !definition.excludeFromTest;
+      });
       const rack = [];
 
       while (rack.length < RACK_SIZE) {

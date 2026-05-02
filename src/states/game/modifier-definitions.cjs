@@ -247,6 +247,7 @@ const createModifierDefinitions = ({ bloodTilePositionValues }) => ({
       description: 'You must include this tile in your submitted word.',
       effects: { required: true, botPerformanceDelta: -0.9 },
       rarityWeight: 0.6,
+      excludeFromTest: true,
       canApply: ({ baseScore }) => baseScore <= 3,
       ui: {
         tileBackground: 'linear-gradient(180deg, #ffdfe2 0%, #ff8b97 72%, #b72848 100%)',
@@ -291,6 +292,7 @@ const createModifierDefinitions = ({ bloodTilePositionValues }) => ({
       description: 'Scores as 1 if used. If left unused, it burns you for -3.',
       effects: { setScore: 1, idleScorePenalty: 3 },
       rarityWeight: 0.5,
+      excludeFromTest: true,
       animations: {
         onNewTurn: 'blaze'
       },
