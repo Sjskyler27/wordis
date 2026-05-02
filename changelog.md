@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.0.43 - 2026-05-02
+- added new tiles: 
+leacher neutral: leach adj tiles and gain value
+bag bad: adj tiles are in the bag and cannot be played unless the bag is played
+baricade bad: cards cannot be played while this tile is out.
+void: neutral tile worth plus 12 but all other letters in word are 0 
+- updated file size for pwa
+- added sparks to lightining may remove them 
+- header alignment
+- pause button and card view fix
+- drawers can stay open on mobile
+- added controller sensitivity
+
 ## 0.0.42 - 2026-05-01
 MAJOR CHANGES
 - pulled background out of every component and put it top level out side of app zoom. 
