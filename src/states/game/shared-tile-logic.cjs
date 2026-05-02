@@ -1821,13 +1821,13 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
       if (options.mode === 'clear') {
         const clearRack = createClearRack(options.currentTiles || [], side, scores, options);
         return options.roundModifierEffects?.lockNextColumn
-          ? applyRotatingLockColumn(clearRack, options.turnCount || 1)
+          ? applyRotatingLockColumn(clearRack, options.turnCount ?? 0)
           : clearRack;
       }
 
       const rack = buildFreshRack(side, scores, options);
       return options.roundModifierEffects?.lockNextColumn
-        ? applyRotatingLockColumn(rack, options.turnCount || 1)
+        ? applyRotatingLockColumn(rack, options.turnCount ?? 0)
         : rack;
     };
 
@@ -1843,7 +1843,7 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
 
     const applyRotatingLockColumn = (tiles = [], turnCount = 1) => {
       const columnCount = 5;
-      const lockedColumnIndex = Math.max(0, (turnCount - 1) % columnCount);
+      const lockedColumnIndex = Math.max(0, turnCount % columnCount);
 
       return tiles.map((tile, index) => {
         if (index % columnCount !== lockedColumnIndex) {
@@ -1955,7 +1955,7 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
 
       let resolvedTiles = nextTiles;
       if (roundModifierEffects.lockNextColumn) {
-        resolvedTiles = applyRotatingLockColumn(resolvedTiles, options.turnCount || 1);
+        resolvedTiles = applyRotatingLockColumn(resolvedTiles, options.turnCount ?? 0);
       }
       if (roundModifierEffects.shuffleOnSubmit) {
         resolvedTiles = shuffleTiles(resolvedTiles);
