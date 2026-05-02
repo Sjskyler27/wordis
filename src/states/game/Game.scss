@@ -52,7 +52,6 @@ body {
 }
 
 .board-frame {
-
   justify-content: center;
   display: flex;
   grid-template-columns: 250px minmax(0, 1fr);
@@ -223,6 +222,7 @@ body {
   letter-spacing: 0.04em;
   font-family: "Press Start 2P", cursive;
   background: linear-gradient(180deg, #6356d9 0%, #41359c 100%);
+  z-index: 9;
   color: white;
 }
 
@@ -310,6 +310,10 @@ body {
     text-transform: uppercase;
     box-shadow: 0 12px 28px rgba(30, 8, 22, 0.22);
     transition: transform 180ms ease, background 180ms ease, color 180ms ease;
+  }
+  .accent-purple{
+    overflow: hidden;
+    overflow-y: auto;
   }
 
   .side-drawer-handle.open {
