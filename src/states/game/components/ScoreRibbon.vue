@@ -6,7 +6,7 @@
     </div>
     <div class="score-divider">VS</div>
     <div class="score-box opponent" :class="opponentScoreClass">
-      <span class="badge">{{ showClock ? 'Time:' : 'Their Board' }}</span>
+      <span class="box-label">{{ showClock ? 'Time:' : 'Their Board' }}</span>
       <strong>{{ showClock ? clockScoreRibbonLabel : rightScore }}</strong>
     </div>
   </div>

@@ -33,11 +33,11 @@
       <section v-if="activeTab === 'display'" class="settings-group">
         <div class="setting">
           <label for="zoom">UI Zoom: {{ Math.round(props.zoom * 100) }}%</label>
-          <input id="zoom" type="range" min="0.5" max="1.5" step="0.01" :value="props.zoom" @input="onZoomInput" />
+          <input id="zoom" type="range" min="0.4" max="1.7" step="0.01" :value="props.zoom" @input="onZoomInput" />
         </div>
         <div class="setting">
           <label for="gameZoom">Game Zoom: {{ Math.round(props.gameZoom * 100) }}%</label>
-          <input id="gameZoom" type="range" min="0.5" max="1.5" step="0.01" :value="props.gameZoom" @input="ongameZoomInput" />
+          <input id="gameZoom" type="range" min="0.4" max="1.7" step="0.01" :value="props.gameZoom" @input="ongameZoomInput" />
         </div>
         <!-- <div class="setting">
           <label for="shopZoom">Shop Zoom: {{ Math.round(props.shopZoom * 100) }}%</label>
