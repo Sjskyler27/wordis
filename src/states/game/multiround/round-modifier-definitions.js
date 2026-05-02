@@ -22,7 +22,7 @@ export const ROUND_MODIFIER_DEFINITIONS = {
     label: 'No S',
     description: 'Words cannot use S.',
     difficulty: ROUND_MODIFIER_DIFFICULTIES.MEDIUM,
-    force_test: false,
+    force_test: true,
     cantCombineWith: [],
     tags: ['letter-ban'],
     rules: {

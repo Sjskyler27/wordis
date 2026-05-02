@@ -898,21 +898,21 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
     const row = Math.floor(index / columnCount);
     const col = index % columnCount;
     const indexes = [];
+    const cardinalOffsets = [
+      [-1, 0],
+      [1, 0],
+      [0, -1],
+      [0, 1]
+    ];
 
-    for (let rowDelta = -1; rowDelta <= 1; rowDelta += 1) {
-      for (let colDelta = -1; colDelta <= 1; colDelta += 1) {
-        if (!rowDelta && !colDelta) {
-          continue;
-        }
-
-        const nextRow = row + rowDelta;
-        const nextCol = col + colDelta;
-        const nextIndex = (nextRow * columnCount) + nextCol;
-        if (nextRow >= 0 && nextCol >= 0 && nextCol < columnCount && nextIndex >= 0 && nextIndex < tilesLength) {
-          indexes.push(nextIndex);
-        }
+    cardinalOffsets.forEach(([rowDelta, colDelta]) => {
+      const nextRow = row + rowDelta;
+      const nextCol = col + colDelta;
+      const nextIndex = (nextRow * columnCount) + nextCol;
+      if (nextRow >= 0 && nextCol >= 0 && nextCol < columnCount && nextIndex >= 0 && nextIndex < tilesLength) {
+        indexes.push(nextIndex);
       }
-    }
+    });
 
     return indexes;
   };

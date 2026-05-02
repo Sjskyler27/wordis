@@ -230,21 +230,21 @@ const getAdjacentRackIndexes = (index, tilesLength = props.tiles.length) => {
   const row = Math.floor(index / RACK_COLUMNS);
   const col = index % RACK_COLUMNS;
   const indexes = [];
+  const cardinalOffsets = [
+    [-1, 0],
+    [1, 0],
+    [0, -1],
+    [0, 1]
+  ];
 
-  for (let rowDelta = -1; rowDelta <= 1; rowDelta += 1) {
-    for (let colDelta = -1; colDelta <= 1; colDelta += 1) {
-      if (!rowDelta && !colDelta) {
-        continue;
-      }
-
-      const nextRow = row + rowDelta;
-      const nextCol = col + colDelta;
-      const nextIndex = (nextRow * RACK_COLUMNS) + nextCol;
-      if (nextRow >= 0 && nextCol >= 0 && nextCol < RACK_COLUMNS && nextIndex >= 0 && nextIndex < tilesLength) {
-        indexes.push(nextIndex);
-      }
+  cardinalOffsets.forEach(([rowDelta, colDelta]) => {
+    const nextRow = row + rowDelta;
+    const nextCol = col + colDelta;
+    const nextIndex = (nextRow * RACK_COLUMNS) + nextCol;
+    if (nextRow >= 0 && nextCol >= 0 && nextCol < RACK_COLUMNS && nextIndex >= 0 && nextIndex < tilesLength) {
+      indexes.push(nextIndex);
     }
-  }
+  });
 
   return indexes;
 };
