@@ -338,7 +338,8 @@ body {
     display: block;
     z-index: 5;
     border: none;
-    background: rgba(18, 6, 17, 0.28);
+    background: rgba(18, 6, 17, 0.00);
+    pointer-events: none;
   }
 
   .side-stack.side-stack-drawer {
@@ -357,6 +358,7 @@ body {
     transform: translateX(calc(-100% - 16px));
     animation: none;
     transition: transform 220ms ease;
+    pointer-events: all;
   }
 
   .side-stack.side-stack-drawer.open {

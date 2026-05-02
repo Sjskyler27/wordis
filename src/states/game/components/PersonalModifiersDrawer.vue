@@ -239,10 +239,12 @@ defineExpose({
     display: block;
     z-index: 29;
     border: none;
-    background: rgba(18, 6, 17, 0.28);
+    background: rgba(18, 6, 17, 0.00);
+    pointer-events: none;
   }
 
   .personal-modifiers-drawer {
+    pointer-events: all;
     position: fixed;
     top: 18px;
     right: 0;
