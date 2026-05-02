@@ -76,6 +76,20 @@ export const ROUND_MODIFIER_DEFINITIONS = {
       idlePenaltyMultiplier: 2
     }
   },
+  four_letter_sap: {
+    key: 'four_letter_sap',
+    label: 'Short Sap',
+    description: 'Four-letter words remove 4 seconds from the clock.',
+    difficulty: ROUND_MODIFIER_DIFFICULTIES.EASY,
+    force_test: false,
+    cantCombineWith: [],
+    tags: ['time', 'word-length'],
+    roundEffects: {
+      lengthTimePenalty: {
+        4: 4
+      }
+    }
+  },
   fleeting_tiles: {
     key: 'fleeting_tiles',
     label: 'Fleeting Rack',

@@ -561,6 +561,7 @@ const roundModifierEffects = computed(() => {
     const tileEffects = modifier.tileEffects || {};
     const chanceEffects = modifier.chanceEffects || {};
     const cardRules = modifier.cardRules || {};
+    const roundEffects = modifier.roundEffects || {};
 
     effects.minimumWordLength = Math.max(effects.minimumWordLength, rules.minimumWordLength || 0);
     effects.bannedLetters = [
@@ -586,6 +587,9 @@ const roundModifierEffects = computed(() => {
     effects.badChanceCapDelta += chanceEffects.badChanceCapDelta || 0;
     effects.neutralChanceCapDelta += chanceEffects.neutralChanceCapDelta || 0;
     effects.cardsDisabled = effects.cardsDisabled || Boolean(cardRules.cardsDisabled);
+    Object.entries(roundEffects.lengthTimePenalty || {}).forEach(([length, seconds]) => {
+      effects.lengthTimePenalty[length] = (effects.lengthTimePenalty[length] || 0) + (seconds || 0);
+    });
     return effects;
   }, {
     minimumWordLength: 0,
@@ -606,7 +610,8 @@ const roundModifierEffects = computed(() => {
     goodChanceCapDelta: 0,
     badChanceCapDelta: 0,
     neutralChanceCapDelta: 0,
-    cardsDisabled: false
+    cardsDisabled: false,
+    lengthTimePenalty: {}
   });
 });
 const multiRoundScoreOptions = computed(() => ({
@@ -1555,6 +1560,21 @@ const applyMultiRoundWordTimeBonus = (tileCount = 0) => {
   return seconds;
 };
 
+const applyMultiRoundWordTimePenalty = (tileCount = 0) => {
+  if (!isMultiRoundMode.value) {
+    return 0;
+  }
+
+  const timePenaltyByLength = roundModifierEffects.value.lengthTimePenalty || {};
+  const seconds = timePenaltyByLength[tileCount] || timePenaltyByLength[String(tileCount)] || 0;
+  if (!seconds) {
+    return 0;
+  }
+
+  multiRoundRun.setTimerRemainingSeconds(multiRoundRun.timerRemainingSeconds.value - seconds);
+  return seconds;
+};
+
 const handleMultiRoundRewardChoice = (rewardKey) => {
   const selectedModifier = multiRoundRun.selectRewardChoice(rewardKey);
   if (!selectedModifier) {
@@ -1750,6 +1770,7 @@ const handleSubmit = async () => {
     isSoloTimerPausedByAttack.value = false;
   }
   isMultiRoundTimerPausedByAttack.value = false;
+  const wasFinalWordWindowActive = finalWordWindowActive.value;
 
   const submitted = submitSinglePlayerWord(resolvedWord, {
     wordElapsedSeconds: currentWordElapsedSeconds.value
@@ -1760,6 +1781,10 @@ const handleSubmit = async () => {
   const secondsRestored = applyMultiRoundWordTimeBonus(selectedTiles.length);
   if (secondsRestored) {
     localMessage.value = `${localMessage.value} Restored ${secondsRestored} seconds.`;
+  }
+  const secondsSapped = applyMultiRoundWordTimePenalty(selectedTiles.length);
+  if (secondsSapped) {
+    localMessage.value = `${localMessage.value} Lost ${secondsSapped} seconds.`;
   }
 
   if (isMultiRoundMode.value) {
@@ -1785,7 +1810,7 @@ const handleSubmit = async () => {
       return;
     }
 
-    if (finalWordWindowActive.value) {
+    if (wasFinalWordWindowActive) {
       failMultiRoundRun();
     }
     return;
