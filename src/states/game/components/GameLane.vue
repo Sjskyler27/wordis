@@ -1083,6 +1083,43 @@ onBeforeUnmount(() => {
 }
 
 .tile-void::before {
+  inset: 8%;
+  z-index: 0;
+  border-radius: 18px;
+  background:
+    radial-gradient(circle at 14% 18%, rgba(255, 255, 255, 0.95) 0 1.5px, transparent 2px),
+    radial-gradient(circle at 76% 14%, rgba(255, 255, 255, 0.88) 0 1px, transparent 1.7px),
+    radial-gradient(circle at 90% 42%, rgba(255, 255, 255, 0.9) 0 1.4px, transparent 2px),
+    radial-gradient(circle at 68% 84%, rgba(255, 255, 255, 0.82) 0 1.2px, transparent 1.8px),
+    radial-gradient(circle at 22% 78%, rgba(255, 255, 255, 0.9) 0 1.3px, transparent 2px),
+    radial-gradient(circle at 8% 52%, rgba(255, 255, 255, 0.72) 0 1px, transparent 1.7px),
+    radial-gradient(circle at 47% 8%, rgba(255, 255, 255, 0.78) 0 1px, transparent 1.7px),
+    radial-gradient(circle at 54% 94%, rgba(255, 255, 255, 0.82) 0 1.2px, transparent 1.8px),
+    radial-gradient(circle at 18% 88%, rgba(255, 255, 255, 0.95) 0 1.5px, transparent 2px),
+    radial-gradient(circle at 26% 14%, rgba(255, 255, 255, 0.88) 0 1px, transparent 1.7px),
+    radial-gradient(circle at 70% 42%, rgba(255, 255, 255, 0.9) 0 1.4px, transparent 2px),
+    radial-gradient(circle at 89% 84%, rgba(255, 255, 255, 0.82) 0 1.2px, transparent 1.8px),
+    radial-gradient(circle at 20% 18%, rgba(255, 255, 255, 0.9) 0 1.3px, transparent 2px),
+    radial-gradient(circle at 8% 52%, rgba(255, 255, 255, 0.72) 0 1px, transparent 1.7px),
+    radial-gradient(circle at 57% 8%, rgba(255, 255, 255, 0.78) 0 1px, transparent 1.7px),
+    radial-gradient(circle at 14% 74%, rgba(255, 255, 255, 0.82) 0 1.2px, transparent 1.8px);
+  transform-origin: 50% 50%;
+  animation: tile-void-stars-collapse 3700ms linear infinite;
+}
+
+.tile-void::after {
+  inset: 26%;
+  z-index: 1;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 50% 50%, #000000 0 42%, rgba(1, 2, 8, 0.88) 43% 62%, transparent 64%);
+  box-shadow:
+    0 0 14px rgba(230, 240, 255, 0.22),
+    inset 0 0 16px rgba(0, 0, 0, 0.94);
+  animation: tile-void-pulse 1400ms ease-in-out infinite;
+}
+
+.tile-voidold::before {
   inset: 9%;
   z-index: 0;
   border-radius: 50%;
@@ -1469,15 +1506,21 @@ onBeforeUnmount(() => {
   }
 }
 
-@keyframes tile-void-vortex {
+@keyframes tile-void-stars-collapse {
   0% {
-    transform: rotate(0deg) scale(1);
+    opacity: 0;
+    transform: scale(1.18) rotate(0deg);
   }
-  50% {
-    transform: rotate(180deg) scale(1.06);
+  14% {
+    opacity: 0.95;
+  }
+  72% {
+    opacity: 0.78;
+    transform: scale(0.24) rotate(28deg);
   }
   100% {
-    transform: rotate(360deg) scale(1);
+    opacity: 0;
+    transform: scale(0.04) rotate(42deg);
   }
 }
 
