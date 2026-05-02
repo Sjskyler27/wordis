@@ -1,8 +1,10 @@
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 import { getLengthBonus, getWordScoreDetails, getDifference, getIdleScorePenalty, getMilestoneReward } from './tile-logic.js';
 
-const formatMilestoneReward = (length) => {
+const formatMilestoneReward = (length, options = {}) => {
   const reward = getMilestoneReward(length);
+  const personalEffects = options.personalModifierEffects || {};
+  const roundEffects = options.roundModifierEffects || {};
   const labels = [];
 
   if (reward.attacks) {
@@ -11,6 +13,26 @@ const formatMilestoneReward = (length) => {
 
   if (reward.boons) {
     labels.push(`+${reward.boons} BOON`);
+  }
+
+  const lengthScoreBonus = personalEffects.lengthScoreBonus?.[length] || personalEffects.lengthScoreBonus?.[String(length)] || 0;
+  if (lengthScoreBonus) {
+    labels.push(`+${lengthScoreBonus} PTS`);
+  }
+
+  const lengthScoreMultiplier = personalEffects.lengthScoreMultiplier?.[length] || personalEffects.lengthScoreMultiplier?.[String(length)] || 0;
+  if (lengthScoreMultiplier && lengthScoreMultiplier !== 1) {
+    labels.push(`x${Number(lengthScoreMultiplier).toFixed(1)}`);
+  }
+
+  const lengthTimeBonus = personalEffects.lengthTimeBonus?.[length] || personalEffects.lengthTimeBonus?.[String(length)] || 0;
+  if (lengthTimeBonus) {
+    labels.push(`+${lengthTimeBonus}s`);
+  }
+
+  const lengthTimePenalty = roundEffects.lengthTimePenalty?.[length] || roundEffects.lengthTimePenalty?.[String(length)] || 0;
+  if (lengthTimePenalty) {
+    labels.push(`-${lengthTimePenalty}s`);
   }
 
   return labels.join(' · ');
@@ -86,13 +108,17 @@ export const useWordBuilder = ({ mySide, myTiles, playerScores, scoreOptions }) 
   const currentLetterTotal = computed(() => currentScoreDetails.value.letterTotal);
   const currentWordMultiplier = computed(() => currentScoreDetails.value.wordMultiplier);
   const currentWordScore = computed(() => currentScoreDetails.value.total - currentIdlePenalty.value);
-  const lengthBonusSteps = computed(() => ([
-    { length: 5, bonus: getLengthBonus(5), difference: getDifference(5), rewardLabel: formatMilestoneReward(5) },
-    { length: 6, bonus: getLengthBonus(6), difference: getDifference(6), rewardLabel: formatMilestoneReward(6) },
-    { length: 7, bonus: getLengthBonus(7), difference: getDifference(7), rewardLabel: formatMilestoneReward(7) },
-    { length: 8, bonus: getLengthBonus(8), difference: getDifference(8), rewardLabel: formatMilestoneReward(8) },
-    { length: 9, bonus: getLengthBonus(9), difference: getDifference(9), rewardLabel: formatMilestoneReward(9) }
-  ]));
+  const lengthBonusSteps = computed(() => {
+    const activeScoreOptions = scoreOptions?.value || {};
+    return [4, 5, 6, 7, 8, 9]
+      .map((length) => ({
+        length,
+        bonus: getLengthBonus(length),
+        difference: getDifference(length),
+        rewardLabel: formatMilestoneReward(length, activeScoreOptions)
+      }))
+      .filter((step) => step.bonus || step.rewardLabel);
+  });
 
   const handleTileClick = (tile, options = {}) => {
     const side = mySide.value;
