@@ -612,7 +612,8 @@ const roundModifierEffects = computed(() => {
 const multiRoundScoreOptions = computed(() => ({
   personalModifierEffects: personalModifierEffects.value,
   roundModifierEffects: roundModifierEffects.value,
-  roundModifierCountdowns: roundModifierCountdowns.value
+  roundModifierCountdowns: roundModifierCountdowns.value,
+  wordElapsedSeconds: currentWordElapsedSeconds.value
 }));
 const buildLane = (side, label) => ({
   side,

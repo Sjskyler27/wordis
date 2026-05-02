@@ -1,4 +1,4 @@
-import { computed, ref } from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 import { getLengthBonus, getWordScoreDetails, getDifference, getIdleScorePenalty, getMilestoneReward } from './tile-logic.js';
 
 const formatMilestoneReward = (length) => {
@@ -33,6 +33,8 @@ export const useWordBuilder = ({ mySide, myTiles, playerScores, scoreOptions }) 
     host: 0,
     opponent: 0
   });
+  const wordClockNow = ref(Date.now());
+  let wordClockIntervalId = null;
 
   const selectedTileIds = computed(() => ({
     host: new Set(selectedTileSlots.value.host),
@@ -62,7 +64,7 @@ export const useWordBuilder = ({ mySide, myTiles, playerScores, scoreOptions }) 
   const currentWordLength = computed(() => selectedTilesForCurrentSide.value.length);
   const currentWordElapsedSeconds = computed(() => {
     const startedAt = wordStartedAt.value[mySide.value] || 0;
-    return startedAt ? Math.max(0, (Date.now() - startedAt) / 1000) : 0;
+    return startedAt ? Math.max(0, (wordClockNow.value - startedAt) / 1000) : 0;
   });
   const currentScoreDetails = computed(() => getWordScoreDetails(selectedTilesForCurrentSide.value, {
     side: mySide.value,
@@ -115,9 +117,10 @@ export const useWordBuilder = ({ mySide, myTiles, playerScores, scoreOptions }) 
       [side]: [...selectedTileSlots.value[side], tile.id]
     };
     if (!wordStartedAt.value[side]) {
+      wordClockNow.value = Date.now();
       wordStartedAt.value = {
         ...wordStartedAt.value,
-        [side]: Date.now()
+        [side]: wordClockNow.value
       };
     }
     if (options.animationSync) {
@@ -244,6 +247,16 @@ export const useWordBuilder = ({ mySide, myTiles, playerScores, scoreOptions }) 
       [side]: savedTileSlots.value[side].map((tileId) => (tileId === fromTileId ? toTileId : tileId))
     };
   };
+
+  onMounted(() => {
+    wordClockIntervalId = window.setInterval(() => {
+      wordClockNow.value = Date.now();
+    }, 250);
+  });
+
+  onBeforeUnmount(() => {
+    window.clearInterval(wordClockIntervalId);
+  });
 
   return {
     selectedTileIds,

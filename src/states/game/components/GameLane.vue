@@ -428,19 +428,51 @@ const isHotBurnTile = (tile) => {
 const getRoundModifierCountdownLabel = (modifierKey) => {
   return props.scoreOptions?.roundModifierCountdowns?.[modifierKey]?.label || '';
 };
-const boardEffectLabel = computed(() => {
-  const effects = props.scoreOptions?.roundModifierEffects || {};
-  if (effects.chaoticBoardIntervalMs) {
-    return getRoundModifierCountdownLabel('chaotic_board') || 'Chaos soon';
-  }
-  if (effects.shuffleRackIntervalMs) {
-    return getRoundModifierCountdownLabel('disorganised') || 'Shuffle soon';
-  }
-  if (effects.returnBuilderIntervalMs) {
-    return getRoundModifierCountdownLabel('loose_letters') || 'Return soon';
+const getTimedWordTierIndex = (elapsedSeconds = 0, config = {}) => {
+  const graceSeconds = Math.max(0, Number(config.graceSeconds) || 0);
+  const intervalSeconds = Math.max(0.001, Number(config.intervalSeconds) || 1);
+  const effectiveSeconds = Math.max(0, (Number(elapsedSeconds) || 0) - graceSeconds);
+  return Math.max(0, Math.floor(effectiveSeconds / intervalSeconds));
+};
+const getSpeedyAdditionLabel = () => {
+  if (!props.isActive) {
+    return '';
   }
 
-  return '';
+  const configs = props.scoreOptions?.personalModifierEffects?.timedWordScoreBonuses || [];
+  const config = configs[0];
+  const bonuses = Array.isArray(config?.bonuses) ? config.bonuses : [];
+  if (!config || !bonuses.length) {
+    return '';
+  }
+
+  const elapsedSeconds = props.scoreOptions?.wordElapsedSeconds || 0;
+  const tierIndex = getTimedWordTierIndex(elapsedSeconds, config);
+  const currentBonus = bonuses[tierIndex] ?? config.finalBonus ?? 0;
+  const zeroTierIndex = bonuses.findIndex((bonus) => Number(bonus) <= 0);
+  const zeroAt = (Math.max(0, Number(config.graceSeconds) || 0) + Math.max(0, zeroTierIndex) * Math.max(0.001, Number(config.intervalSeconds) || 1));
+  const secondsToZero = zeroTierIndex >= 0 ? Math.max(0, Math.ceil(zeroAt - elapsedSeconds)) : 0;
+
+  return `Speed +${Math.max(0, Number(currentBonus) || 0)} · 0 in ${secondsToZero}s`;
+};
+const boardEffectLabel = computed(() => {
+  const effects = props.scoreOptions?.roundModifierEffects || {};
+  const speedyAdditionLabel = getSpeedyAdditionLabel();
+  const labels = [];
+
+  if (effects.chaoticBoardIntervalMs) {
+    labels.push(getRoundModifierCountdownLabel('chaotic_board') || 'Chaos soon');
+  } else if (effects.shuffleRackIntervalMs) {
+    labels.push(getRoundModifierCountdownLabel('disorganised') || 'Shuffle soon');
+  } else if (effects.returnBuilderIntervalMs) {
+    labels.push(getRoundModifierCountdownLabel('loose_letters') || 'Return soon');
+  }
+
+  if (speedyAdditionLabel) {
+    labels.push(speedyAdditionLabel);
+  }
+
+  return labels.join(' · ');
 });
 const getRoundTileMarker = (tile) => {
   if (isHotBurnTile(tile)) {
