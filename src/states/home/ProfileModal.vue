@@ -25,12 +25,24 @@
       </div>
 
       <div v-if="activeView === 'account'">
-        <div class="profile-details">
+        <div v-if="user" class="profile-details">
           <span>Signed in as</span>
           <strong>{{ user?.email || 'Wordis player' }}</strong>
         </div>
 
-        <label class="sync-toggle">
+        <div v-else class="profile-login-panel">
+          <span>Account</span>
+          <strong>Log in to sync progress</strong>
+          <input ref="emailInput" v-model="email" type="email" placeholder="Email" />
+          <input ref="passwordInput" v-model="password" type="password" placeholder="Password" />
+          <p v-if="authError" class="profile-error">{{ authError }}</p>
+          <div class="profile-actions">
+            <button ref="signUpButton" class="profile-button" @click="signUp">Sign Up</button>
+            <button ref="loginButton" class="profile-button primary" @click="login">Log In</button>
+          </div>
+        </div>
+
+        <label v-if="user" class="sync-toggle">
           <input
             type="checkbox"
             :checked="savedGameSyncEnabled"
@@ -39,7 +51,7 @@
           <span>Sync saved games</span>
         </label>
 
-        <div class="profile-actions">
+        <div v-if="user" class="profile-actions">
           <button ref="logoutButton" class="profile-button danger" @click="emit('logout')">Log Out</button>
           <button ref="doneButton" class="profile-button" @click="emit('close')">Done</button>
         </div>
@@ -95,22 +107,29 @@
 
 <script setup>
 import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue';
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
 import { hidePastGames } from '../../../globalVariables.js';
+import { auth, firebaseEnabled } from '../../firebaseClient.js';
+import { initializeNewUser } from '../../userstate/initializeNewUser.js';
 import {
   getPastGamesByMode,
   getVisiblePastGameModes,
   syncPastGames
 } from '../../userstate/pastGames.js';
 
-defineProps({
+const props = defineProps({
   user: Object,
   savedGameSyncEnabled: Boolean
 });
 
-const emit = defineEmits(['close', 'logout', 'savedGameSyncChange']);
+const emit = defineEmits(['close', 'loggedIn', 'logout', 'savedGameSyncChange']);
 const closeButton = ref(null);
 const logoutButton = ref(null);
 const doneButton = ref(null);
+const emailInput = ref(null);
+const passwordInput = ref(null);
+const signUpButton = ref(null);
+const loginButton = ref(null);
 const modalRef = ref(null);
 const activeView = ref('account');
 const visibleModes = getVisiblePastGameModes();
@@ -118,6 +137,9 @@ const selectedMode = ref(visibleModes[0]?.mode || '');
 const pastGamesVersion = ref(0);
 const syncStatus = ref('Sync when opened.');
 const isSyncingPastGames = ref(false);
+const email = ref('');
+const password = ref('');
+const authError = ref('');
 
 const activeGames = computed(() => {
   pastGamesVersion.value;
@@ -144,6 +166,13 @@ const focusTarget = (index) => {
 };
 
 const openPastGames = async () => {
+  if (!props.user) {
+    activeView.value = 'account';
+    authError.value = 'Log in to sync and view past games.';
+    nextTick(() => emailInput.value?.focus());
+    return;
+  }
+
   activeView.value = 'past';
   if (!selectedMode.value && visibleModes.length) {
     selectedMode.value = visibleModes[0].mode;
@@ -164,6 +193,58 @@ const openPastGames = async () => {
     isSyncingPastGames.value = false;
     pastGamesVersion.value += 1;
     nextTick(() => focusTarget(0));
+  }
+};
+
+const validateAuthForm = () => {
+  authError.value = '';
+  if (!email.value || !password.value) {
+    authError.value = 'Email and password are required.';
+    return false;
+  }
+
+  return true;
+};
+
+const signUp = async () => {
+  if (!validateAuthForm()) {
+    return;
+  }
+
+  if (password.value.length < 6) {
+    authError.value = 'Password must be at least 6 characters.';
+    return;
+  }
+
+  try {
+    if (!firebaseEnabled || !auth) {
+      throw new Error('Account features are unavailable right now.');
+    }
+
+    const credential = await createUserWithEmailAndPassword(auth, email.value, password.value);
+    await initializeNewUser(credential.user);
+    localStorage.setItem('userAgreed', true);
+    emit('loggedIn');
+  } catch (error) {
+    authError.value = error.message;
+  }
+};
+
+const login = async () => {
+  if (!validateAuthForm()) {
+    return;
+  }
+
+  try {
+    if (!firebaseEnabled || !auth) {
+      throw new Error('Account features are unavailable right now.');
+    }
+
+    await signInWithEmailAndPassword(auth, email.value, password.value);
+    localStorage.setItem('userAgreed', true);
+    emit('loggedIn');
+  } catch (error) {
+    authError.value = error.message;
   }
 };
 
@@ -232,7 +313,9 @@ const handleKeyDown = (event) => {
 };
 
 onMounted(() => {
-  doneButton.value?.focus();
+  nextTick(() => {
+    (props.user ? doneButton.value : emailInput.value)?.focus();
+  });
   window.addEventListener('keydown', handleKeyDown);
 });
 
@@ -323,6 +406,34 @@ h2 {
   color: #9ff0ff;
 }
 
+.profile-login-panel {
+  display: grid;
+  gap: 12px;
+  margin-bottom: 22px;
+  font-size: 10px;
+  line-height: 1.6;
+}
+
+.profile-login-panel strong {
+  color: #9ff0ff;
+}
+
+.profile-login-panel input {
+  min-height: 42px;
+  border: 2px solid rgba(247, 211, 93, 0.48);
+  border-radius: 6px;
+  padding: 0 12px;
+  color: #111827;
+  font-family: inherit;
+  font-size: 10px;
+  background: rgba(255, 255, 255, 0.94);
+}
+
+.profile-error {
+  margin: 0;
+  color: #ff9aa5;
+}
+
 .sync-toggle {
   display: flex;
   align-items: center;
@@ -360,10 +471,16 @@ h2 {
   background: #b83945;
 }
 
+.profile-button.primary {
+  color: #0b2b2c;
+  background: #82fdee;
+}
+
 .profile-button:focus-visible,
 .profile-close:focus-visible,
 .profile-tab-button:focus-visible,
-.past-mode-tab:focus-visible {
+.past-mode-tab:focus-visible,
+.profile-login-panel input:focus-visible {
   outline: 3px solid rgba(130, 253, 238, 0.9);
   outline-offset: 3px;
 }

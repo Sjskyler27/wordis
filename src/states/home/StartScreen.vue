@@ -56,6 +56,7 @@
     :user="user"
     :savedGameSyncEnabled="savedGameSyncEnabled"
     @close="showProfile = false"
+    @loggedIn="handleProfileLoggedIn"
     @logout="handleProfileLogout"
     @savedGameSyncChange="handleSavedGameSyncChange"
   />
@@ -112,7 +113,7 @@
   startMusic.currentTime = 0
   startMusic.volume = props.volume * props.musicVolume / 100
   startMusic.loop = true;
-  const emit = defineEmits(["type","start", "reset", "feedback", "support", "showSettings", "logIn", "logOut", "nameChange", "backgroundState"]); // Emit event to switch to Shop.vue
+  const emit = defineEmits(["type","start", "reset", "feedback", "support", "showSettings", "logIn", "loggedIn", "logOut", "nameChange", "backgroundState"]); // Emit event to switch to Shop.vue
 
   const gameInProgress = ref(localStorage.getItem("gameInProgress")); // Check if game is in progress
   const showProfile = ref(false);
@@ -212,12 +213,11 @@
   };
 
   const handleProfileClick = () => {
-    if (!user.value) {
-      emit('logIn');
-      return;
-    }
-
     showProfile.value = true;
+  };
+
+  const handleProfileLoggedIn = () => {
+    emit('loggedIn');
   };
 
   const handleProfileLogout = () => {

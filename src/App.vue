@@ -47,6 +47,7 @@
       @type="goToType"
       @reset="resetGame"
       @logIn="showAuthModal = true"
+      @loggedIn="userLoggedIn"
       @logOut="handleLogout"
       @resetHints="resetHints"
       @nameChange="setNames"
