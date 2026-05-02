@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.0.45 - 2026-05-02
+
+Start: 17:42 EDT
+Stop: 18:17 EDT
+
+- Fixed Lockstep so the opening locked column advances after the first submitted word instead of staying on the first column for two turns.
+- Changed the Profile button to open the profile modal for signed-out players, with signup and login available inside the account tab.
+- Made Speedy Addition tick down during word building and added an in-lane countdown badge for its remaining bonus.
+- Renamed Speedy to Speedy Multiplier and added an in-lane countdown badge for its current multiplier.
+- Added the easy Short Sap round modifier, making four-letter words remove 4 seconds from the multi-round clock.
+- Added active length modifier labels to word-builder milestones, including time bonuses, time penalties, score bonuses, and length multipliers.
+- Verified the changes with `npm run build`.
+
 ## 0.0.44 - 2026-05-02
 - fixed the in use layer to be on top of all tiles 
 - auto focus the current dificulty on the actual dificulty 
