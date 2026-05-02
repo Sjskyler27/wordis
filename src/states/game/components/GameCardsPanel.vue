@@ -248,4 +248,6 @@ const getCardStyle = (card) => {
 :global(.side-stack.side-stack-drawer) .action-card {
   max-width: none;
 }
+
+
 </style>

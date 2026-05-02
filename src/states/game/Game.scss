@@ -93,7 +93,6 @@ body {
   border: 2px solid rgba(255, 255, 255, 0.12);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
   position: relative;
-  overflow: visible;
 }
 
 .bonus-card::after {
@@ -133,6 +132,7 @@ body {
 }
 
 .accent-gold {
+  overflow: visible;
   background: linear-gradient(180deg, rgba(231, 124, 47, 0.92), rgba(179, 82, 28, 0.88));
 }
 
