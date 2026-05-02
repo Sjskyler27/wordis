@@ -75,6 +75,7 @@
           >
             <span v-if="tile.status === 'lightningTile'" class="tile-lightning-spark spark-left" aria-hidden="true"></span>
             <span v-if="tile.status === 'lightningTile'" class="tile-lightning-spark spark-right" aria-hidden="true"></span>
+            <span v-if="selectedTileIds.has(tile.id)" class="tile-in-use-overlay" aria-hidden="true"></span>
             <span v-if="!getTileUi(tile).hideBadge && tile.status !== 'normal'" class="tile-modifier" :style="getBadgeStyle(tile)">
               {{ getTileBadge(tile) }}
             </span>
@@ -1473,20 +1474,27 @@ onBeforeUnmount(() => {
   animation: tile-rust-spread var(--tile-animation-duration, 680ms) ease-out;
 }
 .tile-in-use {
-  box-shadow:
-    inset 0 0 0 9999px rgba(0, 0, 0, 0.38), /* soft dark overlay */
-    inset 0 4px 10px rgba(38, 20, 12, 0.32),
-    inset 0 -2px 0 rgba(255, 255, 255, 0.18);
+  box-shadow: var(--tile-shadow, inset 0 -4px 0 rgba(0, 0, 0, 0.12), 0 10px 18px rgba(45, 10, 24, 0.16));
   transform: translateY(2px) scale(0.98);
+}
+
+.tile-in-use-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  border-radius: inherit;
+  pointer-events: none;
+  background: rgba(0, 0, 0, 0.42);
+  box-shadow:
+    inset 0 4px 10px rgba(38, 20, 12, 0.32),
+    inset 0 -2px 0 rgba(255, 255, 255, 0.18),
+    inset 0 0 0 3px rgba(255, 237, 164, 0.34);
 }
 
 .tile-in-use:hover,
 .tile-in-use:focus,
 .tile-in-use:focus-visible {
-  box-shadow:
-    inset 0 0 0 9999px rgba(0, 0, 0, 0.38), /* soft dark overlay */
-    inset 0 4px 10px rgba(38, 20, 12, 0.22),
-    inset 0 -2px 0 rgba(255, 255, 255, 0.18) !important;
+  box-shadow: var(--tile-shadow, inset 0 -4px 0 rgba(0, 0, 0, 0.12), 0 10px 18px rgba(45, 10, 24, 0.16)) !important;
   transform: translateY(1px) scale(0.98);
 }
 
@@ -1974,6 +1982,8 @@ onBeforeUnmount(() => {
 }
 
 .tile-letter {
+  position: relative;
+  z-index: 3;
   font-size: 2.4rem;
   font-weight: 900;
   line-height: 1;
@@ -1983,6 +1993,7 @@ onBeforeUnmount(() => {
 
 .tile-score {
   position: absolute;
+  z-index: 5;
   top: 8px;
   right: 10px;
   font-size: 0.95rem;
@@ -1991,6 +2002,7 @@ onBeforeUnmount(() => {
 
 .tile-modifier {
   position: absolute;
+  z-index: 6;
   top: 6px;
   left: 7px;
   min-width: 30px;
