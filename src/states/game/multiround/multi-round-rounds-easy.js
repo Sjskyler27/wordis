@@ -8,7 +8,7 @@ export const EASY_MULTI_ROUND_ROUNDS = [
   createRound({
     id: 'easy-round-1',
     label: 'Round 1',
-    targetScore: 70,
+    targetScore: 65,
     timeSeconds: 110,
     backgroundPalette: 1,
     modifierBudget: {},
@@ -43,7 +43,7 @@ export const EASY_MULTI_ROUND_ROUNDS = [
   createRound({
     id: 'easy-round-4',
     label: 'Round 4',
-    targetScore: 95,
+    targetScore: 110,
     timeSeconds: 130,
     backgroundPalette: 0,
     modifierBudget: {
@@ -87,7 +87,7 @@ export const EASY_MULTI_ROUND_ROUNDS = [
   createRound({
     id: 'easy-round-7',
     label: 'Final Challenge',
-    targetScore: 160,
+    targetScore: 200,
     timeSeconds: 150,
     isChallenge: true,
     isFinalRound: true,

@@ -41,7 +41,7 @@ export const HARD_MULTI_ROUND_ROUNDS = [
   createRound({
     id: 'round-1',
     label: 'Round 1',
-    targetScore: 120,
+    targetScore: 100,
     timeSeconds: 90,
     backgroundPalette: 'main',
     modifierBudget: {},
@@ -50,7 +50,7 @@ export const HARD_MULTI_ROUND_ROUNDS = [
   createRound({
     id: 'round-2',
     label: 'Round 2',
-    targetScore: 140,
+    targetScore: 120,
     timeSeconds: 95,
     backgroundPalette: 'random-extra',
     modifierBudget: {
@@ -169,7 +169,7 @@ export const HARD_MULTI_ROUND_ROUNDS = [
   createRound({
     id: 'round-11',
     label: 'Round 11',
-    targetScore: 240,
+    targetScore: 300,
     timeSeconds: 150,
     backgroundPalette: 4,
     modifierBudget: {
@@ -184,7 +184,7 @@ export const HARD_MULTI_ROUND_ROUNDS = [
   createRound({
     id: 'round-12',
     label: 'Challenge 4',
-    targetScore: 150,
+    targetScore: 300,
     timeSeconds: 120,
     isChallenge: true,
     modifierBudget: {
@@ -195,7 +195,7 @@ export const HARD_MULTI_ROUND_ROUNDS = [
   createRound({
     id: 'round-13',
     label: 'Final Challenge',
-    targetScore: 300,
+    targetScore: 400,
     timeSeconds: 180,
     isChallenge: true,
     isFinalRound: true,
