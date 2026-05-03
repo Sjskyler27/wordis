@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.0.46 - 2026-05-02
+- fix speedy modifiers 
+- fix description 
+- balance changes 
+- pause game on close 
+- 
 ## 0.0.45 - 2026-05-02
 
 Start: 17:42 EDT
