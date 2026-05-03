@@ -280,7 +280,7 @@ const DEFAULT_JOYSTICK_SENSITIVITY = 30;
   const showSettings = ref(false)
   const isGameState = computed(() => currentState.value === Game);
   const pauseGameForVisibilityChange = () => {
-    if (!isGameState.value || showSettings.value) {
+    if (!isGameState.value || showSettings.value || location.hostname === 'localhost') {
       return;
     }
 
