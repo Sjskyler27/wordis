@@ -71,7 +71,7 @@
       <section class="reference-section">
         <div class="reference-header">
           <span class="kicker">Reference</span>
-          <h2>{{ selectedReferenceType === 'personal' ? 'Possible Upgrades' : 'Possible Round Modifiers' }}</h2>
+          <h2>{{ referenceTitle }}</h2>
         </div>
         <div class="reference-toggle">
           <button
@@ -89,6 +89,14 @@
             @click="selectedReferenceType = 'round'"
           >
             Round Modifiers
+          </button>
+          <button
+            type="button"
+            class="reference-toggle-button"
+            :class="{ active: selectedReferenceType === 'cards' }"
+            @click="selectedReferenceType = 'cards'"
+          >
+            Cards
           </button>
         </div>
         <div v-if="selectedReferenceType === 'personal'" class="filter-row">
@@ -156,6 +164,39 @@
             </article>
           </div>
         </div>
+        <div v-if="selectedReferenceType === 'cards'" class="filter-row">
+          <button
+            v-for="group in cardGroups"
+            :key="group.kind"
+            type="button"
+            class="filter-chip"
+            :class="[`card-kind-${group.kind}`, { active: selectedCardKind === group.kind }]"
+            @click="selectedCardKind = group.kind"
+          >
+            {{ group.label }}
+          </button>
+        </div>
+        <div v-if="selectedReferenceType === 'cards'" class="tier-group">
+          <div class="tier-heading" :class="`card-kind-${activeCardGroup.kind}`">
+            <strong>{{ activeCardGroup.label }}</strong>
+            <span>{{ activeCardGroup.cards.length }} cards</span>
+          </div>
+          <div class="modifier-grid">
+            <article
+              v-for="card in activeCardGroup.cards"
+              :key="card.key"
+              class="modifier-card card-reference-card"
+              :class="`card-kind-${card.kind}`"
+            >
+              <div class="modifier-card-heading">
+                <strong>{{ card.label }}</strong>
+                <span class="modifier-pill">{{ card.kind }}</span>
+              </div>
+              <p>{{ card.description }}</p>
+              <small>{{ formatCardDetail(card) }}</small>
+            </article>
+          </div>
+        </div>
       </section>
 
       <button class="back-button" @click="$emit('type')">Back</button>
@@ -169,12 +210,20 @@ import { PERSONAL_MODIFIER_DEFINITIONS } from './multiround/personal-modifier-de
 import { ROUND_MODIFIER_DEFINITIONS } from './multiround/round-modifier-definitions.js';
 import { getMultiRoundRounds } from './multiround/multi-round-difficulties.js';
 import { resolveBackgroundPaletteKey } from './multiround/useMultiRoundRun.js';
+import './card-definitions.cjs';
+
+const {
+  CARD_DEFINITIONS = {},
+  BOON_CARD_KEYS = [],
+  MULTI_ROUND_ATTACK_CARD_KEYS = []
+} = globalThis.__wordisCardDefinitions || {};
 
 const emit = defineEmits(['singleplayer', 'type']);
 const selectedDifficulty = ref(localStorage.getItem('multiRoundDifficulty') || 'normal');
 const selectedReferenceType = ref('personal');
 const selectedPersonalTier = ref('common');
 const selectedRoundDifficulty = ref('easy');
+const selectedCardKind = ref('boon');
 const screenRoot = ref(null);
 const controllerFocusIndex = ref(0);
 const isExiting = ref(false);
@@ -210,6 +259,13 @@ const difficulties = [
 
 const selectedDifficultyDetails = computed(() => {
   return difficulties.find((difficulty) => difficulty.value === selectedDifficulty.value) || difficulties[1];
+});
+const referenceTitle = computed(() => {
+  if (selectedReferenceType.value === 'cards') {
+    return 'Available Cards';
+  }
+
+  return selectedReferenceType.value === 'personal' ? 'Possible Upgrades' : 'Possible Round Modifiers';
 });
 const firstRoundBackgroundPaletteKey = computed(() => {
   const rounds = getMultiRoundRounds(selectedDifficulty.value);
@@ -265,6 +321,38 @@ const activeRoundModifierGroup = computed(() => {
     || roundModifierGroups.value[0]
     || { difficulty: 'easy', label: 'Easy', modifiers: [] };
 });
+const buildCardEntries = (keys = []) => {
+  return keys
+    .map((key) => ({ key, ...(CARD_DEFINITIONS[key] || {}) }))
+    .filter((card) => card.label)
+    .sort((first, second) => first.label.localeCompare(second.label));
+};
+const cardGroups = computed(() => ([
+  {
+    kind: 'boon',
+    label: 'Boons',
+    cards: buildCardEntries(BOON_CARD_KEYS)
+  },
+  {
+    kind: 'attack',
+    label: 'Attacks',
+    cards: buildCardEntries(MULTI_ROUND_ATTACK_CARD_KEYS)
+  }
+]));
+const activeCardGroup = computed(() => {
+  return cardGroups.value.find((group) => group.kind === selectedCardKind.value)
+    || cardGroups.value[0]
+    || { kind: 'boon', label: 'Boons', cards: [] };
+});
+const formatCardDetail = (card) => {
+  if (card.amount) {
+    return `Value: ${card.amount}`;
+  }
+  if (card.modifier) {
+    return `Modifier: ${card.modifier}`;
+  }
+  return card.effectType ? `Effect: ${card.effectType.replaceAll('_', ' ')}` : 'Card';
+};
 
 const startMultiRound = () => {
   if (isExiting.value) {
@@ -603,6 +691,28 @@ onBeforeUnmount(() => {
 .round-card .modifier-pill {
   background: rgba(255, 223, 134, 0.16);
   color: #ffdf86;
+}
+
+.modifier-card.card-kind-boon,
+.tier-heading.card-kind-boon {
+  background: linear-gradient(180deg, rgba(68, 160, 138, 0.32), rgba(28, 92, 84, 0.26));
+  border-color: rgba(142, 255, 222, 0.3);
+}
+
+.modifier-card.card-kind-attack,
+.tier-heading.card-kind-attack {
+  background: linear-gradient(180deg, rgba(168, 83, 111, 0.34), rgba(104, 34, 65, 0.28));
+  border-color: rgba(255, 154, 184, 0.32);
+}
+
+.card-kind-boon .modifier-pill {
+  background: rgba(142, 255, 222, 0.18);
+  color: #a6ffe5;
+}
+
+.card-kind-attack .modifier-pill {
+  background: rgba(255, 154, 184, 0.18);
+  color: #ffb8ca;
 }
 
 .modifier-card.difficulty-easy,
