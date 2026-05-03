@@ -401,6 +401,8 @@ const timedModeTimerStarted = ref(false);
 const timedSoloFinalWordSpent = ref(false);
 const multiRoundFinalWordSpent = ref(false);
 const pendingMultiRoundStartingScore = ref(0);
+const speedyWordStartedAt = ref(Date.now());
+const speedyWordClockNow = ref(Date.now());
 const gameMusic = new Audio(gameMusicUrl);
 gameMusic.loop = true;
 const tilePickupSound = new Audio(tilePickupSoundUrl);
@@ -421,6 +423,7 @@ let botCogBoostTimeoutId = null;
 let playerCogDecayIntervalId = null;
 let playerCogRampFrameId = null;
 let roundModifierTickIntervalId = null;
+let speedyWordClockIntervalId = null;
 let lastPlayerCogScoreAt = Date.now();
 const GAME_TUTORIAL_STORAGE_KEY = 'hasSeenWordisGameTutorial';
 const hasSeenGameTutorial = () => typeof localStorage !== 'undefined' && localStorage.getItem(GAME_TUTORIAL_STORAGE_KEY);
@@ -618,7 +621,7 @@ const multiRoundScoreOptions = computed(() => ({
   personalModifierEffects: personalModifierEffects.value,
   roundModifierEffects: roundModifierEffects.value,
   roundModifierCountdowns: roundModifierCountdowns.value,
-  wordElapsedSeconds: currentWordElapsedSeconds.value
+  wordElapsedSeconds: Math.max(0, (speedyWordClockNow.value - speedyWordStartedAt.value) / 1000)
 }));
 const buildLane = (side, label) => ({
   side,
@@ -1433,8 +1436,15 @@ const getMultiRoundStartingScoreBonus = () => {
   return Math.max(0, Math.floor(multiRoundRun.timerRemainingSeconds.value * multiplier));
 };
 
+const resetSpeedyWordClock = () => {
+  const now = Date.now();
+  speedyWordStartedAt.value = now;
+  speedyWordClockNow.value = now;
+};
+
 const resetMultiRoundBoardForNextRound = (startingScore = 0) => {
   window.clearTimeout(multiRoundRewardTimeoutId);
+  resetSpeedyWordClock();
   playerScores.value = {
     host: startingScore,
     opponent: 0
@@ -1778,6 +1788,7 @@ const handleSubmit = async () => {
   if (!submitted) {
     return;
   }
+  resetSpeedyWordClock();
   const secondsRestored = applyMultiRoundWordTimeBonus(selectedTiles.length);
   if (secondsRestored) {
     localMessage.value = `${localMessage.value} Restored ${secondsRestored} seconds.`;
@@ -2460,6 +2471,7 @@ const togglePause = () => {
 };
 
 const handlePlayAgain = () => {
+  resetSpeedyWordClock();
   resetActionMode();
   clearSelectionForSide(mySide.value);
   isSoloTimerPausedByAttack.value = false;
@@ -2598,6 +2610,7 @@ const startTimedModeTimerAfterFirstTileClicked = () => {
 };
 
 const restoreCommonSaveState = (common = {}) => {
+  resetSpeedyWordClock();
   playerScores.value = common.scores || { host: 0, opponent: 0 };
   playerTiles.value = common.tiles || { host: [], opponent: [] };
   playerCards.value = common.cards || {
@@ -2677,6 +2690,7 @@ const restoreContinueSave = (rawSave) => {
 };
 
 watch(() => props.playMode, (nextMode) => {
+  resetSpeedyWordClock();
   if (nextMode === 'multi_round') {
     multiRoundRun.resetRun();
     multiRoundFinalWordSpent.value = false;
@@ -2983,6 +2997,9 @@ onMounted(() => {
     showTutorialOverlay.value = true;
   }
   syncWindowWidth();
+  speedyWordClockIntervalId = window.setInterval(() => {
+    speedyWordClockNow.value = Date.now();
+  }, 250);
   playerCogDecayIntervalId = window.setInterval(() => {
     if (!isBotMode.value || Date.now() - lastPlayerCogScoreAt < 1800) {
       return;
@@ -3013,6 +3030,7 @@ onBeforeUnmount(() => {
   window.cancelAnimationFrame(playerCogRampFrameId);
   window.clearInterval(playerCogDecayIntervalId);
   window.clearInterval(roundModifierTickIntervalId);
+  window.clearInterval(speedyWordClockIntervalId);
   tilePickupSound.pause();
   tilePutBackSound.pause();
   tileReplaceSound.pause();
@@ -3028,6 +3046,7 @@ onBeforeUnmount(() => {
 });
 
 const resetAndGoHome = () => {
+  resetSpeedyWordClock();
   saveCurrentMultiRoundLocal();
   saveCurrentBotMatchLocal();
   isPaused.value = false;

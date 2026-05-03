@@ -1,4 +1,4 @@
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
+import { computed, ref } from 'vue';
 import { getLengthBonus, getWordScoreDetails, getDifference, getIdleScorePenalty, getMilestoneReward } from './tile-logic.js';
 
 const formatMilestoneReward = (length, options = {}) => {
@@ -51,13 +51,6 @@ export const useWordBuilder = ({ mySide, myTiles, playerScores, scoreOptions }) 
     host: {},
     opponent: {}
   });
-  const wordStartedAt = ref({
-    host: 0,
-    opponent: 0
-  });
-  const wordClockNow = ref(Date.now());
-  let wordClockIntervalId = null;
-
   const selectedTileIds = computed(() => ({
     host: new Set(selectedTileSlots.value.host),
     opponent: new Set(selectedTileSlots.value.opponent)
@@ -85,8 +78,7 @@ export const useWordBuilder = ({ mySide, myTiles, playerScores, scoreOptions }) 
 
   const currentWordLength = computed(() => selectedTilesForCurrentSide.value.length);
   const currentWordElapsedSeconds = computed(() => {
-    const startedAt = wordStartedAt.value[mySide.value] || 0;
-    return startedAt ? Math.max(0, (wordClockNow.value - startedAt) / 1000) : 0;
+    return Math.max(0, Number(scoreOptions?.value?.wordElapsedSeconds) || 0);
   });
   const currentScoreDetails = computed(() => getWordScoreDetails(selectedTilesForCurrentSide.value, {
     side: mySide.value,
@@ -142,13 +134,6 @@ export const useWordBuilder = ({ mySide, myTiles, playerScores, scoreOptions }) 
       ...selectedTileSlots.value,
       [side]: [...selectedTileSlots.value[side], tile.id]
     };
-    if (!wordStartedAt.value[side]) {
-      wordClockNow.value = Date.now();
-      wordStartedAt.value = {
-        ...wordStartedAt.value,
-        [side]: wordClockNow.value
-      };
-    }
     if (options.animationSync) {
       selectedTileAnimationSync.value = {
         ...selectedTileAnimationSync.value,
@@ -188,12 +173,6 @@ export const useWordBuilder = ({ mySide, myTiles, playerScores, scoreOptions }) 
       ...selectedTileSlots.value,
       [side]: nextSlots
     };
-    if (!nextSlots.length) {
-      wordStartedAt.value = {
-        ...wordStartedAt.value,
-        [side]: 0
-      };
-    }
     if (selectedTileAnimationSync.value[side]?.[tileId]) {
       const nextAnimationSync = { ...selectedTileAnimationSync.value[side] };
       delete nextAnimationSync[tileId];
@@ -213,10 +192,6 @@ export const useWordBuilder = ({ mySide, myTiles, playerScores, scoreOptions }) 
     selectedTileSlots.value = {
       ...selectedTileSlots.value,
       [side]: []
-    };
-    wordStartedAt.value = {
-      ...wordStartedAt.value,
-      [side]: 0
     };
     selectedTileAnimationSync.value = {
       ...selectedTileAnimationSync.value,
@@ -273,16 +248,6 @@ export const useWordBuilder = ({ mySide, myTiles, playerScores, scoreOptions }) 
       [side]: savedTileSlots.value[side].map((tileId) => (tileId === fromTileId ? toTileId : tileId))
     };
   };
-
-  onMounted(() => {
-    wordClockIntervalId = window.setInterval(() => {
-      wordClockNow.value = Date.now();
-    }, 250);
-  });
-
-  onBeforeUnmount(() => {
-    window.clearInterval(wordClockIntervalId);
-  });
 
   return {
     selectedTileIds,
