@@ -30,7 +30,7 @@
             v-for="modifierKey in round.visibleModifierKeys"
             :key="`${round.id}-${modifierKey}`"
           >
-            <span class="modifier-label">{{ getModifierLabel(modifierKey) }}: </span>{{ getModifierDescription(modifierKey) }}
+            <span class="modifier-label">{{ getModifierLabel(modifierKey) }}: </span>{{getRoundModifierDefinition(modifierKey).description}}
           </span>
         </div>
       </li>
