@@ -589,6 +589,9 @@ const roundModifierEffects = computed(() => {
     effects.goodChanceCapDelta += chanceEffects.goodChanceCapDelta || 0;
     effects.badChanceCapDelta += chanceEffects.badChanceCapDelta || 0;
     effects.neutralChanceCapDelta += chanceEffects.neutralChanceCapDelta || 0;
+    Object.entries(chanceEffects.modifierOddsBonus || {}).forEach(([key, bonus]) => {
+      effects.modifierOddsBonus[key] = (effects.modifierOddsBonus[key] || 0) + (bonus || 0);
+    });
     effects.cardsDisabled = effects.cardsDisabled || Boolean(cardRules.cardsDisabled);
     Object.entries(roundEffects.lengthTimePenalty || {}).forEach(([length, seconds]) => {
       effects.lengthTimePenalty[length] = (effects.lengthTimePenalty[length] || 0) + (seconds || 0);
@@ -613,6 +616,7 @@ const roundModifierEffects = computed(() => {
     goodChanceCapDelta: 0,
     badChanceCapDelta: 0,
     neutralChanceCapDelta: 0,
+    modifierOddsBonus: {},
     cardsDisabled: false,
     lengthTimePenalty: {}
   });

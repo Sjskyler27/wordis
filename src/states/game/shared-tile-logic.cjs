@@ -685,6 +685,7 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
     if (isDevLoggingEnabled()) console.log('ROLL MODIFIER FOR '+ side + 'on'+modifierProfile )
     
     const personalModifierEffects = chanceOverrides.personalModifierEffects || {};
+    const roundModifierEffects = chanceOverrides.roundModifierEffects || {};
     if (isDevLoggingEnabled()) console.log(modifierProfile)
     const baseProfile = getModifierProfile(modifierProfile);
     const profile = {
@@ -693,7 +694,12 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
       badModifiers: filterBlockedModifiers(baseProfile.badModifiers, personalModifierEffects),
       neutralModifiers: filterBlockedModifiers(baseProfile.neutralModifiers || [], personalModifierEffects)
     };
-    const modifierOddsBonus = personalModifierEffects.modifierOddsBonus || {};
+    const modifierOddsBonus = {
+      ...(personalModifierEffects.modifierOddsBonus || {})
+    };
+    Object.entries(roundModifierEffects.modifierOddsBonus || {}).forEach(([key, bonus]) => {
+      modifierOddsBonus[key] = (modifierOddsBonus[key] || 0) + (bonus || 0);
+    });
     const {
       goodChance,
       badChance,
@@ -1781,7 +1787,13 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
         }
 
         const targetEntry = candidateIndexes[Math.floor(Math.random() * candidateIndexes.length)];
-        const nextStatus = chooseWeightedModifier(targetEntry.eligibleModifiers, {}, {
+        const modifierOddsBonus = {
+          ...((options.personalModifierEffects || {}).modifierOddsBonus || {})
+        };
+        Object.entries((options.roundModifierEffects || {}).modifierOddsBonus || {}).forEach(([key, bonus]) => {
+          modifierOddsBonus[key] = (modifierOddsBonus[key] || 0) + (bonus || 0);
+        });
+        const nextStatus = chooseWeightedModifier(targetEntry.eligibleModifiers, modifierOddsBonus, {
           letter: targetEntry.tile.baseLetter || targetEntry.tile.letter,
           baseScore: targetEntry.tile.baseScore || letterConfig[targetEntry.tile.baseLetter || targetEntry.tile.letter]?.score || 0,
           rackTiles: rack
