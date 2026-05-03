@@ -1103,7 +1103,7 @@ const formattedMultiRoundTimeRemaining = computed(() => {
 });
 const clockScoreRibbonLabel = computed(() => {
   if (finalWordWindowActive.value) {
-    return 'Play your last word!';
+    return 'Last word!';
   }
 
   if (isMultiRoundMode.value) {
