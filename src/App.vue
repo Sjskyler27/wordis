@@ -279,6 +279,24 @@ const DEFAULT_JOYSTICK_SENSITIVITY = 30;
 
   const showSettings = ref(false)
   const isGameState = computed(() => currentState.value === Game);
+  const pauseGameForVisibilityChange = () => {
+    if (!isGameState.value || showSettings.value) {
+      return;
+    }
+
+    showSettings.value = true;
+  };
+  const handleAppVisibilityChange = () => {
+    if (document.hidden || document.visibilityState === 'hidden') {
+      pauseGameForVisibilityChange();
+    }
+  };
+  const handleAppPageHide = () => {
+    pauseGameForVisibilityChange();
+  };
+  const handleAppWindowBlur = () => {
+    pauseGameForVisibilityChange();
+  };
   const initialMultiRoundBackgroundPaletteKey = ref('');
   const createDefaultBackgroundState = () => ({
     transitionKey: 'default',
@@ -783,12 +801,11 @@ const simulateTab = (reverse = false) => {
     
     
     window.addEventListener("gamepaddisconnected", onGamepadDisconnected);
-    window.addEventListener('keydown', (e) => {
-    // console.log('Key received:', e.key);
-    if(e.key === 'Escape' && !e.repeat){
-      showSettings.value = !showSettings.value;
-    }
-});
+    window.addEventListener('keydown', handleGlobalKeyDown);
+    document.addEventListener('visibilitychange', handleAppVisibilityChange);
+    window.addEventListener('pagehide', handleAppPageHide);
+    window.addEventListener('blur', handleAppWindowBlur);
+    document.addEventListener('freeze', handleAppPageHide);
     
     // Initial check (in case controller was already connected)
     checkGamepadConnection();
@@ -805,11 +822,23 @@ const simulateTab = (reverse = false) => {
 
   });
 
+  const handleGlobalKeyDown = (e) => {
+    // console.log('Key received:', e.key);
+    if(e.key === 'Escape' && !e.repeat){
+      showSettings.value = !showSettings.value;
+    }
+  };
+
   onBeforeUnmount(() => {
     stopUserSync?.();
     window.removeEventListener('resize', handleScreenWidthChange);
     window.removeEventListener("gamepadconnected", onGamepadConnected);
     window.removeEventListener("gamepaddisconnected", onGamepadDisconnected);
+    window.removeEventListener('keydown', handleGlobalKeyDown);
+    document.removeEventListener('visibilitychange', handleAppVisibilityChange);
+    window.removeEventListener('pagehide', handleAppPageHide);
+    window.removeEventListener('blur', handleAppWindowBlur);
+    document.removeEventListener('freeze', handleAppPageHide);
     cancelAnimationFrame(gamepadAnimationFrameId);
   });
 
