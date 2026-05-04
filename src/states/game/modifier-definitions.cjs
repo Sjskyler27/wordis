@@ -123,6 +123,23 @@ const createModifierDefinitions = ({ bloodTilePositionValues }) => ({
         badgeColor: '#20776d'
       }
     },
+    glassTile: {
+      badge: 'GLASS',
+      description: 'Scores +6, but cracks to 0 if it leaves the builder or changes positions before being played.',
+      effects: {
+        bonusScore: 6,
+        cracksInBuilder: true
+      },
+      canApply: ({ letter }) => (letter || '').length === 1,
+      rarityWeight: 0.20,
+      ui: {
+        tileBackground: 'linear-gradient(145deg, rgba(245, 255, 255, 0.94) 0%, rgba(166, 238, 255, 0.82) 42%, rgba(79, 166, 205, 0.86) 72%, rgba(33, 84, 126, 0.92) 100%)',
+        tileShadow: 'inset 0 -4px 0 rgba(36, 108, 147, 0.24), 0 12px 22px rgba(34, 84, 124, 0.22), 0 0 0 1px rgba(221, 255, 255, 0.58)',
+        textColor: '#102b42',
+        badgeBackground: 'rgba(239, 254, 255, 0.96)',
+        badgeColor: '#22688c'
+      }
+    },
     bloodTile: {
       badge: 'BLD',
       description: 'Scores by position instead of face value. Later positions score higher.',

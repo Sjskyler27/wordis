@@ -53,6 +53,8 @@
               'tile-lightning': tile.status === 'lightningTile',
               'tile-twin': tile.status === 'twinTile',
               'tile-twin-active': hasSelectedTwinMatch(tile),
+              'tile-glass': tile.status === 'glassTile',
+              'tile-glass-cracked': tile.glassCracked,
               'tile-void': tile.status === 'voidTile',
               'tile-barricade': tile.status === 'barricadeTile',
               'tile-bag': tile.status === 'bagTile',
@@ -1002,6 +1004,7 @@ onBeforeUnmount(() => {
 .tile-rusting,
 .tile-lightning,
 .tile-twin,
+.tile-glass,
 .tile-void,
 .tile-barricade,
 .tile-bag,
@@ -1166,6 +1169,53 @@ onBeforeUnmount(() => {
     inset 0 -4px 0 rgba(14, 76, 75, 0.16),
     0 0 18px rgba(99, 236, 209, 0.36);
   animation: tile-twin-complete-shimmer 1600ms ease-in-out infinite;
+}
+
+.tile-glass {
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.74) 0 16%, transparent 17% 100%),
+    linear-gradient(145deg, rgba(245, 255, 255, 0.94) 0%, rgba(166, 238, 255, 0.82) 42%, rgba(79, 166, 205, 0.86) 72%, rgba(33, 84, 126, 0.92) 100%);
+  box-shadow:
+    inset 0 2px 0 rgba(255, 255, 255, 0.74),
+    inset 0 -4px 0 rgba(36, 108, 147, 0.24),
+    0 12px 22px rgba(34, 84, 124, 0.22),
+    0 0 0 1px rgba(221, 255, 255, 0.58);
+}
+
+.tile-glass::before,
+.tile-glass::after {
+  content: '';
+  position: absolute;
+  pointer-events: none;
+}
+
+.tile-glass::before {
+  inset: 10%;
+  z-index: 0;
+  border-radius: 12px;
+  background:
+    linear-gradient(120deg, transparent 0 44%, rgba(255, 255, 255, 0.52) 45% 48%, transparent 49% 100%),
+    radial-gradient(circle at 26% 22%, rgba(255, 255, 255, 0.7) 0 8%, transparent 9% 100%);
+  opacity: 0.86;
+}
+
+.tile-glass::after {
+  inset: 16%;
+  z-index: 1;
+  border-radius: 10px;
+  opacity: 0;
+  background:
+    linear-gradient(34deg, transparent 0 47%, rgba(15, 54, 80, 0.72) 48% 50%, transparent 51% 100%),
+    linear-gradient(112deg, transparent 0 42%, rgba(15, 54, 80, 0.58) 43% 45%, transparent 46% 100%),
+    linear-gradient(160deg, transparent 0 54%, rgba(255, 255, 255, 0.74) 55% 57%, transparent 58% 100%);
+}
+
+.tile-glass-cracked {
+  filter: grayscale(0.18) brightness(0.82) saturate(0.78);
+}
+
+.tile-glass-cracked::after {
+  opacity: 1;
 }
 
 .tile-void {
@@ -1372,6 +1422,7 @@ onBeforeUnmount(() => {
 .tile-rusting .tile-letter,
 .tile-lightning .tile-letter,
 .tile-twin .tile-letter,
+.tile-glass .tile-letter,
 .tile-void .tile-letter,
 .tile-barricade .tile-letter,
 .tile-bag .tile-letter,
@@ -1398,6 +1449,7 @@ onBeforeUnmount(() => {
 .tile-rusting .tile-score,
 .tile-lightning .tile-score,
 .tile-twin .tile-score,
+.tile-glass .tile-score,
 .tile-void .tile-score,
 .tile-barricade .tile-score,
 .tile-bag .tile-score,
@@ -1409,6 +1461,7 @@ onBeforeUnmount(() => {
 .tile-rusting .tile-modifier,
 .tile-lightning .tile-modifier,
 .tile-twin .tile-modifier,
+.tile-glass .tile-modifier,
 .tile-void .tile-modifier,
 .tile-barricade .tile-modifier,
 .tile-bag .tile-modifier,

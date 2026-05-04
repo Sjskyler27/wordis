@@ -18,7 +18,7 @@ const {
 } = modifierDefinitionsApi || {};
 
 
-const GOOD_MODIFIERS = ['gold', 'firsttile', 'royalPear', 'twinTile', 'bankTile', 'gainboon', 'gainattack'];
+const GOOD_MODIFIERS = ['gold', 'firsttile', 'royalPear', 'twinTile', 'glassTile', 'bankTile', 'gainboon', 'gainattack'];
 const BAD_MODIFIERS = ['zeroTile', 'mustuse', 'locked3', 'burningTile', 'rustingTile', 'lightningTile', 'barricadeTile', 'bagTile'];
 const NEUTRAL_MODIFIERS = ['yinYang', 'ghostTile','bloodTile', 'wild', 'shimmer', 'voidTile', 'leecherTile'];
 
@@ -864,6 +864,9 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
     }, 0);
   };
   const getPersonalTileScore = (tile, options = {}) => {
+    if (tile?.glassCracked) {
+      return 0;
+    }
     if (isVoidZeroedTile(tile, options.wordTiles || [])) {
       return 0;
     }
@@ -1571,6 +1574,12 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
       state.leechesAdjacentWhileSelected = effects.leechesAdjacentWhileSelected ?? true;
     } else if (status !== tile.status) {
       state.leechesAdjacentWhileSelected = undefined;
+    }
+
+    if (effects.cracksInBuilder) {
+      state.glassCracked = Boolean(tile.glassCracked);
+    } else if (status !== tile.status) {
+      state.glassCracked = undefined;
     }
 
     return state;

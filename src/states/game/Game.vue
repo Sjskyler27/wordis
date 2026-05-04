@@ -1923,6 +1923,50 @@ const useAttackCard = (card) => {
   }
 };
 
+const crackGlassTiles = (side = mySide.value, tileIds = []) => {
+  const crackIds = new Set(tileIds);
+  if (!crackIds.size) {
+    return false;
+  }
+
+  const sideTiles = playerTiles.value[side] || [];
+  let changed = false;
+  const nextSideTiles = sideTiles.map((tile) => {
+    if (tile.status !== 'glassTile' || tile.glassCracked || !crackIds.has(tile.id)) {
+      return tile;
+    }
+
+    changed = true;
+    return {
+      ...tile,
+      glassCracked: true
+    };
+  });
+
+  if (!changed) {
+    return false;
+  }
+
+  playerTiles.value = {
+    ...playerTiles.value,
+    [side]: nextSideTiles
+  };
+  return true;
+};
+
+const getGlassTilesCrackedByRemoval = (removedTileId) => {
+  const selectedTiles = selectedTilesForCurrentSide.value;
+  const removedIndex = selectedTiles.findIndex((tile) => tile.id === removedTileId);
+  if (removedIndex === -1) {
+    return [];
+  }
+
+  return selectedTiles
+    .slice(removedIndex)
+    .filter((tile) => tile.status === 'glassTile' && !tile.glassCracked)
+    .map((tile) => tile.id);
+};
+
 const handleClearRack = () => {
   if (effectiveGameEnded.value) {
     localMessage.value = 'The match is already over.';
@@ -1964,19 +2008,33 @@ const handleSaveLetters = () => {
     return;
   }
 
+  const glassTileIds = selectedTilesForCurrentSide.value
+    .filter((tile) => tile.status === 'glassTile' && !tile.glassCracked)
+    .map((tile) => tile.id);
+
   if (saveSelectionForSide(mySide.value)) {
+    crackGlassTiles(mySide.value, glassTileIds);
     localMessage.value = 'Saved those letters on your rack.';
   }
 };
 
 const handleUndo = () => {
+  const lastTile = selectedTilesForCurrentSide.value.at(-1);
   if (removeLastLetter()) {
+    if (lastTile?.status === 'glassTile' && !lastTile.glassCracked) {
+      crackGlassTiles(mySide.value, [lastTile.id]);
+    }
     playUiSound(tilePutBackSound);
   }
 };
 
 const handleClearWord = () => {
+  const glassTileIds = selectedTilesForCurrentSide.value
+    .filter((tile) => tile.status === 'glassTile' && !tile.glassCracked)
+    .map((tile) => tile.id);
+
   if (clearWord()) {
+    crackGlassTiles(mySide.value, glassTileIds);
     playUiSound(tilePutBackSound);
   }
 };
@@ -2371,10 +2429,14 @@ const handleTileClickWithCards = (payload, side) => {
     return;
   }
 
+  const glassTileIds = selectedTileIds.value[mySide.value]?.has(tile.id)
+    ? getGlassTilesCrackedByRemoval(tile.id)
+    : [];
   const result = handleTileClick(tile, { animationSync });
   if (result === 'added') {
     playUiSound(tilePickupSound);
   } else if (result === 'removed') {
+    crackGlassTiles(mySide.value, glassTileIds);
     playUiSound(tilePutBackSound);
   }
 };
@@ -2409,7 +2471,9 @@ const handleBuiltTileClick = (tile) => {
     return;
   }
 
+  const glassTileIds = getGlassTilesCrackedByRemoval(tile.id);
   if (removeSpecificTile(tile.id)) {
+    crackGlassTiles(mySide.value, glassTileIds);
     playUiSound(tilePutBackSound);
   }
 };

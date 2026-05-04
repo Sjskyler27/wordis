@@ -28,6 +28,8 @@
               class="built-tile scoring score-pop-clone"
               :class="{
                 'built-tile-lightning': tile.status === 'lightningTile',
+                'built-tile-glass': tile.status === 'glassTile',
+                'built-tile-glass-cracked': tile.glassCracked,
                 'built-tile-void': tile.status === 'voidTile',
                 'built-tile-barricade': tile.status === 'barricadeTile',
                 'built-tile-leecher': tile.status === 'leecherTile',
@@ -86,6 +88,8 @@
                 'built-tile-shimmer': slot.tile.status === 'shimmer',
                 'built-tile-rusting': slot.tile.status === 'rustingTile',
                 'built-tile-lightning': slot.tile.status === 'lightningTile',
+                'built-tile-glass': slot.tile.status === 'glassTile',
+                'built-tile-glass-cracked': slot.tile.glassCracked,
                 'built-tile-void': slot.tile.status === 'voidTile',
                 'built-tile-barricade': slot.tile.status === 'barricadeTile',
                 'built-tile-leecher': slot.tile.status === 'leecherTile',
@@ -1087,6 +1091,53 @@ button:focus{
   animation: built-void-pulse 1400ms ease-in-out infinite;
 }
 
+.built-tile-glass {
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.74) 0 16%, transparent 17% 100%),
+    linear-gradient(145deg, rgba(245, 255, 255, 0.94) 0%, rgba(166, 238, 255, 0.82) 42%, rgba(79, 166, 205, 0.86) 72%, rgba(33, 84, 126, 0.92) 100%);
+  box-shadow:
+    inset 0 2px 0 rgba(255, 255, 255, 0.74),
+    inset 0 -3px 0 rgba(36, 108, 147, 0.24),
+    0 10px 16px rgba(34, 84, 124, 0.18),
+    0 0 0 1px rgba(221, 255, 255, 0.58);
+}
+
+.built-tile-glass::before,
+.built-tile-glass::after {
+  content: '';
+  position: absolute;
+  pointer-events: none;
+}
+
+.built-tile-glass::before {
+  inset: 10%;
+  z-index: 0;
+  border-radius: 10px;
+  background:
+    linear-gradient(120deg, transparent 0 44%, rgba(255, 255, 255, 0.52) 45% 48%, transparent 49% 100%),
+    radial-gradient(circle at 26% 22%, rgba(255, 255, 255, 0.7) 0 8%, transparent 9% 100%);
+  opacity: 0.86;
+}
+
+.built-tile-glass::after {
+  inset: 16%;
+  z-index: 1;
+  border-radius: 8px;
+  opacity: 0;
+  background:
+    linear-gradient(34deg, transparent 0 47%, rgba(15, 54, 80, 0.72) 48% 50%, transparent 51% 100%),
+    linear-gradient(112deg, transparent 0 42%, rgba(15, 54, 80, 0.58) 43% 45%, transparent 46% 100%),
+    linear-gradient(160deg, transparent 0 54%, rgba(255, 255, 255, 0.74) 55% 57%, transparent 58% 100%);
+}
+
+.built-tile-glass-cracked {
+  filter: grayscale(0.18) brightness(0.82) saturate(0.78);
+}
+
+.built-tile-glass-cracked::after {
+  opacity: 1;
+}
+
 .built-tile-barricade {
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.24), transparent 36%),
@@ -1147,6 +1198,7 @@ button:focus{
 .built-tile-rusting .tile-letter,
 .built-tile-lightning .tile-letter,
 .built-tile-twin .tile-letter,
+.built-tile-glass .tile-letter,
 .built-tile-void .tile-letter,
 .built-tile-barricade .tile-letter,
 .built-tile-leecher .tile-letter {
@@ -1172,6 +1224,7 @@ button:focus{
 .built-tile-rusting .tile-score,
 .built-tile-lightning .tile-score,
 .built-tile-twin .tile-score,
+.built-tile-glass .tile-score,
 .built-tile-void .tile-score,
 .built-tile-barricade .tile-score,
 .built-tile-leecher .tile-score {
@@ -1182,6 +1235,7 @@ button:focus{
 .built-tile-rusting .tile-modifier,
 .built-tile-lightning .tile-modifier,
 .built-tile-twin .tile-modifier,
+.built-tile-glass .tile-modifier,
 .built-tile-void .tile-modifier,
 .built-tile-barricade .tile-modifier,
 .built-tile-leecher .tile-modifier {
