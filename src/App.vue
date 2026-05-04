@@ -308,19 +308,19 @@ const DEFAULT_JOYSTICK_SENSITIVITY = 30;
   const backgroundState = ref(createDefaultBackgroundState());
 
   const clearLiftedGameUi = () => {
-    console.log('background:app-clear', {
-      previousTransitionKey: backgroundState.value?.transitionKey || 'default',
-      retainedBackgroundTransitionKey: backgroundState.value?.transitionKey || 'default'
-    });
+    // console.log('background:app-clear', {
+    //   previousTransitionKey: backgroundState.value?.transitionKey || 'default',
+    //   retainedBackgroundTransitionKey: backgroundState.value?.transitionKey || 'default'
+    // });
     initialMultiRoundBackgroundPaletteKey.value = '';
   };
 
   const handleBackgroundState = (state) => {
-    console.log('background:app-receive', {
-      nextTransitionKey: state?.transitionKey || 'default',
-      isBotMode: Boolean(state?.isBotMode),
-      moodStyle: state?.moodStyle || {}
-    });
+    // console.log('background:app-receive', {
+    //   nextTransitionKey: state?.transitionKey || 'default',
+    //   isBotMode: Boolean(state?.isBotMode),
+    //   moodStyle: state?.moodStyle || {}
+    // });
     backgroundState.value = state || createDefaultBackgroundState();
   };
 

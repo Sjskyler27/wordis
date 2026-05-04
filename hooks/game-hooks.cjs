@@ -87,6 +87,34 @@ const keepTestingHand = (hand = [], cardId) => {
   return isTestingMode ? hand : hand.filter((entry) => entry.id !== cardId);
 };
 
+const devLog = (...args) => {
+  console.log('devlog')
+  if (isDevMode) {
+    console.log(...args);
+  }
+};
+
+const normalizeMultiplayerSettings = (settings = {}) => {
+  const victoryScore = Math.max(25, Math.min(1000, Math.round(Number(settings.victoryScore) || WINNING_SCORE)));
+  return {
+    victoryScore,
+    disabledTileModifiers: Array.isArray(settings.disabledTileModifiers)
+      ? [...new Set(settings.disabledTileModifiers.filter(Boolean))]
+      : [],
+    disabledCards: Array.isArray(settings.disabledCards)
+      ? [...new Set(settings.disabledCards.filter(Boolean))]
+      : []
+  };
+};
+
+const getWinningScore = (state) => state?.settings?.victoryScore || WINNING_SCORE;
+const getDisabledTileModifierEffects = (state) => ({
+  blockedModifiers: state?.settings?.disabledTileModifiers || []
+});
+const getDisabledCardOptions = (state) => ({
+  disabledCards: state?.settings?.disabledCards || []
+});
+
 const createHistoryTiles = (tiles = []) => {
   // Preserve the exact submitted tiles so post-game history matches what players actually used.
   return tiles.map((tile) => ({
@@ -117,13 +145,24 @@ const generateRoomCode = () => {
   return roomCode;
 };
 
-const createInitialState = ({ hostId, players = [hostId], isPrivate = true, overtimeEnabled = true }) => {
+const createInitialState = ({ hostId, players = [hostId], isPrivate = true, overtimeEnabled = true, settings = {} }) => {
+  const multiplayerSettings = normalizeMultiplayerSettings(settings);
+  const tileModifierOptions = {
+    personalModifierEffects: {
+      blockedModifiers: multiplayerSettings.disabledTileModifiers
+    }
+  };
+  const cardOptions = {
+    disabledCards: multiplayerSettings.disabledCards
+  };
+
   if (isTestingMode) {
     return {
       host: hostId,
       players: [...players],
       isPrivate,
       overtimeEnabled,
+      settings: multiplayerSettings,
       overtimePendingSide: null,
       overtimeFinalWordSubmitted: false,
       submissionPauseOwner: null,
@@ -165,7 +204,8 @@ const createInitialState = ({ hostId, players = [hostId], isPrivate = true, over
       },
       cards: createTestingHands(),
       tiles: createTestingOpeningRackPair({ host: 0, opponent: 0 }, {
-        includeAllModifiers: true
+        includeAllModifiers: true,
+        ...tileModifierOptions
       })
     };
   }
@@ -175,6 +215,7 @@ const createInitialState = ({ hostId, players = [hostId], isPrivate = true, over
     players: [...players],
     isPrivate,
     overtimeEnabled,
+    settings: multiplayerSettings,
     overtimePendingSide: null,
     overtimeFinalWordSubmitted: false,
     submissionPauseOwner: null,
@@ -216,21 +257,23 @@ const createInitialState = ({ hostId, players = [hostId], isPrivate = true, over
     },
     cards: {
       host: {
-        boons: drawCards('boon', 1),
+        boons: drawCards('boon', 1, cardOptions),
         attacks: drawCards('attack', 1, {
           side: 'host',
-          scores: { host: 0, opponent: 0 }
+          scores: { host: 0, opponent: 0 },
+          ...cardOptions
         })
       },
       opponent: {
-        boons: drawCards('boon', 1),
+        boons: drawCards('boon', 1, cardOptions),
         attacks: drawCards('attack', 1, {
           side: 'opponent',
-          scores: { host: 0, opponent: 0 }
+          scores: { host: 0, opponent: 0 },
+          ...cardOptions
         })
       }
     },
-    tiles: createOpeningRackPair({ host: 0, opponent: 0 })
+    tiles: createOpeningRackPair({ host: 0, opponent: 0 }, tileModifierOptions)
   };
 };
 
@@ -239,8 +282,9 @@ const hasOvertimeStarted = (state) => {
     return false;
   }
 
-  const hostAtGoal = state.scores.host >= WINNING_SCORE;
-  const opponentAtGoal = state.scores.opponent >= WINNING_SCORE;
+  const winningScore = getWinningScore(state);
+  const hostAtGoal = state.scores.host >= winningScore;
+  const opponentAtGoal = state.scores.opponent >= winningScore;
   return hostAtGoal !== opponentAtGoal;
 };
 
@@ -253,7 +297,7 @@ const getOvertimeTrailingSide = (state) => {
     return null;
   }
 
-  return state.scores.host >= WINNING_SCORE ? 'opponent' : 'host';
+  return state.scores.host >= getWinningScore(state) ? 'opponent' : 'host';
 };
 
 const updateOvertimeStateAfterSubmit = (state, side) => {
@@ -268,8 +312,9 @@ const updateOvertimeStateAfterSubmit = (state, side) => {
     return;
   }
 
-  const hostAtGoal = state.scores.host >= WINNING_SCORE;
-  const opponentAtGoal = state.scores.opponent >= WINNING_SCORE;
+  const winningScore = getWinningScore(state);
+  const hostAtGoal = state.scores.host >= winningScore;
+  const opponentAtGoal = state.scores.opponent >= winningScore;
   if (hostAtGoal === opponentAtGoal) {
     return;
   }
@@ -286,7 +331,14 @@ const createGame = (roomCode, hostId, options = {}) => {
     hostId,
     players: [hostId],
     isPrivate: options.isPrivate ?? true,
-    overtimeEnabled: options.overtimeEnabled ?? true
+    overtimeEnabled: options.overtimeEnabled ?? true,
+    settings: options.settings || {}
+  });
+  devLog('[multiplayer-room-rules]', {
+    roomCode,
+    isPrivate: state.isPrivate,
+    overtimeEnabled: state.overtimeEnabled,
+    settings: state.settings
   });
 
   games.set(roomCode, state);
@@ -312,6 +364,7 @@ const clearRack = (roomCode, clientId) => {
   state.tiles[side] = createRack(side, state.scores, {
     mode: 'clear',
     currentTiles: state.tiles[side],
+    personalModifierEffects: getDisabledTileModifierEffects(state),
     turnCount: getTurnCount(state)
   });
 
@@ -328,6 +381,9 @@ const useBoon = (roomCode, clientId, cardId, tileId) => {
   const card = state.cards[side].boons.find((entry) => entry.id === cardId);
   if (!card) {
     return { success: false, error: 'No boons remaining' };
+  }
+  if ((state.settings?.disabledCards || []).includes(card.key)) {
+    return { success: false, error: 'That boon is disabled in this room' };
   }
 
   if (card.effectType === 'clear_negative_modifiers') {
@@ -351,6 +407,7 @@ const useBoon = (roomCode, clientId, cardId, tileId) => {
   if (card.effectType === 'delete_tile') {
     state.cards[side].boons = keepTestingHand(state.cards[side].boons, cardId);
     state.tiles[side] = replaceSingleTile(state.tiles[side], tileId, side, state.scores, {
+      personalModifierEffects: getDisabledTileModifierEffects(state),
       turnCount: getTurnCount(state)
     });
     return { success: true, state };
@@ -367,6 +424,7 @@ const useBoon = (roomCode, clientId, cardId, tileId) => {
 
   if (card.effectType === 'isolate_tile') {
     state.tiles[side] = rerollRackExceptTile(state.tiles[side], tileId, side, state.scores, {
+      personalModifierEffects: getDisabledTileModifierEffects(state),
       turnCount: getTurnCount(state)
     });
     return { success: true, state };
@@ -391,6 +449,9 @@ const useAttack = (roomCode, clientId, cardId) => {
   const card = state.cards[side].attacks.find((entry) => entry.id === cardId);
   if (!card) {
     return { success: false, error: 'No attacks remaining' };
+  }
+  if ((state.settings?.disabledCards || []).includes(card.key)) {
+    return { success: false, error: 'That attack is disabled in this room' };
   }
 
   if (card.effectType === 'pause_submissions') {
@@ -466,7 +527,8 @@ const playAgain = (roomCode, clientId) => {
     hostId: state.host,
     players: state.players,
     isPrivate: state.isPrivate,
-    overtimeEnabled: state.overtimeEnabled
+    overtimeEnabled: state.overtimeEnabled,
+    settings: state.settings || {}
   });
 
   games.set(roomCode, nextState);
@@ -479,7 +541,8 @@ const submitWord = async (roomCode, clientId, word, tileIds, languageCode = 'en'
     return { success: false, error: 'Room not found' };
   }
 
-  if (state.overtimeFinalWordSubmitted || (!state.overtimeEnabled && (state.scores.host >= WINNING_SCORE || state.scores.opponent >= WINNING_SCORE))) {
+  const winningScore = getWinningScore(state);
+  if (state.overtimeFinalWordSubmitted || (!state.overtimeEnabled && (state.scores.host >= winningScore || state.scores.opponent >= winningScore))) {
     return { success: false, error: 'Game is already over' };
   }
 
@@ -553,13 +616,15 @@ const submitWord = async (roomCode, clientId, word, tileIds, languageCode = 'en'
     netScore: scoreDelta
   };
   state.scores[side] += scoreDelta;
-  state.cards[side].boons.push(...drawCards('boon', grantedResources.boons));
+  state.cards[side].boons.push(...drawCards('boon', grantedResources.boons, getDisabledCardOptions(state)));
   state.cards[side].attacks.push(...drawCards('attack', grantedResources.attacks, {
     side,
-    scores: state.scores
+    scores: state.scores,
+    ...getDisabledCardOptions(state)
   }));
   state.tiles[side] = refillRack(state.tiles[side], tileIds, side, state.scores, {
     phase: 'submit',
+    personalModifierEffects: getDisabledTileModifierEffects(state),
     turnCount: getTurnCount(state)
   });
   if (state.submissionPauseOwner === side) {

@@ -111,11 +111,11 @@ const clearAnimationFrame = () => {
 const applyMoodStyleImmediately = (nextMoodStyle, reason, meta = {}) => {
   clearAnimationFrame();
   displayMoodStyle.value = normalizeMoodStyle(nextMoodStyle);
-  console.log('background:global-apply-no-transition', {
-    reason,
-    ...meta,
-    appliedMoodStyle: displayMoodStyle.value
-  });
+  // console.log('background:global-apply-no-transition', {
+  //   reason,
+  //   ...meta,
+  //   appliedMoodStyle: displayMoodStyle.value
+  // });
 };
 
 const transitionMoodStyle = (fromMoodStyle, toMoodStyle, transitionMeta) => {
@@ -128,12 +128,12 @@ const transitionMoodStyle = (fromMoodStyle, toMoodStyle, transitionMeta) => {
     return;
   }
 
-  console.log('background:global-transition-start', {
-    ...transitionMeta,
-    durationMs: BACKGROUND_TRANSITION_MS,
-    fromMoodStyle: normalizedFrom,
-    toMoodStyle: normalizedTo
-  });
+  // console.log('background:global-transition-start', {
+  //   ...transitionMeta,
+  //   durationMs: BACKGROUND_TRANSITION_MS,
+  //   fromMoodStyle: normalizedFrom,
+  //   toMoodStyle: normalizedTo
+  // });
 
   const startedAt = performance.now();
 
@@ -154,11 +154,11 @@ const transitionMoodStyle = (fromMoodStyle, toMoodStyle, transitionMeta) => {
     if (progress >= 1) {
       displayMoodStyle.value = normalizedTo;
       animationFrameId = null;
-      console.log('background:global-transition-end', {
-        ...transitionMeta,
-        durationMs: BACKGROUND_TRANSITION_MS,
-        finalMoodStyle: normalizedTo
-      });
+      // console.log('background:global-transition-end', {
+      //   ...transitionMeta,
+      //   durationMs: BACKGROUND_TRANSITION_MS,
+      //   finalMoodStyle: normalizedTo
+      // });
       return;
     }
 
@@ -184,21 +184,21 @@ watch(
     const transitionKeyChanged = nextTransitionKey !== lastTransitionKey;
     const previousTransitionKey = lastTransitionKey;
 
-    console.log('background:global-watch', {
-      previousTransitionKey,
-      nextTransitionKey,
-      visualChanged,
-      transitionKeyChanged,
-      previousMoodStyle: currentMoodStyle,
-      nextMoodStyle
-    });
+    // console.log('background:global-watch', {
+    //   previousTransitionKey,
+    //   nextTransitionKey,
+    //   visualChanged,
+    //   transitionKeyChanged,
+    //   previousMoodStyle: currentMoodStyle,
+    //   nextMoodStyle
+    // });
 
-    if (!visualChanged && !transitionKeyChanged) {
-      console.log('background:global-skip-no-change', {
-        transitionKey: nextTransitionKey
-      });
-      return;
-    }
+    // if (!visualChanged && !transitionKeyChanged) {
+    //   console.log('background:global-skip-no-change', {
+    //     transitionKey: nextTransitionKey
+    //   });
+    //   return;
+    // }
 
     if (transitionKeyChanged && visualChanged) {
       transitionMoodStyle(currentMoodStyle, nextMoodStyle, {

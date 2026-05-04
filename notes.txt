@@ -283,3 +283,7 @@ twin tile and other tiles are not able to be in use style cause of layering afte
 
 the game needs to pause all functions when the app is out of focus its running 
 
+bagged tiles need to be removed if bag tile removed 
+
+need to be able to drag letters around 
+

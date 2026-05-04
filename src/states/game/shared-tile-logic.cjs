@@ -178,7 +178,6 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
       if (profileName === 'solo') {
         return !definition.noSinglePlayer;
       }
-      if (isDevLoggingEnabled()) console.log('profile'+ profileName)
 
       if (profileName === 'duel' || profileName === 'bot') {
         return !definition.noMultiPlayer;
@@ -291,7 +290,7 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
       openingGoodChanceBonus
     };
 
-    if (isDevLoggingEnabled()) {
+    if (isDevLoggingEnabled() && false) {
       // update logs for actual chances
       console.log('[modifier-chances]', {
         profileName,
@@ -745,7 +744,14 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
 
   const rollSharedOpeningModifier = (scores = {}, contexts = [], options = {}) => {
     const modifierProfile = options.modifierProfile || 'duel';
-    const profile = getModifierProfile(modifierProfile);
+    const personalModifierEffects = options.personalModifierEffects || {};
+    const baseProfile = getModifierProfile(modifierProfile);
+    const profile = {
+      ...baseProfile,
+      goodModifiers: filterBlockedModifiers(baseProfile.goodModifiers, personalModifierEffects),
+      badModifiers: filterBlockedModifiers(baseProfile.badModifiers, personalModifierEffects),
+      neutralModifiers: filterBlockedModifiers(baseProfile.neutralModifiers || [], personalModifierEffects)
+    };
     const { goodChance, badChance, neutralChance } = getModifierChances(null, scores, modifierProfile, options.turnCount || 0, options);
     const roll = Math.random();
 
@@ -1329,19 +1335,22 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
     };
 
     const getCardPool = (kind, options = {}) => {
+      const disabledCardKeys = new Set(options.disabledCardKeys || options.disabledCards || []);
+      const filterDisabledCards = (cardKeys = []) => cardKeys.filter((cardKey) => !disabledCardKeys.has(cardKey));
+
       if (kind === 'boon') {
-        return BOON_CARD_KEYS;
+        return filterDisabledCards(BOON_CARD_KEYS);
       }
 
       if (options.deck === 'timed_solo') {
-        return TIMED_SOLO_ATTACK_CARD_KEYS;
+        return filterDisabledCards(TIMED_SOLO_ATTACK_CARD_KEYS);
       }
 
       if (options.deck === 'multi_round') {
-        return MULTI_ROUND_ATTACK_CARD_KEYS;
+        return filterDisabledCards(MULTI_ROUND_ATTACK_CARD_KEYS);
       }
 
-      return ATTACK_CARD_KEYS.filter((cardKey) => {
+      return filterDisabledCards(ATTACK_CARD_KEYS).filter((cardKey) => {
         const definition = getCardDefinition(cardKey);
         if (!definition?.requiresBehind) {
           return true;

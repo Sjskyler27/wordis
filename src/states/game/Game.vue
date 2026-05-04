@@ -221,7 +221,8 @@ import {
   multiplayerOvertimeEnabled,
   multiplayerOvertimePendingSide,
   multiplayerOvertimeFinalWordSubmitted,
-  multiplayerSubmissionPauseOwner
+  multiplayerSubmissionPauseOwner,
+  multiplayerSettings
 } from './multiplayer.js';
 import { MIN_WORD_LENGTH, applyRackManipulationEffects, drawCards, getWordScoreDetails, isMissingRequiredTile, selectedTilesMatchWord, tickLightningTiles, tickShimmerTiles } from './tile-logic.js';
 import { getPreferredLanguage } from './language.js';
@@ -696,6 +697,9 @@ const scoreRibbonScoreLabel = computed(() => {
   if (isBotMode.value) {
     return `${leftLane.value.score} / ${BOT_WINNING_SCORES[props.botDifficulty] ?? WINNING_SCORE}`;
   }
+  if (props.isMultiplayer) {
+    return `${leftLane.value.score} / ${matchWinningScore.value}`;
+  }
 
   return leftLane.value.score;
 });
@@ -791,7 +795,7 @@ const finalWordPointsRemaining = computed(() => {
   }
 
   if (isTimedSoloMode.value && finalWordWindowActive.value) {
-    return Math.max(0, WINNING_SCORE - (playerScores.value.host || 0));
+    return Math.max(0, matchWinningScore.value - (playerScores.value.host || 0));
   }
 
   if (isOvertimeActive.value && overtimeTrailingSide.value === mySide.value) {
@@ -965,6 +969,13 @@ const saveBotMatchPastGame = () => {
 };
 
 const WINNING_SCORE = isTestingMode ? 40 : 250;
+const matchWinningScore = computed(() => {
+  if (props.isMultiplayer) {
+    return multiplayerSettings.value?.victoryScore || WINNING_SCORE;
+  }
+
+  return WINNING_SCORE;
+});
 const winningSide = computed(() => {
   if (isOvertimeActive.value) {
     return null;
@@ -982,11 +993,11 @@ const winningSide = computed(() => {
     return null;
   }
 
-  if (playerScores.value.host >= WINNING_SCORE && playerScores.value.host >= playerScores.value.opponent) {
+  if (playerScores.value.host >= matchWinningScore.value && playerScores.value.host >= playerScores.value.opponent) {
     return 'host';
   }
 
-  if (playerScores.value.opponent >= WINNING_SCORE) {
+  if (playerScores.value.opponent >= matchWinningScore.value) {
     return 'opponent';
   }
 
@@ -1208,7 +1219,7 @@ const backgroundProgress = computed(() => {
   }
 
   const highestScore = Math.max(playerScores.value.host || 0, playerScores.value.opponent || 0);
-  return clamp01(highestScore / WINNING_SCORE);
+  return clamp01(highestScore / matchWinningScore.value);
 });
 const createBackgroundPaletteStyle = (palette, intensity, progress) => {
   return {

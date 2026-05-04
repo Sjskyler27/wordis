@@ -59,15 +59,20 @@ export const multiplayerOvertimeEnabled = ref(true);
 export const multiplayerOvertimePendingSide = ref(null);
 export const multiplayerOvertimeFinalWordSubmitted = ref(false);
 export const multiplayerSubmissionPauseOwner = ref(null);
+export const multiplayerSettings = ref({
+  victoryScore: 250,
+  disabledTileModifiers: [],
+  disabledCards: []
+});
 
-export const hostGame = ({ isPrivate = true, overtimeEnabled = true } = {}) => {
+export const hostGame = ({ isPrivate = true, overtimeEnabled = true, settings = {} } = {}) => {
   if (!isSocketConnected.value) {
     message.value = 'Multiplayer server is offline. Please check your connection.';
     return;
   }
 
   isConnecting.value = true;
-  socket.emit('hostGame', { isPrivate, overtimeEnabled });
+  socket.emit('hostGame', { isPrivate, overtimeEnabled, settings });
 };
 
 const applyGameState = (data = {}) => {
@@ -92,6 +97,7 @@ const applyGameState = (data = {}) => {
   rackClears.value = data.rackClears || rackClears.value;
   playerCards.value = data.cards || playerCards.value;
   isPrivateRoom.value = data.isPrivate ?? isPrivateRoom.value;
+  multiplayerSettings.value = data.settings || multiplayerSettings.value;
   multiplayerOvertimeEnabled.value = data.overtimeEnabled ?? multiplayerOvertimeEnabled.value;
   multiplayerOvertimePendingSide.value = data.overtimePendingSide ?? null;
   multiplayerOvertimeFinalWordSubmitted.value = Boolean(data.overtimeFinalWordSubmitted);
@@ -274,4 +280,9 @@ export const resetGame = () => {
   multiplayerOvertimePendingSide.value = null;
   multiplayerOvertimeFinalWordSubmitted.value = false;
   multiplayerSubmissionPauseOwner.value = null;
+  multiplayerSettings.value = {
+    victoryScore: 250,
+    disabledTileModifiers: [],
+    disabledCards: []
+  };
 };

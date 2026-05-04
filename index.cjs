@@ -62,6 +62,7 @@ const createGameStatePayload = (state) => ({
   cards: state.cards,
   tiles: state.tiles,
   isPrivate: state.isPrivate,
+  settings: state.settings,
   overtimeEnabled: state.overtimeEnabled,
   overtimePendingSide: state.overtimePendingSide,
   overtimeFinalWordSubmitted: state.overtimeFinalWordSubmitted,
@@ -83,7 +84,8 @@ const handleHostGame = (connection, clientId, data) => {
   const roomCode = generateRoomCode();
   const { success, error, state } = createGame(roomCode, clientId, {
     isPrivate: data?.isPrivate ?? true,
-    overtimeEnabled: data?.overtimeEnabled ?? true
+    overtimeEnabled: data?.overtimeEnabled ?? true,
+    settings: data?.settings || {}
   });
   if (!success) {
     sendEvent(connection, 'joinError', error);
