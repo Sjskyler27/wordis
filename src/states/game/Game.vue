@@ -1604,6 +1604,10 @@ const applyMultiRoundWordTimePenalty = (tileCount = 0) => {
 
 const getHourglassTimeDelta = (rackTiles = [], selectedTiles = []) => {
   const selectedIds = new Set(selectedTiles.map((tile) => tile.id));
+  console.log(selectedIds)
+  console.log(rackTiles)
+
+  // rack tiles are already rplaced by now 
   return rackTiles.reduce((delta, tile) => {
     if (tile.status !== 'hourglassTile') {
       return delta;
@@ -1619,6 +1623,7 @@ const applyHourglassTimeDelta = (selectedTiles = []) => {
   }
 
   const delta = getHourglassTimeDelta(myTiles.value, selectedTiles);
+  console.log('delta ' + delta)
   if (!delta) {
     return 0;
   }
@@ -1826,6 +1831,22 @@ const handleSubmit = async () => {
   scorePopTiles.value = selectedTiles.map((tile) => ({ ...tile }));
   playScoreAnimation(selectedTiles.length);
 
+  const hourglassDelta = applyHourglassTimeDelta(selectedTiles);
+  if (hourglassDelta > 0) {
+    localMessage.value = `${localMessage.value} Hourglass added ${hourglassDelta} seconds.`;
+  } else if (hourglassDelta < 0) {
+    localMessage.value = `${localMessage.value} Hourglass lost ${Math.abs(hourglassDelta)} seconds.`;
+  }
+  const secondsRestored = applyMultiRoundWordTimeBonus(selectedTiles.length);
+  if (secondsRestored) {
+    localMessage.value = `${localMessage.value} Restored ${secondsRestored} seconds.`;
+  }
+  const secondsSapped = applyMultiRoundWordTimePenalty(selectedTiles.length);
+  if (secondsSapped) {
+    localMessage.value = `${localMessage.value} Lost ${secondsSapped} seconds.`;
+  }
+
+
   if (props.isMultiplayer) {
     const scoreDetails = getWordScoreDetails(selectedTiles, {
       side: mySide.value,
@@ -1854,20 +1875,6 @@ const handleSubmit = async () => {
     return;
   }
   resetSpeedyWordClock();
-  const hourglassDelta = applyHourglassTimeDelta(selectedTiles);
-  if (hourglassDelta > 0) {
-    localMessage.value = `${localMessage.value} Hourglass added ${hourglassDelta} seconds.`;
-  } else if (hourglassDelta < 0) {
-    localMessage.value = `${localMessage.value} Hourglass lost ${Math.abs(hourglassDelta)} seconds.`;
-  }
-  const secondsRestored = applyMultiRoundWordTimeBonus(selectedTiles.length);
-  if (secondsRestored) {
-    localMessage.value = `${localMessage.value} Restored ${secondsRestored} seconds.`;
-  }
-  const secondsSapped = applyMultiRoundWordTimePenalty(selectedTiles.length);
-  if (secondsSapped) {
-    localMessage.value = `${localMessage.value} Lost ${secondsSapped} seconds.`;
-  }
 
   if (isMultiRoundMode.value) {
     if (wordHistory.value.host?.[0]) {
