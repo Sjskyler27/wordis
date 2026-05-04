@@ -931,6 +931,38 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
 
     return indexes;
   };
+  const getBaggedTileIds = (rackTiles = [], selectedTiles = []) => {
+    const selectedIds = new Set(selectedTiles.map((tile) => tile?.id).filter(Boolean));
+    const hasSelectedBagTile = selectedTiles.some((tile) => tile?.status === 'bagTile');
+    const baggedIds = new Set();
+
+    if (hasSelectedBagTile) {
+      return baggedIds;
+    }
+
+    rackTiles.forEach((tile, index) => {
+      if (tile?.status !== 'bagTile') {
+        return;
+      }
+
+      getAdjacentRackIndexes(index, rackTiles.length).forEach((baggedIndex) => {
+        const baggedTile = rackTiles[baggedIndex];
+        if (baggedTile?.id && baggedTile.id !== tile.id) {
+          baggedIds.add(baggedTile.id);
+        }
+      });
+    });
+
+    return baggedIds;
+  };
+  const isMissingBagTileForBaggedSelection = (rackTiles = [], selectedTiles = []) => {
+    const baggedIds = getBaggedTileIds(rackTiles, selectedTiles);
+    if (!baggedIds.size) {
+      return false;
+    }
+
+    return selectedTiles.some((tile) => baggedIds.has(tile?.id));
+  };
   const applyRackManipulationEffects = (tiles = [], options = {}) => {
     if (!Array.isArray(tiles) || !tiles.length) {
       return tiles;
@@ -2107,6 +2139,7 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
     getMilestoneReward,
     getTilesScore,
     applyRackManipulationEffects,
+    getBaggedTileIds,
     getWordScoreDetails,
     getIdleScorePenalty,
     tickShimmerTiles,
@@ -2117,6 +2150,7 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
     selectedTilesMatchWord,
     getRequiredTiles,
     isMissingRequiredTile,
+    isMissingBagTileForBaggedSelection,
     getCardDefinition,
     applyModifierToTile,
     replaceTileWithModifier,

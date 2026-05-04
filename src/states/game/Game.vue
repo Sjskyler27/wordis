@@ -126,6 +126,7 @@
           :invalid-pulse="invalidWordPulse"
           :score-pop-pulse="scorePopPulse"
           :score-pop-tiles="scorePopTiles"
+          :bagged-tile-ids="currentBaggedTileIds"
           :current-word-length="currentWordLength"
           :current-word-score="currentWordScore"
           :current-letter-total="currentLetterTotal"
@@ -224,7 +225,7 @@ import {
   multiplayerSubmissionPauseOwner,
   multiplayerSettings
 } from './multiplayer.js';
-import { MIN_WORD_LENGTH, applyRackManipulationEffects, drawCards, getWordScoreDetails, isMissingRequiredTile, selectedTilesMatchWord, tickLightningTiles, tickShimmerTiles } from './tile-logic.js';
+import { MIN_WORD_LENGTH, applyRackManipulationEffects, drawCards, getBaggedTileIds, getWordScoreDetails, isMissingBagTileForBaggedSelection, isMissingRequiredTile, selectedTilesMatchWord, tickLightningTiles, tickShimmerTiles } from './tile-logic.js';
 import { getPreferredLanguage } from './language.js';
 import { useWordBuilder } from './useWordBuilder.js';
 import { useSinglePlayerGame } from './useSinglePlayerGame.js';
@@ -668,6 +669,7 @@ const {
   playerScores,
   scoreOptions: multiRoundScoreOptions
 });
+const currentBaggedTileIds = computed(() => getBaggedTileIds(myTiles.value, selectedTilesForCurrentSide.value));
 
 const leftLane = computed(() => buildLane(mySide.value, 'Your Board'));
 const rightLane = computed(() => buildLane(opponentSide.value, isBotMode.value ? 'Bot Board' : 'Their Board'));
@@ -1800,6 +1802,12 @@ const handleSubmit = async () => {
     triggerMustTileAlert(mySide.value, myTiles.value
       .filter((tile) => tile.status === 'mustuse' && !tile.locked)
       .map((tile) => tile.id));
+    return;
+  }
+
+  if (isMissingBagTileForBaggedSelection(myTiles.value, selectedTiles)) {
+    localMessage.value = 'Bagged tiles need their BAG tile in the word.';
+    triggerInvalidWordShake();
     return;
   }
 

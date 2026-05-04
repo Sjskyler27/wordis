@@ -372,10 +372,9 @@ const createModifierDefinitions = ({ bloodTilePositionValues }) => ({
     },
     bagTile: {
       badge: 'BAG',
-      description: 'Makes all adjacent rack tiles unplayable while this tile stays in the rack.',
+      description: 'Adjacent rack tiles can only be submitted if this BAG tile is in the word too.',
       effects: {
-        blocksAdjacentRackTiles: true,
-        blocksAdjacentWhileSelected: false
+        bagsAdjacentRackTiles: true
       },
       rarityWeight: 0.18,
       canApply: ({ baseScore }) => baseScore <= 5,

@@ -59,9 +59,9 @@
               'tile-hourglass': tile.status === 'hourglassTile',
               'tile-barricade': tile.status === 'barricadeTile',
               'tile-bag': tile.status === 'bagTile',
+              'tile-bagged': isBaggedTile(tile),
               'tile-leecher': tile.status === 'leecherTile',
               'tile-leecher-drained': tile.leecherDrained,
-              'tile-adjacent-blocked': isAdjacentBlockedTile(tile),
               'tile-must-alert': mustAlertIds.has(tile.id),
               'tile-banned-letter': isBannedLetter(tile),
               'tile-in-use': selectedTileIds.has(tile.id),
@@ -102,7 +102,7 @@
 
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
-import { getModifierBadge, getModifierUi, tileScore } from '../tile-logic.js';
+import { getBaggedTileIds, getModifierBadge, getModifierUi, tileScore } from '../tile-logic.js';
 import TileHoverTooltip from './TileHoverTooltip.vue';
 
 const props = defineProps({
@@ -228,53 +228,12 @@ const hideTooltip = () => {
   hoveredTile.value = null;
 };
 
-const RACK_COLUMNS = 5;
-
-const getAdjacentRackIndexes = (index, tilesLength = props.tiles.length) => {
-  const row = Math.floor(index / RACK_COLUMNS);
-  const col = index % RACK_COLUMNS;
-  const indexes = [];
-  const cardinalOffsets = [
-    [-1, 0],
-    [1, 0],
-    [0, -1],
-    [0, 1]
-  ];
-
-  cardinalOffsets.forEach(([rowDelta, colDelta]) => {
-    const nextRow = row + rowDelta;
-    const nextCol = col + colDelta;
-    const nextIndex = (nextRow * RACK_COLUMNS) + nextCol;
-    if (nextRow >= 0 && nextCol >= 0 && nextCol < RACK_COLUMNS && nextIndex >= 0 && nextIndex < tilesLength) {
-      indexes.push(nextIndex);
-    }
-  });
-
-  return indexes;
-};
-
-const adjacentBlockedTileIds = computed(() => {
-  const blockedIds = new Set();
-  props.tiles.forEach((tile, index) => {
-    if (tile?.status !== 'bagTile') {
-      return;
-    }
-    if (props.selectedTileIds.has(tile.id) && tile.blocksAdjacentWhileSelected === false) {
-      return;
-    }
-
-    getAdjacentRackIndexes(index).forEach((blockedIndex) => {
-      const blockedTile = props.tiles[blockedIndex];
-      if (blockedTile?.id && blockedTile.id !== tile.id) {
-        blockedIds.add(blockedTile.id);
-      }
-    });
-  });
-
-  return blockedIds;
+const baggedTileIds = computed(() => {
+  const selectedTiles = props.tiles.filter((tile) => props.selectedTileIds.has(tile.id));
+  return getBaggedTileIds(props.tiles, selectedTiles);
 });
 
-const isAdjacentBlockedTile = (tile) => adjacentBlockedTileIds.value.has(tile?.id);
+const isBaggedTile = (tile) => baggedTileIds.value.has(tile?.id);
 
 const getLightningAnimationSync = (tile, event) => {
   if (tile?.status !== 'lightningTile') {
@@ -329,11 +288,6 @@ const handleTileClick = (tile, event) => {
     setTooltipPositionFromElement(event.currentTarget);
     hoveredTile.value = tile;
     isTooltipVisible.value = true;
-    return;
-  }
-
-  if (isAdjacentBlockedTile(tile)) {
-    hideTooltip();
     return;
   }
 
@@ -1394,12 +1348,11 @@ onBeforeUnmount(() => {
 }
 
 
-.tile-adjacent-blocked:not(.tile-in-use) {
-  cursor: not-allowed;
+.tile-bagged:not(.tile-in-use) {
   filter: saturate(0.72) brightness(0.82);
 }
 
-.tile-adjacent-blocked:not(.tile-in-use)::after {
+.tile-bagged:not(.tile-in-use)::after {
   content: '';
   position: absolute;
   inset: 0%;

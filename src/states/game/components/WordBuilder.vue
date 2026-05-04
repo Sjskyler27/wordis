@@ -33,6 +33,8 @@
                 'built-tile-void': tile.status === 'voidTile',
                 'built-tile-hourglass': tile.status === 'hourglassTile',
                 'built-tile-barricade': tile.status === 'barricadeTile',
+                'built-tile-bag': tile.status === 'bagTile',
+                'built-tile-bagged': isBaggedTile(tile),
                 'built-tile-leecher': tile.status === 'leecherTile',
                 'built-tile-leecher-drained': tile.leecherDrained,
                 'built-tile-twin': tile.status === 'twinTile',
@@ -94,6 +96,8 @@
                 'built-tile-void': slot.tile.status === 'voidTile',
                 'built-tile-hourglass': slot.tile.status === 'hourglassTile',
                 'built-tile-barricade': slot.tile.status === 'barricadeTile',
+                'built-tile-bag': slot.tile.status === 'bagTile',
+                'built-tile-bagged': isBaggedTile(slot.tile),
                 'built-tile-leecher': slot.tile.status === 'leecherTile',
                 'built-tile-leecher-drained': slot.tile.leecherDrained,
                 'built-tile-twin': slot.tile.status === 'twinTile',
@@ -206,6 +210,10 @@ const props = defineProps({
   scorePopTiles: {
     type: Array,
     default: () => []
+  },
+  baggedTileIds: {
+    type: [Object, Array],
+    default: () => new Set()
   },
   currentWordLength: {
     type: Number,
@@ -325,6 +333,16 @@ const disabledGoldIds = computed(() => {
 
 const isDisabledGold = (tile) => {
   return disabledGoldIds.value.includes(tile.id);
+};
+
+const isBaggedTile = (tile) => {
+  if (!tile?.id) {
+    return false;
+  }
+
+  return typeof props.baggedTileIds?.has === 'function'
+    ? props.baggedTileIds.has(tile.id)
+    : props.baggedTileIds.includes(tile.id);
 };
 
 
@@ -888,8 +906,11 @@ button:focus{
 .built-tile-rusting,
 .built-tile-lightning,
 .built-tile-twin,
+.built-tile-glass,
 .built-tile-void,
+.built-tile-hourglass,
 .built-tile-barricade,
+.built-tile-bag,
 .built-tile-leecher {
   isolation: isolate;
   overflow: hidden;
@@ -1181,6 +1202,50 @@ button:focus{
   animation: built-hourglass-sand 1400ms ease-in-out infinite;
 }
 
+.built-tile-bag {
+  background:
+    repeating-linear-gradient(180deg, rgba(72, 42, 18, 0.24) 0 4px, transparent 4px 13px),
+    linear-gradient(180deg, #d9b280 0%, #9a6a37 58%, #5d3418 100%);
+  box-shadow:
+    inset 0 -3px 0 rgba(58, 31, 11, 0.34),
+    0 10px 16px rgba(67, 39, 18, 0.18),
+    0 0 0 1px rgba(226, 180, 112, 0.34);
+}
+
+.built-tile-bag::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  border-radius: 10px;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 18% 44%, rgba(242, 214, 34, 0.72) 0 3px, transparent 4px),
+    radial-gradient(circle at 18% 56%, rgba(242, 214, 34, 0.72) 0 3px, transparent 4px),
+    radial-gradient(circle at 82% 44%, rgba(242, 214, 34, 0.72) 0 3px, transparent 4px),
+    radial-gradient(circle at 82% 56%, rgba(242, 214, 34, 0.72) 0 3px, transparent 4px),
+    linear-gradient(90deg, transparent 0 11%, rgba(64, 35, 13, 0.72) 11% 18%, transparent 18% 82%, rgba(64, 35, 13, 0.72) 82% 89%, transparent 89% 100%),
+    repeating-linear-gradient(180deg, rgba(80, 45, 18, 0.28) 0 4px, transparent 4px 14px),
+    linear-gradient(180deg, rgba(234, 188, 121, 0.2), rgba(90, 51, 22, 0.22));
+}
+
+.built-tile-bagged:not(.built-tile-bag)::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 7;
+  border-radius: 10px;
+  pointer-events: none;
+  background:
+    repeating-linear-gradient(180deg, rgba(68, 39, 16, 0.32) 0 4px, transparent 4px 13px),
+    linear-gradient(90deg, transparent 0 11%, rgba(64, 35, 13, 0.38) 11% 18%, transparent 18% 82%, rgba(64, 35, 13, 0.38) 82% 89%, transparent 89% 100%),
+    linear-gradient(180deg, rgba(215, 169, 102, 0.38), rgba(85, 48, 19, 0.34));
+  box-shadow:
+    inset 0 0 0 2px rgba(79, 47, 20, 0.38),
+    inset 8px 0 0 rgba(70, 40, 16, 0.22),
+    inset -8px 0 0 rgba(70, 40, 16, 0.22);
+}
+
 .built-tile-barricade {
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.24), transparent 36%),
@@ -1245,6 +1310,7 @@ button:focus{
 .built-tile-void .tile-letter,
 .built-tile-hourglass .tile-letter,
 .built-tile-barricade .tile-letter,
+.built-tile-bag .tile-letter,
 .built-tile-leecher .tile-letter {
   position: relative;
   z-index: 3;
@@ -1272,6 +1338,7 @@ button:focus{
 .built-tile-void .tile-score,
 .built-tile-hourglass .tile-score,
 .built-tile-barricade .tile-score,
+.built-tile-bag .tile-score,
 .built-tile-leecher .tile-score {
   z-index: 5;
 }
@@ -1284,6 +1351,7 @@ button:focus{
 .built-tile-void .tile-modifier,
 .built-tile-hourglass .tile-modifier,
 .built-tile-barricade .tile-modifier,
+.built-tile-bag .tile-modifier,
 .built-tile-leecher .tile-modifier {
   z-index: 6;
 }
