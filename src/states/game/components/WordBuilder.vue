@@ -1341,6 +1341,20 @@ button:focus{
     inset 0 0 0 3px rgba(44, 92, 50, 0.38),
     var(--built-tile-shadow, inset 0 -3px 0 rgba(0, 0, 0, 0.16));
 }
+.built-tile-leecher-drained:not(.tile-leecher)::before{
+  content: '';
+  position: absolute;
+  left: 70%;
+  right: 05%;
+  top: 18%;
+  height: 5px;
+  border-radius: 999px;
+  background: rgba(213, 31, 55, 0.94);
+  box-shadow: 0 0 0 2px rgba(255, 231, 220, 0.62), 0 6px 12px rgba(88, 5, 18, 0.26);
+  pointer-events: none;
+  transform: translateY(-85%) rotate(-38deg);
+  z-index: 4;
+}
 
 .built-tile-shimmer .tile-letter,
 .built-tile-rusting .tile-letter,
