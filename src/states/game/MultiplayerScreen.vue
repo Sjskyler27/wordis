@@ -509,7 +509,6 @@ onBeforeUnmount(() => {
   --bg-bottom: #341137;
   --bg-corner: #f39a54;
   --cream: #f7efe1;
-  min-height: 100vh;
   position: fixed;
   inset: 0;
   overflow-x: hidden;
