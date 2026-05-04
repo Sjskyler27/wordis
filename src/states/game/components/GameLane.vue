@@ -56,6 +56,7 @@
               'tile-glass': tile.status === 'glassTile',
               'tile-glass-cracked': tile.glassCracked,
               'tile-void': tile.status === 'voidTile',
+              'tile-hourglass': tile.status === 'hourglassTile',
               'tile-barricade': tile.status === 'barricadeTile',
               'tile-bag': tile.status === 'bagTile',
               'tile-leecher': tile.status === 'leecherTile',
@@ -1006,6 +1007,7 @@ onBeforeUnmount(() => {
 .tile-twin,
 .tile-glass,
 .tile-void,
+.tile-hourglass,
 .tile-barricade,
 .tile-bag,
 .tile-leecher {
@@ -1270,6 +1272,47 @@ onBeforeUnmount(() => {
   animation: tile-void-pulse 1400ms ease-in-out infinite;
 }
 
+.tile-hourglass {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.32), transparent 38%),
+    linear-gradient(180deg, #fff7d6 0%, #d9ad54 48%, #6f4d2a 100%);
+  box-shadow:
+    inset 0 -4px 0 rgba(88, 55, 24, 0.32),
+    0 12px 22px rgba(80, 52, 28, 0.22),
+    0 0 0 1px rgba(255, 223, 154, 0.46);
+}
+
+.tile-hourglass::before,
+.tile-hourglass::after {
+  content: '';
+  position: absolute;
+  pointer-events: none;
+}
+
+.tile-hourglass::before {
+  inset: 14% 27%;
+  z-index: 0;
+  border-radius: 999px;
+  border: 4px solid rgba(71, 42, 19, 0.72);
+  background:
+    linear-gradient(180deg, transparent 0 45%, rgba(71, 42, 19, 0.58) 46% 54%, transparent 55% 100%),
+    linear-gradient(180deg, rgba(255, 244, 194, 0.82) 0 28%, transparent 29% 50%, rgba(238, 178, 75, 0.88) 51% 100%);
+  clip-path: polygon(14% 0, 86% 0, 62% 50%, 86% 100%, 14% 100%, 38% 50%);
+}
+
+.tile-hourglass::after {
+  left: 32%;
+  right: 32%;
+  top: 18%;
+  bottom: 18%;
+  z-index: 1;
+  background:
+    radial-gradient(circle at 50% 38%, rgba(255, 245, 176, 0.95) 0 2px, transparent 3px),
+    radial-gradient(circle at 50% 50%, rgba(255, 245, 176, 0.95) 0 2px, transparent 3px),
+    radial-gradient(circle at 50% 62%, rgba(255, 245, 176, 0.95) 0 2px, transparent 3px);
+  animation: tile-hourglass-sand 1400ms ease-in-out infinite;
+}
+
 .tile-voidold::before {
   inset: 9%;
   z-index: 0;
@@ -1424,6 +1467,7 @@ onBeforeUnmount(() => {
 .tile-twin .tile-letter,
 .tile-glass .tile-letter,
 .tile-void .tile-letter,
+.tile-hourglass .tile-letter,
 .tile-barricade .tile-letter,
 .tile-bag .tile-letter,
 .tile-leecher .tile-letter {
@@ -1451,6 +1495,7 @@ onBeforeUnmount(() => {
 .tile-twin .tile-score,
 .tile-glass .tile-score,
 .tile-void .tile-score,
+.tile-hourglass .tile-score,
 .tile-barricade .tile-score,
 .tile-bag .tile-score,
 .tile-leecher .tile-score {
@@ -1463,6 +1508,7 @@ onBeforeUnmount(() => {
 .tile-twin .tile-modifier,
 .tile-glass .tile-modifier,
 .tile-void .tile-modifier,
+.tile-hourglass .tile-modifier,
 .tile-barricade .tile-modifier,
 .tile-bag .tile-modifier,
 .tile-leecher .tile-modifier {
@@ -1816,6 +1862,18 @@ onBeforeUnmount(() => {
   50% {
     transform: scale(1.08);
     opacity: 1;
+  }
+}
+
+@keyframes tile-hourglass-sand {
+  0%,
+  100% {
+    opacity: 0.64;
+    transform: translateY(-2px);
+  }
+  50% {
+    opacity: 1;
+    transform: translateY(2px);
   }
 }
 

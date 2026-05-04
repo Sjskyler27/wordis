@@ -31,6 +31,7 @@
                 'built-tile-glass': tile.status === 'glassTile',
                 'built-tile-glass-cracked': tile.glassCracked,
                 'built-tile-void': tile.status === 'voidTile',
+                'built-tile-hourglass': tile.status === 'hourglassTile',
                 'built-tile-barricade': tile.status === 'barricadeTile',
                 'built-tile-leecher': tile.status === 'leecherTile',
                 'built-tile-leecher-drained': tile.leecherDrained,
@@ -91,6 +92,7 @@
                 'built-tile-glass': slot.tile.status === 'glassTile',
                 'built-tile-glass-cracked': slot.tile.glassCracked,
                 'built-tile-void': slot.tile.status === 'voidTile',
+                'built-tile-hourglass': slot.tile.status === 'hourglassTile',
                 'built-tile-barricade': slot.tile.status === 'barricadeTile',
                 'built-tile-leecher': slot.tile.status === 'leecherTile',
                 'built-tile-leecher-drained': slot.tile.leecherDrained,
@@ -1138,6 +1140,47 @@ button:focus{
   opacity: 1;
 }
 
+.built-tile-hourglass {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.32), transparent 38%),
+    linear-gradient(180deg, #fff7d6 0%, #d9ad54 48%, #6f4d2a 100%);
+  box-shadow:
+    inset 0 -3px 0 rgba(88, 55, 24, 0.32),
+    0 10px 16px rgba(80, 52, 28, 0.18),
+    0 0 0 1px rgba(255, 223, 154, 0.46);
+}
+
+.built-tile-hourglass::before,
+.built-tile-hourglass::after {
+  content: '';
+  position: absolute;
+  pointer-events: none;
+}
+
+.built-tile-hourglass::before {
+  inset: 14% 27%;
+  z-index: 0;
+  border-radius: 999px;
+  border: 3px solid rgba(71, 42, 19, 0.72);
+  background:
+    linear-gradient(180deg, transparent 0 45%, rgba(71, 42, 19, 0.58) 46% 54%, transparent 55% 100%),
+    linear-gradient(180deg, rgba(255, 244, 194, 0.82) 0 28%, transparent 29% 50%, rgba(238, 178, 75, 0.88) 51% 100%);
+  clip-path: polygon(14% 0, 86% 0, 62% 50%, 86% 100%, 14% 100%, 38% 50%);
+}
+
+.built-tile-hourglass::after {
+  left: 32%;
+  right: 32%;
+  top: 18%;
+  bottom: 18%;
+  z-index: 1;
+  background:
+    radial-gradient(circle at 50% 38%, rgba(255, 245, 176, 0.95) 0 2px, transparent 3px),
+    radial-gradient(circle at 50% 50%, rgba(255, 245, 176, 0.95) 0 2px, transparent 3px),
+    radial-gradient(circle at 50% 62%, rgba(255, 245, 176, 0.95) 0 2px, transparent 3px);
+  animation: built-hourglass-sand 1400ms ease-in-out infinite;
+}
+
 .built-tile-barricade {
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.24), transparent 36%),
@@ -1200,6 +1243,7 @@ button:focus{
 .built-tile-twin .tile-letter,
 .built-tile-glass .tile-letter,
 .built-tile-void .tile-letter,
+.built-tile-hourglass .tile-letter,
 .built-tile-barricade .tile-letter,
 .built-tile-leecher .tile-letter {
   position: relative;
@@ -1226,6 +1270,7 @@ button:focus{
 .built-tile-twin .tile-score,
 .built-tile-glass .tile-score,
 .built-tile-void .tile-score,
+.built-tile-hourglass .tile-score,
 .built-tile-barricade .tile-score,
 .built-tile-leecher .tile-score {
   z-index: 5;
@@ -1237,6 +1282,7 @@ button:focus{
 .built-tile-twin .tile-modifier,
 .built-tile-glass .tile-modifier,
 .built-tile-void .tile-modifier,
+.built-tile-hourglass .tile-modifier,
 .built-tile-barricade .tile-modifier,
 .built-tile-leecher .tile-modifier {
   z-index: 6;
@@ -1384,6 +1430,18 @@ button:focus{
   50% {
     transform: scale(1.08);
     opacity: 1;
+  }
+}
+
+@keyframes built-hourglass-sand {
+  0%,
+  100% {
+    opacity: 0.64;
+    transform: translateY(-2px);
+  }
+  50% {
+    opacity: 1;
+    transform: translateY(2px);
   }
 }
 

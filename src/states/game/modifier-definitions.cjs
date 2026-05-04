@@ -190,6 +190,23 @@ const createModifierDefinitions = ({ bloodTilePositionValues }) => ({
         badgeColor: '#b7c9ff'
       }
     },
+    hourglassTile: {
+      badge: 'TIME',
+      description: 'Adds 5 seconds when played. Removes 5 seconds if left in your rack when you submit.',
+      effects: {
+        playedTimeDeltaSeconds: 5,
+        idleTimePenaltySeconds: 5
+      },
+      canApply: ({ letter }) => (letter || '').length === 1,
+      rarityWeight: 0.20,
+      ui: {
+        tileBackground: 'linear-gradient(180deg, #fff7d6 0%, #d9ad54 48%, #6f4d2a 100%)',
+        tileShadow: 'inset 0 -4px 0 rgba(88, 55, 24, 0.32), 0 12px 22px rgba(80, 52, 28, 0.22), 0 0 0 1px rgba(255, 223, 154, 0.46)',
+        textColor: '#261909',
+        badgeBackground: 'rgba(255, 247, 220, 0.94)',
+        badgeColor: '#8a5a18'
+      }
+    },
     bankTile: {
       badge: 'BANK',
       description: 'Gains +1 bonus score each turn it stays unused.',

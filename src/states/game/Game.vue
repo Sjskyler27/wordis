@@ -1600,6 +1600,48 @@ const applyMultiRoundWordTimePenalty = (tileCount = 0) => {
   return seconds;
 };
 
+const getHourglassTimeDelta = (rackTiles = [], selectedTiles = []) => {
+  const selectedIds = new Set(selectedTiles.map((tile) => tile.id));
+  return rackTiles.reduce((delta, tile) => {
+    if (tile.status !== 'hourglassTile') {
+      return delta;
+    }
+
+    return delta + (selectedIds.has(tile.id) ? 5 : -5);
+  }, 0);
+};
+
+const applyHourglassTimeDelta = (selectedTiles = []) => {
+  if (!isTimedSoloMode.value && !isMultiRoundMode.value) {
+    return 0;
+  }
+
+  const delta = getHourglassTimeDelta(myTiles.value, selectedTiles);
+  if (!delta) {
+    return 0;
+  }
+
+  if (isTimedSoloMode.value) {
+    const wasOutOfTime = timerRemainingSeconds.value <= 0;
+    timerRemainingSeconds.value = Math.max(0, timerRemainingSeconds.value + delta);
+    if (wasOutOfTime && timerRemainingSeconds.value > 0) {
+      timedSoloFinalWordSpent.value = false;
+      startSoloTimer();
+    }
+  }
+
+  if (isMultiRoundMode.value) {
+    const wasOutOfTime = multiRoundRun.timerRemainingSeconds.value <= 0;
+    multiRoundRun.setTimerRemainingSeconds(multiRoundRun.timerRemainingSeconds.value + delta);
+    if (wasOutOfTime && multiRoundRun.timerRemainingSeconds.value > 0) {
+      multiRoundFinalWordSpent.value = false;
+      startMultiRoundTimer();
+    }
+  }
+
+  return delta;
+};
+
 const handleMultiRoundRewardChoice = (rewardKey) => {
   const selectedModifier = multiRoundRun.selectRewardChoice(rewardKey);
   if (!selectedModifier) {
@@ -1804,6 +1846,12 @@ const handleSubmit = async () => {
     return;
   }
   resetSpeedyWordClock();
+  const hourglassDelta = applyHourglassTimeDelta(selectedTiles);
+  if (hourglassDelta > 0) {
+    localMessage.value = `${localMessage.value} Hourglass added ${hourglassDelta} seconds.`;
+  } else if (hourglassDelta < 0) {
+    localMessage.value = `${localMessage.value} Hourglass lost ${Math.abs(hourglassDelta)} seconds.`;
+  }
   const secondsRestored = applyMultiRoundWordTimeBonus(selectedTiles.length);
   if (secondsRestored) {
     localMessage.value = `${localMessage.value} Restored ${secondsRestored} seconds.`;
