@@ -15,8 +15,7 @@
       <section class="action-panel">
         <div class="panel-card">
           <span class="kicker">Bot Match</span>
-          <h2>Train Against AI</h2>
-          <p>Pick a bot difficulty and jump into the same rack duel flow without opening a live lobby.</p>
+          <h2>Train Against a Bot</h2>
           <div class="difficulty-row">
             <button
               v-for="difficulty in difficulties"
@@ -52,13 +51,12 @@
 
         <div class="panel-card">
           <span class="kicker">Join</span>
-          <h2>Enter Room Code</h2>
-          <p>Drop into a friend match instantly and keep the pressure on from the first word.</p>
+          <h2>Join Lobby Via Code</h2>
           <div class="join-section">
             <input
               v-model="joinCode"
               class="room-input"
-              placeholder="Enter Room Code"
+              placeholder="Room Code"
               autocapitalize="characters"
               spellcheck="false"
               :disabled="isConnecting || !isSocketConnected"
@@ -70,6 +68,24 @@
             >
               Join Multiplayer Game
             </button>
+
+            <span class="kicker">Open Lobbies</span>
+        <strong>{{ availableLobbies.length ? 'Join a live public room' : 'No public lobbies right now.' }}</strong>
+        <div v-if="availableLobbies.length" class="lobby-list">
+          <button
+            v-for="lobby in availableLobbies"
+            :key="lobby.roomCode"
+            type="button"
+            class="lobby-row"
+            :disabled="isConnecting || !isSocketConnected"
+            @click="joinLobby(lobby.roomCode)"
+          >
+            <span class="lobby-room">{{ lobby.roomCode }}</span>
+            <span class="lobby-meta">{{ lobby.players }}/2 players</span>
+            <span class="lobby-cta">Join</span>
+          </button>
+        </div>
+        <p v-else>Host a public room to make it appear here for other players.</p>
           </div>
         </div>
       </section>
@@ -187,32 +203,14 @@
         </div>
       </section>
 
-      <section class="message-card">
-        <span class="kicker">Open Lobbies</span>
-        <strong>{{ availableLobbies.length ? 'Join a live public room' : 'No public lobbies right now.' }}</strong>
-        <div v-if="availableLobbies.length" class="lobby-list">
-          <button
-            v-for="lobby in availableLobbies"
-            :key="lobby.roomCode"
-            type="button"
-            class="lobby-row"
-            :disabled="isConnecting || !isSocketConnected"
-            @click="joinLobby(lobby.roomCode)"
-          >
-            <span class="lobby-room">{{ lobby.roomCode }}</span>
-            <span class="lobby-meta">{{ lobby.players }}/2 players</span>
-            <span class="lobby-cta">Join</span>
-          </button>
-        </div>
-        <p v-else>Host a public room to make it appear here for other players.</p>
-      </section>
 
-      <section class="message-card">
+
+      <!-- <section class="message-card">
         <span class="kicker">Status</span>
         <strong>{{ message || 'Multiplayer is standing by.' }}</strong>
         <p v-if="roomCode">Active room: {{ roomCode }}</p>
         <p v-else>When a room is ready, this screen will move straight into the duel.</p>
-      </section>
+      </section> -->
 
       <button class="back-button" @click="$emit('home')">Back to Home</button>
     </main>
@@ -452,8 +450,8 @@ const connectionStatusLabel = computed(() => {
 const statusClass = computed(() => `status-${connectionStatus.value}`);
 const hostVisibilityText = computed(() => {
   return hostIsPrivate.value
-    ? 'Spin up a private room and share the code with your opponent.'
-    : 'Spin up a public room so anyone browsing open lobbies can jump in.';
+    ? 'Create a private room and share the code with your opponent.'
+    : 'Create a public room so anyone browsing open lobbies can jump in.';
 });
 const readyToStartMultiplayer = computed(
   () => !!roomCode.value && connectionStatus.value === 'connected'
@@ -824,7 +822,7 @@ p {
 }
 
 .room-input {
-  width: 100%;
+  width: 50%;
   border: 2px solid rgba(255, 255, 255, 0.14);
   border-radius: 18px;
   padding: 14px 16px;
@@ -894,6 +892,9 @@ p {
   margin-top: 16px;
   display: grid;
   gap: 12px;
+  max-height: 300px;
+  overflow: hidden;
+  overflow-y: auto;
 }
 
 .lobby-row {
