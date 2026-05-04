@@ -30,6 +30,7 @@
                 'built-tile-lightning': tile.status === 'lightningTile',
                 'built-tile-glass': tile.status === 'glassTile',
                 'built-tile-glass-cracked': tile.glassCracked,
+                'built-tile-cornucopia': tile.status === 'cornucopiaTile',
                 'built-tile-void': tile.status === 'voidTile',
                 'built-tile-hourglass': tile.status === 'hourglassTile',
                 'built-tile-barricade': tile.status === 'barricadeTile',
@@ -93,6 +94,7 @@
                 'built-tile-lightning': slot.tile.status === 'lightningTile',
                 'built-tile-glass': slot.tile.status === 'glassTile',
                 'built-tile-glass-cracked': slot.tile.glassCracked,
+                'built-tile-cornucopia': slot.tile.status === 'cornucopiaTile',
                 'built-tile-void': slot.tile.status === 'voidTile',
                 'built-tile-hourglass': slot.tile.status === 'hourglassTile',
                 'built-tile-barricade': slot.tile.status === 'barricadeTile',
@@ -503,6 +505,7 @@ const getTileStyle = (tile, index = 0) => {
     '--built-tile-shimmer-cycle': `${tile.shimmerIntervalMs * 2 || 16000}ms`, // idle is slower
     '--built-tile-lightning-cycle': `${tile.lightningIntervalMs || 3000}ms`,
     '--built-tile-lightning-delay': getLightningAnimationDelay(tile),
+    '--cornucopia-fill': tile.status === 'cornucopiaTile' ? `${Math.min(100, Math.max(0, index) * 12.5)}%` : '0%',
     '--score-pop-delay': `${index * 110}ms`
   };
 };
@@ -907,6 +910,7 @@ button:focus{
 .built-tile-lightning,
 .built-tile-twin,
 .built-tile-glass,
+.built-tile-cornucopia,
 .built-tile-void,
 .built-tile-hourglass,
 .built-tile-barricade,
@@ -1151,6 +1155,52 @@ button:focus{
   opacity: 1;
 }
 
+.built-tile-cornucopia {
+  border: 4px solid transparent;
+  background:
+    linear-gradient(180deg, #fff8dd 0%, #e9b65f 54%, #8c5428 100%) padding-box,
+    conic-gradient(from 20deg, #ff4f6d, #ffcb4d, #57e66d, #36c7ff, #8d6bff, #ff4f6d) border-box;
+  box-shadow:
+    inset 0 -3px 0 rgba(94, 52, 23, 0.28),
+    0 10px 16px rgba(79, 43, 20, 0.18),
+    0 0 0 1px rgba(255, 224, 139, 0.46),
+    0 0 16px rgba(255, 211, 89, 0.22);
+}
+
+.built-tile-cornucopia::before,
+.built-tile-cornucopia::after {
+  content: '';
+  position: absolute;
+  pointer-events: none;
+}
+
+.built-tile-cornucopia::before {
+  inset: 16% 14% 18%;
+  z-index: 0;
+  border-radius: 48% 52% 46% 54%;
+  background:
+    radial-gradient(circle at 68% 42%, rgba(102, 59, 28, 0.9) 0 12%, transparent 13%),
+    repeating-radial-gradient(ellipse at 68% 46%, rgba(111, 68, 32, 0.84) 0 5px, rgba(229, 166, 84, 0.76) 6px 11px, rgba(111, 68, 32, 0.68) 12px 15px),
+    linear-gradient(135deg, rgba(255, 241, 186, 0.74), rgba(153, 88, 36, 0.62));
+  clip-path: polygon(11% 22%, 65% 0, 100% 22%, 88% 75%, 39% 100%, 0 78%);
+  opacity: 0.82;
+}
+
+.built-tile-cornucopia::after {
+  left: 18%;
+  right: 18%;
+  bottom: 16%;
+  height: var(--cornucopia-fill, 0%);
+  z-index: 1;
+  border-radius: 10px 10px 13px 13px;
+  background:
+    radial-gradient(circle at 25% 25%, rgba(255, 255, 255, 0.7) 0 10%, transparent 11%),
+    linear-gradient(90deg, rgba(255, 74, 109, 0.76), rgba(255, 210, 74, 0.8), rgba(73, 226, 118, 0.76), rgba(62, 191, 255, 0.78), rgba(145, 106, 255, 0.78));
+  box-shadow: 0 0 12px rgba(255, 235, 133, 0.32);
+  opacity: 0.35;
+  transition: height 180ms ease;
+}
+
 .built-tile-hourglass {
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.32), transparent 38%),
@@ -1297,6 +1347,7 @@ button:focus{
 .built-tile-lightning .tile-letter,
 .built-tile-twin .tile-letter,
 .built-tile-glass .tile-letter,
+.built-tile-cornucopia .tile-letter,
 .built-tile-void .tile-letter,
 .built-tile-hourglass .tile-letter,
 .built-tile-barricade .tile-letter,
@@ -1325,6 +1376,7 @@ button:focus{
 .built-tile-lightning .tile-score,
 .built-tile-twin .tile-score,
 .built-tile-glass .tile-score,
+.built-tile-cornucopia .tile-score,
 .built-tile-void .tile-score,
 .built-tile-hourglass .tile-score,
 .built-tile-barricade .tile-score,
@@ -1338,6 +1390,7 @@ button:focus{
 .built-tile-lightning .tile-modifier,
 .built-tile-twin .tile-modifier,
 .built-tile-glass .tile-modifier,
+.built-tile-cornucopia .tile-modifier,
 .built-tile-void .tile-modifier,
 .built-tile-hourglass .tile-modifier,
 .built-tile-barricade .tile-modifier,

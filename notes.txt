@@ -287,3 +287,9 @@ bagged tiles need to be removed if bag tile removed
 
 need to be able to drag letters around 
 
+bot mode game is not ending on normal 
+
+hourgalss gain time is not working 
+
+update the wordbuilder to support dragging tiles around when  a used holds left click on a tile they should be able to pick it up and move it withing the word builder if they bring the fifth letter to the second slot it should shift everything down one space for example: cnesa drag a to second postion becomes canes
+

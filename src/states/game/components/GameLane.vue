@@ -55,6 +55,7 @@
               'tile-twin-active': hasSelectedTwinMatch(tile),
               'tile-glass': tile.status === 'glassTile',
               'tile-glass-cracked': tile.glassCracked,
+              'tile-cornucopia': tile.status === 'cornucopiaTile',
               'tile-void': tile.status === 'voidTile',
               'tile-hourglass': tile.status === 'hourglassTile',
               'tile-barricade': tile.status === 'barricadeTile',
@@ -497,6 +498,7 @@ const getTileStyle = (tile) => {
     '--tile-rust-coverage': `${Math.min(120, (((tile.rustTurns  || 0) + 1) * 20) + 18)}%`,
     '--tile-shimmer-cycle': `${tile.shimmerIntervalMs || 8000}ms`,
     '--tile-lightning-cycle': `${tile.lightningIntervalMs || 3000}ms`,
+    '--cornucopia-fill': '0%',
     '--tile-enter-delay': `${tileEnterDelays.value[tile.id] || 0}ms`,
     '--tile-animation-duration': `${getTileAnimationDuration(tile)}ms`
   };
@@ -960,6 +962,7 @@ onBeforeUnmount(() => {
 .tile-lightning,
 .tile-twin,
 .tile-glass,
+.tile-cornucopia,
 .tile-void,
 .tile-hourglass,
 .tile-barricade,
@@ -1163,6 +1166,51 @@ onBeforeUnmount(() => {
 
 .tile-glass-cracked::after {
   opacity: 1;
+}
+
+.tile-cornucopia {
+  border: 4px solid transparent;
+  background:
+    linear-gradient(180deg, #fff8dd 0%, #e9b65f 54%, #8c5428 100%) padding-box,
+    conic-gradient(from 20deg, #ff4f6d, #ffcb4d, #57e66d, #36c7ff, #8d6bff, #ff4f6d) border-box;
+  box-shadow:
+    inset 0 -4px 0 rgba(94, 52, 23, 0.28),
+    0 12px 22px rgba(79, 43, 20, 0.2),
+    0 0 0 1px rgba(255, 224, 139, 0.46),
+    0 0 18px rgba(255, 211, 89, 0.24);
+}
+
+.tile-cornucopia::before,
+.tile-cornucopia::after {
+  content: '';
+  position: absolute;
+  pointer-events: none;
+}
+
+.tile-cornucopia::before {
+  inset: 16% 14% 18%;
+  z-index: 0;
+  border-radius: 48% 52% 46% 54%;
+  background:
+    radial-gradient(circle at 68% 42%, rgba(102, 59, 28, 0.9) 0 12%, transparent 13%),
+    repeating-radial-gradient(ellipse at 68% 46%, rgba(111, 68, 32, 0.84) 0 5px, rgba(229, 166, 84, 0.76) 6px 11px, rgba(111, 68, 32, 0.68) 12px 15px),
+    linear-gradient(135deg, rgba(255, 241, 186, 0.74), rgba(153, 88, 36, 0.62));
+  clip-path: polygon(11% 22%, 65% 0, 100% 22%, 88% 75%, 39% 100%, 0 78%);
+  opacity: 0.82;
+}
+
+.tile-cornucopia::after {
+  left: 18%;
+  right: 18%;
+  bottom: 16%;
+  height: var(--cornucopia-fill, 0%);
+  z-index: 1;
+  border-radius: 10px 10px 13px 13px;
+  background:
+    radial-gradient(circle at 25% 25%, rgba(255, 255, 255, 0.7) 0 10%, transparent 11%),
+    linear-gradient(90deg, rgba(255, 74, 109, 0.76), rgba(255, 210, 74, 0.8), rgba(73, 226, 118, 0.76), rgba(62, 191, 255, 0.78), rgba(145, 106, 255, 0.78));
+  box-shadow: 0 0 12px rgba(255, 235, 133, 0.32);
+  opacity: 0.35;
 }
 
 .tile-void {
@@ -1410,6 +1458,7 @@ onBeforeUnmount(() => {
 .tile-lightning .tile-letter,
 .tile-twin .tile-letter,
 .tile-glass .tile-letter,
+.tile-cornucopia .tile-letter,
 .tile-void .tile-letter,
 .tile-hourglass .tile-letter,
 .tile-barricade .tile-letter,
@@ -1438,6 +1487,7 @@ onBeforeUnmount(() => {
 .tile-lightning .tile-score,
 .tile-twin .tile-score,
 .tile-glass .tile-score,
+.tile-cornucopia .tile-score,
 .tile-void .tile-score,
 .tile-hourglass .tile-score,
 .tile-barricade .tile-score,
@@ -1451,6 +1501,7 @@ onBeforeUnmount(() => {
 .tile-lightning .tile-modifier,
 .tile-twin .tile-modifier,
 .tile-glass .tile-modifier,
+.tile-cornucopia .tile-modifier,
 .tile-void .tile-modifier,
 .tile-hourglass .tile-modifier,
 .tile-barricade .tile-modifier,

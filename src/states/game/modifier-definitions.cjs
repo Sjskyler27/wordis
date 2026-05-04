@@ -141,6 +141,22 @@ const createModifierDefinitions = ({ bloodTilePositionValues }) => ({
         badgeColor: '#22688c'
       }
     },
+    cornucopiaTile: {
+      badge: 'CRN',
+      description: 'Scores +2 for each position after the first.',
+      effects: {
+        scorePerPositionPastFirst: 2
+      },
+      canApply: ({ letter }) => (letter || '').length === 1,
+      rarityWeight: 0.14,
+      ui: {
+        tileBackground: 'linear-gradient(180deg, #fff8dd 0%, #e9b65f 54%, #8c5428 100%)',
+        tileShadow: 'inset 0 -4px 0 rgba(94, 52, 23, 0.28), 0 12px 22px rgba(79, 43, 20, 0.2), 0 0 0 1px rgba(255, 224, 139, 0.46)',
+        textColor: '#2b1709',
+        badgeBackground: 'rgba(255, 246, 217, 0.96)',
+        badgeColor: '#8a4f16'
+      }
+    },
     bloodTile: {
       badge: 'BLD',
       description: 'Scores by position instead of face value. Later positions score higher.',
@@ -314,6 +330,7 @@ const createModifierDefinitions = ({ bloodTilePositionValues }) => ({
       description: 'Worth +3, but disappears if you leave it unused.',
       effects: { fadesIfUnused: true, bonusScore: 3 },
       rarityWeight: 0.52,
+      excludeFromTest: true,
       ui: {
         tileBackground: 'linear-gradient(180deg, rgba(242, 250, 255, 0.88) 0%, rgba(198, 218, 236, 0.78) 58%, rgba(131, 156, 181, 0.74) 100%)',
         tileShadow: 'inset 0 -4px 0 rgba(82, 105, 131, 0.18), 0 10px 18px rgba(44, 61, 86, 0.16), 0 0 0 1px rgba(236, 247, 255, 0.48)',

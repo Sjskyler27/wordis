@@ -18,7 +18,7 @@ const {
 } = modifierDefinitionsApi || {};
 
 
-const GOOD_MODIFIERS = ['gold', 'firsttile', 'royalPear', 'twinTile', 'glassTile', 'bankTile', 'gainboon', 'gainattack'];
+const GOOD_MODIFIERS = ['gold', 'firsttile', 'royalPear', 'twinTile', 'glassTile', 'cornucopiaTile', 'bankTile', 'gainboon', 'gainattack'];
 const BAD_MODIFIERS = ['zeroTile', 'mustuse', 'locked3', 'burningTile', 'rustingTile', 'lightningTile', 'barricadeTile', 'bagTile'];
 const NEUTRAL_MODIFIERS = ['yinYang', 'ghostTile','bloodTile', 'wild', 'shimmer', 'voidTile', 'hourglassTile', 'leecherTile'];
 
@@ -814,8 +814,10 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
     }
 
     const positionKey = `pos${options.positionIndex + 1}`;
-    const positionBonusByIndex = getModifierDefinition(tile?.status).effects.positionBonusByIndex || {};
-    return positionBonusByIndex[positionKey] || 0;
+    const effects = getModifierDefinition(tile?.status).effects || {};
+    const positionBonusByIndex = effects.positionBonusByIndex || {};
+    const positionStepBonus = Math.max(0, options.positionIndex) * (effects.scorePerPositionPastFirst || 0);
+    return (positionBonusByIndex[positionKey] || 0) + positionStepBonus;
   };
   const hasTwinLetterInWord = (tile, wordTiles = []) => {
     if (!tile || tile.status !== 'twinTile') {
@@ -1284,9 +1286,11 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
       }
 
       const definition = getModifierDefinition(tile?.status);
+      const effects = definition.effects || {};
       const positionKey = `pos${index + 1}`;
-      const positionBonusByIndex = definition.effects.positionBonusByIndex || {};
-      return total + (positionBonusByIndex[positionKey] || 0);
+      const positionBonusByIndex = effects.positionBonusByIndex || {};
+      const positionStepBonus = Math.max(0, index) * (effects.scorePerPositionPastFirst || 0);
+      return total + (positionBonusByIndex[positionKey] || 0) + positionStepBonus;
     }, 0);
     const firstTileBonus = tiles.reduce((total, tile, index) => {
       if (index !== 0) {
