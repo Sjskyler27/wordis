@@ -365,7 +365,7 @@ onBeforeUnmount(() => {
 h2 {
   margin: 0 0 22px;
   color: #f7d35d;
-  font-size: 22px;
+  font-size: 23px;
   text-align: center;
 }
 
@@ -373,7 +373,7 @@ h2 {
   display: grid;
   gap: 10px;
   margin-bottom: 22px;
-  font-size: 10px;
+  font-size: 12px;
   line-height: 1.6;
 }
 
@@ -393,7 +393,7 @@ h2 {
   color: #fff;
   background: rgba(255, 255, 255, 0.08);
   font-family: inherit;
-  font-size: 9px;
+  font-size: 11px;
   cursor: pointer;
 }
 
@@ -427,7 +427,7 @@ h2 {
   padding: 0 12px;
   color: #111827;
   font-family: inherit;
-  font-size: 10px;
+  font-size: 12px;
   background: rgba(255, 255, 255, 0.94);
 }
 
@@ -536,5 +536,42 @@ h2 {
   padding: 5px 7px;
   border-radius: 6px;
   background: rgba(0, 0, 0, 0.18);
+}
+
+
+@media (max-width: 1000px) {
+.profile-modal {
+max-width: 90%;
+max-height: 90%;
+width: 90%;
+height: 90%;
+}
+
+.profile-details {
+
+  font-size: 22px;
+  line-height: 1.6;
+}
+.profile-tab-button{
+  font-size: 18px;
+}
+.profile-button{
+  font-size: 18px;
+}
+.past-mode-tab{
+  font-size: 15px;
+}
+.profile-close{
+  font-size: 35px;
+}
+
+.past-game-card {
+  padding: 14px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  font-size: 18px;
+  line-height: 1.5;
+}
 }
 </style>

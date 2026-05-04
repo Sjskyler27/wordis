@@ -668,10 +668,11 @@ input {
   color: rgba(255, 247, 230, 0.78);
 }
 
-@media screen and (max-width: 768px) {
+@media screen and (max-width: 1008px) {
   .modal-content {
-    width: 90%;
-    max-height: 88vh;
+    width: 80%;
+    height: 80%;
+    max-height: 80%;
     padding: 24px 18px;
     border-radius: 18px;
   }
@@ -683,10 +684,10 @@ input {
     height: 48px;
   }
   .menu-text h3 {
-    font-size: 0.74rem;
+    font-size: 0.99rem;
   }
   .menu-text p {
-    font-size: 0.58rem;
+    font-size: 0.89rem;
   }
   
 }
