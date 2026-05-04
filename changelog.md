@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.0.47 - 2026-05-04
+
+Start: 09:35 EDT
+Stop: 10:02 EDT
+
+- Added the Glass good tile with +6 score, cracked-zero scoring, and rack/builder crack styling when moved or removed before submit.
+- Added the Hourglass neutral tile with rack/builder styling and timed-mode +5/-5 second submit effects.
+- Updated Bag so adjacent tiles stay selectable, submit is blocked only when bagged tiles are used without the Bag, and rack/builder bagged visuals hide once the Bag is in the word.
+- Verified the changes with `npm run build`.
+
 ## 0.0.46 - 2026-05-02
 - fix speedy modifiers 
 - fix description 
