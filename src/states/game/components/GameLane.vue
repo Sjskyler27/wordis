@@ -1127,16 +1127,7 @@ onBeforeUnmount(() => {
   animation: tile-twin-complete-shimmer 1600ms ease-in-out infinite;
 }
 
-.tile-glass {
-  background:
-    linear-gradient(135deg, rgba(255, 255, 255, 0.74) 0 16%, transparent 17% 100%),
-    linear-gradient(145deg, rgba(245, 255, 255, 0.94) 0%, rgba(166, 238, 255, 0.82) 42%, rgba(79, 166, 205, 0.86) 72%, rgba(33, 84, 126, 0.92) 100%);
-  box-shadow:
-    inset 0 2px 0 rgba(255, 255, 255, 0.74),
-    inset 0 -4px 0 rgba(36, 108, 147, 0.24),
-    0 12px 22px rgba(34, 84, 124, 0.22),
-    0 0 0 1px rgba(221, 255, 255, 0.58);
-}
+
 
 .tile-glass::before,
 .tile-glass::after {

@@ -18,6 +18,7 @@ const createModifierDefinitions = ({ bloodTilePositionValues }) => ({
       description: 'Doubles this tile as a word multiplier when used.',
       effects: { wordMultiplier: 2 },
       rarityWeight: 0.19,
+      excludeFromTest: true,
       rarityWeightModifiers: {whenOneIsInHand: -0.09},
       canApply: ({ baseScore }) => baseScore >= 3,
       animations: {
@@ -124,7 +125,7 @@ const createModifierDefinitions = ({ bloodTilePositionValues }) => ({
       }
     },
     glassTile: {
-      badge: 'GLASS',
+      badge: 'GLS',
       description: 'Scores +6, but cracks to 0 if it leaves the builder or changes positions before being played.',
       effects: {
         bonusScore: 6,
@@ -133,7 +134,7 @@ const createModifierDefinitions = ({ bloodTilePositionValues }) => ({
       canApply: ({ letter }) => (letter || '').length === 1,
       rarityWeight: 0.20,
       ui: {
-        tileBackground: 'linear-gradient(145deg, rgba(245, 255, 255, 0.94) 0%, rgba(166, 238, 255, 0.82) 42%, rgba(79, 166, 205, 0.86) 72%, rgba(33, 84, 126, 0.92) 100%)',
+        tileBackground: 'linear-gradient(145deg, rgba(245, 255, 255, 0.14) 0%, rgba(166, 238, 255, 0.32) 42%, rgba(79, 166, 205, 0.26) 72%, rgba(33, 84, 126, 0.22) 100%)',
         tileShadow: 'inset 0 -4px 0 rgba(36, 108, 147, 0.24), 0 12px 22px rgba(34, 84, 124, 0.22), 0 0 0 1px rgba(221, 255, 255, 0.58)',
         textColor: '#102b42',
         badgeBackground: 'rgba(239, 254, 255, 0.96)',
@@ -208,7 +209,7 @@ const createModifierDefinitions = ({ bloodTilePositionValues }) => ({
       }
     },
     bankTile: {
-      badge: 'BANK',
+      badge: 'BNK',
       description: 'Gains +1 bonus score each turn it stays unused.',
       effects: { 
         startWithHalfScoreRoundedUp: true,
@@ -227,7 +228,7 @@ const createModifierDefinitions = ({ bloodTilePositionValues }) => ({
       }
     },
     leecherTile: {
-      badge: 'LEECH',
+      badge: 'LeCH',
       description: 'Sets adjacent rack tiles to 0 and absorbs their values into this tile until it is played.',
       effects: {
         leechesAdjacentRackScores: true,
