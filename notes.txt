@@ -298,3 +298,17 @@ Water tile drag to duplicate
 consolidatet lower buttons to its own component, float left in singleplay bottom in multi player  
 
 move pause outside of drawer
+
+extra option upgrade per reward, common rare epic
+
+rare upgrade extra reward select per reward 
+
+fix reward choice panel when 4 options 
+
+add indicaters above letters for the additional rewards
+
+choice overlay blocks the modifiers 
+
+update modifier reward sside 
+
+add reroll attack boon for upgrade rewards. 

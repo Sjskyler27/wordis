@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.0.49 - 2026-05-05
+- style changes 
+- reward amount modifiers 
+- disabled some modifiers 
+- mobile work
+- hide clock in mobile 
+
 ## 0.0.48 - 2026-05-04
 - glass tile style change bag AFTER fixes need to do more of them 
 - fix compact multipliers on the wrong ones, need to round still
