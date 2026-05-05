@@ -415,13 +415,28 @@ onBeforeUnmount(() => {
   cursor: pointer;
 }
 
-@media (max-width: 880px) {
-  .tutorial-sections,
-  .tutorial-tiles {
+@media (max-width: 1000px) {
+  .tutorial-sections{
     grid-template-columns: 1fr;
+  }
+  .tutorial-card strong{
+    font-size: 23px;
+  }
+  .tutorial-card p{
+    font-size: 21px;
+  }
+  .tutorial-tile-card strong{
+    font-size: 21px;
+  }
+  .tutorial-tile-card p{
+    font-size: 21px;
   }
 
   .tutorial-panel {
+    max-height: 90%;
+    height: 90%;
+    max-width: 90%;
+    width: 90%;
     padding: 22px;
   }
 
