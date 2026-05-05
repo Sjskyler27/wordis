@@ -12,7 +12,7 @@
   >
     <div class="lane-header">
       <div>
-        <p class="lane-label">{{ label }} </p>
+        <p class="lane-label" v-if="multiplayerOrBot">{{ label }} </p>
         <h2>
           {{ submittedWord || 'Waiting for a word...' }}
           <strong v-if="submittedWord">+ {{ displayWordScore }}</strong>
@@ -175,6 +175,10 @@ const props = defineProps({
   controllerFocusedTileId: {
     type: String,
     default: ''
+  },
+  multiplayerOrBot: {
+    type: Boolean,
+    default: false
   }
 });
 
@@ -757,9 +761,9 @@ onBeforeUnmount(() => {
   border-radius: 28px;
   padding: 20px;
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.02)),
-    rgba(72, 17, 38, 0.35);
-  border: 2px solid rgba(255, 255, 255, 0.08);
+    linear-gradient(180deg, rgba(255, 255, 255, 0.0), rgba(255, 255, 255, 0.00)),
+    rgba(72, 17, 38, 0.00);
+  border: 0px solid rgba(255, 255, 255, 0.08);
   display: flex;
   flex-direction: column;
   gap: 16px;

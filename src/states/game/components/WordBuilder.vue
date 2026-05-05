@@ -636,7 +636,7 @@ button:focus{
   justify-content: space-between;
   padding: 16px;
   border-radius: 24px;
-  background: rgba(48, 12, 28, 0.23);
+  background: rgba(48, 12, 28, 0.00);
   position: relative;
 }
 
@@ -689,11 +689,11 @@ button:focus{
   color: #dfffee;
 }
 
-.word-console.overtime {
-  background: rgba(72, 11, 21, 0.54);
+/*.word-console.overtime {
+  background: rgba(72, 11, 21, 0.34);
   border: 1px solid rgba(255, 140, 140, 0.2);
 }
-
+*/
 .bonus-ladder {
   width: 100%;
   display: grid;
@@ -1732,8 +1732,8 @@ button:focus{
   font-size: 2rem;
   font-weight: 900;
   line-height: 1;
-  color: rgba(181, 181, 181, 0.997);
-  text-shadow: 0 1px 0 rgba(255, 226, 163, 0.08);
+  color: rgba(255, 191, 0, 0.997);
+  text-shadow: 1px 1px 1px rgba(10, 10, 10, 0.98);
   padding-right: 20px;
 }
 

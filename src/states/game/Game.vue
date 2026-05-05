@@ -74,6 +74,7 @@
           <GameLane
             :isMobile="props.isMobile"
             :side="leftLane.side"
+            :multiplayer-or-bot="isBotMode || isMultiplayer"
             :label="leftLane.label"
             :submitted-word="leftLane.submittedWord"
             :score="leftLane.score"
@@ -94,6 +95,7 @@
 
           <GameLane
             v-if="showOpponentLane"
+            :multiplayer-or-bot="isBotMode || isMultiplayer"
             :isMobile="props.isMobile"
             :side="rightLane.side"
             :label="rightLane.label"
