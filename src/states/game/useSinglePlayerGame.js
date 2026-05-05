@@ -842,7 +842,7 @@ export const useSinglePlayerGame = ({
     }
 
     if (card.effectType === 'gain_time') {
-      onTimedSoloGainTime?.(card.amount || 10);
+      onTimedSoloGainTime?.(card.amount || 10, true);
       return {
         success: true,
         message: `Added ${card.amount || 10} seconds to the clock.`

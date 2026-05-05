@@ -740,11 +740,11 @@ const {
     isSoloTimerPausedByAttack.value = true;
     isMultiRoundTimerPausedByAttack.value = true;
   },
-  onTimedSoloGainTime: (seconds) => {
+  onTimedSoloGainTime: (seconds, overrideStartTimer) => {
     const wasOutOfTime = timerRemainingSeconds.value <= 0 || multiRoundRun.timerRemainingSeconds <= 0;
     timerRemainingSeconds.value += seconds;
     multiRoundRun.timerRemainingSeconds.value += seconds;
-    if (wasOutOfTime && timerRemainingSeconds.value > 0) {
+    if ((wasOutOfTime && timerRemainingSeconds.value > 0)|| overrideStartTimer) {
       // Recovering from timeout should fully return solo sprint to live play.
       timedSoloFinalWordSpent.value = false;
       isSoloTimerPausedByAttack.value = false;
@@ -2726,6 +2726,7 @@ const startMultiRoundTimer = () => {
   window.clearInterval(multiRoundTimerId);
   multiRoundTimerId = window.setInterval(() => {
     if (isMultiRoundTimerPausedByAttack.value) {
+      console.log('timerpaused')
       return;
     }
     
