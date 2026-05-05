@@ -718,6 +718,46 @@ export const useSinglePlayerGame = ({
         replacementTileId: replacementTile?.id || null
       };
     }
+   if (card.effectType === 'change_letter') {
+    playerCards.value = {
+      ...playerCards.value,
+      [side]: {
+        ...playerCards.value[side],
+        boons: keepTestingHand(hand, cardId)
+      }
+    };
+
+    const nextTiles = playerTiles.value[side].map((tile) => {
+      if (tile.id !== tileId) return tile;
+
+      const replacementTile = replaceSingleTile(
+        playerTiles.value[side],
+        tileId,
+        side,
+        playerScores.value,
+        {
+          modifierProfile: modifierProfile(),
+          personalModifierEffects: getPersonalModifierEffects(),
+          turnCount: getTurnCount()
+        }
+      ).find((entry) => entry.id !== tileId && !playerTiles.value[side].some((existingTile) => existingTile.id === entry.id));
+
+      return {
+        ...tile,
+        letter: replacementTile?.letter || tile.letter
+      };
+      });
+
+      playerTiles.value = {
+        ...playerTiles.value,
+        [side]: nextTiles
+      };
+
+      return {
+        success: true,
+        replacementTileId: tileId
+      };
+    }
 
     if (tile.locked) {
       localMessage.value = 'That tile cannot take a boon.';

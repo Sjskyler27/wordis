@@ -430,6 +430,49 @@ const useBoon = (roomCode, clientId, cardId, tileId) => {
     return { success: true, state };
   }
 
+  if (card.effectType === 'change_letter') {
+  playerCards.value = {
+    ...playerCards.value,
+    [side]: {
+      ...playerCards.value[side],
+      boons: keepTestingHand(hand, cardId)
+    }
+  };
+
+
+  // may need to be updated to match actual versions in this file
+  if (card.effectType === 'change_letter') {
+  const replacementTile = replaceSingleTile(state.tiles[side], tileId, side, state.scores, {
+    personalModifierEffects: getDisabledTileModifierEffects(state),
+    turnCount: getTurnCount(state)
+  }).find((entry) => (
+    entry.id !== tileId &&
+    !state.tiles[side].some((existingTile) => existingTile.id === entry.id)
+  ));
+
+  state.tiles[side] = state.tiles[side].map((tile) => {
+    if (tile.id !== tileId) return tile;
+
+    return {
+      ...tile,
+      letter: replacementTile?.letter || tile.letter
+    };
+  });
+
+  return { success: true, state };
+}
+
+  playerTiles.value = {
+    ...playerTiles.value,
+    [side]: nextTiles
+  };
+
+  return {
+    success: true,
+    replacementTileId: tileId
+  };
+}
+
   state.tiles[side] = replaceTileWithModifier(state.tiles[side], tileId, card.modifier);
   return { success: true, state };
 };

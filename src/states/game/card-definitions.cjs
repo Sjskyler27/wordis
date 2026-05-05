@@ -71,6 +71,13 @@ const CARD_DEFINITIONS = {
       cardBadgeBackground: 'rgba(57, 31, 108, 0.42)'
     }
   },
+  boon_newLetter: {
+    kind: 'boon',
+    label: 'New Letter',
+    description: 'Turn one of your tiles into a new letter.',
+    rarityWeight: 0.78,
+    effectType: 'change_letter',
+  },
   boon_gold: {
     kind: 'boon',
     label: 'Gold',
@@ -262,6 +269,7 @@ const BOON_CARD_KEYS = [
   'boon_clear_negative',
   'boon_firsttile',
   'boon_wild',
+  'boon_newLetter',
   'boon_ghostTile',
   'boon_gold'
 ];
