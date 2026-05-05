@@ -48,7 +48,7 @@
           @select-boon="selectBoonCard"
           @use-attack="useAttackCard"
         />
-      <button class="pause-button" @click="emit('showSettings')">{{ isPaused ? 'Resume' : 'Pause' }}</button>
+      <button class="pause-button" @click="emit('showSettings')">{{ isPaused ? 'Paused' : 'Pause' }}</button>
       <!-- <button class="back-button" @click="resetAndGoHome">Back to Home</button> -->
 
       </aside>
@@ -69,7 +69,7 @@
           :opponent-score-class="[{ timer: isTimedSoloMode || isMultiRoundMode }, scoreBoxClass('opponent')]"
         />
 
-        <div v-if="props.isMultiplayer ? gameStarted : true" class="arena" :class="{ 'arena-solo': !showOpponentLane }">
+        <div v-if="props.isMultiplayer ? gameStarted : true" class="arena" :class="{ 'arena-solo': !showOpponentLane, 'hide-letters': props.settingsShowing }">
           <GameLane
             :isMobile="props.isMobile"
             :side="leftLane.side"

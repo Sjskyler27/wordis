@@ -61,7 +61,7 @@ body {
 }
 
 .board-frame.paused {
-  filter: blur(4px) saturate(0.82);
+
   pointer-events: none;
   user-select: none;
 }
@@ -168,6 +168,10 @@ body {
   grid-template-columns: minmax(0, 1fr);
 }
 
+.hide-letters {
+    filter: blur(11px);
+  
+}
 .waiting-card {
   border-radius: 26px;
   background: rgba(255, 255, 255, 0.06);
