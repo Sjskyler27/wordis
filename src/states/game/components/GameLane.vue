@@ -1179,17 +1179,7 @@ onBeforeUnmount(() => {
   pointer-events: none;
 }
 
-.tile-cornucopia::before {
-  inset: 16% 14% 18%;
-  z-index: 0;
-  border-radius: 48% 52% 46% 54%;
-  background:
-    radial-gradient(circle at 68% 42%, rgba(102, 59, 28, 0.9) 0 12%, transparent 13%),
-    repeating-radial-gradient(ellipse at 68% 46%, rgba(111, 68, 32, 0.84) 0 5px, rgba(229, 166, 84, 0.76) 6px 11px, rgba(111, 68, 32, 0.68) 12px 15px),
-    linear-gradient(135deg, rgba(255, 241, 186, 0.74), rgba(153, 88, 36, 0.62));
-  clip-path: polygon(11% 22%, 65% 0, 100% 22%, 88% 75%, 39% 100%, 0 78%);
-  opacity: 0.82;
-}
+
 
 .tile-cornucopia::after {
   left: 18%;
@@ -1285,18 +1275,6 @@ onBeforeUnmount(() => {
   clip-path: polygon(14% 0, 86% 0, 62% 50%, 86% 100%, 14% 100%, 38% 50%);
 }
 
-.tile-hourglass::after {
-  left: 32%;
-  right: 32%;
-  top: 18%;
-  bottom: 18%;
-  z-index: 1;
-  background:
-    radial-gradient(circle at 50% 38%, rgba(255, 245, 176, 0.95) 0 2px, transparent 3px),
-    radial-gradient(circle at 50% 50%, rgba(255, 245, 176, 0.95) 0 2px, transparent 3px),
-    radial-gradient(circle at 50% 62%, rgba(255, 245, 176, 0.95) 0 2px, transparent 3px);
-  animation: tile-hourglass-sand 1400ms ease-in-out infinite;
-}
 
 .tile-voidold::before {
   inset: 9%;

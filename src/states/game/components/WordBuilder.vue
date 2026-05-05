@@ -1174,28 +1174,18 @@ button:focus{
   pointer-events: none;
 }
 
-.built-tile-cornucopia::before {
-  inset: 16% 14% 18%;
-  z-index: 0;
-  border-radius: 48% 52% 46% 54%;
-  background:
-    radial-gradient(circle at 68% 42%, rgba(102, 59, 28, 0.9) 0 12%, transparent 13%),
-    repeating-radial-gradient(ellipse at 68% 46%, rgba(111, 68, 32, 0.84) 0 5px, rgba(229, 166, 84, 0.76) 6px 11px, rgba(111, 68, 32, 0.68) 12px 15px),
-    linear-gradient(135deg, rgba(255, 241, 186, 0.74), rgba(153, 88, 36, 0.62));
-  clip-path: polygon(11% 22%, 65% 0, 100% 22%, 88% 75%, 39% 100%, 0 78%);
-  opacity: 0.82;
-}
 
-.built-tile-cornucopia::after {
-  left: 18%;
-  right: 18%;
-  bottom: 16%;
+
+.built-tile-cornucopia::before {
+  left: 0%;
+  right: 0%;
+  bottom: 00%;
   height: var(--cornucopia-fill, 0%);
   z-index: 1;
-  border-radius: 10px 10px 13px 13px;
+
   background:
     radial-gradient(circle at 25% 25%, rgba(255, 255, 255, 0.7) 0 10%, transparent 11%),
-    linear-gradient(90deg, rgba(255, 74, 109, 0.76), rgba(255, 210, 74, 0.8), rgba(73, 226, 118, 0.76), rgba(62, 191, 255, 0.78), rgba(145, 106, 255, 0.78));
+    linear-gradient(190deg, rgba(255, 74, 109, 0.76), rgba(255, 210, 74, 0.8), rgba(73, 226, 118, 0.76), rgba(62, 191, 255, 0.78), rgba(145, 106, 255, 0.78));
   box-shadow: 0 0 12px rgba(255, 235, 133, 0.32);
   opacity: 0.35;
   transition: height 180ms ease;
@@ -1229,18 +1219,6 @@ button:focus{
   clip-path: polygon(14% 0, 86% 0, 62% 50%, 86% 100%, 14% 100%, 38% 50%);
 }
 
-.built-tile-hourglass::after {
-  left: 32%;
-  right: 32%;
-  top: 18%;
-  bottom: 18%;
-  z-index: 1;
-  background:
-    radial-gradient(circle at 50% 38%, rgba(255, 245, 176, 0.95) 0 2px, transparent 3px),
-    radial-gradient(circle at 50% 50%, rgba(255, 245, 176, 0.95) 0 2px, transparent 3px),
-    radial-gradient(circle at 50% 62%, rgba(255, 245, 176, 0.95) 0 2px, transparent 3px);
-  animation: built-hourglass-sand 1400ms ease-in-out infinite;
-}
 
 .built-tile-bag {
   background:
