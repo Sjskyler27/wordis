@@ -312,3 +312,16 @@ choice overlay blocks the modifiers
 update modifier reward sside 
 
 add reroll attack boon for upgrade rewards. 
+
+boon that gives plus one new rack clear 
+
+new letter should reapply styles currently if you new letter an s it still is crossed
+
+void s same after image issue
+
+dont reward last round 
+
+exit from history screen
+
+I need to make bad modifiers chance increase by more each round its not scaling enough
+ 

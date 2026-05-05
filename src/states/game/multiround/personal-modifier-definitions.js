@@ -25,8 +25,8 @@ export const PERSONAL_MODIFIER_DEFINITIONS = {
     rarity: .29,
     tier: PERSONAL_MODIFIER_TIERS.RARE,
     tags: ['rewards'],
-    maxStacks: 0,
-    start_with: 2,
+    maxStacks: 2,
+    start_with: 0,
     effects: {
       rewardCountModifier: 1
     }
