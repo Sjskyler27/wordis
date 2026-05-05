@@ -1271,7 +1271,7 @@ onBeforeUnmount(() => {
   border: 4px solid rgba(71, 42, 19, 0.72);
   background:
     linear-gradient(180deg, transparent 0 45%, rgba(71, 42, 19, 0.58) 46% 54%, transparent 55% 100%),
-    linear-gradient(180deg, rgba(255, 244, 194, 0.82) 0 28%, transparent 29% 50%, rgba(238, 178, 75, 0.88) 51% 100%);
+    linear-gradient(180deg, rgba(255, 244, 194, 0.82) 0 28%, rgba(255, 244, 194, 0.32)  29% 50%, rgba(238, 178, 75, 0.88) 51% 100%);
   clip-path: polygon(14% 0, 86% 0, 62% 50%, 86% 100%, 14% 100%, 38% 50%);
 }
 
