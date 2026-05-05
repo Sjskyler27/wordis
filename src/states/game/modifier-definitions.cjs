@@ -378,6 +378,7 @@ const createModifierDefinitions = ({ bloodTilePositionValues }) => ({
       effects: {
         disablesCardsWhileInRack: true
       },
+      excludeFromTest: true,
       rarityWeight: 0.34,
       canApply: ({ baseScore }) => baseScore <= 5,
       ui: {
