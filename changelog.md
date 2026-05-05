@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.0.48 - 2026-05-04
+- glass tile style change bag AFTER fixes need to do more of them 
+- fix compact multipliers on the wrong ones, need to round still
+- mobile screen adjustments
+- settings blur letters removed sparks 
+-  fixed score z index on mobile
+- removed blood tile, attack and boon tile. 
+
+
 ## 0.0.47 - 2026-05-04
 
 Start: 09:35 EDT
