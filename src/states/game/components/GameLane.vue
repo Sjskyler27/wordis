@@ -1029,14 +1029,6 @@ onBeforeUnmount(() => {
 }
 
 .tile-lightning::before {
-  inset: 0;
-  z-index: 0;
-  opacity: 0.12;
-  animation: tile-lightning-charge var(--tile-lightning-cycle, 3000ms) linear infinite;
-  animation-delay: var(--tile-lightning-delay, 0ms);
-}
-
-.tile-lightning::after {
   top: 8%;
   left: 43%;
   width: 24%;
@@ -1050,7 +1042,7 @@ onBeforeUnmount(() => {
   animation-delay: var(--tile-lightning-delay, 0ms);
 }
 
-.tile-lightning-spark {
+.tile-lightning-spark-old {
   position: absolute;
   bottom: 7%;
   width: 18%;
@@ -1065,7 +1057,7 @@ onBeforeUnmount(() => {
     0 0 13px rgba(89, 220, 255, 0.56);
   opacity: 0;
   transform: scale(0.62);
-  animation: tile-lightning-spark var(--tile-lightning-cycle, 3000ms) linear infinite;
+  animation: tile-lightning-spark var(--tile-lightning-cycle, 100ms) linear infinite;
   animation-delay: var(--tile-lightning-delay, 0ms);
 }
 
@@ -1386,28 +1378,6 @@ onBeforeUnmount(() => {
     inset -12px 0 0 rgba(81, 45, 16, 0.2);
 }
 
-
-.tile-bagged:not(.tile-in-use) {
-  filter: saturate(0.72) brightness(0.82);
-}
-
-.tile-bagged:not(.tile-in-use)::after {
-  content: '';
-  position: absolute;
-  inset: 0%;
-  z-index: 7;
-  border-radius: 12px;
-  pointer-events: none;
-  background:
-    repeating-linear-gradient(180deg, rgba(68, 39, 16, 0.32) 0 4px, transparent 4px 13px),
-    linear-gradient(90deg, transparent 0 11%, rgba(64, 35, 13, 0.38) 11% 18%, transparent 18% 82%, rgba(64, 35, 13, 0.38) 82% 89%, transparent 89% 100%),
-    linear-gradient(180deg, rgba(215, 169, 102, 0.38), rgba(85, 48, 19, 0.34));
-  box-shadow:
-    inset 0 0 0 2px rgba(79, 47, 20, 0.38),
-    inset 10px 0 0 rgba(70, 40, 16, 0.22),
-    inset -10px 0 0 rgba(70, 40, 16, 0.22);
-}
-
 .tile-leecher {
   background:
     radial-gradient(circle at 50% 42%, rgba(217, 255, 179, 0.62) 0 11%, transparent 12%),
@@ -1649,6 +1619,29 @@ onBeforeUnmount(() => {
   box-shadow: var(--tile-shadow, inset 0 -4px 0 rgba(0, 0, 0, 0.12), 0 10px 18px rgba(45, 10, 24, 0.16)) !important;
   transform: translateY(1px) scale(0.98);
 }
+
+
+.tile-bagged:not(.tile-in-use) {
+  filter: saturate(0.72) brightness(0.82);
+}
+
+.tile-bagged:not(.tile-in-use)::after {
+  content: '';
+  position: absolute;
+  inset: 0%;
+  z-index: 7;
+  border-radius: 12px;
+  pointer-events: none;
+  background:
+    repeating-linear-gradient(180deg, rgba(68, 39, 16, 0.32) 0 4px, transparent 4px 13px),
+    linear-gradient(90deg, transparent 0 11%, rgba(64, 35, 13, 0.38) 11% 18%, transparent 18% 82%, rgba(64, 35, 13, 0.38) 82% 89%, transparent 89% 100%),
+    linear-gradient(180deg, rgba(215, 169, 102, 0.38), rgba(85, 48, 19, 0.34));
+  box-shadow:
+    inset 0 0 0 2px rgba(79, 47, 20, 0.38),
+    inset 10px 0 0 rgba(70, 40, 16, 0.22),
+    inset -10px 0 0 rgba(70, 40, 16, 0.22);
+}
+
 
 @keyframes must-tile-flash {
   0%,
