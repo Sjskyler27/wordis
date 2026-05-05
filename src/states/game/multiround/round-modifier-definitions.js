@@ -67,19 +67,22 @@ export const ROUND_MODIFIER_DEFINITIONS = {
   double_burns: {
     key: 'double_burns',
     label: 'Hot Rack',
-    description: 'Burn penalties are doubled, and burn tiles appear more often.',
+    description: 'Burn penalties are doubled, if no burn tile is on your board there is a 25% cahnce of pulling one.',
     difficulty: ROUND_MODIFIER_DIFFICULTIES.EASY,
-    force_test: false,
+    force_test: true,
     cantCombineWith: [],
     tags: ['burns', 'tile-odds'],
     scoreEffects: {
       idlePenaltyMultiplier: 2
     },
+    tileEffects: {
+      burnTileEachTurn: .25,
+    },
     chanceEffects: {
       badChanceBonus: 0.02,
       badChanceCapDelta: 0.03,
       modifierOddsBonus: {
-        burningTile: 0.18
+        burningTile: 0.18 
       }
     }
   },

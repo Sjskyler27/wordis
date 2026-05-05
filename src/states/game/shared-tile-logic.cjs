@@ -1770,9 +1770,22 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
       return Boolean(roundModifierEffects.mustTileEachTurn)
         && !(personalModifierEffects.blockedModifiers || []).includes('mustuse');
     };
+    const canForceTurnBurnTile = (options = {}) => {
+      const roundModifierEffects = options.roundModifierEffects || options.chanceOverrides?.roundModifierEffects || {};
+      const personalModifierEffects = options.personalModifierEffects || options.chanceOverrides?.personalModifierEffects || {};
+      const chance = roundModifierEffects.burnTileEachTurn || 0;
+      const shouldForceReplacementBurnBasedOffChance = Math.random() < chance 
+      console.log(chance)
+      console.log(shouldForceReplacementBurnBasedOffChance)
+      return shouldForceReplacementBurnBasedOffChance &&
+        !(personalModifierEffects.blockedModifiers || []).includes('burningTile');
+    };
 
     const rackHasAvailableMustTile = (tiles = []) => {
       return tiles.some((tile) => tile.status === 'mustuse' && !tile.locked);
+    };
+    const rackHasAvailableBurnTile = (tiles = []) => {
+      return tiles.some((tile) => tile.status === 'burningTile' && !tile.locked);
     };
 
     const drawSingleLetter = (rack = []) => {
@@ -1789,9 +1802,11 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
     const buildFreshRack = (side = null, scores = {}, options = {}) => {
       const rack = [];
       const forceOpeningMust = canForceTurnMustTile(options);
+      const forceOpeningBurn = canForceTurnBurnTile(options);
       while (rack.length < RACK_SIZE) {
         const forceMust = forceOpeningMust && rack.length === 0;
-        rack.push(createTile(forceMust ? drawSingleLetter(rack) : drawLetter(rack), side, scores, forceMust ? 'mustuse' : (options.forcedStatus || null), {
+        const forceBurn = forceOpeningBurn && rack.length === 0;
+        rack.push(createTile(forceMust || forceBurn ? drawSingleLetter(rack) : drawLetter(rack), side, scores, forceMust ? 'mustuse' : forceBurn ? 'burningTile' : (options.forcedStatus || null), {
           ...(options.chanceOverrides || {}),
           rackTiles: rack,
           personalModifierEffects: options.personalModifierEffects || options.chanceOverrides?.personalModifierEffects || {},
@@ -1994,6 +2009,11 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
       const shouldForceReplacementMust = canForceTurnMustTile(options)
         && !rackHasAvailableMustTile(nextTiles.filter((tile) => !replacedIds.has(tile.id)));
       let forcedReplacementMust = false;
+      console.log('not has available burn' + !rackHasAvailableBurnTile(nextTiles.filter((tile) => !replacedIds.has(tile.id))))
+      console.log('not has available must' + !rackHasAvailableMustTile(nextTiles.filter((tile) => !replacedIds.has(tile.id))))
+      const shouldForceReplacementBurn = canForceTurnBurnTile(options)
+        && !rackHasAvailableBurnTile(nextTiles.filter((tile) => !replacedIds.has(tile.id)));
+      let forcedReplacementBurn = false;
 
       nextTiles.forEach((tile, index) => {
         if (!replacedIds.has(tile.id)) {
@@ -2005,7 +2025,8 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
         });
 
         const forceMust = shouldForceReplacementMust && !forcedReplacementMust;
-        nextTiles[index] = createTile(forceMust ? drawSingleLetter(remainingTiles) : drawLetter(remainingTiles), side, scores, forceMust ? 'mustuse' : null, {
+        const forceBurn = shouldForceReplacementBurn && !forcedReplacementBurn;
+        nextTiles[index] = createTile(forceMust || forceBurn ? drawSingleLetter(remainingTiles) : drawLetter(remainingTiles), side, scores, forceMust ? 'mustuse' : forceBurn ? 'burningTile' :  null, {
           rackTiles: remainingTiles,
           modifierProfile: options.modifierProfile || 'duel',
           personalModifierEffects: options.personalModifierEffects || {},
@@ -2015,6 +2036,9 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
         });
         if (forceMust) {
           forcedReplacementMust = true;
+        }
+        if (forceBurn && !forceMust) {
+          forcedReplacementBurn = true;
         }
       });
       if (isDevLoggingEnabled()) console.log(nextTiles) // logs something callled status so modifier is determined by this point 

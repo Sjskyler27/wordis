@@ -106,7 +106,7 @@ export const PERSONAL_MODIFIER_DEFINITIONS = {
     key: 'cool_embers',
     label: 'Cool Embers',
     description: 'Burn tiles appear less often.',
-    rarity: 0.72,
+    rarity: 0.0,// disabled
     tier: PERSONAL_MODIFIER_TIERS.COMMON,
     tags: ['tile-odds', 'burningTile'],
     maxStacks: 5,
@@ -391,7 +391,7 @@ export const PERSONAL_MODIFIER_DEFINITIONS = {
   burn_shield: {
     key: 'burn_shield',
     label: 'Burn Shield',
-    description: 'MUST tiles no longer appear.',
+    description: 'Burn tiles no longer appear.',
     rarity: 0.22,
     tier: PERSONAL_MODIFIER_TIERS.EPIC,
     tags: ['tile-odds', 'burn'],

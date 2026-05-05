@@ -585,6 +585,7 @@ const roundModifierEffects = computed(() => {
     effects.chaoticBoardIntervalMs = effects.chaoticBoardIntervalMs || tileEffects.chaoticBoardIntervalMs || 0;
     effects.lockNextColumn = effects.lockNextColumn || Boolean(tileEffects.lockNextColumn);
     effects.mustTileEachTurn = effects.mustTileEachTurn || Boolean(tileEffects.mustTileEachTurn);
+    effects.burnTileEachTurn = effects.burnTileEachTurn || tileEffects.burnTileEachTurn;
     effects.goodChanceBonus += chanceEffects.goodChanceBonus || 0;
     effects.badChanceBonus += chanceEffects.badChanceBonus || 0;
     effects.neutralChanceBonus += chanceEffects.neutralChanceBonus || 0;
@@ -612,6 +613,7 @@ const roundModifierEffects = computed(() => {
     chaoticBoardIntervalMs: 0,
     lockNextColumn: false,
     mustTileEachTurn: false,
+    burnTileEachTurn: false,
     goodChanceBonus: 0,
     badChanceBonus: 0,
     neutralChanceBonus: 0,
