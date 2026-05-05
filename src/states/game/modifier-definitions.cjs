@@ -37,6 +37,7 @@ const createModifierDefinitions = ({ bloodTilePositionValues }) => ({
       description: 'Grants 1 boon card when this tile is used.',
       effects: { grantBoon: 1 },
       rarityWeight: 0.20,
+      canApply: ({ baseScore }) => baseScore <= 0, // disabled
       ui: {
         tileBackground: 'linear-gradient(180deg, #f6ffe1 0%, #b9e16b 72%, #6f9d24 100%)',
         tileShadow: 'inset 0 -4px 0 rgba(60, 92, 14, 0.24), 0 12px 20px rgba(45, 10, 24, 0.16), 0 0 0 1px rgba(209, 244, 131, 0.42)',
@@ -50,6 +51,7 @@ const createModifierDefinitions = ({ bloodTilePositionValues }) => ({
       description: 'Grants 1 attack card when this tile is used.',
       effects: { grantAttack: 1 },
       rarityWeight: 0.20,
+      canApply: ({ baseScore }) => baseScore <= 0, // disabled
       ui: {
         tileBackground: 'linear-gradient(180deg, #ffe8d9 0%, #ff9b6e 72%, #b64a1f 100%)',
         tileShadow: 'inset 0 -4px 0 rgba(116, 43, 12, 0.24), 0 12px 20px rgba(45, 10, 24, 0.18), 0 0 0 1px rgba(255, 190, 150, 0.42)',
@@ -164,7 +166,7 @@ const createModifierDefinitions = ({ bloodTilePositionValues }) => ({
         startWithHalfScoreRoundedDown: true,
         positionBonusByIndex: bloodTilePositionValues
       },
-      canApply: ({ baseScore }) => baseScore <= 5,
+      canApply: ({ baseScore }) => baseScore <= 0, // disabled
       rarityWeight: 0.36,
       ui: {
         tileBackground: 'radial-gradient(circle at 26% 24%, rgba(255, 125, 125, 0.96) 0%, rgba(255, 125, 125, 0.96) 11%, rgba(120, 15, 21, 0.94) 12%, rgba(120, 15, 21, 0.94) 26%, rgba(28, 7, 12, 0.98) 27%, rgba(28, 7, 12, 0.98) 44%, rgba(182, 20, 34, 0.96) 45%, rgba(182, 20, 34, 0.96) 62%, rgba(24, 6, 10, 0.98) 63%, rgba(24, 6, 10, 0.98) 100%)',
@@ -231,6 +233,8 @@ const createModifierDefinitions = ({ bloodTilePositionValues }) => ({
         startWithHalfScoreRoundedUp: true,
         idleBonusScoreDelta: 1
       },
+            excludeFromTest: true,
+
       rarityWeight: 0.18,
       animations: {
         onNewTurn: 'emerald'
@@ -252,6 +256,8 @@ const createModifierDefinitions = ({ bloodTilePositionValues }) => ({
       },
       canApply: ({ letter, baseScore }) => (letter || '').length === 1 && baseScore <= 6,
       rarityWeight: 0.16,
+            excludeFromTest: true,
+
       ui: {
         tileBackground: 'linear-gradient(180deg, #e2ffcf 0%, #83d65a 48%, #276c35 100%)',
         tileShadow: 'inset 0 -4px 0 rgba(19, 84, 35, 0.34), 0 12px 22px rgba(23, 84, 46, 0.24), 0 0 0 1px rgba(184, 255, 150, 0.42)',
@@ -270,6 +276,8 @@ const createModifierDefinitions = ({ bloodTilePositionValues }) => ({
           tied: 0
         }
       },
+            excludeFromTest: true,
+
       rarityWeight: 0.32,
       noSinglePlayer: true,
       ui: {
@@ -316,6 +324,8 @@ const createModifierDefinitions = ({ bloodTilePositionValues }) => ({
       animations: {
         onNewTurn: 'unlock-dissolve'
       },
+            excludeFromTest: true,
+
       ui: {
         tileBackground: 'linear-gradient(180deg, #3b3343 0%, #211926 72%, #100b14 100%)',
         tileShadow: 'inset 0 -4px 0 rgba(0, 0, 0, 0.4), 0 12px 20px rgba(10, 5, 12, 0.34)',
