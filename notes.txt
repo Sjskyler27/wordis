@@ -293,3 +293,28 @@ hourgalss gain time is not working
 
 update the wordbuilder to support dragging tiles around when  a used holds left click on a tile they should be able to pick it up and move it withing the word builder if they bring the fifth letter to the second slot it should shift everything down one space for example: cnesa drag a to second postion becomes canes
 
+hover on word builde rword needs to move  
+
+add a score system based on how fast you clear each round and how many points over you get on each round. speed should probably be worth more 
+
+add reconnect logic if they choose to not reconnect then destroy the lobby 
+
+after match notes 
+Shouldn't be able to get rid of negative with modifiers
+Loose rack sucks it just gets rid of modified tiles... Could be get rid of unsaved tiles can only save 5 
+Gain time then pause time from no time did not restart the clock
+1.3 mult needs to round
+Five letter form is for 4 letter words
+Add a new letter boon it just changes the letter
+Can't click on rounds should hide scores mobile in between
+7 second wind should not end the game or the round 
+Increase pause screen to hide letters
+Increase chance for royal pair it's not happening much
+
+some tiles do not get the bag style bolt and i think shimmer 
+
+focus returns to the last selected letter with mouse 
+
+bag is affecting AFTER along with other things, there needs to be abetter way then having multiple afters 
+
+tile style needs a full rework have to edit to many places and the AFTER and BEFORE are not great 
