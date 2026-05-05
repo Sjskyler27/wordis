@@ -5,7 +5,7 @@
       <strong>{{ scoreRibbonScoreLabel }}</strong>
     </div>
     <div class="score-divider">VS</div>
-    <div class="score-box opponent" :class="opponentScoreClass">
+    <div class="score-box opponent" :class="[opponentScoreClass,{ hideClock: rewardModal}]">
       <span class="box-label">{{ showClock ? 'Time:' : 'Their Board' }}</span>
       <strong>{{ showClock ? clockScoreRibbonLabel : rightScore }}</strong>
     </div>
@@ -27,6 +27,10 @@ defineProps({
     required: true
   },
   showClock: {
+    type: Boolean,
+    default: false
+  },
+  rewardModal: {
     type: Boolean,
     default: false
   },
@@ -197,6 +201,9 @@ defineProps({
 }
 
 @media (max-width: 980px) {
+  .hideClock{
+    visibility: hidden;
+  }
   .score-ribbon {
     position: fixed;
     top: 18px;

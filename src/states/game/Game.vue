@@ -65,6 +65,7 @@
           :clock-score-ribbon-label="clockScoreRibbonLabel"
           :right-score="rightLane.score"
           :show-clock="isTimedSoloMode || isMultiRoundMode"
+          :reward-modal="isMultiRoundRewardChoiceOpen"
           :host-score-class="scoreBoxClass('host')"
           :opponent-score-class="[{ timer: isTimedSoloMode || isMultiRoundMode }, scoreBoxClass('opponent')]"
         />

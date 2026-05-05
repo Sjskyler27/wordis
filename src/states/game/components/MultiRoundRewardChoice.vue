@@ -98,13 +98,16 @@ const getModifierLabel = (modifierKey = '') => {
   z-index: 1;
   visibility: hidden;
   width: min(100%, 820px);
-  padding: 120px 80px;
+  padding: 100px 80px;
   border-radius: 24px;
   color: #fff7e8;
   background: rgba(72, 22, 48, 0.96);
   border: 2px solid rgba(255, 220, 144, 0.22);
   box-shadow: 0 24px 50px rgba(20, 6, 18, 0.34);
   pointer-events: auto;
+
+  overflow: hidden;
+  overflow-y: auto;
 }
 
 .reward-kicker {
@@ -127,6 +130,9 @@ const getModifierLabel = (modifierKey = '') => {
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 14px;
   margin-top: 18px;
+  overflow: hidden;
+  overflow-y: auto;
+  padding: 16px;
 }
 
 .upcoming-round-preview {
