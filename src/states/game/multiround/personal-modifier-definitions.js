@@ -25,7 +25,7 @@ export const PERSONAL_MODIFIER_DEFINITIONS = {
     rarity: .29,
     tier: PERSONAL_MODIFIER_TIERS.RARE,
     tags: ['rewards'],
-    maxStacks: 2,
+    maxStacks: 0,
     start_with: 2,
     effects: {
       rewardCountModifier: 1
@@ -171,7 +171,7 @@ export const PERSONAL_MODIFIER_DEFINITIONS = {
     tier: PERSONAL_MODIFIER_TIERS.COMMON,
     tags: ['time', 'word-length'],
     maxStacks: 1,
-    start_with: 1,
+    start_with: 0,
     effects: {
       lengthTimeBonus: {
         7: 7
