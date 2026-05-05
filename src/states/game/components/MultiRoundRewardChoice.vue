@@ -221,29 +221,17 @@ const getModifierLabel = (modifierKey = '') => {
   opacity: 0.86;
 }
 
-@media (max-width: 720px) {
-  .reward-choice-overlay {
-    inset: 0;
-    align-items: stretch;
-  }
-
-  .reward-choice-scrim {
-    border-radius: 0;
-  }
+@media (max-width: 1000px) {
 
   .reward-choice-panel {
-    width: 100%;
-    max-height: 100%;
+    padding: 20px;
+    width: 60%;
+    max-height: 70%;
+    min-height: 70%;
     overflow-y: auto;
-    border-radius: 0;
+    bottom: 10%;
   }
 
-  .reward-choice-grid {
-    grid-template-columns: 1fr;
-  }
 
-  .reward-card {
-    min-height: 0;
-  }
 }
 </style>

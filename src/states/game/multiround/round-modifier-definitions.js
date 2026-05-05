@@ -1,3 +1,5 @@
+import { effect } from "vue";
+
 export const ROUND_MODIFIER_DIFFICULTIES = {
   EASY: 'easy',
   MEDIUM: 'medium',
@@ -110,6 +112,18 @@ export const ROUND_MODIFIER_DEFINITIONS = {
     tags: ['tile-lifecycle'],
     tileEffects: {
       fleetingAllTiles: true
+    }
+  },
+  less_reward_options: {
+    key: 'less_reward_options',
+    label: 'Minimization',
+    description: 'Recieve 1 less upgrade reward this round',
+    difficulty: ROUND_MODIFIER_DIFFICULTIES.EASY,
+    force_test: true,
+    cantCombineWith: [],
+    tags: ['reward-options'],
+    roundEffects:{
+      rewardCountModifier: -1
     }
   },
   two_vowels: {

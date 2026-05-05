@@ -18,6 +18,19 @@ export const PERSONAL_MODIFIER_DEFINITIONS = {
       vowelScoreBonus: 1
     }
   },
+  more_options: {
+    key: 'more_options',
+    label: 'More Options',
+    description: 'Upgrade reward options contain 1 extra reward.',
+    rarity: .29,
+    tier: PERSONAL_MODIFIER_TIERS.RARE,
+    tags: ['rewards'],
+    maxStacks: 2,
+    start_with: 2,
+    effects: {
+      rewardCountModifier: 1
+    }
+  },
   ghost_charge: {
     key: 'ghost_charge',
     label: 'Ghost Charge',

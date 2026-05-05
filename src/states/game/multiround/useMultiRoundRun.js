@@ -208,6 +208,8 @@ export const useMultiRoundRun = ({ rounds = MULTI_ROUND_ROUNDS } = {}) => {
     return personalModifiers.value.reduce((effects, modifier) => {
       const stacks = Math.max(1, modifier.stacks || 1);
       const definitionEffects = modifier.effects || {};
+      console.log(JSON.stringify(definitionEffects))
+      console.log(definitionEffects.rewardCountModifier)
 
       effects.vowelScoreBonus += (definitionEffects.vowelScoreBonus || 0) * stacks;
       effects.vowelScoreMultiplier = Math.max(
@@ -223,6 +225,8 @@ export const useMultiRoundRun = ({ rounds = MULTI_ROUND_ROUNDS } = {}) => {
       effects.goodChanceCapDelta += (definitionEffects.goodChanceCapDelta || 0) * stacks;
       effects.badChanceCapDelta += (definitionEffects.badChanceCapDelta || 0) * stacks;
       effects.neutralChanceCapDelta += (definitionEffects.neutralChanceCapDelta || 0) * stacks;
+      effects.rewardCountModifier += (definitionEffects.rewardCountModifier || 0) * stacks;
+      console.log('cr'+effects.rewardCountModifier)
       Object.entries(definitionEffects.modifierScoreBonus || {}).forEach(([key, bonus]) => {
         effects.modifierScoreBonus[key] = (effects.modifierScoreBonus[key] || 0) + (bonus * stacks);
       });
@@ -280,7 +284,8 @@ export const useMultiRoundRun = ({ rounds = MULTI_ROUND_ROUNDS } = {}) => {
       roundTimeSecondsBonus: 0,
       goodChanceCapDelta: 0,
       badChanceCapDelta: 0,
-      neutralChanceCapDelta: 0
+      neutralChanceCapDelta: 0,
+      rewardCountModifier: 0
     });
   });
   const visibleProgressRounds = computed(() => {
@@ -415,7 +420,8 @@ export const useMultiRoundRun = ({ rounds = MULTI_ROUND_ROUNDS } = {}) => {
     return nextModifier;
   };
 
-  const generateRewardChoices = () => {
+  const generateRewardChoices = (lengthModifier = 0) => {
+    const defaultLength = 3;
     const allowedTiers = currentRound.value?.isChallenge
       ? [getHighestTier(rewardTiers.value)]
       : rewardTiers.value;
@@ -430,7 +436,7 @@ export const useMultiRoundRun = ({ rounds = MULTI_ROUND_ROUNDS } = {}) => {
     const choices = [];
     const availableDefinitions = [...eligibleDefinitions];
 
-    while (choices.length < 3 && availableDefinitions.length) {
+    while (choices.length < defaultLength + lengthModifier && availableDefinitions.length) {
       const choice = chooseWeightedReward(availableDefinitions);
       if (!choice) {
         break;

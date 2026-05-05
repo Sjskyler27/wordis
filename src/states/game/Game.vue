@@ -586,6 +586,8 @@ const roundModifierEffects = computed(() => {
     effects.lockNextColumn = effects.lockNextColumn || Boolean(tileEffects.lockNextColumn);
     effects.mustTileEachTurn = effects.mustTileEachTurn || Boolean(tileEffects.mustTileEachTurn);
     effects.burnTileEachTurn = effects.burnTileEachTurn || tileEffects.burnTileEachTurn;
+    effects.rewardCountModifier += roundEffects.rewardCountModifier || 0;
+    console.log('rewards' + effects.rewardCountModifier) 
     effects.goodChanceBonus += chanceEffects.goodChanceBonus || 0;
     effects.badChanceBonus += chanceEffects.badChanceBonus || 0;
     effects.neutralChanceBonus += chanceEffects.neutralChanceBonus || 0;
@@ -620,6 +622,7 @@ const roundModifierEffects = computed(() => {
     goodChanceCapDelta: 0,
     badChanceCapDelta: 0,
     neutralChanceCapDelta: 0,
+    rewardCountModifier: 0,
     modifierOddsBonus: {},
     cardsDisabled: false,
     lengthTimePenalty: {}
@@ -1500,7 +1503,9 @@ const completeMultiRoundRound = () => {
   });
 
   pendingMultiRoundStartingScore.value = startingScore;
-  const rewardChoices = multiRoundRun.generateRewardChoices();
+  console.log('pr'+JSON.stringify(personalModifierEffects.value))
+  console.log('pr'+personalModifierEffects.value.rewardCountModifier)
+  const rewardChoices = multiRoundRun.generateRewardChoices((roundModifierEffects.value.rewardCountModifier || 0) + (personalModifierEffects.value.rewardCountModifier || 0));
   saveCurrentMultiRoundCheckpoint();
   playUiSound(tileReplaceSound);
   localMessage.value = 'Round complete.';
