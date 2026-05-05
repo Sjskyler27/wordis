@@ -340,7 +340,8 @@ onBeforeUnmount(() => {
   visibility: hidden;
   position: relative;
   width: min(620px, calc(100vw - 32px));
-  max-height: calc(100vh - 32px);
+  max-height: 80%;
+  height: 80%;
   overflow-y: auto;
   border: 4px solid #f7d35d;
   border-radius: 8px;
