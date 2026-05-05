@@ -108,6 +108,9 @@ const getCardStyle = (card) => {
   max-height: 450px;
   overflow-y: auto;
 }
+.action-card > * {
+  pointer-events: none;
+}
 
 .action-card {
   --card-glow: rgba(255, 255, 255, 0.16);

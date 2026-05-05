@@ -538,6 +538,9 @@ button{
   outline-offset: 2px;
   background: rgba(67, 21, 45, 0.86);
 }
+.modal-button > * {
+  pointer-events: none;
+}
 
 
 .menu-option:focus-visible {
@@ -593,6 +596,9 @@ input {
   border-radius: 12px;
 }
 
+.menu-option > * {
+  pointer-events: none;
+}
 .menu-option {
   display: flex;
   align-items: center;
