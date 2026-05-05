@@ -191,8 +191,8 @@ const onJoystickSensitivityInput = (e) => {
   border: 1px solid rgba(255, 231, 190, 0.24);
   border-radius: 22px;
   text-align: center;
-  max-width: 680px;
-  width: min(92vw, 680px);
+  max-width: 980px;
+  width: min(92vw, 980px);
   max-height: 86vh;
   overflow-y: auto;
   position: relative;
