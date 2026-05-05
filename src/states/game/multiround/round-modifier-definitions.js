@@ -71,7 +71,7 @@ export const ROUND_MODIFIER_DEFINITIONS = {
     label: 'Hot Rack',
     description: 'Burn penalties are doubled, if no burn tile is on your board there is a 25% cahnce of pulling one.',
     difficulty: ROUND_MODIFIER_DIFFICULTIES.EASY,
-    force_test: true,
+    force_test: false,
     cantCombineWith: [],
     tags: ['burns', 'tile-odds'],
     scoreEffects: {
@@ -119,7 +119,7 @@ export const ROUND_MODIFIER_DEFINITIONS = {
     label: 'Minimization',
     description: 'Recieve 1 less upgrade reward this round',
     difficulty: ROUND_MODIFIER_DIFFICULTIES.EASY,
-    force_test: true,
+    force_test: false,
     cantCombineWith: [],
     tags: ['reward-options'],
     roundEffects:{
