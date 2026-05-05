@@ -4,41 +4,30 @@ add other languages to dictionary
 
 bot dont use scary words lets limit it to more knowable words
 
-up how much big words give, give attack or boon at high words 
-
-up how often you get ither modifiers
 
 
 preview what opponent is building 
 
-add sounds 
-
-add animations
-
-individual sound based on word length
 
 request to add word and other feedback
 
-better notifications 
+better toast notifications 
 
-add tile sense show what it dies 
 
 add color blind friendliness
 
 
 daily mode that pulls from list of letters and give the same boons in order 
 
-save a letter and clear the rest 
 
-add color shifitng to background
 
-pause should pause timer
+
+
+
 
 pause should throw up a pause on both players screen 
 
-add cleanse remove all negetive 
 
-shake and sound tiles when not real word
 
 
 there may be a bug with creating tile ids i had multiple with the same id  (Proxy(Object) {id: 'local-tile-2', letter: 'R', baseLetter: 'R', score: 1, baseScore: 1, …}
@@ -49,66 +38,26 @@ ok how are we making tile ids?? there is no reason a tile should end up with the
 
 booons that give permennent upgrades like this letter is worth more 
 
-add a way to attack the time with single player attacks 
 
-maybe add time by spelling words add add somewhere to get to a goal get to a certain num of points or something  
 no boon on neg atack a normal tile 
 
 
-game broke at some point while playing 
-
-maybe cycle what the length bonus is, add a next turn get this 
 
 bunch of audio bus like overlapping music sounds and such need to also pass all the audio info accross screens and update sounds real time restart sounds after game
 
 delete is doing two if you do a locked then not 
 
-flame lane  if bbig word
 
 
-after 250 play continues until losing player submits words no attacks can be played only boons 
-
-
-pause time does not pause 
-
-still no epic score thing flame in lane 
-
-New new modifier type neutral it's a yin and yang. Enter. Add away from the menu to be able to disable certain tiles if you don't want to see them and attack.
-
-
-seperate max modifier bonus to max modifier bonus for good and bad 
-
-each turn increase chance of pulling either good or bad tiles so the game gets more diverse as you go 
-
-neutral tiles are always a zero percent chance right now we need to fix that we will have a set percent chance at 2 percent they should also have rarity weights i have moved ghost tile to neutral.
-
-you should be able to pull neutral tiles in single player, we will add a flag to tiles that says no single player this includes the yinyang and the attack tile
 
 first tile is hovering a bit for some reason 
 
-new rack slowly degrades to only nenutral tiles 
 
-yin yang badge should change same with color of letter 
 
-the bot is not winning 
 
 multiplayer is not respevting test 
 
 when clicking boon move to tiles 
-
-
-multi tasks:
-
-
-
-
-when you receive a boon or an atk throw the card up in the middle of the screen then animate it going left into the cards slot so the user knows what they got
-
-for screens smaller than 1250px lets make the side stack a drawer with a handle that can be taped to slide it out, or if the cards become focussed open the drawer close it if cards become defocessed 
-
-if you are on mobile it is very hard to see everything, for mobile multiplayer we should replace the opponnents rack grid with the word console you still see what word they are playing and score but have more room 
-
-if single player we will move it next to the your own rack grid so you can see it 
 
 
 
@@ -318,3 +267,34 @@ focus returns to the last selected letter with mouse
 bag is affecting AFTER along with other things, there needs to be abetter way then having multiple afters 
 
 tile style needs a full rework have to edit to many places and the AFTER and BEFORE are not great 
+
+
+
+1 less reward choice easy 
+Always one burn 
+Splitting tile tiles next to this are removed at the end of turn 
+https://www.epidemicsound.com/artists/brendon-moeller/
+Music by Brendon Moeller | Epidemic Sound
+Music by Brendon Moeller | Epidemic Sound
+Find music from Brendon Moeller here. Download and use the royalty-free tracks with an Epidemic Sound subscription. Listen and sign up here
+www.epidemicsound.com
+Transition from one track to the next move music top level 
+Add a round selection infinate sound 
+Bahamas bm following on bm Mars adventure 
+
+Read agent MD and complete each of these tasks with separate commits:
+Lock step locks on first turn but does not transition on the second the first column stays locked for two turns 
+
+Add UI sound on button click 
+Xbox buttons visuals
+https://www.epidemicsound.com/music/tracks/1c7b4766-2bb5-3e63-8c62-7f635e180be2/
+Brendon Moeller - Sunshine Rain | Epidemic Sound
+Brendon Moeller - Sunshine Rain | Epidemic Sound
+Listen and use the track Sunshine Rain by Brendon Moeller with an Epidemic Sound subscription. Start your free trial here
+www.epidemicsound.com
+Svaeing a bagged item makes a blue circle 
+Water tile drag to duplicate
+
+consolidatet lower buttons to its own component, float left in singleplay bottom in multi player  
+
+move pause outside of drawer
