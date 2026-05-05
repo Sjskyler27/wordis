@@ -1,7 +1,7 @@
 <template>
   <section class="word-console" :class="{ overtime: isOvertimeActive }">
     <div class="console-topline">
-      <span class="console-label"><span v-if="currentWordScore < 10" style="visibility:hidden">_</span>{{ currentWordScore }} pts</span>
+      <div class="console-label"><span v-if="currentWordScore < 10" style="visibility:hidden">_</span>{{ currentWordScore }} pts</div>
       <div
         v-if="minimumVowels"
         class="vowel-toll-meter"
@@ -647,7 +647,7 @@ button:focus{
   justify-content: space-between;
   gap: 12px;
   position: relative;
-  z-index: 8;
+  z-index: 58;
 }
 
 .overtime-banner {
@@ -1728,8 +1728,7 @@ button:focus{
 
 .console-label,
 .console-score {
-  position: relative;
-  z-index: 8;
+  z-index: 58;
   font-size: 2rem;
   font-weight: 900;
   line-height: 1;
@@ -1779,10 +1778,10 @@ button:focus{
 
   .console-topline {
     position: absolute;
-    top: 10px;
+    top: -11px;
     left: 12px;
     right: 12px;
-    z-index: 2;
+    z-index: 58;
     pointer-events: none;
   }
 
