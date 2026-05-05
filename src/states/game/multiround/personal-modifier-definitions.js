@@ -158,7 +158,7 @@ export const PERSONAL_MODIFIER_DEFINITIONS = {
     tier: PERSONAL_MODIFIER_TIERS.COMMON,
     tags: ['time', 'word-length'],
     maxStacks: 1,
-    start_with: 0,
+    start_with: 1,
     effects: {
       lengthTimeBonus: {
         7: 7
@@ -404,22 +404,7 @@ export const PERSONAL_MODIFIER_DEFINITIONS = {
   compact_double: {
     key: 'compact_double',
     label: 'Compact Multiplier',
-    description: 'Four-letter word scores are now multiplied by 1.2 after all other points.',
-    rarity: 0.2,
-    tier: PERSONAL_MODIFIER_TIERS.EPIC,
-    tags: ['score', 'word-length'],
-    maxStacks: 1,
-    start_with: 0,
-    effects: {
-      lengthScoreMultiplier: {
-        5: 1.3
-      }
-    }
-  },
-  semi_compact_double: {
-    key: 'semi_compact_double',
-    label: 'Semi Compact Multiplier',
-    description: 'Five-letter word scores are now multiplied by 1.3 after all other points.',
+    description: 'Four-letter word scores are now multiplied by 1.3 after all other points.',
     rarity: 0.2,
     tier: PERSONAL_MODIFIER_TIERS.EPIC,
     tags: ['score', 'word-length'],
@@ -428,6 +413,21 @@ export const PERSONAL_MODIFIER_DEFINITIONS = {
     effects: {
       lengthScoreMultiplier: {
         4: 1.3
+      }
+    }
+  },
+  semi_compact_double: {
+    key: 'semi_compact_double',
+    label: 'Semi Compact Multiplier',
+    description: 'Five-letter word scores are now multiplied by 1.2 after all other points.',
+    rarity: 0.2,
+    tier: PERSONAL_MODIFIER_TIERS.EPIC,
+    tags: ['score', 'word-length'],
+    maxStacks: 1,
+    start_with: 0,
+    effects: {
+      lengthScoreMultiplier: {
+        5: 1.2
       }
     }
   }
