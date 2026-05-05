@@ -27,8 +27,8 @@ export const createRound = ({
 }) => ({
   id,
   label,
-  targetScore: isTestingMode ? 15 : targetScore,
-  timeSeconds: isTestingMode ? 20 : timeSeconds,
+  targetScore: isTestingMode ? 45 : targetScore,
+  timeSeconds: isTestingMode ? 5 : timeSeconds,
   isChallenge,
   isFinalRound,
   backgroundPalette,
