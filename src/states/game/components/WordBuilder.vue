@@ -964,7 +964,7 @@ button:focus{
   pointer-events: none;
 }
 
-.built-tile-lightning::before {
+.built-tile-lightning-old::before {
   inset: 0;
   z-index: 0;
   opacity: 0.12;
@@ -972,7 +972,7 @@ button:focus{
   animation-delay: var(--built-tile-lightning-delay, 0ms);
 }
 
-.built-tile-lightning::after {
+.built-tile-lightning::before {
   top: 8%;
   left: 43%;
   width: 24%;
@@ -986,7 +986,7 @@ button:focus{
   animation-delay: var(--built-tile-lightning-delay, 0ms);
 }
 
-.built-tile-lightning-spark {
+.built-tile-lightning-spark-old {
   position: absolute;
   bottom: 7%;
   width: 18%;
@@ -1005,11 +1005,11 @@ button:focus{
   animation-delay: var(--built-tile-lightning-delay, 0ms);
 }
 
-.built-tile-lightning-spark.spark-left {
+.built-tile-lightning-spark.spark-left-old {
   left: 10%;
 }
 
-.built-tile-lightning-spark.spark-right {
+.built-tile-lightning-spark.spark-right-old {
   right: 10%;
   animation-name: built-lightning-spark-right;
 }
