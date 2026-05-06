@@ -31,6 +31,19 @@ export const PERSONAL_MODIFIER_DEFINITIONS = {
       rewardCountModifier: 1
     }
   },
+  epic_reward_choice: {
+    key: 'epic_reward_choice',
+    label: 'Epic Reward Choice',
+    description: 'Upgrade reward options contain 1 extra reward.',
+    rarity: 0.22,
+    tier: PERSONAL_MODIFIER_TIERS.EPIC,
+    tags: ['rewards'],
+    maxStacks: 1,
+    start_with: 0,
+    effects: {
+      rewardCountModifier: 1
+    }
+  },
   ghost_charge: {
     key: 'ghost_charge',
     label: 'Ghost Charge',
