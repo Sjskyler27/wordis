@@ -161,6 +161,13 @@
 
       <div class="history-actions">
         <button
+          type="button"
+          class="main-menu-button"
+          @click="$emit('home')"
+        >
+          Main Menu
+        </button>
+        <button
           ref="playAgainButton"
           type="button"
           class="play-again-button"
@@ -221,7 +228,7 @@ const props = defineProps({
   }
 });
 
-defineEmits(['play-again']);
+defineEmits(['play-again', 'home']);
 
 const playAgainButton = ref(null);
 
@@ -660,9 +667,12 @@ watch(() => props.playAgainDisabled, (disabled, wasDisabled) => {
   margin-top: 22px;
   display: flex;
   justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
 }
 
-.play-again-button {
+.play-again-button,
+.main-menu-button {
   border: none;
   cursor: pointer;
   display: inline-flex;
@@ -679,6 +689,10 @@ watch(() => props.playAgainDisabled, (disabled, wasDisabled) => {
   box-shadow:
     0 0 0 2px rgba(243, 228, 104, 0.9),
     0 14px 22px rgba(21, 12, 28, 0.2);
+}
+
+.main-menu-button {
+  background: linear-gradient(180deg, rgba(255, 189, 101, 0.96), rgba(190, 92, 48, 0.94));
 }
 
 .play-again-button:disabled {
@@ -790,7 +804,8 @@ watch(() => props.playAgainDisabled, (disabled, wasDisabled) => {
     margin-top: 18px;
   }
 
-  .play-again-button {
+  .play-again-button,
+  .main-menu-button {
     width: 100%;
   }
 }

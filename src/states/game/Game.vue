@@ -184,6 +184,7 @@
         :play-again-text="playAgainButtonText"
         :play-again-disabled="props.isMultiplayer && myReplayVote"
         @play-again="handlePlayAgain"
+        @home="emit('home')"
       />
 
       <TutorialOverlay
