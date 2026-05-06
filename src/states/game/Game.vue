@@ -1508,6 +1508,15 @@ const completeMultiRoundRound = () => {
     selectedRewardKey: null
   });
 
+  if (multiRoundRun.currentRoundIndex.value >= multiRoundRun.resolvedRounds.value.length - 1) {
+    multiRoundRun.goToNextRound({ startingScore });
+    saveMultiRoundPastGame('won');
+    clearMultiRoundSaves();
+    playUiSound(tileReplaceSound);
+    localMessage.value = 'Run complete!';
+    return;
+  }
+
   pendingMultiRoundStartingScore.value = startingScore;
   console.log('pr'+JSON.stringify(personalModifierEffects.value))
   console.log('pr'+personalModifierEffects.value.rewardCountModifier)
