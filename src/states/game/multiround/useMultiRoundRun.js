@@ -208,8 +208,6 @@ export const useMultiRoundRun = ({ rounds = MULTI_ROUND_ROUNDS } = {}) => {
     return personalModifiers.value.reduce((effects, modifier) => {
       const stacks = Math.max(1, modifier.stacks || 1);
       const definitionEffects = modifier.effects || {};
-      console.log(JSON.stringify(definitionEffects))
-      console.log(definitionEffects.rewardCountModifier)
 
       effects.vowelScoreBonus += (definitionEffects.vowelScoreBonus || 0) * stacks;
       effects.vowelScoreMultiplier = Math.max(
@@ -226,7 +224,6 @@ export const useMultiRoundRun = ({ rounds = MULTI_ROUND_ROUNDS } = {}) => {
       effects.badChanceCapDelta += (definitionEffects.badChanceCapDelta || 0) * stacks;
       effects.neutralChanceCapDelta += (definitionEffects.neutralChanceCapDelta || 0) * stacks;
       effects.rewardCountModifier += (definitionEffects.rewardCountModifier || 0) * stacks;
-      console.log('cr'+effects.rewardCountModifier)
       Object.entries(definitionEffects.modifierScoreBonus || {}).forEach(([key, bonus]) => {
         effects.modifierScoreBonus[key] = (effects.modifierScoreBonus[key] || 0) + (bonus * stacks);
       });

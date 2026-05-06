@@ -33,7 +33,7 @@ const formatMilestoneReward = (length, options = {}) => {
   return labels.join(' · ');
 };
 
-export const useWordBuilder = ({ mySide, myTiles, playerScores, scoreOptions }) => {
+export const useWordBuilder = ({ mySide, myTiles, playerScores, scoreOptions, lengthBonusOptions }) => {
   const selectedTileSlots = ref({
     host: [],
     opponent: []
@@ -96,12 +96,12 @@ export const useWordBuilder = ({ mySide, myTiles, playerScores, scoreOptions }) 
   const currentWordMultiplier = computed(() => currentScoreDetails.value.wordMultiplier);
   const currentWordScore = computed(() => currentScoreDetails.value.total - currentIdlePenalty.value);
   const lengthBonusSteps = computed(() => {
-    const activeScoreOptions = scoreOptions?.value || {};
+    const activeScoreOptions = lengthBonusOptions?.value || scoreOptions?.value || {};
     return [4, 5, 6, 7, 8, 9]
       .map((length) => ({
         length,
         bonus: getLengthBonus(length, activeScoreOptions),
-        difference: getDifference(length, activeScoreOptions),
+        difference: getDifference(length, activeScoreOptions, currentWordLength.value),
         rewardLabel: formatMilestoneReward(length, activeScoreOptions)
       }))
       .filter((step) => step.bonus || step.rewardLabel);

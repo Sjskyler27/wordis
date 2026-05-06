@@ -594,7 +594,6 @@ const roundModifierEffects = computed(() => {
     effects.mustTileEachTurn = effects.mustTileEachTurn || Boolean(tileEffects.mustTileEachTurn);
     effects.burnTileEachTurn = effects.burnTileEachTurn || tileEffects.burnTileEachTurn;
     effects.rewardCountModifier += roundEffects.rewardCountModifier || 0;
-    console.log('rewards' + effects.rewardCountModifier) 
     effects.goodChanceBonus += chanceEffects.goodChanceBonus || 0;
     effects.badChanceBonus += chanceEffects.badChanceBonus || 0;
     effects.neutralChanceBonus += chanceEffects.neutralChanceBonus || 0;
@@ -641,6 +640,12 @@ const multiRoundScoreOptions = computed(() => ({
   roundModifierCountdowns: roundModifierCountdowns.value,
   wordElapsedSeconds: Math.max(0, (speedyWordClockNow.value - speedyWordStartedAt.value) / 1000)
 }));
+const lengthBonusScoreOptions = computed(() => ({
+  personalModifierEffects: personalModifierEffects.value,
+  roundModifierEffects: {
+    lengthTimePenalty: roundModifierEffects.value.lengthTimePenalty || {}
+  }
+}));
 const buildLane = (side, label) => ({
   side,
   label,
@@ -682,7 +687,8 @@ const {
   mySide,
   myTiles,
   playerScores,
-  scoreOptions: multiRoundScoreOptions
+  scoreOptions: multiRoundScoreOptions,
+  lengthBonusOptions: lengthBonusScoreOptions
 });
 const currentBaggedTileIds = computed(() => getBaggedTileIds(myTiles.value, selectedTilesForCurrentSide.value));
 
@@ -1522,8 +1528,6 @@ const completeMultiRoundRound = () => {
   }
 
   pendingMultiRoundStartingScore.value = startingScore;
-  console.log('pr'+JSON.stringify(personalModifierEffects.value))
-  console.log('pr'+personalModifierEffects.value.rewardCountModifier)
   const rewardChoices = multiRoundRun.generateRewardChoices((roundModifierEffects.value.rewardCountModifier || 0) + (personalModifierEffects.value.rewardCountModifier || 0));
   saveCurrentMultiRoundCheckpoint();
   playUiSound(tileReplaceSound);
