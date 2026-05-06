@@ -15,11 +15,6 @@ const formatMilestoneReward = (length, options = {}) => {
     labels.push(`+${reward.boons} BOON`);
   }
 
-  const lengthScoreBonus = personalEffects.lengthScoreBonus?.[length] || personalEffects.lengthScoreBonus?.[String(length)] || 0;
-  if (lengthScoreBonus) {
-    labels.push(`+${lengthScoreBonus} PTS`);
-  }
-
   const lengthScoreMultiplier = personalEffects.lengthScoreMultiplier?.[length] || personalEffects.lengthScoreMultiplier?.[String(length)] || 0;
   if (lengthScoreMultiplier && lengthScoreMultiplier !== 1) {
     labels.push(`x${Number(lengthScoreMultiplier).toFixed(1)}`);
@@ -105,8 +100,8 @@ export const useWordBuilder = ({ mySide, myTiles, playerScores, scoreOptions }) 
     return [4, 5, 6, 7, 8, 9]
       .map((length) => ({
         length,
-        bonus: getLengthBonus(length),
-        difference: getDifference(length),
+        bonus: getLengthBonus(length, activeScoreOptions),
+        difference: getDifference(length, activeScoreOptions),
         rewardLabel: formatMilestoneReward(length, activeScoreOptions)
       }))
       .filter((step) => step.bonus || step.rewardLabel);

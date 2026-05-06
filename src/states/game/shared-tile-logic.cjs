@@ -1229,20 +1229,26 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
     };
   };
 
-  const getLengthBonus = (length) => {
+  const getPersonalLengthScoreBonus = (length, options = {}) => {
+    const personalModifierEffects = options.personalModifierEffects || options.personalModifiers || {};
+    const lengthScoreBonus = personalModifierEffects.lengthScoreBonus || {};
+    return lengthScoreBonus[length] || lengthScoreBonus[String(length)] || 0;
+  };
+
+  const getLengthBonus = (length, options = {}) => {
     if (wordBonuses[length]) {
-      return wordBonuses[length];
+      return wordBonuses[length] + getPersonalLengthScoreBonus(length, options);
     }
 
     if (length > 9) {
-      return wordBonuses[9] + ((length - 9) * 5);
+      return wordBonuses[9] + ((length - 9) * 5) + getPersonalLengthScoreBonus(length, options);
     }
 
-    return 0;
+    return getPersonalLengthScoreBonus(length, options);
   };
-  const getDifference = (length) =>{
-      if (wordBonuses[length]) {
-      return wordBonuses[length] - (wordBonuses[length - 1] || 0);
+  const getDifference = (length, options = {}) =>{
+      if (getLengthBonus(length, options)) {
+      return getLengthBonus(length, options) - getLengthBonus(length - 1, options);
     }
     return 0;
   }
@@ -1314,7 +1320,6 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
 
   const getWordScoreDetails = (tiles, options = {}) => {
     const personalModifierEffects = options.personalModifierEffects || options.personalModifiers || {};
-    const lengthScoreBonus = personalModifierEffects.lengthScoreBonus || {};
     const lengthScoreMultiplier = personalModifierEffects.lengthScoreMultiplier || {};
     const zeroedIndexes = getZeroedRoundModifierIndexes(tiles, options);
     const baseLetterTotal = tiles.reduce((total, tile, index) => {
@@ -1352,8 +1357,7 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
       return total + tile?.firstTileBonus + (firstTileBonusByModifier[tile?.status] || 0);
     }, 0);
     const letterTotal = baseLetterTotal + firstTileBonus + positionBonus;
-    const personalLengthBonus = lengthScoreBonus[tiles.length] || lengthScoreBonus[String(tiles.length)] || 0;
-    const lengthBonus = getLengthBonus(tiles.length) + personalLengthBonus;
+    const lengthBonus = getLengthBonus(tiles.length, options);
     // we need to know if a gold tile is disabled 
 
 

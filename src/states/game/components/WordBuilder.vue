@@ -227,7 +227,7 @@
 
 <script setup>
 import { computed, onBeforeUnmount, ref, watch } from 'vue';
-import { getModifierBadge, getModifierUi, tileScore } from '../tile-logic.js';
+import { MIN_WORD_LENGTH, getModifierBadge, getModifierUi, tileScore } from '../tile-logic.js';
 import TileHoverTooltip from './TileHoverTooltip.vue';
 
 const props = defineProps({
@@ -324,7 +324,7 @@ const suppressNextClick = ref(false);
 let tooltipTimeoutId = null;
 
 const wordSlots = computed(() => {
-  const minimumWordLength = props.scoreOptions?.roundModifierEffects?.minimumWordLength || 0;
+  const requiredWordLength = Math.max(MIN_WORD_LENGTH, props.scoreOptions?.roundModifierEffects?.minimumWordLength || 0);
   const slots = Array.from({ length: 9 }, (_, index) => {
     const position = index + 1;
     const bonusStep = props.lengthBonusSteps.find((step) => step.length === position);
@@ -336,16 +336,16 @@ const wordSlots = computed(() => {
 	      bonus: bonusStep?.bonus || 0,
 	      difference: bonusStep?.difference || 0,
 	      rewardLabel: bonusStep?.rewardLabel || '',
-	      minimumRequired: position <= minimumWordLength
+	      minimumRequired: position <= requiredWordLength
 	    };
 	  });
 
-  const milestoneSlots = slots.filter((slot) => slot.bonus && !slot.minimumRequired);
+  const milestoneSlots = slots.filter((slot) => (slot.bonus || slot.rewardLabel) && !slot.minimumRequired);
   const milestoneCount = milestoneSlots.length || 1;
 
   return slots.map((slot) => ({
     ...slot,
-    milestoneIndex: slot.bonus ? milestoneSlots.findIndex((entry) => entry.index === slot.index) : -1,
+    milestoneIndex: (slot.bonus || slot.rewardLabel) ? milestoneSlots.findIndex((entry) => entry.index === slot.index) : -1,
     milestoneCount
   }));
 });
