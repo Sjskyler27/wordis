@@ -184,6 +184,24 @@ export const useWordBuilder = ({ mySide, myTiles, playerScores, scoreOptions }) 
     return true;
   };
 
+  const reorderSelectedTile = (side = mySide.value, fromIndex, toIndex) => {
+    const currentSlots = selectedTileSlots.value[side] || [];
+    const boundedFromIndex = Math.max(0, Math.min(Number(fromIndex), currentSlots.length - 1));
+    const boundedToIndex = Math.max(0, Math.min(Number(toIndex), currentSlots.length - 1));
+    if (!currentSlots.length || boundedFromIndex === boundedToIndex) {
+      return false;
+    }
+
+    const nextSlots = [...currentSlots];
+    const [movedTileId] = nextSlots.splice(boundedFromIndex, 1);
+    nextSlots.splice(boundedToIndex, 0, movedTileId);
+    selectedTileSlots.value = {
+      ...selectedTileSlots.value,
+      [side]: nextSlots
+    };
+    return true;
+  };
+
   const clearSelectionForSide = (side = mySide.value) => {
     if (!selectedTileSlots.value[side].length) {
       return false;
@@ -265,6 +283,7 @@ export const useWordBuilder = ({ mySide, myTiles, playerScores, scoreOptions }) 
     handleTileClick,
     removeLastLetter,
     removeSpecificTile,
+    reorderSelectedTile,
     replaceSelectedTileId,
     clearWord,
     clearSelectionForSide,

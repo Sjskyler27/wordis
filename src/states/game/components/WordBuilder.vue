@@ -60,8 +60,10 @@
           :class="{
             filled: !!slot.tile,
             milestone: !!slot.bonus,
-            active: currentWordLength >= slot.position
+            active: currentWordLength >= slot.position,
+            'drag-target': isDragTarget(slot.index)
           }"
+          :data-word-slot-index="slot.index"
         >
           <div v-if="!slot.tile" class="word-slot-placeholder">
             <div
@@ -104,11 +106,13 @@
                 'built-tile-leecher-drained': slot.tile.leecherDrained,
                 'built-tile-twin': slot.tile.status === 'twinTile',
                 'built-tile-twin-active': hasTwinMatch(slot.tile),
+                'built-tile-dragging': draggedTileId === slot.tile.id,
                 'built-tile-controller-focus': controllerFocusedBuiltTileId === slot.tile.id
               }"
               :style="getTileStyle(slot.tile, slot.index)"
               :data-controller-built="slot.index"
-              @click="$emit('tile-click', slot.tile)"
+              @pointerdown="handleBuiltPointerDown(slot, $event)"
+              @click="handleBuiltTileClick(slot.tile, $event)"
               @mouseenter="showTooltipLater(slot.tile, $event)"
               @mousemove="updateTooltipPosition($event)"
               @mouseleave="hideTooltip"
@@ -187,6 +191,18 @@
       :x="tooltipPosition.x"
       :y="tooltipPosition.y"
     />
+    <div
+      v-if="dragPreviewTile"
+      class="built-drag-afterimage"
+      :style="getDragAfterimageStyle(dragPreviewTile)"
+      aria-hidden="true"
+    >
+      <span v-if="!getTileUi(dragPreviewTile).hideBadge && dragPreviewTile.status !== 'normal'" class="tile-modifier" :style="getBadgeStyle(dragPreviewTile)">
+        {{ getTileBadge(dragPreviewTile) }}
+      </span>
+      <span class="tile-score">{{ getBuiltTileScore(dragPreviewTile, dragState.fromIndex) }}</span>
+      <span class="tile-letter">{{ dragPreviewTile.letter }}</span>
+    </div>
   </section>
 </template>
 
@@ -279,11 +295,13 @@ const props = defineProps({
   }
 });
 
-defineEmits(['undo', 'clear', 'submit', 'remove-specific', 'clear-rack', 'save-letters', 'tile-click']);
+const emit = defineEmits(['undo', 'clear', 'submit', 'remove-specific', 'clear-rack', 'save-letters', 'tile-click', 'reorder']);
 const hoveredTile = ref(null);
 const isTooltipVisible = ref(false);
 const tooltipPosition = ref({ x: 0, y: 0 });
 const canShowTooltip = computed(() => isTooltipVisible.value && !props.isMobile);
+const dragState = ref(null);
+const suppressNextClick = ref(false);
 let tooltipTimeoutId = null;
 
 const wordSlots = computed(() => {
@@ -335,6 +353,132 @@ const disabledGoldIds = computed(() => {
 
 const isDisabledGold = (tile) => {
   return disabledGoldIds.value.includes(tile.id);
+};
+
+const draggedTileId = computed(() => dragState.value?.tileId || '');
+const dragPreviewTile = computed(() => {
+  if (!dragState.value?.isDragging) {
+    return null;
+  }
+
+  return props.selectedTiles[dragState.value.fromIndex] || null;
+});
+
+const isDragTarget = (slotIndex) => {
+  return dragState.value?.isDragging && dragState.value?.targetIndex === slotIndex;
+};
+
+const getDragAfterimageStyle = (tile) => ({
+  ...getTileStyle(tile, dragState.value?.fromIndex || 0),
+  left: `${(dragState.value?.currentX || 0) + 14}px`,
+  top: `${(dragState.value?.currentY || 0) + 14}px`
+});
+
+const getSlotIndexFromPointer = (event) => {
+  const element = document.elementFromPoint(event.clientX, event.clientY);
+  const slotElement = element?.closest?.('[data-word-slot-index]');
+  if (!slotElement) {
+    return dragState.value?.targetIndex ?? dragState.value?.fromIndex ?? 0;
+  }
+
+  const rawIndex = Number(slotElement.dataset.wordSlotIndex);
+  return Math.max(0, Math.min(rawIndex, Math.max(0, props.selectedTiles.length - 1)));
+};
+
+const updateDragTarget = (event) => {
+  if (!dragState.value) {
+    return;
+  }
+
+  const targetIndex = getSlotIndexFromPointer(event);
+  dragState.value = {
+    ...dragState.value,
+    targetIndex
+  };
+};
+
+const endBuiltTileDrag = (event) => {
+  if (!dragState.value) {
+    return;
+  }
+
+  updateDragTarget(event);
+  const { fromIndex, targetIndex, isDragging } = dragState.value;
+  const shouldReorder = isDragging && fromIndex !== targetIndex;
+  dragState.value.element?.releasePointerCapture?.(event.pointerId);
+  dragState.value = null;
+  window.removeEventListener('pointermove', handleBuiltPointerMove);
+  window.removeEventListener('pointerup', endBuiltTileDrag);
+  window.removeEventListener('pointercancel', cancelBuiltTileDrag);
+
+  if (isDragging) {
+    suppressNextClick.value = true;
+  }
+  if (shouldReorder) {
+    emit('reorder', { fromIndex, toIndex: targetIndex });
+  }
+};
+
+const cancelBuiltTileDrag = (event) => {
+  dragState.value?.element?.releasePointerCapture?.(event.pointerId);
+  dragState.value = null;
+  window.removeEventListener('pointermove', handleBuiltPointerMove);
+  window.removeEventListener('pointerup', endBuiltTileDrag);
+  window.removeEventListener('pointercancel', cancelBuiltTileDrag);
+};
+
+const handleBuiltPointerMove = (event) => {
+  if (!dragState.value) {
+    return;
+  }
+
+  const deltaX = event.clientX - dragState.value.startX;
+  const deltaY = event.clientY - dragState.value.startY;
+  const isDragging = dragState.value.isDragging || Math.hypot(deltaX, deltaY) > 8;
+  dragState.value = {
+    ...dragState.value,
+    currentX: event.clientX,
+    currentY: event.clientY,
+    isDragging
+  };
+
+  if (isDragging) {
+    event.preventDefault();
+    hideTooltip();
+    updateDragTarget(event);
+  }
+};
+
+const handleBuiltPointerDown = (slot, event) => {
+  if (!slot.tile || event.button !== 0) {
+    return;
+  }
+
+  dragState.value = {
+    tileId: slot.tile.id,
+    fromIndex: slot.index,
+    targetIndex: slot.index,
+    startX: event.clientX,
+    startY: event.clientY,
+    currentX: event.clientX,
+    currentY: event.clientY,
+    isDragging: false,
+    element: event.currentTarget
+  };
+  event.currentTarget.setPointerCapture?.(event.pointerId);
+  window.addEventListener('pointermove', handleBuiltPointerMove);
+  window.addEventListener('pointerup', endBuiltTileDrag);
+  window.addEventListener('pointercancel', cancelBuiltTileDrag);
+};
+
+const handleBuiltTileClick = (tile, event) => {
+  if (suppressNextClick.value) {
+    event.preventDefault();
+    suppressNextClick.value = false;
+    return;
+  }
+
+  emit('tile-click', tile);
 };
 
 const isBaggedTile = (tile) => {
@@ -620,6 +764,9 @@ const getPlaceholderStyle = (slot) => {
 onBeforeUnmount(() => {
   window.clearTimeout(shakeTimeoutId);
   window.clearTimeout(tooltipTimeoutId);
+  window.removeEventListener('pointermove', handleBuiltPointerMove);
+  window.removeEventListener('pointerup', endBuiltTileDrag);
+  window.removeEventListener('pointercancel', cancelBuiltTileDrag);
 });
 </script>
 
@@ -778,6 +925,19 @@ button:focus{
   border-radius: 14px;
 }
 
+.word-slot.drag-target::before {
+  content: '';
+  position: absolute;
+  inset: -5px;
+  z-index: 4;
+  border-radius: 18px;
+  pointer-events: none;
+  border: 3px solid rgba(117, 246, 222, 0.88);
+  box-shadow:
+    0 0 0 3px rgba(117, 246, 222, 0.18),
+    0 0 18px rgba(117, 246, 222, 0.42);
+}
+
 .word-slot-placeholder {
   position: absolute;
   inset: 0;
@@ -903,6 +1063,65 @@ button:focus{
   justify-content: center;
   padding: 0;
   will-change: transform, opacity;
+  touch-action: none;
+  user-select: none;
+}
+
+.built-tile-dragging {
+  cursor: grabbing;
+  opacity: 0.58;
+  transform: translateY(-4px) scale(1.05);
+  z-index: 5;
+  box-shadow:
+    var(--built-tile-shadow, inset 0 -3px 0 rgba(0, 0, 0, 0.16)),
+    0 0 0 4px rgba(117, 246, 222, 0.34),
+    0 18px 24px rgba(23, 18, 34, 0.28);
+}
+
+.built-drag-afterimage {
+  position: fixed;
+  visibility: hidden;
+  z-index: 10000;
+  width: 58px;
+  height: 58px;
+  border-radius: 10px;
+  pointer-events: none;
+  transform: rotate(4deg) scale(0.92);
+  background: var(--built-tile-bg, linear-gradient(180deg, #fffef8 0%, #f2ebe0 70%, #d9cec0 100%));
+  color: var(--built-tile-text-color, #1c1930);
+  box-shadow:
+    var(--built-tile-shadow, inset 0 -3px 0 rgba(0, 0, 0, 0.16)),
+    0 0 0 3px rgba(117, 246, 222, 0.34),
+    0 12px 20px rgba(17, 12, 28, 0.32);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.78;
+}
+
+.built-drag-afterimage .tile-letter {
+  position: relative;
+  z-index: 3;
+  font-size: 1.28rem;
+}
+
+.built-drag-afterimage .tile-score {
+  position: absolute;
+  z-index: 5;
+  top: 5px;
+  right: 6px;
+  font-size: 0.48rem;
+}
+
+.built-drag-afterimage .tile-modifier {
+  position: absolute;
+  z-index: 6;
+  top: 4px;
+  left: 4px;
+  min-width: 18px;
+  padding: 2px 4px;
+  font-size: 0.34rem;
+  border-radius: 999px;
 }
 
 .built-tile-shimmer,

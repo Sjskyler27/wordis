@@ -152,6 +152,7 @@
           @submit="handleSubmit"
           @remove-specific="removeSpecificTile"
           @tile-click="handleBuiltTileClick"
+          @reorder="handleBuiltTileReorder"
         />
 
       </section>
@@ -667,6 +668,7 @@ const {
   handleTileClick,
   removeLastLetter,
   removeSpecificTile,
+  reorderSelectedTile,
   replaceSelectedTileId,
   clearWord,
   clearSelectionForSide,
@@ -2040,6 +2042,22 @@ const getGlassTilesCrackedByRemoval = (removedTileId) => {
     .map((tile) => tile.id);
 };
 
+const getGlassTilesCrackedByReorder = (fromIndex, toIndex) => {
+  const selectedTiles = selectedTilesForCurrentSide.value;
+  const boundedFromIndex = Math.max(0, Math.min(Number(fromIndex), selectedTiles.length - 1));
+  const boundedToIndex = Math.max(0, Math.min(Number(toIndex), selectedTiles.length - 1));
+  if (!selectedTiles.length || boundedFromIndex === boundedToIndex) {
+    return [];
+  }
+
+  const startIndex = Math.min(boundedFromIndex, boundedToIndex);
+  const endIndex = Math.max(boundedFromIndex, boundedToIndex);
+  return selectedTiles
+    .slice(startIndex, endIndex + 1)
+    .filter((tile) => tile.status === 'glassTile' && !tile.glassCracked)
+    .map((tile) => tile.id);
+};
+
 const handleClearRack = () => {
   if (effectiveGameEnded.value) {
     localMessage.value = 'The match is already over.';
@@ -2548,6 +2566,17 @@ const handleBuiltTileClick = (tile) => {
   if (removeSpecificTile(tile.id)) {
     crackGlassTiles(mySide.value, glassTileIds);
     playUiSound(tilePutBackSound);
+  }
+};
+
+const handleBuiltTileReorder = ({ fromIndex, toIndex } = {}) => {
+  if (effectiveGameEnded.value || activeBoonCard.value) {
+    return;
+  }
+
+  const glassTileIds = getGlassTilesCrackedByReorder(fromIndex, toIndex);
+  if (reorderSelectedTile(mySide.value, fromIndex, toIndex)) {
+    crackGlassTiles(mySide.value, glassTileIds);
   }
 };
 
