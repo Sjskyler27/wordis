@@ -1937,7 +1937,7 @@ const selectBoonCard = (card) => {
     return;
   }
 
-  if (card.effectType === 'clear_negative_modifiers') {
+  if (['clear_negative_modifiers', 'gain_rack_clear'].includes(card.effectType)) {
     if (props.isMultiplayer) {
       useMultiplayerBoon({ cardId: card.id, tileId: null });
       localMessage.value = `Played ${card.label}.`;
@@ -1947,7 +1947,7 @@ const selectBoonCard = (card) => {
 
     const result = useSinglePlayerBoon(mySide.value, card.id, null);
     if (result?.success) {
-      localMessage.value = `Played ${card.label}.`;
+      localMessage.value = result.message || `Played ${card.label}.`;
       resetActionMode();
     }
     return;

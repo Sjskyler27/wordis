@@ -399,6 +399,12 @@ const useBoon = (roomCode, clientId, cardId, tileId) => {
     return { success: true, state };
   }
 
+  if (card.effectType === 'gain_rack_clear') {
+    state.cards[side].boons = keepTestingHand(state.cards[side].boons, cardId);
+    state.rackClears[side] = (state.rackClears[side] || 0) + (card.amount || 1);
+    return { success: true, state };
+  }
+
   const tile = state.tiles[side].find((entry) => entry.id === tileId);
   if (!tile) {
     return { success: false, error: 'That tile cannot take a boon' };

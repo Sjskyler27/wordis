@@ -41,6 +41,21 @@ const CARD_DEFINITIONS = {
       cardBadgeBackground: 'rgba(15, 78, 72, 0.42)'
     }
   },
+  boon_extra_clear: {
+    kind: 'boon',
+    label: 'Extra Clear',
+    description: 'Gain one extra rack clear.',
+    rarityWeight: 0.42,
+    effectType: 'gain_rack_clear',
+    amount: 1,
+    ui: {
+      cardGlow: 'rgba(255, 219, 137, 0.24)',
+      cardEdge: 'rgba(255, 230, 166, 0.34)',
+      cardPattern: 'rgba(255, 242, 209, 0.12)',
+      cardBackground: 'linear-gradient(180deg, rgba(218, 151, 62, 0.98), rgba(132, 78, 28, 0.96))',
+      cardBadgeBackground: 'rgba(88, 48, 18, 0.42)'
+    }
+  },
   boon_firsttile: {
     kind: 'boon',
     label: 'First Tile',
@@ -267,6 +282,7 @@ const BOON_CARD_KEYS = [
   'boon_delete_tile',
   'boon_isolate_tile',
   'boon_clear_negative',
+  'boon_extra_clear',
   'boon_firsttile',
   'boon_wild',
   'boon_newLetter',

@@ -689,6 +689,25 @@ export const useSinglePlayerGame = ({
       return { success: true };
     }
 
+    if (card.effectType === 'gain_rack_clear') {
+      playerCards.value = {
+        ...playerCards.value,
+        [side]: {
+          ...playerCards.value[side],
+          boons: keepTestingHand(hand, cardId)
+        }
+      };
+      rackClears.value = {
+        ...rackClears.value,
+        [side]: (rackClears.value[side] || 0) + (card.amount || 1)
+      };
+
+      return {
+        success: true,
+        message: `Gained ${card.amount || 1} rack clear.`
+      };
+    }
+
     const tile = playerTiles.value[side]?.find((entry) => entry.id === tileId);
     if (!tile) {
       localMessage.value = 'That tile cannot take a boon.';
