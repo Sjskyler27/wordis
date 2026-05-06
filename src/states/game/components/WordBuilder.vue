@@ -843,6 +843,9 @@ button:focus{
 }
 
 .overtime-banner {
+  position: absolute;
+  right: 0px;
+  bottom: 25px;
   flex: 0 0 auto;
   padding: 10px 14px;
   border-radius: 14px;
