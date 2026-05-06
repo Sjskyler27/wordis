@@ -1,7 +1,11 @@
 # Changelog
 
 ## 0.0.51 - 2026-05-06
-- 
+- upgrade drawer and card style change
+- over time bannner up a litte
+- adjust word builder difference calculations and display for banners over covered rewards
+- drag from word builder to the rack 
+- major changes to how often word differenc and word  bonus are calculated prior they were every half second. may require further testing and investigations 
 
 ## 0.0.50 - 2026-05-06
 

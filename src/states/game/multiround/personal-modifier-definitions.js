@@ -169,7 +169,7 @@ export const PERSONAL_MODIFIER_DEFINITIONS = {
     tier: PERSONAL_MODIFIER_TIERS.COMMON,
     tags: ['score', 'word-length'],
     maxStacks: 3,
-    start_with: 2,
+    start_with: 0,
     effects: {
       lengthScoreBonus: {
         5: 3
@@ -254,7 +254,7 @@ export const PERSONAL_MODIFIER_DEFINITIONS = {
     tier: PERSONAL_MODIFIER_TIERS.RARE,
     tags: ['score', 'word-length'],
     maxStacks: 3,
-    start_with: 1,
+    start_with: 0,
     effects: {
       lengthScoreBonus: {
         4: 5
