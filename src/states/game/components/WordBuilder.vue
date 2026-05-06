@@ -989,35 +989,34 @@ button:focus{
 .covered-reward-stack {
   position: absolute;
   left: 50%;
-  bottom: calc(100% - 11px);
-  z-index: 5;
+  bottom: calc(100%);
+  z-index: 1;
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   justify-content: center;
-  gap: 4px;
-  width: max-content;
-  max-width: 112px;
+  width: 80%;
   transform: translateX(-50%);
   pointer-events: none;
+  background: linear-gradient(
+      90deg,
+      rgba(195, 130, 39, 0.99) 0%,
+      rgba(204, 153, 51, 0.99) 100%
+    );
+  border-radius: 8px 8px 0px 0px;
 }
 
 .covered-reward-chip {
   min-height: 20px;
-  display: inline-flex;
+  display: flex;
   align-items: center;
+  flex-wrap: nowrap;
   justify-content: center;
-  padding: 3px 6px;
-  border-radius: 8px;
-  background: linear-gradient(180deg, rgba(255, 139, 28, 0.96), rgba(209, 84, 19, 0.96));
-  border: 1px solid rgba(255, 230, 172, 0.72);
+  padding: 3px 2px;
+  text-wrap: nowrap;
   color: #fff8e6;
-  font-size: 0.58rem;
+  font-size: 0.76rem;
   font-weight: 900;
   line-height: 1;
-  text-shadow: 0 1px 0 rgba(72, 26, 8, 0.42);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 245, 212, 0.28),
-    0 4px 9px rgba(32, 8, 18, 0.26);
 }
 
 .word-slot-placeholder {
