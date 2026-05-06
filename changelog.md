@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.0.50 - 2026-05-06
+
+Start: 2026-05-06 12:31:00 EDT
+Stop: 2026-05-06 12:46:39 EDT
+
+- Added an Extra Clear boon that grants one additional rack clear immediately.
+- Added covered reward indicators above built tiles on milestone slots, including score difference, card rewards, and time/score modifier rewards.
+- Added an epic one-stack reward-choice modifier for one extra upgrade option.
+- Made personal modifier rarity easier to scan in the upgrades drawer with rarity badges.
+- Stopped multi-round mode from offering an upgrade reward after completing the final round.
+- Added a Main Menu action to the history/results overlay.
+
 ## 0.0.49 - 2026-05-05
 - style changes 
 - reward amount modifiers 
