@@ -228,6 +228,23 @@ const createModifierDefinitions = ({ bloodTilePositionValues }) => ({
         badgeColor: '#8a5a18'
       }
     },
+    waterTile: {
+      badge: 'H2O',
+      description: 'Reusable tile. Repeated uses split the same water between each cup.',
+      effects: {
+        reusableInBuilder: true,
+        waterStartsAt: 0.75
+      },
+      canApply: ({ letter }) => (letter || '').length === 1,
+      rarityWeight: 0.18,
+      ui: {
+        tileBackground: 'linear-gradient(180deg, rgba(246, 255, 255, 0.72) 0%, rgba(196, 239, 255, 0.58) 58%, rgba(102, 168, 214, 0.54) 100%)',
+        tileShadow: 'inset 0 -4px 0 rgba(38, 108, 150, 0.24), 0 12px 22px rgba(34, 96, 136, 0.18), 0 0 0 1px rgba(218, 252, 255, 0.62)',
+        textColor: '#11324d',
+        badgeBackground: 'rgba(234, 253, 255, 0.96)',
+        badgeColor: '#24779e'
+      }
+    },
     bankTile: {
       badge: 'BNK',
       description: 'Gains +1 bonus score each turn it stays unused.',

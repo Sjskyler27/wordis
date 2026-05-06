@@ -58,6 +58,7 @@
               'tile-cornucopia': tile.status === 'cornucopiaTile',
               'tile-void': tile.status === 'voidTile',
               'tile-hourglass': tile.status === 'hourglassTile',
+              'tile-water': tile.status === 'waterTile',
               'tile-barricade': tile.status === 'barricadeTile',
               'tile-bag': tile.status === 'bagTile',
               'tile-bagged': isBaggedTile(tile),
@@ -65,7 +66,7 @@
               'tile-leecher-drained': tile.leecherDrained,
               'tile-must-alert': mustAlertIds.has(tile.id),
               'tile-banned-letter': isBannedLetter(tile),
-              'tile-in-use': selectedTileIds.has(tile.id),
+              'tile-in-use': selectedTileIds.has(tile.id) && tile.status !== 'waterTile',
               'tile-controller-focus': controllerFocusedTileId === tile.id,
               [getShimmerCycleClass(tile)]: !!getShimmerCycleClass(tile),
               [getTileAnimationClass(tile)]: !!getTileAnimationClass(tile)
@@ -79,7 +80,8 @@
           >
             <span v-if="tile.status === 'lightningTile'" class="tile-lightning-spark spark-left" aria-hidden="true"></span>
             <span v-if="tile.status === 'lightningTile'" class="tile-lightning-spark spark-right" aria-hidden="true"></span>
-            <span v-if="selectedTileIds.has(tile.id)" class="tile-in-use-overlay" aria-hidden="true"></span>
+            <span v-if="tile.status === 'waterTile'" class="tile-water-fill" aria-hidden="true"></span>
+            <span v-if="selectedTileIds.has(tile.id) && tile.status !== 'waterTile'" class="tile-in-use-overlay" aria-hidden="true"></span>
             <span v-if="isBaggedTile(tile) && !selectedTileIds.has(tile.id)" class="tile-state-overlay tile-state-bagged" aria-hidden="true"></span>
             <span v-if="tile.leecherDrained" class="tile-state-drained" aria-hidden="true"></span>
             <span v-if="isBannedLetter(tile)" class="tile-state-slash" aria-hidden="true"></span>
@@ -506,6 +508,7 @@ const getTileStyle = (tile) => {
     '--tile-shimmer-cycle': `${tile.shimmerIntervalMs || 8000}ms`,
     '--tile-lightning-cycle': `${tile.lightningIntervalMs || 3000}ms`,
     '--cornucopia-fill': '0%',
+    '--water-fill': `${Math.max(0, Math.min(100, Number(tile.waterAmount ?? 0.75) * 100))}%`,
     '--tile-enter-delay': `${tileEnterDelays.value[tile.id] || 0}ms`,
     '--tile-animation-duration': `${getTileAnimationDuration(tile)}ms`
   };
@@ -972,6 +975,7 @@ onBeforeUnmount(() => {
 .tile-cornucopia,
 .tile-void,
 .tile-hourglass,
+.tile-water,
 .tile-barricade,
 .tile-bag,
 .tile-leecher {
@@ -1282,6 +1286,51 @@ onBeforeUnmount(() => {
   clip-path: polygon(14% 0, 86% 0, 62% 50%, 86% 100%, 14% 100%, 38% 50%);
 }
 
+.tile-water {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.82), rgba(230, 251, 255, 0.52)) padding-box,
+    linear-gradient(135deg, rgba(242, 255, 255, 0.9), rgba(115, 208, 247, 0.72), rgba(39, 116, 174, 0.62)) border-box;
+  border: 4px solid transparent;
+  box-shadow:
+    inset 0 2px 0 rgba(255, 255, 255, 0.72),
+    inset 0 -4px 0 rgba(38, 108, 150, 0.24),
+    0 12px 22px rgba(34, 96, 136, 0.18),
+    0 0 0 1px rgba(218, 252, 255, 0.62);
+}
+
+.tile-water::before {
+  content: '';
+  position: absolute;
+  inset: 4px;
+  z-index: 0;
+  border-radius: 12px;
+  pointer-events: none;
+  background:
+    linear-gradient(90deg, rgba(255, 255, 255, 0.74) 0 10%, transparent 12% 78%, rgba(255, 255, 255, 0.28) 80% 100%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.58), rgba(207, 244, 255, 0.14));
+  box-shadow:
+    inset 0 0 0 3px rgba(245, 255, 255, 0.78),
+    inset 0 -7px 12px rgba(68, 150, 196, 0.14);
+}
+
+.tile-water-fill {
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  bottom: 8px;
+  height: var(--water-fill, 75%);
+  z-index: 1;
+  border-radius: 0 0 10px 10px;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 28% 24%, rgba(255, 255, 255, 0.72) 0 8%, transparent 9%),
+    linear-gradient(180deg, rgba(116, 226, 255, 0.72), rgba(33, 130, 210, 0.78));
+  box-shadow:
+    inset 0 3px 0 rgba(255, 255, 255, 0.38),
+    0 0 12px rgba(79, 196, 255, 0.34);
+  transition: height 180ms ease;
+}
+
 
 .tile-voidold::before {
   inset: 9%;
@@ -1401,6 +1450,7 @@ onBeforeUnmount(() => {
 .tile-cornucopia .tile-letter,
 .tile-void .tile-letter,
 .tile-hourglass .tile-letter,
+.tile-water .tile-letter,
 .tile-barricade .tile-letter,
 .tile-bag .tile-letter,
 .tile-leecher .tile-letter {
@@ -1430,6 +1480,7 @@ onBeforeUnmount(() => {
 .tile-cornucopia .tile-score,
 .tile-void .tile-score,
 .tile-hourglass .tile-score,
+.tile-water .tile-score,
 .tile-barricade .tile-score,
 .tile-bag .tile-score,
 .tile-leecher .tile-score {
@@ -1444,6 +1495,7 @@ onBeforeUnmount(() => {
 .tile-cornucopia .tile-modifier,
 .tile-void .tile-modifier,
 .tile-hourglass .tile-modifier,
+.tile-water .tile-modifier,
 .tile-barricade .tile-modifier,
 .tile-bag .tile-modifier,
 .tile-leecher .tile-modifier {

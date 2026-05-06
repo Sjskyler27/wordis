@@ -668,6 +668,7 @@ const {
   handleTileClick,
   removeLastLetter,
   removeSpecificTile,
+  removeTileAtIndex,
   reorderSelectedTile,
   replaceSelectedTileId,
   clearWord,
@@ -2042,6 +2043,19 @@ const getGlassTilesCrackedByRemoval = (removedTileId) => {
     .map((tile) => tile.id);
 };
 
+const getGlassTilesCrackedByRemovalIndex = (removedIndex) => {
+  const selectedTiles = selectedTilesForCurrentSide.value;
+  const boundedIndex = Math.max(0, Math.min(Number(removedIndex), selectedTiles.length - 1));
+  if (!selectedTiles.length || !Number.isFinite(boundedIndex)) {
+    return [];
+  }
+
+  return selectedTiles
+    .slice(boundedIndex)
+    .filter((tile) => tile.status === 'glassTile' && !tile.glassCracked)
+    .map((tile) => tile.id);
+};
+
 const getGlassTilesCrackedByReorder = (fromIndex, toIndex) => {
   const selectedTiles = selectedTilesForCurrentSide.value;
   const boundedFromIndex = Math.max(0, Math.min(Number(fromIndex), selectedTiles.length - 1));
@@ -2532,7 +2546,9 @@ const handleTileClickWithCards = (payload, side) => {
   }
 };
 
-const handleBuiltTileClick = (tile) => {
+const handleBuiltTileClick = (payload) => {
+  const tile = payload?.tile || payload;
+  const tileIndex = payload?.index;
   if (effectiveGameEnded.value) {
     return;
   }
@@ -2562,8 +2578,12 @@ const handleBuiltTileClick = (tile) => {
     return;
   }
 
-  const glassTileIds = getGlassTilesCrackedByRemoval(tile.id);
-  if (removeSpecificTile(tile.id)) {
+  const useIndexRemoval = Number.isFinite(Number(tileIndex));
+  const glassTileIds = useIndexRemoval
+    ? getGlassTilesCrackedByRemovalIndex(tileIndex)
+    : getGlassTilesCrackedByRemoval(tile.id);
+  const removed = useIndexRemoval ? removeTileAtIndex(tileIndex) : removeSpecificTile(tile.id);
+  if (removed) {
     crackGlassTiles(mySide.value, glassTileIds);
     playUiSound(tilePutBackSound);
   }

@@ -20,7 +20,7 @@ const {
 
 const GOOD_MODIFIERS = ['gold', 'firsttile', 'royalPear', 'twinTile', 'glassTile', 'cornucopiaTile', 'bankTile', 'gainboon', 'gainattack'];
 const BAD_MODIFIERS = ['zeroTile', 'mustuse', 'locked3', 'burningTile', 'rustingTile', 'lightningTile', 'barricadeTile', 'bagTile'];
-const NEUTRAL_MODIFIERS = ['yinYang', 'ghostTile','bloodTile', 'wild', 'shimmer', 'voidTile', 'hourglassTile', 'leecherTile'];
+const NEUTRAL_MODIFIERS = ['yinYang', 'ghostTile','bloodTile', 'wild', 'shimmer', 'voidTile', 'hourglassTile', 'waterTile', 'leecherTile'];
 
 const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {}, devLogging = false, testing = false }) => {
   const isDevLoggingEnabled = () => typeof devLogging === 'function' ? Boolean(devLogging()) : Boolean(devLogging);
@@ -839,6 +839,25 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
     return bonus && hasVoidTileInWord(options.wordTiles || []) ? bonus : 0;
   };
   const isVoidZeroedTile = (tile, wordTiles = []) => tile?.status !== 'voidTile' && hasVoidTileInWord(wordTiles);
+  const getWaterAmount = (tile = {}) => {
+    if (tile?.status !== 'waterTile') {
+      return 1;
+    }
+
+    const effects = getModifierDefinition('waterTile').effects || {};
+    return Math.max(0, Number(tile.waterAmount ?? effects.waterStartsAt ?? 0.75));
+  };
+  const getWaterUseAmount = (tile, options = {}) => {
+    if (tile?.status !== 'waterTile') {
+      return 1;
+    }
+
+    const useCount = Array.isArray(options.wordTiles)
+      ? options.wordTiles.filter((wordTile) => wordTile?.id === tile.id).length
+      : 1;
+
+    return getWaterAmount(tile) / Math.max(1, useCount);
+  };
   const isVowelLetter = (letter = '') => ['A', 'E', 'I', 'O', 'U'].includes((letter || '').toUpperCase());
   const getTimedWordTierIndex = (elapsedSeconds = 0, config = {}) => {
     const graceSeconds = Math.max(0, Number(config.graceSeconds) || 0);
@@ -892,6 +911,10 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
     if (isVowelLetter(tile?.baseLetter || tile?.letter)) {
       score += personalModifierEffects.vowelScoreBonus || 0;
       score *= personalModifierEffects.vowelScoreMultiplier || 1;
+    }
+
+    if (tile?.status === 'waterTile') {
+      score = Math.ceil(score * getWaterUseAmount(tile, options));
     }
 
     return score;
@@ -1019,6 +1042,30 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
         leecherAbsorbedScore: leecherAbsorbedScore || undefined
       };
     });
+  };
+  const getWaterUseCounts = (tiles = [], usedTileIds = []) => {
+    const tilesById = new Map(tiles.map((tile) => [tile?.id, tile]));
+    return usedTileIds.reduce((counts, tileId) => {
+      const tile = tilesById.get(tileId);
+      if (tile?.status !== 'waterTile') {
+        return counts;
+      }
+
+      counts.set(tileId, (counts.get(tileId) || 0) + 1);
+      return counts;
+    }, new Map());
+  };
+  const applyWaterTileUse = (tile = {}, useCount = 0) => {
+    if (tile?.status !== 'waterTile' || !useCount) {
+      return tile;
+    }
+
+    const nextAmount = getWaterAmount(tile) / Math.max(1, useCount);
+    return {
+      ...tile,
+      waterAmount: Math.max(0, nextAmount),
+      waterUseCount: (tile.waterUseCount || 0) + useCount
+    };
   };
   const tickIdleTile = (tile, options = {}) => {
     const definition = getModifierDefinition(tile?.status);
@@ -1277,6 +1324,7 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
 
       return total + tileScore(tile, {
         ...options,
+        positionIndex: tile?.status === 'waterTile' ? index : options.positionIndex,
         wordTiles: tiles
       });
     }, 0);
@@ -1610,6 +1658,20 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
       state.leechesAdjacentWhileSelected = effects.leechesAdjacentWhileSelected ?? true;
     } else if (status !== tile.status) {
       state.leechesAdjacentWhileSelected = undefined;
+    }
+
+    if (effects.reusableInBuilder) {
+      state.reusableInBuilder = true;
+    } else if (status !== tile.status) {
+      state.reusableInBuilder = undefined;
+    }
+
+    if (effects.waterStartsAt != null) {
+      state.waterAmount = Number(tile.waterAmount ?? effects.waterStartsAt);
+      state.waterUseCount = tile.waterUseCount || 0;
+    } else if (status !== tile.status) {
+      state.waterAmount = undefined;
+      state.waterUseCount = undefined;
     }
 
     if (effects.cracksInBuilder) {
@@ -1984,7 +2046,8 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
     };
 
     const refillTiles = (tiles, usedTileIds, side = null, scores = {}, options = {}) => {
-      const usedIds = new Set(usedTileIds);
+      const waterUseCounts = getWaterUseCounts(tiles, usedTileIds);
+      const usedIds = new Set(usedTileIds.filter((tileId) => !waterUseCounts.has(tileId)));
       // remove existing ghost tiles 
       const roundModifierEffects = options.roundModifierEffects || {};
       const fleetingAllTiles = Boolean(options.roundModifierEffects?.fleetingAllTiles);
@@ -2000,7 +2063,8 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
         }
 
         // Surviving tiles can fire their modifier-specific new turn animation hooks here.
-        return tickLockedTile(tickIdleTile(tile, {
+        const usedWaterTile = applyWaterTileUse(tile, waterUseCounts.get(tile.id) || 0);
+        return tickLockedTile(tickIdleTile(usedWaterTile, {
           personalModifierEffects: options.personalModifierEffects || {},
           roundModifierEffects
         }), { trigger: 'onNewTurn' });

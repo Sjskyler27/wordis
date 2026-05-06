@@ -118,7 +118,7 @@ export const useWordBuilder = ({ mySide, myTiles, playerScores, scoreOptions }) 
       return null;
     }
 
-    if (selectedTileSlots.value[side].includes(tile.id)) {
+    if (selectedTileSlots.value[side].includes(tile.id) && !tile.reusableInBuilder) {
       removeSpecificTile(tile.id);
       return 'removed';
     }
@@ -176,6 +176,31 @@ export const useWordBuilder = ({ mySide, myTiles, playerScores, scoreOptions }) 
     if (selectedTileAnimationSync.value[side]?.[tileId]) {
       const nextAnimationSync = { ...selectedTileAnimationSync.value[side] };
       delete nextAnimationSync[tileId];
+      selectedTileAnimationSync.value = {
+        ...selectedTileAnimationSync.value,
+        [side]: nextAnimationSync
+      };
+    }
+    return true;
+  };
+
+  const removeTileAtIndex = (index) => {
+    const side = mySide.value;
+    const nextSlots = [...selectedTileSlots.value[side]];
+    const boundedIndex = Math.max(0, Math.min(Number(index), nextSlots.length - 1));
+
+    if (!nextSlots.length || !Number.isFinite(boundedIndex)) {
+      return false;
+    }
+
+    const [removedTileId] = nextSlots.splice(boundedIndex, 1);
+    selectedTileSlots.value = {
+      ...selectedTileSlots.value,
+      [side]: nextSlots
+    };
+    if (removedTileId && !nextSlots.includes(removedTileId) && selectedTileAnimationSync.value[side]?.[removedTileId]) {
+      const nextAnimationSync = { ...selectedTileAnimationSync.value[side] };
+      delete nextAnimationSync[removedTileId];
       selectedTileAnimationSync.value = {
         ...selectedTileAnimationSync.value,
         [side]: nextAnimationSync
@@ -283,6 +308,7 @@ export const useWordBuilder = ({ mySide, myTiles, playerScores, scoreOptions }) 
     handleTileClick,
     removeLastLetter,
     removeSpecificTile,
+    removeTileAtIndex,
     reorderSelectedTile,
     replaceSelectedTileId,
     clearWord,

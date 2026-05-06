@@ -33,6 +33,7 @@
                 'built-tile-cornucopia': tile.status === 'cornucopiaTile',
                 'built-tile-void': tile.status === 'voidTile',
                 'built-tile-hourglass': tile.status === 'hourglassTile',
+                'built-tile-water': tile.status === 'waterTile',
                 'built-tile-barricade': tile.status === 'barricadeTile',
                 'built-tile-bag': tile.status === 'bagTile',
                 'built-tile-bagged': isBaggedTile(tile),
@@ -45,6 +46,7 @@
             >
               <span v-if="tile.status === 'lightningTile'" class="built-tile-lightning-spark spark-left" aria-hidden="true"></span>
               <span v-if="tile.status === 'lightningTile'" class="built-tile-lightning-spark spark-right" aria-hidden="true"></span>
+              <span v-if="tile.status === 'waterTile'" class="built-water-fill" aria-hidden="true"></span>
               <span v-if="isBaggedTile(tile)" class="built-state-overlay built-state-bagged" aria-hidden="true"></span>
               <span v-if="tile.leecherDrained" class="built-state-drained" aria-hidden="true"></span>
               <span v-if="isBannedLetter(tile)" class="built-state-slash" aria-hidden="true"></span>
@@ -102,6 +104,7 @@
                 'built-tile-cornucopia': slot.tile.status === 'cornucopiaTile',
                 'built-tile-void': slot.tile.status === 'voidTile',
                 'built-tile-hourglass': slot.tile.status === 'hourglassTile',
+                'built-tile-water': slot.tile.status === 'waterTile',
                 'built-tile-barricade': slot.tile.status === 'barricadeTile',
                 'built-tile-bag': slot.tile.status === 'bagTile',
                 'built-tile-bagged': isBaggedTile(slot.tile),
@@ -115,13 +118,14 @@
               :style="getTileStyle(slot.tile, slot.index)"
               :data-controller-built="slot.index"
               @pointerdown="handleBuiltPointerDown(slot, $event)"
-              @click="handleBuiltTileClick(slot.tile, $event)"
+              @click="handleBuiltTileClick(slot, $event)"
               @mouseenter="showTooltipLater(slot.tile, $event)"
               @mousemove="updateTooltipPosition($event)"
               @mouseleave="hideTooltip"
             >
               <span v-if="slot.tile.status === 'lightningTile'" class="built-tile-lightning-spark spark-left" aria-hidden="true"></span>
               <span v-if="slot.tile.status === 'lightningTile'" class="built-tile-lightning-spark spark-right" aria-hidden="true"></span>
+              <span v-if="slot.tile.status === 'waterTile'" class="built-water-fill" aria-hidden="true"></span>
               <span v-if="isBaggedTile(slot.tile)" class="built-state-overlay built-state-bagged" aria-hidden="true"></span>
               <span v-if="slot.tile.leecherDrained" class="built-state-drained" aria-hidden="true"></span>
               <span v-if="isBannedLetter(slot.tile)" class="built-state-slash" aria-hidden="true"></span>
@@ -361,6 +365,15 @@ const isDisabledGold = (tile) => {
   return disabledGoldIds.value.includes(tile.id);
 };
 
+const getWaterUseAmount = (tile) => {
+  if (tile?.status !== 'waterTile') {
+    return 1;
+  }
+
+  const useCount = props.selectedTiles.filter((selectedTile) => selectedTile?.id === tile.id).length;
+  return Math.max(0, Number(tile.waterAmount ?? 0.75) / Math.max(1, useCount));
+};
+
 const draggedTileId = computed(() => dragState.value?.tileId || '');
 const dragPreviewTile = computed(() => {
   if (!dragState.value?.isDragging) {
@@ -477,14 +490,17 @@ const handleBuiltPointerDown = (slot, event) => {
   window.addEventListener('pointercancel', cancelBuiltTileDrag);
 };
 
-const handleBuiltTileClick = (tile, event) => {
+const handleBuiltTileClick = (slot, event) => {
   if (suppressNextClick.value) {
     event.preventDefault();
     suppressNextClick.value = false;
     return;
   }
 
-  emit('tile-click', tile);
+  emit('tile-click', {
+    tile: slot.tile,
+    index: slot.index
+  });
 };
 
 const isBaggedTile = (tile) => {
@@ -656,6 +672,7 @@ const getTileStyle = (tile, index = 0) => {
     '--built-tile-lightning-cycle': `${tile.lightningIntervalMs || 3000}ms`,
     '--built-tile-lightning-delay': getLightningAnimationDelay(tile),
     '--cornucopia-fill': tile.status === 'cornucopiaTile' ? `${Math.min(100, Math.max(0, index) * 12.5)}%` : '0%',
+    '--water-fill': `${Math.max(0, Math.min(100, getWaterUseAmount(tile, index) * 100))}%`,
     '--score-pop-delay': `${index * 110}ms`
   };
 };
@@ -1138,6 +1155,7 @@ button:focus{
 .built-tile-cornucopia,
 .built-tile-void,
 .built-tile-hourglass,
+.built-tile-water,
 .built-tile-barricade,
 .built-tile-bag,
 .built-tile-leecher {
@@ -1444,6 +1462,51 @@ button:focus{
   clip-path: polygon(14% 0, 86% 0, 62% 50%, 86% 100%, 14% 100%, 38% 50%);
 }
 
+.built-tile-water {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.82), rgba(230, 251, 255, 0.52)) padding-box,
+    linear-gradient(135deg, rgba(242, 255, 255, 0.9), rgba(115, 208, 247, 0.72), rgba(39, 116, 174, 0.62)) border-box;
+  border: 4px solid transparent;
+  box-shadow:
+    inset 0 2px 0 rgba(255, 255, 255, 0.72),
+    inset 0 -3px 0 rgba(38, 108, 150, 0.24),
+    0 10px 16px rgba(34, 96, 136, 0.18),
+    0 0 0 1px rgba(218, 252, 255, 0.62);
+}
+
+.built-tile-water::before {
+  content: '';
+  position: absolute;
+  inset: 4px;
+  z-index: 0;
+  border-radius: 10px;
+  pointer-events: none;
+  background:
+    linear-gradient(90deg, rgba(255, 255, 255, 0.74) 0 10%, transparent 12% 78%, rgba(255, 255, 255, 0.28) 80% 100%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.58), rgba(207, 244, 255, 0.14));
+  box-shadow:
+    inset 0 0 0 3px rgba(245, 255, 255, 0.78),
+    inset 0 -7px 12px rgba(68, 150, 196, 0.14);
+}
+
+.built-water-fill {
+  position: absolute;
+  left: 7px;
+  right: 7px;
+  bottom: 7px;
+  height: var(--water-fill, 75%);
+  z-index: 1;
+  border-radius: 0 0 9px 9px;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 28% 24%, rgba(255, 255, 255, 0.72) 0 8%, transparent 9%),
+    linear-gradient(180deg, rgba(116, 226, 255, 0.72), rgba(33, 130, 210, 0.78));
+  box-shadow:
+    inset 0 3px 0 rgba(255, 255, 255, 0.38),
+    0 0 12px rgba(79, 196, 255, 0.34);
+  transition: height 180ms ease;
+}
+
 
 .built-tile-bag {
   background:
@@ -1554,6 +1617,7 @@ button:focus{
 .built-tile-cornucopia .tile-letter,
 .built-tile-void .tile-letter,
 .built-tile-hourglass .tile-letter,
+.built-tile-water .tile-letter,
 .built-tile-barricade .tile-letter,
 .built-tile-bag .tile-letter,
 .built-tile-leecher .tile-letter {
@@ -1583,6 +1647,7 @@ button:focus{
 .built-tile-cornucopia .tile-score,
 .built-tile-void .tile-score,
 .built-tile-hourglass .tile-score,
+.built-tile-water .tile-score,
 .built-tile-barricade .tile-score,
 .built-tile-bag .tile-score,
 .built-tile-leecher .tile-score {
@@ -1597,6 +1662,7 @@ button:focus{
 .built-tile-cornucopia .tile-modifier,
 .built-tile-void .tile-modifier,
 .built-tile-hourglass .tile-modifier,
+.built-tile-water .tile-modifier,
 .built-tile-barricade .tile-modifier,
 .built-tile-bag .tile-modifier,
 .built-tile-leecher .tile-modifier {
