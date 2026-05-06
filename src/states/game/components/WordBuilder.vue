@@ -45,6 +45,9 @@
             >
               <span v-if="tile.status === 'lightningTile'" class="built-tile-lightning-spark spark-left" aria-hidden="true"></span>
               <span v-if="tile.status === 'lightningTile'" class="built-tile-lightning-spark spark-right" aria-hidden="true"></span>
+              <span v-if="isBaggedTile(tile)" class="built-state-overlay built-state-bagged" aria-hidden="true"></span>
+              <span v-if="tile.leecherDrained" class="built-state-drained" aria-hidden="true"></span>
+              <span v-if="isBannedLetter(tile)" class="built-state-slash" aria-hidden="true"></span>
               <span v-if="!getTileUi(tile).hideBadge && tile.status !== 'normal'" class="tile-modifier" :style="getBadgeStyle(tile)">
                 {{ getTileBadge(tile) }}
               </span>
@@ -119,6 +122,9 @@
             >
               <span v-if="slot.tile.status === 'lightningTile'" class="built-tile-lightning-spark spark-left" aria-hidden="true"></span>
               <span v-if="slot.tile.status === 'lightningTile'" class="built-tile-lightning-spark spark-right" aria-hidden="true"></span>
+              <span v-if="isBaggedTile(slot.tile)" class="built-state-overlay built-state-bagged" aria-hidden="true"></span>
+              <span v-if="slot.tile.leecherDrained" class="built-state-drained" aria-hidden="true"></span>
+              <span v-if="isBannedLetter(slot.tile)" class="built-state-slash" aria-hidden="true"></span>
               <span v-if="!getTileUi(slot.tile).hideBadge && slot.tile.status !== 'normal'" class="tile-modifier" :style="getBadgeStyle(slot.tile)">
                 {{ getTileBadge(slot.tile) }}
               </span>
@@ -1466,13 +1472,15 @@ button:focus{
     linear-gradient(180deg, rgba(234, 188, 121, 0.2), rgba(90, 51, 22, 0.22));
 }
 
-.built-tile-bagged:not(.built-tile-bag)::after {
-  content: '';
+.built-state-overlay {
   position: absolute;
   inset: 0;
   z-index: 7;
   border-radius: 10px;
   pointer-events: none;
+}
+
+.built-state-bagged {
   background:
     repeating-linear-gradient(180deg, rgba(68, 39, 16, 0.32) 0 4px, transparent 4px 13px),
     linear-gradient(90deg, transparent 0 11%, rgba(64, 35, 13, 0.38) 11% 18%, transparent 18% 82%, rgba(64, 35, 13, 0.38) 82% 89%, transparent 89% 100%),
@@ -1538,21 +1546,6 @@ button:focus{
     inset 0 0 0 3px rgba(44, 92, 50, 0.38),
     var(--built-tile-shadow, inset 0 -3px 0 rgba(0, 0, 0, 0.16));
 }
-.built-tile-leecher-drained:not(.tile-leecher)::before{
-  content: '';
-  position: absolute;
-  left: 70%;
-  right: 05%;
-  top: 18%;
-  height: 5px;
-  border-radius: 999px;
-  background: rgba(213, 31, 55, 0.94);
-  box-shadow: 0 0 0 2px rgba(255, 231, 220, 0.62), 0 6px 12px rgba(88, 5, 18, 0.26);
-  pointer-events: none;
-  transform: translateY(-85%) rotate(-38deg);
-  z-index: 4;
-}
-
 .built-tile-shimmer .tile-letter,
 .built-tile-rusting .tile-letter,
 .built-tile-lightning .tile-letter,
@@ -1779,19 +1772,31 @@ button:focus{
   }
 }
 
-.built-tile-banned-letter::before {
-  content: '';
+.built-state-slash,
+.built-state-drained {
   position: absolute;
-  left: 13%;
-  right: 13%;
-  top: 50%;
-  height: 8px;
   border-radius: 999px;
   background: rgba(213, 31, 55, 0.94);
   box-shadow: 0 0 0 2px rgba(255, 231, 220, 0.62), 0 6px 12px rgba(88, 5, 18, 0.26);
   pointer-events: none;
+}
+
+.built-state-slash {
+  left: 13%;
+  right: 13%;
+  top: 50%;
+  height: 8px;
   transform: translateY(-50%) rotate(-38deg);
-  z-index: 4;
+  z-index: 8;
+}
+
+.built-state-drained {
+  left: 70%;
+  right: 5%;
+  top: 18%;
+  height: 5px;
+  transform: translateY(-85%) rotate(-38deg);
+  z-index: 8;
 }
 
 .built-tile-disabled-gold {

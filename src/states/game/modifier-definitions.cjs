@@ -216,6 +216,8 @@ const createModifierDefinitions = ({ bloodTilePositionValues }) => ({
         playedTimeDeltaSeconds: 5,
         idleTimePenaltySeconds: 5
       },
+      excludeFromTest: true,
+
       canApply: ({ letter }) => (letter || '').length === 1,
       rarityWeight: 0.20,
       ui: {
@@ -289,6 +291,8 @@ const createModifierDefinitions = ({ bloodTilePositionValues }) => ({
       }
     },
     zeroTile: {
+      badge: 'ZERO',
+      excludeFromTest: true,
       description: 'This tile always scores 0.',
       effects: { setScore: 0 },
       rarityWeight: 0.95,
@@ -373,6 +377,8 @@ const createModifierDefinitions = ({ bloodTilePositionValues }) => ({
         lightningScorePenalty: 1,
         lightningIntervalMs: 3000
       },
+      excludeFromTest: true,
+
       rarityWeight: 0.24,
       ui: {
         tileBackground: 'linear-gradient(180deg, #f8fbff 0%, #9fc9ff 48%, #2859b8 100%)',

@@ -80,6 +80,9 @@
             <span v-if="tile.status === 'lightningTile'" class="tile-lightning-spark spark-left" aria-hidden="true"></span>
             <span v-if="tile.status === 'lightningTile'" class="tile-lightning-spark spark-right" aria-hidden="true"></span>
             <span v-if="selectedTileIds.has(tile.id)" class="tile-in-use-overlay" aria-hidden="true"></span>
+            <span v-if="isBaggedTile(tile) && !selectedTileIds.has(tile.id)" class="tile-state-overlay tile-state-bagged" aria-hidden="true"></span>
+            <span v-if="tile.leecherDrained" class="tile-state-drained" aria-hidden="true"></span>
+            <span v-if="isBannedLetter(tile)" class="tile-state-slash" aria-hidden="true"></span>
             <span v-if="!getTileUi(tile).hideBadge && tile.status !== 'normal'" class="tile-modifier" :style="getBadgeStyle(tile)">
               {{ getTileBadge(tile) }}
             </span>
@@ -1390,21 +1393,6 @@ onBeforeUnmount(() => {
     var(--tile-shadow, inset 0 -4px 0 rgba(0, 0, 0, 0.92), 0 10px 18px rgba(45, 10, 24, 0.16));
 }
 
-.tile-leecher-drained:not(.tile-leecher)::before{
-  content: '';
-  position: absolute;
-  left: 70%;
-  right: 05%;
-  top: 18%;
-  height: 5px;
-  border-radius: 999px;
-  background: rgba(213, 31, 55, 0.94);
-  box-shadow: 0 0 0 2px rgba(255, 231, 220, 0.62), 0 6px 12px rgba(88, 5, 18, 0.26);
-  pointer-events: none;
-  transform: translateY(-85%) rotate(-38deg);
-  z-index: 4;
-}
-
 .tile-shimmer .tile-letter,
 .tile-rusting .tile-letter,
 .tile-lightning .tile-letter,
@@ -1462,19 +1450,31 @@ onBeforeUnmount(() => {
   z-index: 6;
 }
 
-.tile-banned-letter::before {
-  content: '';
+.tile-state-slash,
+.tile-state-drained {
   position: absolute;
-  left: 13%;
-  right: 13%;
-  top: 50%;
-  height: 8px;
   border-radius: 999px;
   background: rgba(213, 31, 55, 0.94);
   box-shadow: 0 0 0 2px rgba(255, 231, 220, 0.62), 0 6px 12px rgba(88, 5, 18, 0.26);
   pointer-events: none;
+}
+
+.tile-state-slash {
+  left: 13%;
+  right: 13%;
+  top: 50%;
+  height: 8px;
   transform: translateY(-50%) rotate(-38deg);
-  z-index: 4;
+  z-index: 8;
+}
+
+.tile-state-drained {
+  left: 70%;
+  right: 5%;
+  top: 18%;
+  height: 5px;
+  transform: translateY(-85%) rotate(-38deg);
+  z-index: 8;
 }
 
 .tile-saved:not(.tile-in-use) {
@@ -1607,13 +1607,15 @@ onBeforeUnmount(() => {
   filter: saturate(0.72) brightness(0.82);
 }
 
-.tile-bagged:not(.tile-in-use)::after {
-  content: '';
+.tile-state-overlay {
   position: absolute;
-  inset: 0%;
+  inset: 0;
   z-index: 7;
   border-radius: 12px;
   pointer-events: none;
+}
+
+.tile-state-bagged {
   background:
     repeating-linear-gradient(180deg, rgba(68, 39, 16, 0.32) 0 4px, transparent 4px 13px),
     linear-gradient(90deg, transparent 0 11%, rgba(64, 35, 13, 0.38) 11% 18%, transparent 18% 82%, rgba(64, 35, 13, 0.38) 82% 89%, transparent 89% 100%),
