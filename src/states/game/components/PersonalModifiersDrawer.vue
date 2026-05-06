@@ -36,7 +36,7 @@
           :class="modifier.tier"
         >
           <div>
-            <span>{{ modifier.tier }}</span>
+            <span class="rarity-badge" :class="modifier.tier">{{ formatRarityTier(modifier.tier) }}</span>
             <strong>{{ modifier.label }}</strong>
           </div>
           <small>{{ modifier.description }}</small>
@@ -67,6 +67,8 @@ const closeDrawer = () => {
 const toggleDrawer = () => {
   isOpen.value = !isOpen.value;
 };
+
+const formatRarityTier = (tier = '') => tier || 'common';
 
 defineExpose({
   closeDrawer,
@@ -136,6 +138,7 @@ defineExpose({
 
 .personal-modifier.rare {
   border-color: rgba(91, 218, 255, 0.34);
+  background: rgba(75, 146, 211, 0.1);
 }
 
 .personal-modifier.epic {
@@ -143,12 +146,31 @@ defineExpose({
   background: rgba(255, 188, 83, 0.12);
 }
 
-.personal-modifier span {
-  display: block;
+.rarity-badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 22px;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: rgba(255, 247, 232, 0.84);
   font-size: 0.62rem;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  opacity: 0.72;
+  opacity: 1;
+}
+
+.rarity-badge.rare {
+  background: rgba(91, 218, 255, 0.16);
+  border-color: rgba(91, 218, 255, 0.4);
+  color: #bdefff;
+}
+
+.rarity-badge.epic {
+  background: rgba(255, 206, 102, 0.18);
+  border-color: rgba(255, 206, 102, 0.48);
+  color: #ffe09c;
 }
 
 .personal-modifier strong {
