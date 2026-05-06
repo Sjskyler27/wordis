@@ -1235,23 +1235,31 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
     return lengthScoreBonus[length] || lengthScoreBonus[String(length)] || 0;
   };
 
-  const getLengthBonus = (length, options = {}) => {
+  const getBaseLengthBonus = (length) => {
     if (wordBonuses[length]) {
-      return wordBonuses[length] + getPersonalLengthScoreBonus(length, options);
+      return wordBonuses[length];
     }
 
     if (length > 9) {
-      return wordBonuses[9] + ((length - 9) * 5) + getPersonalLengthScoreBonus(length, options);
+      return wordBonuses[9] + ((length - 9) * 5);
     }
 
-    return getPersonalLengthScoreBonus(length, options);
+    return 0;
   };
-  const getDifference = (length, options = {}) =>{
-      if (getLengthBonus(length, options)) {
-      return getLengthBonus(length, options) - getLengthBonus(length - 1, options);
+
+  const getLengthBonus = (length, options = {}) => {
+    return getBaseLengthBonus(length) + getPersonalLengthScoreBonus(length, options);
+  };
+  const getDifference = (length, options = {}, currentWordLength) =>{
+    const baseDifference = Math.max(0, getBaseLengthBonus(length) - getBaseLengthBonus(length - 1));
+    let exactLengthBonus = Math.max(0, getPersonalLengthScoreBonus(length, options));
+    if(length != currentWordLength) exactLengthBonus = 0;
+
+    if (baseDifference || exactLengthBonus) {
+      return baseDifference + exactLengthBonus;
     }
     return 0;
-  }
+  };
 
   const getMilestoneReward = (length, options = {}) => {
     const reward = milestoneRewards[length] || milestoneRewards[String(length)] || {};
