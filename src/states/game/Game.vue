@@ -141,6 +141,7 @@
           :current-word-side="mySide"
           :current-player-scores="playerScores"
           :score-options="multiRoundScoreOptions"
+          :minimum-word-length="wordBuilderMinimumWordLength"
           :clear-count="rackClears[mySide]"
           :length-bonus-steps="lengthBonusSteps"
           :controller-focused-built-tile-id="controllerRegion === 'builder' ? controllerFocusedBuiltTileId : ''"
@@ -646,6 +647,7 @@ const lengthBonusScoreOptions = computed(() => ({
     lengthTimePenalty: roundModifierEffects.value.lengthTimePenalty || {}
   }
 }));
+const wordBuilderMinimumWordLength = computed(() => roundModifierEffects.value.minimumWordLength || 0);
 const buildLane = (side, label) => ({
   side,
   label,

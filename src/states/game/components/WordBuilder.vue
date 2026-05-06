@@ -70,9 +70,9 @@
           }"
           :data-word-slot-index="slot.index"
         >
-          <div v-if="slot.tile && getCoveredRewardLabels(slot).length" class="covered-reward-stack">
+          <div v-if="slot.tile && slot.coveredRewardLabels.length" class="covered-reward-stack">
             <span
-              v-for="label in getCoveredRewardLabels(slot)"
+              v-for="label in slot.coveredRewardLabels"
               :key="`covered-reward-${slot.index}-${label}`"
               class="covered-reward-chip"
             >
@@ -288,6 +288,10 @@ const props = defineProps({
     type: Object,
     default: () => ({})
   },
+  minimumWordLength: {
+    type: Number,
+    default: 0
+  },
   clearCount: {
     type: Number,
     required: true
@@ -324,21 +328,30 @@ const suppressNextClick = ref(false);
 let tooltipTimeoutId = null;
 
 const wordSlots = computed(() => {
-  const requiredWordLength = Math.max(MIN_WORD_LENGTH, props.scoreOptions?.roundModifierEffects?.minimumWordLength || 0);
+  const requiredWordLength = Math.max(MIN_WORD_LENGTH, props.minimumWordLength || 0);
   const slots = Array.from({ length: 9 }, (_, index) => {
     const position = index + 1;
     const bonusStep = props.lengthBonusSteps.find((step) => step.length === position);
 
-	    return {
-	      index,
-	      position,
-	      tile: props.selectedTiles[index] || null,
-	      bonus: bonusStep?.bonus || 0,
-	      difference: bonusStep?.difference || 0,
-	      rewardLabel: bonusStep?.rewardLabel || '',
-	      minimumRequired: position <= requiredWordLength
-	    };
-	  });
+    const coveredRewardLabels = [];
+    if (bonusStep?.difference) {
+      coveredRewardLabels.push(`+${bonusStep.difference}`);
+    }
+    if (bonusStep?.rewardLabel) {
+      coveredRewardLabels.push(...bonusStep.rewardLabel.split(' · ').filter(Boolean));
+    }
+
+    return {
+      index,
+      position,
+      tile: props.selectedTiles[index] || null,
+      bonus: bonusStep?.bonus || 0,
+      difference: bonusStep?.difference || 0,
+      rewardLabel: bonusStep?.rewardLabel || '',
+      coveredRewardLabels,
+      minimumRequired: position <= requiredWordLength
+    };
+  });
 
   const milestoneSlots = slots.filter((slot) => (slot.bonus || slot.rewardLabel) && !slot.minimumRequired);
   const milestoneCount = milestoneSlots.length || 1;
@@ -394,19 +407,6 @@ const dragPreviewTile = computed(() => {
 
 const isDragTarget = (slotIndex) => {
   return dragState.value?.isDragging && dragState.value?.targetIndex === slotIndex;
-};
-
-const getCoveredRewardLabels = (slot) => {
-  const labels = [];
-  if (slot.difference) {
-    labels.push(`+${slot.difference}`);
-  }
-
-  if (slot.rewardLabel) {
-    labels.push(...slot.rewardLabel.split(' · ').filter(Boolean));
-  }
-
-  return labels;
 };
 
 const getDragAfterimageStyle = (tile) => ({

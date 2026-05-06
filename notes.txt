@@ -19,16 +19,7 @@ add color blind friendliness
 
 daily mode that pulls from list of letters and give the same boons in order 
 
-
-
-
-
-
-
 pause should throw up a pause on both players screen 
-
-
-
 
 there may be a bug with creating tile ids i had multiple with the same id  (Proxy(Object) {id: 'local-tile-2', letter: 'R', baseLetter: 'R', score: 1, baseScore: 1, …}
 Game.vue:524 Proxy(Object) {id: 'local-tile-1', letter: 'T', baseLetter: 'T', score: 1, baseScore: 1, …}
@@ -62,73 +53,28 @@ when clicking boon move to tiles
 
 
 can change neg with a boon
-lock disapering it should be an animation
 
-attack destroyed background
 
-ghost boon not working 
 
-burns not showing up? 
-
-swap boon attack and add more 
 
 logs are only showing chance for that given tile so you are not getting the full stats of a pull 
 
 multiplayer chess clock mode 
 
 
-gain a buffer of time depending on how well you do  
-
-make a game mode like word play but instead of plays its time and the time gets shorter and shorter you ocan have modifiers and special rounds 
-if we do 15 rounds with 5 special rounds 3 min per round to hit a certain score that makes it at most 45 min. you get a modifier every single round you complete from a list of the rarities for a given round .
-
-We are going to make a document for the next game mode of wordis. 
-the goal is to create 3 to 5 parent tasks with all of the neccessary subtasks to create this new game mode.
-the core idea of the game mode is a multi round time attack, each round you have a given time around 3 minutes to reach a given number of points around 250
-upon round completion you gain new personal modifiers that make it easier to score high points
-every few rounds will have challanges that make it harder to score points, these challange rounds reward better personal modifiers 
-
-some things that i have already thought of 
-
-these changes will not affect the timed mode the bot mode or the multiplayer mode 
-add a new game mode to the typescreen that activates multiRound game mode
-we will need a rewards component that shows 3 rewards to choose from 
-
-rounds: 
-a list of rounds amount of time each round has and what roundModifiers it can have meybe even multiple and what round modifiers it can give how much time the round has 
-add an indacter in the game that shows what round you are currently on  rounds are indicated in the top bar with circles and challange rounds have a diamond shape. a progress line is showed connecting them and where you are in the rounds
-
-
-gameModifiersForplayersbenefit: they should also have a rarity and can affect anything so we need a list of types of modifiers the player would choose from a set of three 
-these would all be seperate tasks 
-examples: vowels are double points increase amount that ghost tiles give, increase how often x2 modifer shows up, raise your good modifer cap decrease your bad modifier cap, start with better good modifier,  imeediatly gain 3 boons, 
-
-
-
-a list of round modifiers and the diferent types there can be
-these would all be seperate tasks 
-examples: must play 5 letter words, must play at least 6 letter words or more, highgest consonent is actually 0,  can't play s, burns are doubled and show up more, all tiles gain fleeting(on top of there current fleeting trait). boons and attacks cannot be played, 
-
-do you have any questions 
 
 when you win the auto update of mode shows you go streight to 150 
 
 
 NOTES FRO M MY PLAYS: 
-shuffle is way to hard 
 
-
-
-wilds need to be neutral and increase chance if behind 
 
 lock rack needs to unlock back to the original it also needs to start first turn with a lock clearing rack should still lock the current column
 is strong start even working, add a minimum amoount of good tiles to start with in strong start 
 shuffle should give a countdown
 givr one second grace for submitting two words if they accidently submit a word right when time ends
 
-must cannot be on a double letter  
 
-pause time does not work in baltro
 
 5 up should give players more time it is too hard 
 
@@ -137,24 +83,16 @@ final word z index
 add local storage key for dev logging instead of env 
 cards should be time x so u can see how many of each hyou have 
 
-cleanse does not work in balatro
 
 fleeting rack is not working it is only clearing mdifiers
 if no letters in built word and saved letterds exist make it unsave letters 
 
-constant demand is coded wrong it should not change a letter into a must it should pull a must 
 
-constant demand should give a must on the first turn too
 
 no cards is also too hard should maybe be a hard one or give more time 
 
-didnt see a single gold time with golden draft
 
-early game is hard time not starting is great but it should be more like a prep window you get 15 seconds until the time starts
- or when you play your first word, i was able to get waining for 270 the multiplers on multiplers is insain and kinda breaks some aspects
-of the game with how long you can craft a realy good word. 
 
-loose rack could be a medium if it had more time 
 
 bright vowels is really good the decision making was decent between things
 
@@ -209,7 +147,6 @@ lower epic multiplyer for four letter words
 
 strong start does not work due to max good modifer chance we need to temporarily boost it and log the chances when pulling intro tiles 
 
-define what  a tile is for syntax highliting 
 
 focus something already focused spasms 
 
@@ -301,7 +238,6 @@ move pause outside of drawer
 
 extra option upgrade per reward, common rare epic
 
-rare upgrade extra reward select per reward 
 
 fix reward choice panel when 4 options 
 
@@ -318,10 +254,114 @@ boon that gives plus one new rack clear
 new letter should reapply styles currently if you new letter an s it still is crossed
 
 void s same after image issue
+save letter has circle same issue as after bag
 
-dont reward last round 
+addd  a drag from rack to word builder tile to replace tile. 
 
-exit from history screen
+if a tile is dragged to its same spot it should be removed some missclicks are happening when a user tries to remove tiles 
+do the same tile drag logic for the rack so the user still gets the tile in the word if it is dragged to the same spot/ if its dragged and let go
+return from builder does not break glas sit should 
 
+add a upgrade that increase the amount a word bonus gives you, i kind of already have it based off the short word sharpener just make it official 
 I need to make bad modifiers chance increase by more each round its not scaling enough
- 
+
+
+ MAJOR BUG when a user plays a round then exits mid way through the round while being logged in when the user refreshes they cannot load the game for some reason. disable syncc and loggin for now 
+ test to see if it happens offline with local game 
+this has been occuring ever since adding the profile sync we are also syncing stuff from dungeon draft or something 
+
+ B4njWvIR.js:1 Unrecognized feature: 'pointer-lock'.
+Js @ B4njWvIR.js:1
+Ae @ BB31P8Vd.js:116
+(anonymous) @ B4njWvIR.js:1
+An @ B4njWvIR.js:1
+Fe @ B4njWvIR.js:1
+D @ B4njWvIR.js:1
+Lt @ B4njWvIR.js:1
+ensure @ B4njWvIR.js:1
+i @ B3z6wlpl.js:1
+(anonymous) @ B3z6wlpl.js:1
+(anonymous) @ BB31P8Vd.js:116
+(anonymous) @ B3z6wlpl.js:1
+An @ B4njWvIR.js:1
+Fe @ B4njWvIR.js:1
+Dt @ B4njWvIR.js:1
+process @ B4njWvIR.js:1
+vt @ B4njWvIR.js:1
+flush @ B4njWvIR.js:1
+(anonymous) @ B4njWvIR.js:1
+Pn @ B4njWvIR.js:1
+Kt @ B4njWvIR.js:1
+ir @ B4njWvIR.js:1
+dt @ B4njWvIR.js:1
+Da @ app.BiZtwPX8.js:2
+(anonymous) @ app.BiZtwPX8.js:2
+Ft @ jaOHpbld.js:1
+Zn @ jaOHpbld.js:1
+await in Zn
+lr @ jaOHpbld.js:1
+await in lr
+(anonymous) @ wordis:57
+Promise.then
+(anonymous) @ wordis:56Understand this warning
+B4njWvIR.js:1 Unrecognized feature: 'orientation-lock'.
+Js @ B4njWvIR.js:1
+Ae @ BB31P8Vd.js:116
+(anonymous) @ B4njWvIR.js:1
+An @ B4njWvIR.js:1
+Fe @ B4njWvIR.js:1
+D @ B4njWvIR.js:1
+Lt @ B4njWvIR.js:1
+ensure @ B4njWvIR.js:1
+i @ B3z6wlpl.js:1
+(anonymous) @ B3z6wlpl.js:1
+(anonymous) @ BB31P8Vd.js:116
+(anonymous) @ B3z6wlpl.js:1
+An @ B4njWvIR.js:1
+Fe @ B4njWvIR.js:1
+Dt @ B4njWvIR.js:1
+process @ B4njWvIR.js:1
+vt @ B4njWvIR.js:1
+flush @ B4njWvIR.js:1
+(anonymous) @ B4njWvIR.js:1
+Pn @ B4njWvIR.js:1
+Kt @ B4njWvIR.js:1
+ir @ B4njWvIR.js:1
+dt @ B4njWvIR.js:1
+Da @ app.BiZtwPX8.js:2
+(anonymous) @ app.BiZtwPX8.js:2
+Ft @ jaOHpbld.js:1
+Zn @ jaOHpbld.js:1
+await in Zn
+lr @ jaOHpbld.js:1
+await in lr
+(anonymous) @ wordis:57
+Promise.then
+(anonymous) @ wordis:56Understand this warning
+index-C9aYzukU.js:17 electron app: false
+index-C9aYzukU.js:17 using socket: https://vuegamesetup-production.up.railway.app/
+index-C9aYzukU.js:89707 false
+index-C9aYzukU.js:89707 isfirebase enabledtrue
+index-C9aYzukU.js:89707 checking for controller
+index-C9aYzukU.js:89707 gamepadsfalse
+index-BidPmaK4.css:1  GET https://mx70d3a37s71e18b9p2vka4rn185754d-830d5ac9.builds.wavedashcdn.com/Press_Start_2P/PressStart2P-Regular.ttf net::ERR_ABORTED 404 (Not Found)Understand this error
+index-C9aYzukU.js:89707 play index-1
+
+
+we get as far as establishing theese local storage items
+lastInitSync	Wed May 06 2026 10:36:26 GMT-0400 (Eastern Daylight Time)
+deviceId	d28aca5c-e0bb-4564-b291-fcd8cb0a1a27
+theme	night
+nativeControllerSupport	true
+joystickSensitivity	30
+zoom	0.5
+gameZoom	1
+completedGames	[]
+completedLevel	Tutorial
+names	{"player1":"Player 1","player2":"Player 2","player3":"Player 3","player4":"Player 4"}
+roster	old
+unlockSystem	hard
+unlockedMonsters	[1,2,3]
+defaultHints	[{"hint":"The Alert will notify you when you are in danger!","hasSeen":false},{"hint":"Press x or tap a character image to view its actions","hasSeen":false},{"hint":"Right Click the Deck to see your Chances of Breaking!","hasSeen":false},{"hint":"Using all of your supplies gives bonus fame!","hasSeen":false},{"hint":"You can buy armor and supplies more than once!","hasSeen":false},{"hint":"Balance your supplies and armor","hasSeen":false},{"hint":"A massive Character could overflow your game","hasSeen":false},{"hint":"Be sure to select a character if it has an active action","hasSeen":false},{"hint":"Use the Deck to Draw a Character!","hasSeen":false},{"hint":"Use the Deck to view your cards and their fear.","hasSeen":false},{"hint":"Right Click on a character to view its action and other information.","hasSeen":false}]
+
+A major bug has been occuring on wavedash since we added the log in to profile option. I am not sure what portion is breaking there are no errors other than the usual press p to start font. we need to add logs to determine how far it is getting, cause things are syncing but we get the 0 percent loading screen. here are the logs and the synced local storage. along with those logs ad some saftey checks with logs stating whats happening. 
