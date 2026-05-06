@@ -73,6 +73,7 @@
             }"
             :style="getTileStyle(tile)"
             :data-controller-tile="`${side}-${index}`"
+            @pointerdown="handleTilePointerDown(tile, $event)"
             @click="handleTileClick(tile, $event)"
             @mouseenter="showTooltipLater(tile, $event)"
             @mousemove="updateTooltipPosition($event)"
@@ -102,6 +103,18 @@
           @close="hideTooltip"
         />
       </div>
+    </div>
+    <div
+      v-if="rackDragPreviewTile"
+      class="rack-drag-afterimage"
+      :style="getRackDragAfterimageStyle(rackDragPreviewTile)"
+      aria-hidden="true"
+    >
+      <span v-if="!getTileUi(rackDragPreviewTile).hideBadge && rackDragPreviewTile.status !== 'normal'" class="tile-modifier" :style="getBadgeStyle(rackDragPreviewTile)">
+        {{ getTileBadge(rackDragPreviewTile) }}
+      </span>
+      <span class="tile-score">{{ getTileScore(rackDragPreviewTile) }}</span>
+      <span class="tile-letter">{{ rackDragPreviewTile.letter }}</span>
     </div>
   </section>
 </template>
@@ -191,10 +204,13 @@ const hoveredTile = ref(null);
 const isTooltipVisible = ref(false);
 const tooltipPosition = ref({ x: 0, y: 0 });
 const mobileInspectEnabled = ref(false);
+const rackDragState = ref(null);
+const suppressNextClick = ref(false);
 let tooltipTimeoutId = null;
 
-const emit = defineEmits(['tile-click']);
+const emit = defineEmits(['tile-click', 'tile-drop-on-builder']);
 const canShowTooltip = computed(() => isTooltipVisible.value && (!props.isMobile || mobileInspectEnabled.value));
+const rackDragPreviewTile = computed(() => rackDragState.value?.isDragging ? rackDragState.value.tile : null);
 
 const setTooltipPositionFromElement = (element) => {
   const rect = element.getBoundingClientRect();
@@ -293,7 +309,118 @@ const handleDocumentClick = (event) => {
   hideTooltip();
 };
 
+const getBuilderSlotIndexFromPointer = (event) => {
+  const element = document.elementFromPoint(event.clientX, event.clientY);
+  const slotElement = element?.closest?.('[data-word-slot-index]');
+  if (!slotElement) {
+    return null;
+  }
+
+  const rawIndex = Number(slotElement.dataset.wordSlotIndex);
+  return Number.isFinite(rawIndex) ? Math.max(0, rawIndex) : null;
+};
+
+const updateRackDragTarget = (event) => {
+  if (!rackDragState.value) {
+    return;
+  }
+
+  rackDragState.value = {
+    ...rackDragState.value,
+    targetIndex: getBuilderSlotIndexFromPointer(event)
+  };
+};
+
+const cleanupRackDrag = (event) => {
+  rackDragState.value?.element?.releasePointerCapture?.(event.pointerId);
+  rackDragState.value = null;
+  window.removeEventListener('pointermove', handleTilePointerMove);
+  window.removeEventListener('pointerup', endTileDrag);
+  window.removeEventListener('pointercancel', cancelTileDrag);
+};
+
+const endTileDrag = (event) => {
+  if (!rackDragState.value) {
+    return;
+  }
+
+  updateRackDragTarget(event);
+  const { tile, targetIndex, isDragging, animationSync } = rackDragState.value;
+  cleanupRackDrag(event);
+
+  if (!isDragging) {
+    return;
+  }
+
+  suppressNextClick.value = true;
+  if (targetIndex != null) {
+    emit('tile-drop-on-builder', {
+      tile,
+      targetIndex,
+      animationSync
+    });
+  }
+};
+
+const cancelTileDrag = (event) => {
+  cleanupRackDrag(event);
+};
+
+const handleTilePointerMove = (event) => {
+  if (!rackDragState.value) {
+    return;
+  }
+
+  const deltaX = event.clientX - rackDragState.value.startX;
+  const deltaY = event.clientY - rackDragState.value.startY;
+  const isDragging = rackDragState.value.isDragging || Math.hypot(deltaX, deltaY) > 8;
+  rackDragState.value = {
+    ...rackDragState.value,
+    currentX: event.clientX,
+    currentY: event.clientY,
+    isDragging
+  };
+
+  if (isDragging) {
+    event.preventDefault();
+    hideTooltip();
+    updateRackDragTarget(event);
+  }
+};
+
+const handleTilePointerDown = (tile, event) => {
+  if (props.isMobile && mobileInspectEnabled.value) {
+    return;
+  }
+
+  if (event.button !== 0 || tile.locked) {
+    return;
+  }
+
+  rackDragState.value = {
+    tile,
+    targetIndex: null,
+    startX: event.clientX,
+    startY: event.clientY,
+    currentX: event.clientX,
+    currentY: event.clientY,
+    isDragging: false,
+    element: event.currentTarget,
+    animationSync: getLightningAnimationSync(tile, event)
+  };
+  event.currentTarget.setPointerCapture?.(event.pointerId);
+  window.addEventListener('pointermove', handleTilePointerMove);
+  window.addEventListener('pointerup', endTileDrag);
+  window.addEventListener('pointercancel', cancelTileDrag);
+};
+
 const handleTileClick = (tile, event) => {
+  if (suppressNextClick.value) {
+    event.preventDefault();
+    suppressNextClick.value = false;
+    return;
+  }
+
   if (props.isMobile && mobileInspectEnabled.value) {
     setTooltipPositionFromElement(event.currentTarget);
     hoveredTile.value = tile;
@@ -513,6 +640,12 @@ const getTileStyle = (tile) => {
     '--tile-animation-duration': `${getTileAnimationDuration(tile)}ms`
   };
 };
+
+const getRackDragAfterimageStyle = (tile) => ({
+  ...getTileStyle(tile),
+  left: `${(rackDragState.value?.currentX || 0) + 14}px`,
+  top: `${(rackDragState.value?.currentY || 0) + 14}px`
+});
 
 const getBadgeStyle = (tile) => {
   const ui = getTileUi(tile);
@@ -742,6 +875,9 @@ watch(() => props.isMobile, (isMobile) => {
 });
 
 onBeforeUnmount(() => {
+  window.removeEventListener('pointermove', handleTilePointerMove);
+  window.removeEventListener('pointerup', endTileDrag);
+  window.removeEventListener('pointercancel', cancelTileDrag);
   window.removeEventListener('click', handleDocumentClick, true);
   window.clearTimeout(burstTimeoutId);
   window.clearTimeout(tooltipTimeoutId);
@@ -925,6 +1061,8 @@ onBeforeUnmount(() => {
   transition: transform 140ms ease, box-shadow 140ms ease;
   padding: 15px;
   will-change: transform, opacity;
+  touch-action: none;
+  user-select: none;
 }
 
 .tile:hover {
@@ -939,6 +1077,47 @@ onBeforeUnmount(() => {
   outline-offset: 2px;
   transform: translateY(-2px);
   box-shadow: var(--tile-focus-shadow, inset 0 -4px 0 rgba(0, 0, 0, 0.12), 0 0 0 4px rgba(92, 25, 41, 0.45), 0 14px 20px rgba(45, 10, 24, 0.24)) !important;
+}
+
+.rack-drag-afterimage {
+  visibility: hidden;
+  position: fixed;
+  z-index: 10000;
+  width: 58px;
+  height: 58px;
+  border-radius: 10px;
+  pointer-events: none;
+  transform: rotate(4deg) scale(0.92);
+  background: var(--tile-bg, linear-gradient(180deg, #fffef8 0%, #f2ebe0 70%, #d9cec0 100%));
+  color: var(--tile-text-color, #1c1930);
+  box-shadow:
+    var(--tile-shadow, inset 0 -3px 0 rgba(0, 0, 0, 0.16)),
+    0 0 0 3px rgba(117, 246, 222, 0.34),
+    0 12px 20px rgba(17, 12, 28, 0.32);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.78;
+}
+
+.rack-drag-afterimage .tile-letter {
+  position: relative;
+  z-index: 3;
+  font-size: 1.15rem;
+}
+
+.rack-drag-afterimage .tile-score {
+  top: 5px;
+  right: 5px;
+  z-index: 4;
+  font-size: 0.45rem;
+}
+
+.rack-drag-afterimage .tile-modifier {
+  top: 5px;
+  left: 5px;
+  z-index: 4;
+  font-size: 0.38rem;
 }
 
 .tile-controller-focus {

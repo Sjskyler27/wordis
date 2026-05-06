@@ -445,7 +445,9 @@ const endBuiltTileDrag = (event) => {
 
   updateDragTarget(event);
   const { fromIndex, targetIndex, isDragging } = dragState.value;
+  const draggedTile = props.selectedTiles[fromIndex] || null;
   const shouldReorder = isDragging && fromIndex !== targetIndex;
+  const shouldRemove = isDragging && fromIndex === targetIndex && draggedTile;
   dragState.value.element?.releasePointerCapture?.(event.pointerId);
   dragState.value = null;
   window.removeEventListener('pointermove', handleBuiltPointerMove);
@@ -457,6 +459,11 @@ const endBuiltTileDrag = (event) => {
   }
   if (shouldReorder) {
     emit('reorder', { fromIndex, toIndex: targetIndex });
+  } else if (shouldRemove) {
+    emit('tile-click', {
+      tile: draggedTile,
+      index: fromIndex
+    });
   }
 };
 

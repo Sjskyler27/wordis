@@ -91,6 +91,7 @@
             :clear-pulse="rackClearPulse[leftLane.side]"
             :controller-focused-tile-id="leftLane.side === mySide ? controllerFocusedTileId : ''"
             @tile-click="handleTileClickWithCards($event, leftLane.side)"
+            @tile-drop-on-builder="handleRackTileDropOnBuilder($event, leftLane.side)"
           />
 
           <GameLane
@@ -114,6 +115,7 @@
             :clear-pulse="rackClearPulse[rightLane.side]"
             :controller-focused-tile-id="rightLane.side === mySide ? controllerFocusedTileId : ''"
             @tile-click="handleTileClickWithCards($event, rightLane.side)"
+            @tile-drop-on-builder="handleRackTileDropOnBuilder($event, rightLane.side)"
           />
         </div>
 
@@ -670,6 +672,7 @@ const {
   removeLastLetter,
   removeSpecificTile,
   removeTileAtIndex,
+  replaceTileAtIndex,
   reorderSelectedTile,
   replaceSelectedTileId,
   clearWord,
@@ -2082,6 +2085,11 @@ const getGlassTilesCrackedByReorder = (fromIndex, toIndex) => {
     .map((tile) => tile.id);
 };
 
+const getGlassTilesCrackedByReplacement = (targetIndex) => {
+  const targetTile = selectedTilesForCurrentSide.value[targetIndex];
+  return targetTile?.status === 'glassTile' && !targetTile.glassCracked ? [targetTile.id] : [];
+};
+
 const handleClearRack = () => {
   if (effectiveGameEnded.value) {
     localMessage.value = 'The match is already over.';
@@ -2607,6 +2615,39 @@ const handleBuiltTileReorder = ({ fromIndex, toIndex } = {}) => {
   const glassTileIds = getGlassTilesCrackedByReorder(fromIndex, toIndex);
   if (reorderSelectedTile(mySide.value, fromIndex, toIndex)) {
     crackGlassTiles(mySide.value, glassTileIds);
+  }
+};
+
+const handleRackTileDropOnBuilder = ({ tile, targetIndex, animationSync } = {}, side) => {
+  if (effectiveGameEnded.value || activeBoonCard.value) {
+    return;
+  }
+
+  if (side !== mySide.value) {
+    localMessage.value = 'You can only use your own rack.';
+    return;
+  }
+
+  if (!tile || tile.locked) {
+    return;
+  }
+
+  const selectedTiles = selectedTilesForCurrentSide.value;
+  const boundedIndex = Math.max(0, Math.min(Number(targetIndex), selectedTiles.length - 1));
+  const targetTile = selectedTiles[boundedIndex];
+  if (!targetTile || !Number.isFinite(boundedIndex)) {
+    return;
+  }
+
+  if (selectedTileIds.value[mySide.value]?.has(tile.id) && !tile.reusableInBuilder) {
+    localMessage.value = 'That tile is already in your word.';
+    return;
+  }
+
+  const glassTileIds = getGlassTilesCrackedByReplacement(boundedIndex);
+  if (replaceTileAtIndex(mySide.value, boundedIndex, tile.id, { animationSync })) {
+    crackGlassTiles(mySide.value, glassTileIds);
+    playUiSound(tilePickupSound);
   }
 };
 

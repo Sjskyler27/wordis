@@ -204,6 +204,48 @@ export const useWordBuilder = ({ mySide, myTiles, playerScores, scoreOptions }) 
     return true;
   };
 
+  const replaceTileAtIndex = (side = mySide.value, index, toTileId, options = {}) => {
+    const currentSlots = selectedTileSlots.value[side] || [];
+    const boundedIndex = Math.max(0, Math.min(Number(index), currentSlots.length - 1));
+    if (!currentSlots.length || !Number.isFinite(boundedIndex) || !toTileId) {
+      return false;
+    }
+
+    const fromTileId = currentSlots[boundedIndex];
+    if (fromTileId === toTileId) {
+      return false;
+    }
+
+    const nextSlots = [...currentSlots];
+    nextSlots[boundedIndex] = toTileId;
+    selectedTileSlots.value = {
+      ...selectedTileSlots.value,
+      [side]: nextSlots
+    };
+
+    const sideAnimationSync = selectedTileAnimationSync.value[side] || {};
+    const nextAnimationSync = { ...sideAnimationSync };
+    if (fromTileId && !nextSlots.includes(fromTileId)) {
+      delete nextAnimationSync[fromTileId];
+    }
+    if (options.animationSync) {
+      nextAnimationSync[toTileId] = options.animationSync;
+    }
+    selectedTileAnimationSync.value = {
+      ...selectedTileAnimationSync.value,
+      [side]: nextAnimationSync
+    };
+
+    if (savedTileSlots.value[side].includes(toTileId)) {
+      savedTileSlots.value = {
+        ...savedTileSlots.value,
+        [side]: savedTileSlots.value[side].filter((savedTileId) => savedTileId !== toTileId)
+      };
+    }
+
+    return true;
+  };
+
   const reorderSelectedTile = (side = mySide.value, fromIndex, toIndex) => {
     const currentSlots = selectedTileSlots.value[side] || [];
     const boundedFromIndex = Math.max(0, Math.min(Number(fromIndex), currentSlots.length - 1));
@@ -304,6 +346,7 @@ export const useWordBuilder = ({ mySide, myTiles, playerScores, scoreOptions }) 
     removeLastLetter,
     removeSpecificTile,
     removeTileAtIndex,
+    replaceTileAtIndex,
     reorderSelectedTile,
     replaceSelectedTileId,
     clearWord,
