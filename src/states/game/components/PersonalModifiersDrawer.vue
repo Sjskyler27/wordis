@@ -92,12 +92,9 @@ defineExpose({
 
   max-height: 1000px;
   height: 100%;
-  padding: 18px;
-  border-radius: 24px;
+  border-radius:9px 9px 24px 24px;
   color: #fff7e8;
-  background: rgba(56, 19, 48, 0.84);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 18px 38px rgba(35, 8, 27, 0.2);
+  border: 2px solid rgba(37, 12, 36, 0.66)
 }
 
 .personal-modifiers-header {
@@ -105,13 +102,19 @@ defineExpose({
   align-items: center;
   justify-content: space-between;
   gap: 12px;
+  padding: 8px;
+    background: linear-gradient(180deg, rgba(63, 18, 58, 0.64), rgba(37, 12, 36, 0.66));
+  border-radius: 8px 8px 0px 0px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 18px 38px rgba(35, 8, 27, 0.2);
 }
 
 .personal-modifiers-header span {
-  font-size: 0.72rem;
+  font-size: 0.92rem;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  opacity: 0.76;
+  font-weight: 600;
+  color: #ffd265;
 }
 
 .personal-modifiers-header strong {
@@ -121,29 +124,32 @@ defineExpose({
 .personal-modifier-list {
   list-style: none;
   display: grid;
-  gap: 10px;
   margin: 14px 0 0;
   padding: 0;
 }
 
 .personal-modifier {
   position: relative;
+  margin: 10px;
   display: grid;
   gap: 6px;
   padding: 12px;
   border-radius: 14px;
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: linear-gradient(180deg, rgba(76, 156, 138, 0.96), rgba(43, 92, 98, 0.94));
+
+  border: 1px solid rgba(63, 138, 148, 0.784);
 }
 
 .personal-modifier.rare {
   border-color: rgba(91, 218, 255, 0.34);
-  background: rgba(75, 146, 211, 0.1);
+  background: linear-gradient(180deg, rgba(82, 136, 215, 0.96), rgba(50, 62, 148, 0.94));
+
 }
 
 .personal-modifier.epic {
   border-color: rgba(255, 206, 102, 0.42);
-  background: rgba(255, 188, 83, 0.12);
+  background: linear-gradient(180deg, rgba(215, 151, 68, 0.98), rgba(142, 62, 72, 0.96));
+
 }
 
 .rarity-badge {
@@ -228,7 +234,6 @@ defineExpose({
     min-width: 50px;
     padding: 10px 8px 10px 10px;
     border-radius: 14px 0 0 14px;
-    background: rgba(55, 13, 31, 0.94);
     color: rgba(255, 244, 228, 0.86);
     font-family: inherit;
     font-size: 0.7rem;
@@ -274,10 +279,6 @@ defineExpose({
     z-index: 30;
     width: min(320px, calc(100vw - 52px));
     max-width: none;
-    padding: 18px 16px 22px;
-    border-left: 2px solid rgba(255, 255, 255, 0.12);
-    background: linear-gradient(180deg, rgba(63, 18, 58, 0.94), rgba(37, 12, 36, 0.96));
-    box-shadow: -24px 0 42px rgba(18, 6, 17, 0.24);
     overflow-y: auto;
     transform: translateX(calc(100% + 16px));
     animation: none;
@@ -291,8 +292,6 @@ defineExpose({
   .personal-modifiers-drawer-content {
     max-height: 1000px;
     padding: 0;
-    border: none;
-    border-radius: 0;
     background: transparent;
     box-shadow: none;
   }
