@@ -117,6 +117,13 @@ import AuthPrompt from "/src/assets/AuthPrompt.vue";
 import { auth as firebaseAuth, firebaseEnabled } from "./firebaseClient.js";
 import pkg from '../package.json';
 const hasSeenIntro = ref(false);
+const bootLog = (...args) => {
+  console.log('[Wordis Boot]', ...args);
+};
+
+const bootWarn = (...args) => {
+  console.warn('[Wordis Boot]', ...args);
+};
 
 const demoDate = new Date('2025-10-01T00:00:00Z')
 const isDemo = false
@@ -157,13 +164,15 @@ const DEFAULT_JOYSTICK_SENSITIVITY = 30;
 
 
   const handleLogout = async () => {
-    console.log('logging out ')
+    bootLog('logout requested');
     if (!firebaseEnabled || !firebaseAuth) {
-      console.warn('Firebase auth is unavailable; skipping logout.');
+      bootWarn('Firebase auth is unavailable; skipping logout.');
       return;
     }
     await logoutCleanup();
+    bootLog('logout cleanup finished');
     await signOut(firebaseAuth);
+    bootLog('firebase signOut finished');
     setTimeout(() => {
       reloader.value++;
     }, 200);
@@ -422,18 +431,33 @@ const DEFAULT_JOYSTICK_SENSITIVITY = 30;
   };
 
   const showFirstRunAuthPrompt = () => {
+    bootLog('first-run auth prompt check', {
+      firebaseEnabled,
+      hasStreamerCode: Boolean(streamerCode),
+      hasDismissedPrompt: Boolean(localStorage.getItem(AUTH_PROMPT_SEEN_KEY))
+    });
+
     if (!firebaseEnabled || streamerCode || localStorage.getItem(AUTH_PROMPT_SEEN_KEY)) {
+      bootLog('first-run auth prompt skipped');
       return;
     }
 
+    bootLog('first-run auth prompt shown');
     showAuthModal.value = true;
   };
 
   const userLoggedIn = async () => {
+    bootLog('userLoggedIn handler start');
     showAuthModal.value = false
-    await syncUserState({ force: true });
+    try {
+      const result = await syncUserState({ force: true });
+      bootLog('userLoggedIn sync completed', result);
+    } catch (error) {
+      bootWarn('userLoggedIn sync failed safely', error);
+    }
     setTimeout(() => {
       reloader.value++
+      bootLog('userLoggedIn reload tick complete', reloader.value);
     }, 200);
   }
 
@@ -746,26 +770,49 @@ const simulateTab = (reverse = false) => {
 
 
   onMounted( () => {
-    console.log('isfirebase enabled'+ firebaseEnabled)
-    stopUserSync = initUserSync(showFirstRunAuthPrompt);
-    showFirstRunAuthPrompt();
+    bootLog('App mounted start', {
+      firebaseEnabled,
+      wavedash: import.meta.env.VITE_WAVEDASH === 'true',
+      currentState: currentState.value?.__name || currentState.value?.name || 'unknown',
+      hasSharedGameId: Boolean(sharedGameId)
+    });
+
+    try {
+      stopUserSync = initUserSync(showFirstRunAuthPrompt);
+      bootLog('user sync listener initialized');
+    } catch (error) {
+      bootWarn('user sync listener failed safely', error);
+      stopUserSync = null;
+    }
+
+    try {
+      showFirstRunAuthPrompt();
+    } catch (error) {
+      bootWarn('first-run auth prompt failed safely', error);
+    }
+
     if(!localStorage.getItem('nativeControllerSupport')){ 
       localStorage.setItem('nativeControllerSupport', true)
       nativeControllerSupport.value = true;
+      bootLog('native controller support defaulted');
     }
     if(!localStorage.getItem('joystickSensitivity')){
       localStorage.setItem('joystickSensitivity', DEFAULT_JOYSTICK_SENSITIVITY)
+      bootLog('joystick sensitivity defaulted');
     }
 
     checkGamepadInput();
+    bootLog('gamepad check requested');
     if (isMobile.value && !localStorage.getItem('mobileZoomApplied')) {
       zoom.value = 0.5
       localStorage.setItem('zoom', 0.5)
       localStorage.setItem('mobileZoomApplied', 'true')
+      bootLog('mobile zoom default applied');
     }
     setZoom(zoom.value)
     setgameZoom(gameZoom.value)
     window.addEventListener('resize', handleScreenWidthChange)
+    bootLog('zoom initialized', { zoom: zoom.value, gameZoom: gameZoom.value });
 
 
     setTimeout(() => {
@@ -779,6 +826,7 @@ const simulateTab = (reverse = false) => {
     if(!localStorage.getItem('theme')) localStorage.setItem('theme',"day")
     if(!localStorage.getItem('unlockSystem')) localStorage.setItem('unlockSystem',"hard")
     if(!localStorage.getItem('unlockedMonsters')) localStorage.setItem('unlockedMonsters','[1,2,3]')
+    bootLog('local defaults established');
     if(!localStorage.getItem('defaultHints')) localStorage.setItem('defaultHints', JSON.stringify(defaultHints.value))
     else{
       // Load saved user hints (may be partial or missing new keys)
@@ -798,6 +846,7 @@ const simulateTab = (reverse = false) => {
     }
     // hard reset turn if app is exited
     localStorage.removeItem('drawnMonsters')
+    bootLog('drawnMonsters cleared');
     
     
     window.addEventListener("gamepaddisconnected", onGamepadDisconnected);
@@ -809,6 +858,7 @@ const simulateTab = (reverse = false) => {
     
     // Initial check (in case controller was already connected)
     checkGamepadConnection();
+    bootLog('gamepad connection watcher initialized');
 
 
     // Poll for changes (some browsers require this)
@@ -819,6 +869,7 @@ const simulateTab = (reverse = false) => {
     }, 2000);
     // Hide Google Translate banner
     hideGoogleTranslateIframesAfterDelay(400);
+    bootLog('App mounted complete');
 
   });
 
@@ -830,6 +881,7 @@ const simulateTab = (reverse = false) => {
   };
 
   onBeforeUnmount(() => {
+    bootLog('App before unmount');
     stopUserSync?.();
     window.removeEventListener('resize', handleScreenWidthChange);
     window.removeEventListener("gamepadconnected", onGamepadConnected);

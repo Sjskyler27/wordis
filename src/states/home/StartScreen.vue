@@ -114,6 +114,9 @@
   startMusic.volume = props.volume * props.musicVolume / 100
   startMusic.loop = true;
   const emit = defineEmits(["type","start", "reset", "feedback", "support", "showSettings", "logIn", "loggedIn", "logOut", "nameChange", "backgroundState"]); // Emit event to switch to Shop.vue
+  const startLog = (...args) => {
+    console.log('[StartScreen]', ...args);
+  };
 
   const gameInProgress = ref(localStorage.getItem("gameInProgress")); // Check if game is in progress
   const showProfile = ref(false);
@@ -415,6 +418,11 @@ const handleKeyDown = (e) => {
 };
 
 onMounted(() => {
+  startLog('mounted', {
+    firebaseEnabled,
+    hasAuth: Boolean(auth),
+    hasSeenIntro: props.hasSeenIntro
+  });
   document.addEventListener('visibilitychange', handleVisibilityChange);
   if (!showIntro.value) {
     focusPlayButton();
@@ -427,9 +435,14 @@ onMounted(() => {
   //check logged in 
   if (firebaseEnabled && auth) {
     onAuthStateChanged(auth, (u) => {
+      startLog('auth state received', {
+        hasUser: Boolean(u?.uid),
+        uid: u?.uid ? `${u.uid.slice(0, 6)}...` : null
+      });
       user.value = u;
     });
   } else {
+    startLog('auth unavailable on start screen');
     user.value = null;
   }
 });

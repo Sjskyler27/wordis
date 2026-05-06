@@ -17,6 +17,35 @@ import { initializeNewUser } from './initializeNewUser.js';
 export const USER_SYNC_INTERVAL_MS = 10 * 60 * 1000;
 export const LAST_USER_SYNC_KEY = 'wordis:userstate:last-sync-at';
 export const SYNC_SAVED_GAMES_ENABLED_KEY = 'wordis:sync:saved-games-enabled';
+const USER_SYNC_TIMEOUT_MS = 6000;
+
+const userSyncLog = (...args) => {
+  console.log('[UserState Sync]', ...args);
+};
+
+const userSyncWarn = (...args) => {
+  console.warn('[UserState Sync]', ...args);
+};
+
+const getUserLabel = (user) => {
+  return user?.uid ? `${user.uid.slice(0, 6)}...` : 'none';
+};
+
+const withTimeout = (promise, label, timeoutMs = USER_SYNC_TIMEOUT_MS) => {
+  let timeoutId;
+
+  const timeoutPromise = new Promise((resolve) => {
+    timeoutId = window.setTimeout(() => {
+      userSyncWarn(`${label} timed out after ${timeoutMs}ms`);
+      resolve({ timedOut: true });
+    }, timeoutMs);
+  });
+
+  return Promise.race([promise, timeoutPromise])
+    .finally(() => {
+      window.clearTimeout(timeoutId);
+    });
+};
 
 const BOT_DIFFICULTY_RANK = {
   [BOT_DIFFICULTIES.EASY]: 0,
@@ -86,6 +115,7 @@ const getRemoteSave = (remoteSaves = {}, mode) => {
 
 const syncSavedGames = async (uid, userState = {}) => {
   if (!isSavedGameSyncEnabled()) {
+    userSyncLog('saved game sync disabled locally');
     return { uploaded: 0, downloaded: 0 };
   }
 
@@ -103,6 +133,10 @@ const syncSavedGames = async (uid, userState = {}) => {
     }
 
     if (remoteSave && (!localSave || getSaveTimestamp(remoteSave) > getSaveTimestamp(localSave))) {
+      userSyncLog('downloading newer save', mode, {
+        remoteTs: getSaveTimestamp(remoteSave),
+        localTs: getSaveTimestamp(localSave)
+      });
       if (importLocalGameSave(mode, remoteSave)) {
         downloaded += 1;
       }
@@ -110,6 +144,10 @@ const syncSavedGames = async (uid, userState = {}) => {
     }
 
     if (localSave && (!remoteSave || getSaveTimestamp(localSave) > getSaveTimestamp(remoteSave))) {
+      userSyncLog('uploading newer save', mode, {
+        localTs: getSaveTimestamp(localSave),
+        remoteTs: getSaveTimestamp(remoteSave)
+      });
       await set(dbRef(db, `users/${uid}/svgms/${getCloudSaveKey(mode)}`), localSave);
       uploaded += 1;
     }
@@ -124,10 +162,12 @@ const syncBotDifficultyCompletion = async (uid, userState = {}) => {
   const mergedDifficulty = maxDifficulty(localDifficulty, remoteDifficulty);
 
   if (mergedDifficulty !== localDifficulty) {
+    userSyncLog('updating local bot difficulty', { from: localDifficulty, to: mergedDifficulty });
     setLocalBotDifficulty(mergedDifficulty);
   }
 
   if (mergedDifficulty !== remoteDifficulty) {
+    userSyncLog('updating cloud bot difficulty', { from: remoteDifficulty, to: mergedDifficulty });
     await update(dbRef(db, `users/${uid}/gameData`), {
       botDifficultyCompletion: {
         maxUnlocked: mergedDifficulty,
@@ -140,52 +180,104 @@ const syncBotDifficultyCompletion = async (uid, userState = {}) => {
 };
 
 export const syncUserState = async ({ force = false, user = auth?.currentUser } = {}) => {
-  if (!firebaseEnabled || !db || !user?.uid || !navigator.onLine || !canSyncNow(force)) {
+  userSyncLog('sync requested', {
+    force,
+    firebaseEnabled,
+    hasDb: Boolean(db),
+    hasUser: Boolean(user?.uid),
+    user: getUserLabel(user),
+    online: navigator.onLine
+  });
+
+  if (!firebaseEnabled || !db || !user?.uid || !navigator.onLine) {
+    userSyncLog('sync skipped: unavailable dependency or offline');
     return { skipped: true };
   }
 
-  await initializeNewUser(user);
+  if (!canSyncNow(force)) {
+    userSyncLog('sync skipped: ten minute guard');
+    return { skipped: true };
+  }
 
-  const userRef = dbRef(db, `users/${user.uid}`);
-  const snapshot = await get(userRef);
-  const userState = snapshot.exists() ? snapshot.val() : {};
+  try {
+    const initResult = await withTimeout(initializeNewUser(user), 'initializeNewUser');
+    if (initResult?.timedOut) {
+      return { skipped: true, timedOut: true };
+    }
 
-  const [savedGames, botDifficulty] = await Promise.all([
-    syncSavedGames(user.uid, userState),
-    syncBotDifficultyCompletion(user.uid, userState)
-  ]);
+    const userRef = dbRef(db, `users/${user.uid}`);
+    const snapshot = await withTimeout(get(userRef), 'read user state');
+    if (snapshot?.timedOut) {
+      return { skipped: true, timedOut: true };
+    }
 
-  localStorage.setItem(LAST_USER_SYNC_KEY, String(Date.now()));
-  window.dispatchEvent(new CustomEvent('wordis:saves-changed'));
+    const userState = snapshot.exists() ? snapshot.val() : {};
+    userSyncLog('cloud user state read', {
+      hasSvgms: Boolean(userState.svgms),
+      hasGameData: Boolean(userState.gameData)
+    });
 
-  return {
-    skipped: false,
-    savedGames,
-    botDifficulty
-  };
+    const syncResult = await withTimeout(Promise.all([
+      syncSavedGames(user.uid, userState),
+      syncBotDifficultyCompletion(user.uid, userState)
+    ]), 'merge user state');
+    if (syncResult?.timedOut) {
+      return { skipped: true, timedOut: true };
+    }
+
+    const [savedGames, botDifficulty] = syncResult;
+    localStorage.setItem(LAST_USER_SYNC_KEY, String(Date.now()));
+    window.dispatchEvent(new CustomEvent('wordis:saves-changed'));
+    userSyncLog('sync finished', { savedGames, botDifficulty });
+
+    return {
+      skipped: false,
+      savedGames,
+      botDifficulty
+    };
+  } catch (error) {
+    userSyncWarn('sync failed safely', error);
+    return { skipped: true, error };
+  }
 };
 
 export const initUserSync = (showAuthPrompt) => {
   if (!firebaseEnabled || !auth) {
+    userSyncLog('auth listener skipped: firebase auth unavailable');
     return () => {};
   }
 
-  const unsubscribeAuth = onAuthStateChanged(auth, async (user) => {
-    if (!user) {
-      if (!localStorage.getItem('userAgreed')) {
-        showAuthPrompt?.();
-      }
-      return;
-    }
+  userSyncLog('auth listener starting');
+  let unsubscribeAuth = () => {};
 
-    try {
-      await syncUserState({ user });
-    } catch (error) {
-      console.warn('Initial user sync failed.', error);
-    }
-  });
+  try {
+    unsubscribeAuth = onAuthStateChanged(auth, async (user) => {
+      userSyncLog('auth state changed', {
+        hasUser: Boolean(user?.uid),
+        user: getUserLabel(user)
+      });
+
+      if (!user) {
+        if (!localStorage.getItem('userAgreed')) {
+          userSyncLog('no auth user and prompt not dismissed; showing prompt');
+          showAuthPrompt?.();
+        }
+        return;
+      }
+
+      try {
+        await syncUserState({ user });
+      } catch (error) {
+        userSyncWarn('initial user sync failed safely', error);
+      }
+    });
+  } catch (error) {
+    userSyncWarn('auth listener failed safely', error);
+    return () => {};
+  }
 
   const handleOnline = () => {
+    userSyncLog('online event sync requested');
     void syncUserState();
   };
 

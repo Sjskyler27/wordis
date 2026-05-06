@@ -141,6 +141,14 @@ const email = ref('');
 const password = ref('');
 const authError = ref('');
 
+const profileLog = (...args) => {
+  console.log('[Profile Modal]', ...args);
+};
+
+const profileWarn = (...args) => {
+  console.warn('[Profile Modal]', ...args);
+};
+
 const activeGames = computed(() => {
   pastGamesVersion.value;
   return selectedMode.value ? getPastGamesByMode(selectedMode.value) : [];
@@ -166,6 +174,7 @@ const focusTarget = (index) => {
 };
 
 const openPastGames = async () => {
+  profileLog('past games tab requested', { hasUser: Boolean(props.user) });
   if (!props.user) {
     activeView.value = 'account';
     authError.value = 'Log in to sync and view past games.';
@@ -183,11 +192,12 @@ const openPastGames = async () => {
 
   try {
     const result = await syncPastGames();
+    profileLog('past games sync finished', result);
     syncStatus.value = result.skipped
       ? 'Showing local games.'
       : `Synced ${result.downloaded} down, ${result.uploaded} up.`;
   } catch (error) {
-    console.warn('Past game sync failed.', error);
+    profileWarn('Past game sync failed safely.', error);
     syncStatus.value = 'Showing local games.';
   } finally {
     isSyncingPastGames.value = false;
@@ -207,6 +217,7 @@ const validateAuthForm = () => {
 };
 
 const signUp = async () => {
+  profileLog('signup requested');
   if (!validateAuthForm()) {
     return;
   }
@@ -222,15 +233,19 @@ const signUp = async () => {
     }
 
     const credential = await createUserWithEmailAndPassword(auth, email.value, password.value);
+    profileLog('firebase signup completed', { uid: credential.user?.uid?.slice(0, 6) });
     await initializeNewUser(credential.user);
+    profileLog('new user shell initialized');
     localStorage.setItem('userAgreed', true);
     emit('loggedIn');
   } catch (error) {
+    profileWarn('signup failed safely', error);
     authError.value = error.message;
   }
 };
 
 const login = async () => {
+  profileLog('login requested');
   if (!validateAuthForm()) {
     return;
   }
@@ -241,9 +256,11 @@ const login = async () => {
     }
 
     await signInWithEmailAndPassword(auth, email.value, password.value);
+    profileLog('firebase login completed');
     localStorage.setItem('userAgreed', true);
     emit('loggedIn');
   } catch (error) {
+    profileWarn('login failed safely', error);
     authError.value = error.message;
   }
 };
@@ -326,7 +343,6 @@ onBeforeUnmount(() => {
 
 <style scoped>
 .profile-modal-backdrop {
-  visibility: hidden;
   position: fixed;
   inset: 0;
   z-index: 10000;
@@ -337,7 +353,6 @@ onBeforeUnmount(() => {
 }
 
 .profile-modal {
-  visibility: hidden;
   position: relative;
   width: min(620px, calc(100vw - 32px));
   max-height: 80%;

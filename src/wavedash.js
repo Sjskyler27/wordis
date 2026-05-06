@@ -1,6 +1,7 @@
 let wavedashPromise = null;
 let wavedashInitStarted = false;
 export const isWavedashEnabled = import.meta.env.VITE_WAVEDASH === 'true';
+const WAVEDASH_SDK_TIMEOUT_MS = 2500;
 
 const logWavedash = (...args) => {
   if (isWavedashEnabled) {
@@ -16,6 +17,22 @@ const errorWavedash = (...args) => {
 
 const clampProgress = (value) => {
   return Math.max(0, Math.min(1, Number.isFinite(value) ? value : 0));
+};
+
+const withTimeout = (promise, label, timeoutMs = WAVEDASH_SDK_TIMEOUT_MS) => {
+  let timeoutId;
+
+  const timeoutPromise = new Promise((resolve) => {
+    timeoutId = window.setTimeout(() => {
+      logWavedash(`[Wavedash] ${label} timed out after ${timeoutMs}ms`);
+      resolve(null);
+    }, timeoutMs);
+  });
+
+  return Promise.race([promise, timeoutPromise])
+    .finally(() => {
+      window.clearTimeout(timeoutId);
+    });
 };
 
 export const cleanupWavedashServiceWorkers = async () => {
@@ -64,7 +81,7 @@ const getWavedashPromise = () => {
   // `wavedash dev` injects a Promise, while uploaded builds may expose the SDK object directly.
   if (typeof injectedSdk.then === 'function') {
     logWavedash('[Wavedash] SDK promise detected on window');
-    wavedashPromise = injectedSdk
+    wavedashPromise = withTimeout(injectedSdk, 'SDK promise')
       .then((sdk) => {
         logWavedash('[Wavedash] SDK promise resolved');
         return sdk || null;
@@ -84,35 +101,46 @@ const getWavedashPromise = () => {
 };
 
 export const updateWavedashLoadProgress = async (progress) => {
-  const sdk = await getWavedashPromise();
-  if (!sdk?.updateLoadProgressZeroToOne) {
-    logWavedash('[Wavedash] Skipping load progress update; API unavailable', progress);
+  const nextProgress = clampProgress(progress);
+
+  try {
+    const sdk = await getWavedashPromise();
+    if (!sdk?.updateLoadProgressZeroToOne) {
+      logWavedash('[Wavedash] Skipping load progress update; API unavailable', nextProgress);
+      return null;
+    }
+
+    logWavedash('[Wavedash] Updating load progress', nextProgress);
+    sdk.updateLoadProgressZeroToOne(nextProgress);
+    return sdk;
+  } catch (error) {
+    errorWavedash('[Wavedash] Failed to update load progress', nextProgress, error);
     return null;
   }
-
-  const nextProgress = clampProgress(progress);
-  logWavedash('[Wavedash] Updating load progress', nextProgress);
-  sdk.updateLoadProgressZeroToOne(nextProgress);
-  return sdk;
 };
 
 export const initWavedash = async ({ debug = false } = {}) => {
-  const sdk = await getWavedashPromise();
-  if (!sdk?.init) {
-    logWavedash('[Wavedash] Skipping init; API unavailable');
-    return sdk;
-  }
+  try {
+    const sdk = await getWavedashPromise();
+    if (!sdk?.init) {
+      logWavedash('[Wavedash] Skipping init; API unavailable');
+      return sdk;
+    }
 
-  if (wavedashInitStarted) {
-    logWavedash('[Wavedash] Skipping init; already started');
-    return sdk;
-  }
+    if (wavedashInitStarted) {
+      logWavedash('[Wavedash] Skipping init; already started');
+      return sdk;
+    }
 
-  wavedashInitStarted = true;
-  logWavedash('[Wavedash] Calling init()', { debug });
-  sdk.init({ debug });
-  logWavedash('[Wavedash] init() call finished');
-  return sdk;
+    wavedashInitStarted = true;
+    logWavedash('[Wavedash] Calling init()', { debug });
+    sdk.init({ debug });
+    logWavedash('[Wavedash] init() call finished');
+    return sdk;
+  } catch (error) {
+    errorWavedash('[Wavedash] init failed', error);
+    return null;
+  }
 };
 
 export const getWavedashSdk = async () => {

@@ -38,6 +38,12 @@
   const email = ref("");
   const password = ref("");
   const error = ref("");
+  const authPromptLog = (...args) => {
+    console.log('[Auth Prompt]', ...args);
+  };
+  const authPromptWarn = (...args) => {
+    console.warn('[Auth Prompt]', ...args);
+  };
   const closeButton = ref(null);
   const emailInput = ref(null);
   const passwordInput = ref(null);
@@ -59,12 +65,14 @@
   };
   
   const dismiss = () => {
+    authPromptLog('dismissed');
     localStorage.setItem("userAgreed", true);
     visible.value = false;
     emit("close");
   };
   
   const signUp = async () => {
+    authPromptLog('signup requested');
     error.value = "";
     if (!email.value || !password.value) {
         error.value = "Email and password are required.";
@@ -79,16 +87,20 @@
             throw new Error("Account features are unavailable right now.");
         }
         const credential = await createUserWithEmailAndPassword(auth, email.value, password.value);
+        authPromptLog('firebase signup completed', { uid: credential.user?.uid?.slice(0, 6) });
         await initializeNewUser(credential.user);
+        authPromptLog('new user shell initialized');
         localStorage.setItem("userAgreed", true);
         visible.value = false;
         emit("loggedIn");
     } catch (err) {
+        authPromptWarn('signup failed safely', err);
         error.value = err.message;
     }
     };
 
     const login = async () => {
+    authPromptLog('login requested');
     error.value = "";
     if (!email.value || !password.value) {
         error.value = "Email and password are required.";
@@ -99,11 +111,13 @@
             throw new Error("Account features are unavailable right now.");
         }
         await signInWithEmailAndPassword(auth, email.value, password.value);
+        authPromptLog('firebase login completed');
         localStorage.setItem("userAgreed", true);
         visible.value = false;
         emit("loggedIn");
         // window.location.reload();
     } catch (err) {
+        authPromptWarn('login failed safely', err);
         error.value = err.message;
     }
 
@@ -139,7 +153,6 @@
   
   <style scoped>
   .modal {
-    visibility: hidden;
     position: fixed;
     inset: 0;
     background:
@@ -153,7 +166,6 @@
   }
   
   .modal-content {
-    visibility: hidden;
     position: relative;
     background:
       linear-gradient(180deg, rgba(78, 25, 43, 0.97), rgba(42, 15, 40, 0.97)),
