@@ -73,6 +73,7 @@
             }"
             :style="getTileStyle(tile)"
             :data-controller-tile="`${side}-${index}`"
+            :data-rack-tile-id="tile.id"
             @pointerdown="handleTilePointerDown(tile, $event)"
             @click="handleTileClick(tile, $event)"
             @mouseenter="showTooltipLater(tile, $event)"
@@ -320,6 +321,12 @@ const getBuilderSlotIndexFromPointer = (event) => {
   return Number.isFinite(rawIndex) ? Math.max(0, rawIndex) : null;
 };
 
+const getRackTileIdFromPointer = (event) => {
+  const element = document.elementFromPoint(event.clientX, event.clientY);
+  const tileElement = element?.closest?.('[data-rack-tile-id]');
+  return tileElement?.dataset?.rackTileId || '';
+};
+
 const updateRackDragTarget = (event) => {
   if (!rackDragState.value) {
     return;
@@ -346,6 +353,8 @@ const endTileDrag = (event) => {
 
   updateRackDragTarget(event);
   const { tile, targetIndex, isDragging, animationSync } = rackDragState.value;
+  const droppedRackTileId = getRackTileIdFromPointer(event);
+  const droppedOnSameRackTile = droppedRackTileId === tile.id;
   cleanupRackDrag(event);
 
   if (!isDragging) {
@@ -357,6 +366,11 @@ const endTileDrag = (event) => {
     emit('tile-drop-on-builder', {
       tile,
       targetIndex,
+      animationSync
+    });
+  } else if (droppedOnSameRackTile) {
+    emit('tile-click', {
+      tile,
       animationSync
     });
   }
