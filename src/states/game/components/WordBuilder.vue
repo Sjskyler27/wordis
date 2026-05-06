@@ -70,6 +70,15 @@
           }"
           :data-word-slot-index="slot.index"
         >
+          <div v-if="slot.tile && getCoveredRewardLabels(slot).length" class="covered-reward-stack">
+            <span
+              v-for="label in getCoveredRewardLabels(slot)"
+              :key="`covered-reward-${slot.index}-${label}`"
+              class="covered-reward-chip"
+            >
+              {{ label }}
+            </span>
+          </div>
           <div v-if="!slot.tile" class="word-slot-placeholder">
             <div
               class="word-slot-placeholder-surface"
@@ -385,6 +394,19 @@ const dragPreviewTile = computed(() => {
 
 const isDragTarget = (slotIndex) => {
   return dragState.value?.isDragging && dragState.value?.targetIndex === slotIndex;
+};
+
+const getCoveredRewardLabels = (slot) => {
+  const labels = [];
+  if (slot.difference) {
+    labels.push(`+${slot.difference}`);
+  }
+
+  if (slot.rewardLabel) {
+    labels.push(...slot.rewardLabel.split(' · ').filter(Boolean));
+  }
+
+  return labels;
 };
 
 const getDragAfterimageStyle = (tile) => ({
@@ -959,6 +981,40 @@ button:focus{
   box-shadow:
     0 0 0 3px rgba(117, 246, 222, 0.18),
     0 0 18px rgba(117, 246, 222, 0.42);
+}
+
+.covered-reward-stack {
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% - 11px);
+  z-index: 5;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 4px;
+  width: max-content;
+  max-width: 112px;
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+.covered-reward-chip {
+  min-height: 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3px 6px;
+  border-radius: 8px;
+  background: linear-gradient(180deg, rgba(255, 139, 28, 0.96), rgba(209, 84, 19, 0.96));
+  border: 1px solid rgba(255, 230, 172, 0.72);
+  color: #fff8e6;
+  font-size: 0.58rem;
+  font-weight: 900;
+  line-height: 1;
+  text-shadow: 0 1px 0 rgba(72, 26, 8, 0.42);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 245, 212, 0.28),
+    0 4px 9px rgba(32, 8, 18, 0.26);
 }
 
 .word-slot-placeholder {
