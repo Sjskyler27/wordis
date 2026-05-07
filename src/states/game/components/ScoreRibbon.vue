@@ -200,7 +200,7 @@ defineProps({
   }
 }
 
-@media (max-width: 980px) {
+@media (max-width: 1000px) {
   .hideClock{
     visibility: hidden;
   }
@@ -227,11 +227,11 @@ defineProps({
   }
 
   .score-box.host {
-    left: 0;
+    left: 380px;
   }
 
   .score-box.opponent {
-    right: 0;
+    right: 380px;
   }
   .box-label{
     display: none;
