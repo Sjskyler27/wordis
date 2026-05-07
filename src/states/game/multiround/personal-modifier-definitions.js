@@ -215,7 +215,7 @@ export const PERSONAL_MODIFIER_DEFINITIONS = {
     maxStacks: 5,
     start_with: 0,
     effects: {
-      goodChanceBonus: 0.006,
+      goodChanceBonus: 0.01,
       goodChanceCapDelta: 0.01
     }
   },
@@ -229,7 +229,7 @@ export const PERSONAL_MODIFIER_DEFINITIONS = {
     maxStacks: 5,
     start_with: 0,
     effects: {
-      badChanceBonus: -0.004
+      badChanceBonus: -0.01
     }
   },
   bank_interest: {
