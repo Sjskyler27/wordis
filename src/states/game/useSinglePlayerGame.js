@@ -638,9 +638,12 @@ export const useSinglePlayerGame = ({
       [side]: nextRack,
       ...(isMultiRoundMode?.value ? { opponent: [] } : {})
     };
+    const nextRackClears = isMultiRoundMode?.value
+      ? (rackClears.value[side] ?? 2)
+      : 2;
     rackClears.value = {
       ...rackClears.value,
-      [side]: 2,
+      [side]: nextRackClears,
       ...(isMultiRoundMode?.value ? { opponent: 0 } : {})
     };
     if (!isMultiRoundMode?.value) {
