@@ -87,6 +87,7 @@
             <span v-if="isBaggedTile(tile) && !selectedTileIds.has(tile.id)" class="tile-state-overlay tile-state-bagged" aria-hidden="true"></span>
             <span v-if="tile.leecherDrained" class="tile-state-drained" aria-hidden="true"></span>
             <span v-if="isBannedLetter(tile)" class="tile-state-slash" aria-hidden="true"></span>
+            <span v-if="savedTileIds.has(tile.id) && !selectedTileIds.has(tile.id)" class="tile-save-badge" aria-hidden="true">SAVE</span>
             <span v-if="!getTileUi(tile).hideBadge && tile.status !== 'normal'" class="tile-modifier" :style="getBadgeStyle(tile)">
               {{ getTileBadge(tile) }}
             </span>
@@ -1730,11 +1731,11 @@ onBeforeUnmount(() => {
   filter: saturate(0.92) brightness(0.98);
 }
 
-.tile-saved:not(.tile-in-use)::after {
-  content: 'SAVE';
+.tile-save-badge {
   position: absolute;
   bottom: 8px;
   left: 10px;
+  z-index: 9;
   padding: 2px 7px;
   border-radius: 999px;
   background: rgba(88, 206, 186, 0.9);
@@ -1744,6 +1745,7 @@ onBeforeUnmount(() => {
   letter-spacing: 0.12em;
   text-transform: uppercase;
   box-shadow: 0 4px 10px rgba(18, 57, 53, 0.2);
+  pointer-events: none;
 }
 
 .tile-must-alert {
