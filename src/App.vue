@@ -68,6 +68,7 @@
       :gameZoom="gameZoom"
       :joystickSensitivity="joystickSensitivity"
       :nativeControllerSupport="nativeControllerSupport"
+      :controllerMapping="controllerMapping"
       :canShowHowToPlay="isGameState"
       :names="names"
       @volumeChange="setVolume"
@@ -78,6 +79,8 @@
       @joystickSensitivityChange="setJoystickSensitivity"
       @shopZoomChange="setshopZoom"
       @nativeControllerChange="setNativeControllerSupport"
+      @controllerMappingChange="setControllerMapping"
+      @resetControllerMapping="resetControllerMapping"
       @nameChange="setNames"
       @reset="resetGame" 
       @home="goToHome"
@@ -116,6 +119,13 @@ import { signOut } from "firebase/auth";
 import AuthPrompt from "/src/assets/AuthPrompt.vue";
 import { auth as firebaseAuth, firebaseEnabled } from "./firebaseClient.js";
 import pkg from '../package.json';
+import {
+  DEFAULT_CONTROLLER_ACTION_MAPPING,
+  getActionForButton,
+  getInputKeyForAction,
+  loadControllerMapping,
+  saveControllerMapping
+} from "./controllerMapping.js";
 const hasSeenIntro = ref(false);
 const bootLog = (...args) => {
   console.log('[Wordis Boot]', ...args);
@@ -281,6 +291,7 @@ const DEFAULT_JOYSTICK_SENSITIVITY = 30;
   const effectsVolume = ref(Number(localStorage.getItem('effectsVolume') ?? 5))
   const nativeControllerSupport = ref(JSON.parse(localStorage.getItem('nativeControllerSupport')))
   const joystickSensitivity = ref(Number(localStorage.getItem('joystickSensitivity') ?? DEFAULT_JOYSTICK_SENSITIVITY))
+  const controllerMapping = ref(loadControllerMapping())
   const now = new Date();
   const lockContent = computed(() => (new Date() > demoDate || isDemo) && !validSeed);
   const versionNumber = ref(pkg.version)
@@ -414,6 +425,12 @@ const DEFAULT_JOYSTICK_SENSITIVITY = 30;
   function setNativeControllerSupport(val) {
     nativeControllerSupport.value = val
     localStorage.setItem('nativeControllerSupport', val)
+  }
+  function setControllerMapping(val) {
+    controllerMapping.value = saveControllerMapping(val)
+  }
+  function resetControllerMapping() {
+    setControllerMapping(DEFAULT_CONTROLLER_ACTION_MAPPING)
   }
   function setNames(val) {
     console.log(val)
@@ -611,27 +628,6 @@ const continueGame = (mode) => {
 
 
 
-const buttonMap = {
-  0: ' ',          // A / Cross
-  1: 'b',          // B / Circle
-  2: 'x',          // X / Square
-  3: 'y',          // Y / Triangle
-  4: 'lb',         // Left Bumper (L1)
-  5: 'rb',         // Right Bumper (R1)
-  6: 'lt',         // Left Trigger (L2) (analog)
-  7: 'rt',         // Right Trigger (R2) (analog)
-  8: 'select',     // Back / Select / Share
-  9: 'Escape',     // Start / Options
-  10: 'ls',        // Left Stick Click (L3)
-  11: 'rs',        // Right Stick Click (R3)
-  12: 'ArrowUp',   // D-pad Up
-  13: 'ArrowDown', // D-pad Down
-  14: 'ArrowLeft', // D-pad Left
-  15: 'ArrowRight',// D-pad Right
-  16: 'home'       // Guide / PS button / Xbox button (not always available)
-
-};
-
   const prevButtonStates = [];
   const buttonCooldowns = [];
   const prevAxisDirections = [];
@@ -649,10 +645,10 @@ const buttonMap = {
     }
 
     if (Math.abs(horizontal) > Math.abs(vertical)) {
-      return horizontal > 0 ? 'ArrowRight' : 'ArrowLeft';
+      return horizontal > 0 ? 'navigateRight' : 'navigateLeft';
     }
 
-    return vertical > 0 ? 'ArrowDown' : 'ArrowUp';
+    return vertical > 0 ? 'navigateDown' : 'navigateUp';
   };
 
   const handleJoystickDirection = (gamepad, gamepadIndex) => {
@@ -671,7 +667,7 @@ const buttonMap = {
     }
 
     if (direction !== previousDirection || cooldown === 0) {
-      dispatchKey(direction);
+      dispatchControllerAction(direction);
       axisCooldowns[gamepadIndex] = joystickSensitivity.value;
     } else {
       axisCooldowns[gamepadIndex] = Math.max(0, cooldown - 1);
@@ -707,9 +703,9 @@ const buttonMap = {
   if (isPressed && !wasPressed && cooldown === 0) {
     // console.log(`Button ${index} pressed`);
     buttonPressed.value = null;
-    const key = buttonMap[index];
-    dispatchKey(key);
-    console.log(key)
+    const actionKey = getActionForButton(controllerMapping.value, index);
+    dispatchControllerAction(actionKey);
+    console.log(actionKey)
 
     buttonCooldowns[i][index] = COOLDOWN_FRAMES;
   }
@@ -726,6 +722,10 @@ const buttonMap = {
   gamepadAnimationFrameId = requestAnimationFrame(checkGamepadInput);
 };
 
+
+const dispatchControllerAction = (actionKey) => {
+  dispatchKey(getInputKeyForAction(actionKey));
+};
 
 const dispatchKey = (key) => {
   if (!key) return;
