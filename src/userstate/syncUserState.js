@@ -258,10 +258,7 @@ export const initUserSync = (showAuthPrompt, onSignedIn) => {
       });
 
       if (!user) {
-        if (!localStorage.getItem('userAgreed')) {
-          userSyncLog('no auth user and prompt not dismissed; showing prompt');
-          showAuthPrompt?.();
-        }
+        userSyncLog('no auth user; automatic auth prompt disabled');
         return;
       }
 

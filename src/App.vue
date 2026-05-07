@@ -450,20 +450,12 @@ const DEFAULT_JOYSTICK_SENSITIVITY = 30;
   };
 
   const showFirstRunAuthPrompt = () => {
-    bootLog('first-run auth prompt check', {
+    bootLog('automatic auth prompt disabled', {
       firebaseEnabled,
       hasCurrentUser: Boolean(firebaseAuth?.currentUser),
       hasStreamerCode: Boolean(streamerCode),
       hasDismissedPrompt: Boolean(localStorage.getItem(AUTH_PROMPT_SEEN_KEY))
     });
-
-    if (!firebaseEnabled || firebaseAuth?.currentUser || streamerCode || localStorage.getItem(AUTH_PROMPT_SEEN_KEY)) {
-      bootLog('first-run auth prompt skipped');
-      return;
-    }
-
-    bootLog('first-run auth prompt shown');
-    showAuthModal.value = true;
   };
 
   const userLoggedIn = async () => {
