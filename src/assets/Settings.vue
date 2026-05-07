@@ -86,6 +86,13 @@
               {{ button.label }}
             </option>
           </select>
+          <ControllerButtonHint
+            :action-key="action.key"
+            :controller-mapping="controllerMappingValue"
+            :controller-connected="isControllerConnected"
+            :size="24"
+            side="right"
+          />
         </div>
         <div class="menu-section controller-actions">
           <button type="button" class="modal-button" @click="emit('resetControllerMapping')">Reset Buttons</button>
@@ -107,6 +114,7 @@ import {
   DEFAULT_CONTROLLER_ACTION_MAPPING,
   normalizeControllerMapping
 } from "../controllerMapping.js";
+import ControllerButtonHint from "../states/game/components/ControllerButtonHint.vue";
 
 const props = defineProps({
   volume: Number,
@@ -117,6 +125,7 @@ const props = defineProps({
   shopZoom: Number,
   joystickSensitivity: Number,
   nativeControllerSupport: Boolean,
+  isControllerConnected: Boolean,
   controllerMapping: {
     type: Object,
     default: () => ({ ...DEFAULT_CONTROLLER_ACTION_MAPPING })
@@ -404,6 +413,7 @@ const assignControllerButton = (actionKey, nextButtonIndex) => {
   border: 1px solid rgba(255, 225, 180, 0.12);
   border-radius: 12px;
   background: rgba(18, 8, 20, 0.3);
+  position: relative;
 
   label {
     color: rgba(255, 244, 223, 0.88);

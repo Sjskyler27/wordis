@@ -25,6 +25,13 @@
         <span v-if="cardGroup.count > 1" class="action-card-count">x{{ cardGroup.count }}</span>
         <strong>{{ cardGroup.card.label }}</strong>
         <span>{{ cardGroup.card.description }}</span>
+        <ControllerButtonHint
+          v-if="controllerRegion === 'cards' && controllerCardCursorIndex === index"
+          action-key="select"
+          :controller-mapping="controllerMapping"
+          :controller-connected="isControllerConnected"
+          :size="26"
+        />
       </button>
       <button
         v-if="attacksEnabled"
@@ -44,12 +51,21 @@
         <span v-if="cardGroup.count > 1" class="action-card-count">x{{ cardGroup.count }}</span>
         <strong>{{ cardGroup.card.label }}</strong>
         <span>{{ cardGroup.card.description }}</span>
+        <ControllerButtonHint
+          v-if="controllerRegion === 'cards' && controllerCardCursorIndex === groupedBoonCards.length + attackIndex"
+          action-key="select"
+          :controller-mapping="controllerMapping"
+          :controller-connected="isControllerConnected"
+          :size="26"
+        />
       </button>
     </div>
   </div>
 </template>
 
 <script setup>
+import ControllerButtonHint from './ControllerButtonHint.vue';
+
 defineEmits(['select-boon', 'use-attack']);
 
 defineProps({
@@ -83,6 +99,14 @@ defineProps({
   controllerCardCursorIndex: {
     type: Number,
     default: 0
+  },
+  controllerMapping: {
+    type: Object,
+    default: () => ({})
+  },
+  isControllerConnected: {
+    type: Boolean,
+    default: false
   }
 });
 

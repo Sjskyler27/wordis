@@ -55,6 +55,13 @@
           <span>{{ reward.tier }}</span>
           <strong>{{ reward.label }}</strong>
           <p>{{ reward.description }}</p>
+          <ControllerButtonHint
+            v-if="controllerFocusedRewardIndex === index"
+            action-key="select"
+            :controller-mapping="controllerMapping"
+            :controller-connected="isControllerConnected"
+            :size="28"
+          />
         </button>
       </div>
     </section>
@@ -64,6 +71,7 @@
 <script setup>
 import { computed } from 'vue';
 import { getRoundModifierDefinition } from '../multiround/round-modifier-definitions.js';
+import ControllerButtonHint from './ControllerButtonHint.vue';
 
 const props = defineProps({
   rewards: {
@@ -95,6 +103,14 @@ const props = defineProps({
     default: false
   },
   canRerollRewardChoices: {
+    type: Boolean,
+    default: false
+  },
+  controllerMapping: {
+    type: Object,
+    default: () => ({})
+  },
+  isControllerConnected: {
     type: Boolean,
     default: false
   }

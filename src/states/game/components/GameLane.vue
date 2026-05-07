@@ -98,6 +98,14 @@
             <span v-if="isFleetingRoundTile(tile)" class="tile-fleeting-marker" aria-hidden="true">↩</span>
             <span class="tile-score">{{ getTileScore(tile) }}</span>
             <span class="tile-letter">{{ tile.letter }}</span>
+            <ControllerButtonHint
+              v-if="controllerFocusedTileId === tile.id"
+              action-key="select"
+              :controller-mapping="controllerMapping"
+              :controller-connected="isControllerConnected"
+              :size="24"
+              :hide="true"
+            />
           </button>
         </Transition>
         <TileHoverTooltip
@@ -126,6 +134,7 @@
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { getBaggedTileIds, getModifierBadge, getModifierUi, tileScore } from '../tile-logic.js';
+import ControllerButtonHint from './ControllerButtonHint.vue';
 import TileHoverTooltip from './TileHoverTooltip.vue';
 
 const props = defineProps({
@@ -197,6 +206,14 @@ const props = defineProps({
   controllerFocusedTileId: {
     type: String,
     default: ''
+  },
+  controllerMapping: {
+    type: Object,
+    default: () => ({})
+  },
+  isControllerConnected: {
+    type: Boolean,
+    default: false
   },
   multiplayerOrBot: {
     type: Boolean,

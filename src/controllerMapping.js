@@ -1,16 +1,27 @@
+import aCrossIcon from './assets/images/xbox-buttons/a-cross.svg';
+import bCircleIcon from './assets/images/xbox-buttons/b-circle.svg';
+import xSquareIcon from './assets/images/xbox-buttons/x-square.svg';
+import yTriangleIcon from './assets/images/xbox-buttons/y-triangle.svg';
+import leftBumperIcon from './assets/images/xbox-buttons/left-bumper.svg';
+import rightBumperIcon from './assets/images/xbox-buttons/right-bumper.svg';
+import leftTriggerIcon from './assets/images/xbox-buttons/left-trigger.svg';
+import rightTriggerIcon from './assets/images/xbox-buttons/right-trigger.svg';
+import viewSelectIcon from './assets/images/xbox-buttons/view-select.svg';
+import menuStartIcon from './assets/images/xbox-buttons/menu-start.svg';
+
 export const CONTROLLER_MAPPING_STORAGE_KEY = 'wordis:controllerButtonMapping';
 
 export const CONTROLLER_BUTTONS = [
-  { index: 0, label: 'A / Cross' },
-  { index: 1, label: 'B / Circle' },
-  { index: 2, label: 'X / Square' },
-  { index: 3, label: 'Y / Triangle' },
-  { index: 4, label: 'Left Bumper' },
-  { index: 5, label: 'Right Bumper' },
-  { index: 6, label: 'Left Trigger' },
-  { index: 7, label: 'Right Trigger' },
-  { index: 8, label: 'View / Select' },
-  { index: 9, label: 'Menu / Start' },
+  { index: 0, label: 'A / Cross', icon: aCrossIcon },
+  { index: 1, label: 'B / Circle', icon: bCircleIcon },
+  { index: 2, label: 'X / Square', icon: xSquareIcon },
+  { index: 3, label: 'Y / Triangle', icon: yTriangleIcon },
+  { index: 4, label: 'Left Bumper', icon: leftBumperIcon },
+  { index: 5, label: 'Right Bumper', icon: rightBumperIcon },
+  { index: 6, label: 'Left Trigger', icon: leftTriggerIcon },
+  { index: 7, label: 'Right Trigger', icon: rightTriggerIcon },
+  { index: 8, label: 'View / Select', icon: viewSelectIcon },
+  { index: 9, label: 'Menu / Start', icon: menuStartIcon },
   { index: 10, label: 'Left Stick Press' },
   { index: 11, label: 'Right Stick Press' },
   { index: 12, label: 'D-pad Up' },
@@ -118,3 +129,8 @@ export const getActionForButton = (mapping, buttonIndex) => {
 export const getInputKeyForAction = (actionKey) => (
   CONTROLLER_ACTIONS.find((action) => action.key === actionKey)?.inputKey || ''
 );
+
+export const getButtonForAction = (mapping, actionKey) => {
+  const buttonIndex = normalizeControllerMapping(mapping)[actionKey];
+  return CONTROLLER_BUTTONS.find((button) => button.index === buttonIndex) || null;
+};

@@ -15,13 +15,32 @@ WORDIS uses the browser Gamepad API at the app shell level in `src/App.vue`.
 
 This keeps controller hardware details out of most screens. Game screens continue to work with inputs such as `ArrowLeft`, `ArrowRight`, `Escape`, `x`, `b`, `lb`, and `rt`.
 
+## Xbox Button Assets
+
+The current visual button prompts are Xbox-only. PlayStation art is intentionally out of scope for this pass.
+
+Xbox SVGs live in `src/assets/images/xbox-buttons/` and are named to match the current button labels:
+
+- `a-cross.svg`
+- `b-circle.svg`
+- `x-square.svg`
+- `y-triangle.svg`
+- `left-bumper.svg`
+- `right-bumper.svg`
+- `left-trigger.svg`
+- `right-trigger.svg`
+- `view-select.svg`
+- `menu-start.svg`
+
+The shared mapping module imports these SVGs and attaches them to the matching `CONTROLLER_BUTTONS` entries. D-pad, stick press, and guide/home entries currently fall back to text because no SVGs exist for them yet.
+
 ## Shared Mapping Layer
 
 The shared mapping lives in `src/controllerMapping.js`.
 
 It defines:
 
-- `CONTROLLER_BUTTONS`: physical Gamepad API button indexes and user-facing labels.
+- `CONTROLLER_BUTTONS`: physical Gamepad API button indexes, user-facing labels, and Xbox icon URLs when available.
 - `CONTROLLER_ACTIONS`: game/action concepts and the keyboard token each action emits.
 - `DEFAULT_CONTROLLER_ACTION_MAPPING`: the default action-to-button assignments.
 - `loadControllerMapping()`: loads and normalizes mappings from `localStorage`.
@@ -70,6 +89,8 @@ The Controller tab lets players assign a physical controller button to each conf
 
 The settings modal also handles controller-style focus movement across buttons, inputs, and selects. When a mapping select has focus, directional input cycles that action through available controller buttons. If a player chooses a button already used by another action, the settings UI swaps those two assignments so one button does not secretly control multiple actions.
 
+Each mapping row displays the current Xbox button image through `ControllerButtonHint`. Rows use the right side so the icon does not cover the action label or select text.
+
 ## Game Screen Responsibilities
 
 `src/states/game/Game.vue` owns in-game controller behavior after actions have been translated into keyboard-style tokens.
@@ -95,6 +116,29 @@ Important child components expose focusable controller targets with data attribu
 - `b`, `y`, and `x` perform undo, clear word, and submit.
 - `lb`, `rb`, `lt`, and `rt` trigger save letters, clear rack, side drawer, and modifiers drawer.
 - `Escape` is allowed to continue to the broader pause/settings behavior.
+
+## Button Prompt Overlay
+
+Controller prompts are rendered by `src/states/game/components/ControllerButtonHint.vue`.
+
+The component accepts:
+
+- `actionKey`: the controller action to display.
+- `controllerMapping`: the current action-to-button mapping.
+- `controllerConnected`: whether a controller is currently connected.
+- `hide`: optional boolean override that suppresses the prompt.
+- `size`: optional pixel size, defaulting to `30`.
+- `side`: optional overlay side, defaulting to `left`; supported values are `left` and `right`.
+
+The hint renders in the bottom-left corner by default and can be moved to bottom-right with `side="right"`. It renders nothing unless `controllerConnected` is true, and it also renders nothing when `hide` is true. The hint is absolutely positioned, so it should not reserve layout space in the element that owns it.
+
+If the mapped Xbox button has an SVG, the SVG is displayed. If no Xbox SVG exists, a small text fallback displays the mapped button label.
+
+Current prompt placement:
+
+- Rack tiles, built tiles, cards, rounds, and reward cards show the mapped Select button only when they have controller focus.
+- Word builder action buttons always show their mapped action button.
+- Settings controller rows show their mapped Xbox button image.
 
 ## Other Screens
 

@@ -143,6 +143,13 @@
               </span>
               <span class="tile-score">{{ getBuiltTileScore(slot.tile, slot.index) }}</span>
               <span class="tile-letter">{{ slot.tile.letter }}</span>
+              <ControllerButtonHint
+                v-if="controllerFocusedBuiltTileId === slot.tile.id"
+                action-key="select"
+                :controller-mapping="controllerMapping"
+                :controller-connected="isControllerConnected"
+                :size="24"
+              />
             </button>
           </Transition>
         </div>
@@ -162,6 +169,7 @@
         @click="$emit('undo')"
       >
         Undo
+        <ControllerButtonHint action-key="undoLetter" :controller-mapping="controllerMapping" :controller-connected="isControllerConnected" :size="24" side="right" />
       </button>
       <button
         type="button"
@@ -171,6 +179,7 @@
         @click="$emit('clear')"
       >
         Clear
+        <ControllerButtonHint action-key="clearWord" :controller-mapping="controllerMapping" :controller-connected="isControllerConnected" :size="24" side="right" />
       </button>
       <button
         type="button"
@@ -181,6 +190,7 @@
         @click="$emit('save-letters')"
       >
         Save Letters
+        <ControllerButtonHint action-key="saveLetters" :controller-mapping="controllerMapping" :controller-connected="isControllerConnected" :size="24" side="right" />
       </button>
       <button
         type="button"
@@ -191,6 +201,7 @@
         @click="$emit('clear-rack')"
       >
         New Rack {{ clearCount }}
+        <ControllerButtonHint action-key="clearRack" :controller-mapping="controllerMapping" :controller-connected="isControllerConnected" :size="24" side="right" />
       </button>
       <button
         type="button"
@@ -200,6 +211,7 @@
         @click="$emit('submit')"
       >
         Submit Word
+        <ControllerButtonHint action-key="submitWord" :controller-mapping="controllerMapping" :controller-connected="isControllerConnected" :size="24" side="right" />
       </button>
     </div>
     <TileHoverTooltip
@@ -228,6 +240,7 @@
 <script setup>
 import { computed, onBeforeUnmount, ref, watch } from 'vue';
 import { MIN_WORD_LENGTH, getModifierBadge, getModifierUi, tileScore } from '../tile-logic.js';
+import ControllerButtonHint from './ControllerButtonHint.vue';
 import TileHoverTooltip from './TileHoverTooltip.vue';
 
 const props = defineProps({
@@ -307,6 +320,14 @@ const props = defineProps({
   controllerFocusedActionIndex: {
     type: Number,
     default: -1
+  },
+  controllerMapping: {
+    type: Object,
+    default: () => ({})
+  },
+  isControllerConnected: {
+    type: Boolean,
+    default: false
   },
   isOvertimeActive: {
     type: Boolean,
@@ -2139,6 +2160,7 @@ button:focus{
   font-weight: 800;
   letter-spacing: 0.04em;
   font-family: "Press Start 2P", cursive;
+  position: relative;
 }
 
 .ghost-button {

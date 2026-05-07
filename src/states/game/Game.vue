@@ -45,6 +45,8 @@
           :active-boon-card-id="activeBoonCardId"
           :controller-region="controllerRegion"
           :controller-card-cursor-index="controllerCardCursorIndex"
+          :controller-mapping="props.controllerMapping"
+          :is-controller-connected="props.isControllerConnected"
           @select-boon="selectBoonCard"
           @use-attack="useAttackCard"
         />
@@ -58,6 +60,8 @@
           v-if="isMultiRoundMode"
           :rounds="multiRoundProgressRounds"
           :controller-focused-round-index="controllerRegion === 'rounds' ? controllerRoundCursorIndex : -1"
+          :controller-mapping="props.controllerMapping"
+          :is-controller-connected="props.isControllerConnected"
         />
 
         <ScoreRibbon
@@ -90,6 +94,8 @@
             :burst-pulse="laneBurstPulse[leftLane.side]"
             :clear-pulse="rackClearPulse[leftLane.side]"
             :controller-focused-tile-id="leftLane.side === mySide ? controllerFocusedTileId : ''"
+            :controller-mapping="props.controllerMapping"
+            :is-controller-connected="props.isControllerConnected"
             @tile-click="handleTileClickWithCards($event, leftLane.side)"
             @tile-drop-on-builder="handleRackTileDropOnBuilder($event, leftLane.side)"
           />
@@ -114,6 +120,8 @@
             :burst-pulse="laneBurstPulse[rightLane.side]"
             :clear-pulse="rackClearPulse[rightLane.side]"
             :controller-focused-tile-id="rightLane.side === mySide ? controllerFocusedTileId : ''"
+            :controller-mapping="props.controllerMapping"
+            :is-controller-connected="props.isControllerConnected"
             @tile-click="handleTileClickWithCards($event, rightLane.side)"
             @tile-drop-on-builder="handleRackTileDropOnBuilder($event, rightLane.side)"
           />
@@ -146,6 +154,8 @@
           :length-bonus-steps="lengthBonusSteps"
           :controller-focused-built-tile-id="controllerRegion === 'builder' ? controllerFocusedBuiltTileId : ''"
           :controller-focused-action-index="controllerRegion === 'actions' ? controllerActionCursorIndex : -1"
+          :controller-mapping="props.controllerMapping"
+          :is-controller-connected="props.isControllerConnected"
           :is-overtime-active="wordBuilderBannerActive"
           :overtime-label="wordBuilderBannerLabel"
           :hide-console-topline="isMultiRoundRewardChoiceOpen || showHistoryOverlay"
@@ -177,6 +187,8 @@
         :can-reroll-round-modifiers="canRerollRewardRoundModifiers"
         :can-reroll-reward-choices="canRerollPersonalModifierRewards"
         :controller-focused-reward-index="controllerRegion === 'reward' ? controllerRewardCursorIndex : -1"
+        :controller-mapping="props.controllerMapping"
+        :is-controller-connected="props.isControllerConnected"
         @choose="handleMultiRoundRewardChoice"
         @reroll-round-modifiers="handleRewardRoundModifierReroll"
         @reroll-reward-choices="handlePersonalModifierRewardReroll"
@@ -318,6 +330,10 @@ const props = defineProps({
   overtimeEnabled: {
     type: Boolean,
     default: true
+  },
+  controllerMapping: {
+    type: Object,
+    default: () => ({})
   }
 });
 

@@ -55,6 +55,17 @@ const CONTROLLER_BUTTONS = [
 
 The `index` should match the platform API. The `label` is for settings UI.
 
+If you have controller-family-specific art, attach an icon URL to each supported button:
+
+```js
+const XBOX_CONTROLLER_BUTTONS = [
+  { index: 0, label: 'A / Cross', icon: aCrossIcon },
+  { index: 1, label: 'B / Circle', icon: bCircleIcon }
+];
+```
+
+Keep the art explicit about the controller family. For example, use Xbox SVGs only for Xbox prompts until PlayStation assets and labels are added.
+
 ## Action Catalog
 
 Create a list of actions the game allows players to bind:
@@ -134,6 +145,32 @@ A remapping UI should include:
 If the UI must work with a controller, make sure the selector can be changed without a mouse. For example, focused rows can cycle through available buttons with left/right input.
 
 Decide how to handle duplicate assignments. A simple default is to swap assignments when a player picks a button that is already in use. That keeps every action reachable and avoids hidden priority rules.
+
+## Button Prompt Overlay
+
+Create one reusable prompt component instead of hand-writing image markup in every screen.
+
+Recommended props:
+
+- `actionKey`: the action whose current binding should be shown.
+- `controllerMapping`: the current persisted mapping.
+- `controllerConnected`: whether a controller is currently connected.
+- `hide`: optional override for suppressing the prompt.
+- `size`: optional visual size, with a default.
+- `side`: optional bottom overlay side, defaulting to `left`.
+
+The component should:
+
+- Resolve the mapped physical button from `actionKey`.
+- Display the controller-family icon when available.
+- Fall back to a compact text label when no icon exists.
+- Render nothing when no controller is connected.
+- Render nothing when `hide` is true.
+- Render as an absolute overlay in the bottom-left by default.
+- Allow bottom-right placement for dense controls.
+- Avoid reserving layout space; the owning element should remain the same size whether the prompt is visible or hidden.
+
+Use the prompt on elements that are operated by controller actions. For repeated selectable items, showing the Select prompt only on the currently focused item avoids visual clutter. For direct action buttons, always showing the mapped button helps players learn the controls.
 
 ## Accessibility Notes
 

@@ -23,6 +23,14 @@
           :data-controller-round="index"
         >
           <span class="round-number">{{ round.number }}</span>
+          <ControllerButtonHint
+            v-if="controllerFocusedRoundIndex === index"
+            action-key="select"
+            :controller-mapping="controllerMapping"
+            :controller-connected="isControllerConnected"
+            :size="18"
+            :hide="true"
+          />
         </button>
         <div v-if="round.visibleModifierKeys.length" class="round-tooltip">
           <strong>{{ round.label }}</strong>
@@ -42,6 +50,7 @@
 import { computed } from 'vue';
 import { getRoundModifierDefinition } from '../multiround/round-modifier-definitions.js';
 import { getModifierDescription } from '../tile-logic.js';
+import ControllerButtonHint from './ControllerButtonHint.vue';
 
 const props = defineProps({
   rounds: {
@@ -51,6 +60,14 @@ const props = defineProps({
   controllerFocusedRoundIndex: {
     type: Number,
     default: -1
+  },
+  controllerMapping: {
+    type: Object,
+    default: () => ({})
+  },
+  isControllerConnected: {
+    type: Boolean,
+    default: false
   }
 });
 

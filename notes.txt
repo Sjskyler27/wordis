@@ -351,3 +351,47 @@ A major bug has been occuring on wavedash since we added the log in to profile o
 disable start with on wavedash and not dev
 
 add tile after image back in
+
+
+notes after normal game 
+player does not scale as well as they should 
+7 second wind is actually goated, since it can keep you in play indefinately i went from 150 away to playing 5 7 letter words with 4 letter words in between beating the insain 350 requirment 
+normal also took me an intermitant 1.5 hours. its a long game. the longest part is not the time for the rounds its the first and last word paralysis.
+shimmer should not turn on fist and last word 
+Does getting glass wrong break it
+E was the highest consonent for some reason 
+muted consonent still too hard. 
+New racks still not between each round
+Profile modile still not hidden 
+Add unlock system for tiles 
+ 8:06 AM 
+Add inricater of fleeting rack
+No longer seeing seven second wind what happened 
+ 9:29 AM 
+New letter doesn't change the score may be fine 
+Epic reward choice should not show up on second to last round 
+I didnt see any bad modifiers by the end of last round on normal 
+logging in still breaks the wavedash platform, maybe add a 
+sync is not the issue through
+[StartScreen] mounted {firebaseEnabled: true, hasAuth: true, hasSeenIntro: false}
+index-ddw2d89W.js:89707 [Wordis Boot] App mounted start {firebaseEnabled: true, wavedash: false, currentState: 'StartScreen', hasSharedGameId: false}
+index-ddw2d89W.js:89707 [UserState Sync] auth listener starting
+index-ddw2d89W.js:89707 [Wordis Boot] user sync listener initialized
+index-ddw2d89W.js:89707 [Wordis Boot] first-run auth prompt check {firebaseEnabled: true, hasStreamerCode: false, hasDismissedPrompt: true}
+index-ddw2d89W.js:89707 [Wordis Boot] first-run auth prompt skipped
+index-ddw2d89W.js:89707 [Wordis Boot] gamepad check requested
+index-ddw2d89W.js:89707 [Wordis Boot] zoom initialized {zoom: 0.51, gameZoom: 1}
+index-ddw2d89W.js:89707 [Wordis Boot] local defaults established
+index-ddw2d89W.js:89707 [Wordis Boot] drawnMonsters cleared
+index-ddw2d89W.js:89707 checking for controller
+index-ddw2d89W.js:89707 gamepadsfalse
+index-ddw2d89W.js:89707 [Wordis Boot] gamepad connection watcher initialized
+index-ddw2d89W.js:89707 [Wordis Boot] App mounted complete
+index-DolSwyWv.css:1  GET https://mx70d3a37s71e18b9p2vka4rn185754d-830d5ac9.builds.wavedashcdn.com/Press_Start_2P/PressStart2P-Regular.ttf net::ERR_ABORTED 404 (Not Found)Understand this error
+index-ddw2d89W.js:89707 [StartScreen] auth state received {hasUser: true, uid: 'M3cCi8...'}
+index-ddw2d89W.js:89707 [UserState Sync] auth state changed {hasUser: true, user: 'M3cCi8...'}
+index-ddw2d89W.js:89707 [UserState Sync] sync requested {force: false, firebaseEnabled: true, hasDb: true, hasUser: true, user: 'M3cCi8...', …}
+index-ddw2d89W.js:89707 [UserState Sync] sync skipped: ten minute guard
+index-ddw2d89W.js:89707 play index-1
+
+it mapped the actions to the buttons rather then the buttons to the actions, ie the keyboard can do only the same things as ususal so its hard to test
