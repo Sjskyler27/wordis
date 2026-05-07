@@ -216,14 +216,18 @@
   };
 
   const handleProfileClick = () => {
+    startLog('profile opened', { hasUser: Boolean(user.value?.uid) });
     showProfile.value = true;
   };
 
   const handleProfileLoggedIn = () => {
+    startLog('profile logged in; closing modal');
+    showProfile.value = false;
     emit('loggedIn');
   };
 
   const handleProfileLogout = () => {
+    startLog('profile logout requested');
     showProfile.value = false;
     emit('logOut');
   };
