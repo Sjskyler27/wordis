@@ -90,6 +90,7 @@ const getRoundLabel = (round) => {
 <style scoped>
 .multi-round-progress {
   position: relative;
+  z-index: var(--layer-round-info, 70);
   width: min(760px, 100%);
   margin: 0 auto 16px;
   padding: 12px 10px 18px;
@@ -203,6 +204,7 @@ const getRoundLabel = (round) => {
 
 .round-tooltip {
   position: absolute;
+  z-index: calc(var(--layer-round-info, 70) + 1);
   top: 48px;
   left: 50%;
   min-width: 250px;

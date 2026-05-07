@@ -1,6 +1,6 @@
 <template>
   <section class="word-console" :class="{ overtime: isOvertimeActive }">
-    <div class="console-topline">
+    <div v-if="!hideConsoleTopline" class="console-topline">
       <div class="console-label"><span v-if="currentWordScore < 10" style="visibility:hidden">_</span>{{ currentWordScore }} pts</div>
       <div
         v-if="minimumVowels"
@@ -315,6 +315,10 @@ const props = defineProps({
   overtimeLabel: {
     type: String,
     default: 'Final Word!'
+  },
+  hideConsoleTopline: {
+    type: Boolean,
+    default: false
   }
 });
 
@@ -2085,7 +2089,7 @@ button:focus{
 
 .console-label,
 .console-score {
-  z-index: 58;
+  z-index: 0;
   font-size: 2rem;
   font-weight: 900;
   line-height: 1;

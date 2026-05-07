@@ -148,6 +148,7 @@
           :controller-focused-action-index="controllerRegion === 'actions' ? controllerActionCursorIndex : -1"
           :is-overtime-active="wordBuilderBannerActive"
           :overtime-label="wordBuilderBannerLabel"
+          :hide-console-topline="isMultiRoundRewardChoiceOpen || showHistoryOverlay"
           @undo="handleUndo"
           @clear="handleClearWord"
           @save-letters="handleSaveLetters"
