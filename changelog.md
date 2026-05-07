@@ -1,4 +1,6 @@
 # Changelog
+## 0.0.55 - 2026-05-07
+- removed show auth prompt on launch
 
 ## 0.0.54 - 2026-05-07
 - CAHNGE PROFILE VISIBLE MAY FIX CRASHING
