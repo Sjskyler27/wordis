@@ -362,6 +362,8 @@ export const packMultiRoundSave = ({
     cr: multiRound?.completedRounds,
     pm: multiRound?.personalModifiers,
     rc: multiRound?.rewardChoices,
+    rsr: multiRound?.rewardSelectionsRemaining,
+    rst: multiRound?.rewardSelectionsTotal,
     pe: multiRound?.pendingStartingScore,
     end: multiRound?.runEnded,
     fs: multiRound?.failureSummary,

@@ -184,6 +184,8 @@ export const useMultiRoundRun = ({ rounds = MULTI_ROUND_ROUNDS } = {}) => {
   const completedRounds = ref([]);
   const personalModifiers = ref(createStartingPersonalModifiers());
   const rewardChoices = ref([]);
+  const rewardSelectionsRemaining = ref(0);
+  const rewardSelectionsTotal = ref(0);
   const runEnded = ref(false);
   const failureSummary = ref(null);
 
@@ -216,7 +218,8 @@ export const useMultiRoundRun = ({ rounds = MULTI_ROUND_ROUNDS } = {}) => {
     });
   });
   const rewardTiers = computed(() => currentRound.value?.rewardTiers || []);
-  const rewardChoiceOpen = computed(() => rewardChoices.value.length > 0);
+  const rewardChoiceOpen = computed(() => rewardChoices.value.length > 0 && rewardSelectionsRemaining.value > 0);
+  const rewardSelectionsChosen = computed(() => Math.max(0, rewardSelectionsTotal.value - rewardSelectionsRemaining.value));
   const runWon = computed(() => runEnded.value && !failureSummary.value);
   const activePersonalModifierEffects = computed(() => {
     return personalModifiers.value.reduce((effects, modifier) => {
@@ -238,6 +241,7 @@ export const useMultiRoundRun = ({ rounds = MULTI_ROUND_ROUNDS } = {}) => {
       effects.badChanceCapDelta += (definitionEffects.badChanceCapDelta || 0) * stacks;
       effects.neutralChanceCapDelta += (definitionEffects.neutralChanceCapDelta || 0) * stacks;
       effects.rewardCountModifier += (definitionEffects.rewardCountModifier || 0) * stacks;
+      effects.rewardSelectionCountBonus += (definitionEffects.rewardSelectionCountBonus || 0) * stacks;
       Object.entries(definitionEffects.modifierScoreBonus || {}).forEach(([key, bonus]) => {
         effects.modifierScoreBonus[key] = (effects.modifierScoreBonus[key] || 0) + (bonus * stacks);
       });
@@ -296,7 +300,8 @@ export const useMultiRoundRun = ({ rounds = MULTI_ROUND_ROUNDS } = {}) => {
       goodChanceCapDelta: 0,
       badChanceCapDelta: 0,
       neutralChanceCapDelta: 0,
-      rewardCountModifier: 0
+      rewardCountModifier: 0,
+      rewardSelectionCountBonus: 0
     });
   });
   const visibleProgressRounds = computed(() => {
@@ -317,6 +322,8 @@ export const useMultiRoundRun = ({ rounds = MULTI_ROUND_ROUNDS } = {}) => {
     completedRounds.value = [];
     personalModifiers.value = createStartingPersonalModifiers();
     rewardChoices.value = [];
+    rewardSelectionsRemaining.value = 0;
+    rewardSelectionsTotal.value = 0;
     runEnded.value = false;
     failureSummary.value = null;
   };
@@ -336,6 +343,11 @@ export const useMultiRoundRun = ({ rounds = MULTI_ROUND_ROUNDS } = {}) => {
       ? state.personalModifiers
       : createStartingPersonalModifiers();
     rewardChoices.value = Array.isArray(state.rewardChoices) ? state.rewardChoices : [];
+    rewardSelectionsRemaining.value = Math.max(0, Math.floor(Number(state.rewardSelectionsRemaining) || 0));
+    rewardSelectionsTotal.value = Math.max(
+      rewardSelectionsRemaining.value,
+      Math.floor(Number(state.rewardSelectionsTotal) || rewardSelectionsRemaining.value || (rewardChoices.value.length ? 1 : 0))
+    );
     runEnded.value = Boolean(state.runEnded);
     failureSummary.value = state.failureSummary || null;
   };
@@ -431,7 +443,7 @@ export const useMultiRoundRun = ({ rounds = MULTI_ROUND_ROUNDS } = {}) => {
     return nextModifier;
   };
 
-  const generateRewardChoices = (lengthModifier = 0) => {
+  const generateRewardChoices = (lengthModifier = 0, selectionModifier = 0) => {
     const defaultLength = 3;
     const allowedTiers = currentRound.value?.isChallenge
       ? [getHighestTier(rewardTiers.value)]
@@ -458,6 +470,10 @@ export const useMultiRoundRun = ({ rounds = MULTI_ROUND_ROUNDS } = {}) => {
     }
 
     rewardChoices.value = choices;
+    rewardSelectionsTotal.value = choices.length
+      ? Math.max(1, Math.floor(1 + (Number(selectionModifier) || 0)))
+      : 0;
+    rewardSelectionsRemaining.value = rewardSelectionsTotal.value;
     return choices;
   };
 
@@ -477,11 +493,19 @@ export const useMultiRoundRun = ({ rounds = MULTI_ROUND_ROUNDS } = {}) => {
         return {
           ...round,
           selectedRewardKey: selectedModifier.key,
-          selectedRewardLabel: selectedModifier.label
+          selectedRewardLabel: selectedModifier.label,
+          selectedRewardKeys: [...(round.selectedRewardKeys || []), selectedModifier.key],
+          selectedRewardLabels: [...(round.selectedRewardLabels || []), selectedModifier.label]
         };
       });
     }
-    rewardChoices.value = [];
+    rewardSelectionsRemaining.value = Math.max(0, rewardSelectionsRemaining.value - 1);
+    rewardChoices.value = rewardChoices.value.filter((choice) => choice.key !== modifierKey);
+    if (rewardSelectionsRemaining.value <= 0 || !rewardChoices.value.length) {
+      rewardChoices.value = [];
+      rewardSelectionsRemaining.value = 0;
+      rewardSelectionsTotal.value = 0;
+    }
     return selectedModifier;
   };
 
@@ -504,6 +528,8 @@ export const useMultiRoundRun = ({ rounds = MULTI_ROUND_ROUNDS } = {}) => {
 
   const goToNextRound = ({ startingScore = 0 } = {}) => {
     rewardChoices.value = [];
+    rewardSelectionsRemaining.value = 0;
+    rewardSelectionsTotal.value = 0;
     if (currentRoundIndex.value >= resolvedRounds.value.length - 1) {
       runEnded.value = true;
       failureSummary.value = null;
@@ -549,6 +575,9 @@ export const useMultiRoundRun = ({ rounds = MULTI_ROUND_ROUNDS } = {}) => {
     accumulatedChanceIncrease,
     rewardTiers,
     rewardChoices,
+    rewardSelectionsRemaining,
+    rewardSelectionsTotal,
+    rewardSelectionsChosen,
     rewardChoiceOpen,
     runEnded,
     runWon,

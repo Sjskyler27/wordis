@@ -170,6 +170,9 @@
         v-if="isMultiRoundMode && isMultiRoundRewardChoiceOpen"
         :rewards="multiRoundRewardChoices"
         :upcoming-round="upcomingMultiRoundPreview"
+        :selection-total="multiRoundRun.rewardSelectionsTotal.value"
+        :selections-remaining="multiRoundRun.rewardSelectionsRemaining.value"
+        :selections-chosen="multiRoundRun.rewardSelectionsChosen.value"
         :controller-focused-reward-index="controllerRegion === 'reward' ? controllerRewardCursorIndex : -1"
         @choose="handleMultiRoundRewardChoice"
       />
@@ -510,6 +513,8 @@ const buildMultiRoundSaveState = ({ includeInRound = true, includeHistory = true
     completedRounds: multiRoundRun.completedRounds.value,
     personalModifiers: multiRoundRun.personalModifiers.value,
     rewardChoices: multiRoundRun.rewardChoices.value,
+    rewardSelectionsRemaining: multiRoundRun.rewardSelectionsRemaining.value,
+    rewardSelectionsTotal: multiRoundRun.rewardSelectionsTotal.value,
     pendingStartingScore: pendingMultiRoundStartingScore.value,
     runEnded: multiRoundRun.runEnded.value,
     failureSummary: multiRoundRun.failureSummary.value,
@@ -927,16 +932,26 @@ const packPastGameRound = (round = {}) => ({
   sb: round.startingScoreBonus || 0,
   mods: round.activeRoundModifierKeys || [],
   rw: round.selectedRewardKey || null,
-  rwl: round.selectedRewardLabel || ''
+  rwl: round.selectedRewardLabel || '',
+  rws: round.selectedRewardKeys || [],
+  rwls: round.selectedRewardLabels || []
 });
 
 const packPastGameRewards = (rounds = []) => rounds
-  .filter((round) => round.selectedRewardKey)
-  .map((round) => ({
-    rn: round.roundNumber || 0,
-    k: round.selectedRewardKey,
-    lb: round.selectedRewardLabel || ''
-  }));
+  .flatMap((round) => {
+    const rewardKeys = round.selectedRewardKeys?.length
+      ? round.selectedRewardKeys
+      : (round.selectedRewardKey ? [round.selectedRewardKey] : []);
+    const rewardLabels = round.selectedRewardLabels?.length
+      ? round.selectedRewardLabels
+      : (round.selectedRewardLabel ? [round.selectedRewardLabel] : []);
+
+    return rewardKeys.map((rewardKey, index) => ({
+      rn: round.roundNumber || 0,
+      k: rewardKey,
+      lb: rewardLabels[index] || ''
+    }));
+  });
 
 const markPastGameSaved = (id) => {
   savedPastGameIds.value = new Set([...savedPastGameIds.value, id]);
@@ -1537,7 +1552,10 @@ const completeMultiRoundRound = () => {
   }
 
   pendingMultiRoundStartingScore.value = startingScore;
-  const rewardChoices = multiRoundRun.generateRewardChoices((roundModifierEffects.value.rewardCountModifier || 0) + (personalModifierEffects.value.rewardCountModifier || 0));
+  const rewardChoices = multiRoundRun.generateRewardChoices(
+    (roundModifierEffects.value.rewardCountModifier || 0) + (personalModifierEffects.value.rewardCountModifier || 0),
+    personalModifierEffects.value.rewardSelectionCountBonus || 0
+  );
   saveCurrentMultiRoundCheckpoint();
   playUiSound(tileReplaceSound);
   localMessage.value = 'Round complete.';
@@ -1695,6 +1713,12 @@ const handleMultiRoundRewardChoice = (rewardKey) => {
   }
 
   applyImmediatePersonalModifierEffects(selectedModifier);
+  if (multiRoundRun.rewardChoiceOpen.value) {
+    saveCurrentMultiRoundCheckpoint();
+    localMessage.value = `Choose ${multiRoundRun.rewardSelectionsRemaining.value} more modifier${multiRoundRun.rewardSelectionsRemaining.value === 1 ? '' : 's'}.`;
+    return;
+  }
+
   const startingScore = pendingMultiRoundStartingScore.value;
   const advanced = multiRoundRun.goToNextRound({ startingScore });
   pendingMultiRoundStartingScore.value = 0;
@@ -2927,6 +2951,8 @@ const restoreContinueSave = (rawSave) => {
       completedRounds: multiRoundSave.cr,
       personalModifiers: multiRoundSave.pm,
       rewardChoices: multiRoundSave.rc,
+      rewardSelectionsRemaining: multiRoundSave.rsr,
+      rewardSelectionsTotal: multiRoundSave.rst,
       startingScoreBonus: multiRoundSave.pe,
       runEnded: multiRoundSave.end,
       failureSummary: multiRoundSave.fs

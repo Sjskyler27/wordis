@@ -2,7 +2,7 @@
   <div class="reward-choice-overlay">
     <section class="reward-choice-panel animated-slide-up">
       <span class="reward-kicker">Round Complete</span>
-      <strong>Choose a modifier</strong>
+      <strong>{{ choiceTitle }}</strong>
       <div v-if="upcomingRound" class="upcoming-round-preview">
         <span class="upcoming-round-kicker">Next Round</span>
         <strong>{{ upcomingRound.label }}</strong>
@@ -39,9 +39,10 @@
 </template>
 
 <script setup>
+import { computed } from 'vue';
 import { getRoundModifierDefinition } from '../multiround/round-modifier-definitions.js';
 
-defineProps({
+const props = defineProps({
   rewards: {
     type: Array,
     required: true
@@ -53,6 +54,18 @@ defineProps({
   controllerFocusedRewardIndex: {
     type: Number,
     default: -1
+  },
+  selectionTotal: {
+    type: Number,
+    default: 1
+  },
+  selectionsRemaining: {
+    type: Number,
+    default: 1
+  },
+  selectionsChosen: {
+    type: Number,
+    default: 0
   }
 });
 
@@ -69,6 +82,17 @@ const formatModifierKey = (modifierKey = '') => {
 const getModifierLabel = (modifierKey = '') => {
   return getRoundModifierDefinition(modifierKey)?.label || formatModifierKey(modifierKey);
 };
+
+const choiceTitle = computed(() => {
+  const selectionTotal = Math.max(1, Number(props.selectionTotal) || 1);
+  if (selectionTotal <= 1) {
+    return 'Choose a modifier';
+  }
+
+  const remaining = Math.max(0, Number(props.selectionsRemaining) || 0);
+  const chosen = Math.max(0, Number(props.selectionsChosen) || 0);
+  return `Select ${selectionTotal} modifiers (${chosen}/${selectionTotal}, ${remaining} left)`;
+});
 </script>
 
 <style scoped>
