@@ -449,8 +449,7 @@ export const useMultiRoundRun = ({ rounds = MULTI_ROUND_ROUNDS } = {}) => {
     return nextModifier;
   };
 
-  const generateRewardChoices = (lengthModifier = 0, selectionModifier = 0) => {
-    const defaultLength = 3;
+  const getEligibleRewardDefinitions = () => {
     const allowedTiers = currentRound.value?.isChallenge
       ? [getHighestTier(rewardTiers.value)]
       : rewardTiers.value;
@@ -458,14 +457,21 @@ export const useMultiRoundRun = ({ rounds = MULTI_ROUND_ROUNDS } = {}) => {
       stacks[modifier.key] = modifier.stacks || 1;
       return stacks;
     }, {});
-    const eligibleDefinitions = Object.values(PERSONAL_MODIFIER_DEFINITIONS).filter((definition) => {
+    return Object.values(PERSONAL_MODIFIER_DEFINITIONS).filter((definition) => {
       return allowedTiers.includes(definition.tier)
         && (currentStacks[definition.key] || 0) < (definition.maxStacks || 1);
     });
-    const choices = [];
-    const availableDefinitions = [...eligibleDefinitions];
+  };
 
-    while (choices.length < defaultLength + lengthModifier && availableDefinitions.length) {
+  const chooseRewardChoices = (count = 3, excludedKeys = new Set()) => {
+    const eligibleDefinitions = getEligibleRewardDefinitions();
+    const choices = [];
+    let availableDefinitions = eligibleDefinitions.filter((definition) => !excludedKeys.has(definition.key));
+    if (!availableDefinitions.length) {
+      availableDefinitions = [...eligibleDefinitions];
+    }
+
+    while (choices.length < count && availableDefinitions.length) {
       const choice = chooseWeightedReward(availableDefinitions);
       if (!choice) {
         break;
@@ -475,11 +481,32 @@ export const useMultiRoundRun = ({ rounds = MULTI_ROUND_ROUNDS } = {}) => {
       availableDefinitions.splice(availableDefinitions.findIndex((definition) => definition.key === choice.key), 1);
     }
 
+    return choices;
+  };
+
+  const generateRewardChoices = (lengthModifier = 0, selectionModifier = 0) => {
+    const defaultLength = 3;
+    const choices = chooseRewardChoices(defaultLength + lengthModifier);
     rewardChoices.value = choices;
     rewardSelectionsTotal.value = choices.length
       ? Math.max(1, Math.floor(1 + (Number(selectionModifier) || 0)))
       : 0;
     rewardSelectionsRemaining.value = rewardSelectionsTotal.value;
+    return choices;
+  };
+
+  const rerollRewardChoices = () => {
+    if (!rewardChoiceOpen.value || !rewardChoices.value.length) {
+      return [];
+    }
+
+    const excludedKeys = new Set(rewardChoices.value.map((choice) => choice.key));
+    const choices = chooseRewardChoices(rewardChoices.value.length, excludedKeys);
+    if (!choices.length) {
+      return rewardChoices.value;
+    }
+
+    rewardChoices.value = choices;
     return choices;
   };
 
@@ -596,6 +623,7 @@ export const useMultiRoundRun = ({ rounds = MULTI_ROUND_ROUNDS } = {}) => {
     reduceCurrentTargetScore,
     addPersonalModifier,
     generateRewardChoices,
+    rerollRewardChoices,
     selectRewardChoice,
     recordCompletedRound,
     goToNextRound,

@@ -175,9 +175,11 @@
         :selections-remaining="multiRoundRun.rewardSelectionsRemaining.value"
         :selections-chosen="multiRoundRun.rewardSelectionsChosen.value"
         :can-reroll-round-modifiers="canRerollRewardRoundModifiers"
+        :can-reroll-reward-choices="canRerollPersonalModifierRewards"
         :controller-focused-reward-index="controllerRegion === 'reward' ? controllerRewardCursorIndex : -1"
         @choose="handleMultiRoundRewardChoice"
         @reroll-round-modifiers="handleRewardRoundModifierReroll"
+        @reroll-reward-choices="handlePersonalModifierRewardReroll"
       />
 
       <HistoryOverlay
@@ -799,6 +801,7 @@ const {
     }
   },
   onMultiRoundRerollNextRoundModifiers: () => multiRoundRun.rerollNextRoundModifiers(),
+  onMultiRoundRerollRewardChoices: () => multiRoundRun.rerollRewardChoices(),
   onMultiRoundReduceTargetScore: (amount) => multiRoundRun.reduceCurrentTargetScore(amount),
   onBotPreparing: triggerBotCogBoost,
   personalModifierEffects,
@@ -881,8 +884,18 @@ const rewardRoundModifierRerollCard = computed(() => {
   ];
   return cards.find((card) => card.effectType === 'reroll_next_round_modifier') || null;
 });
+const personalModifierRewardRerollCard = computed(() => {
+  const cards = [
+    ...(myCards.value.boons || []),
+    ...(myCards.value.attacks || [])
+  ];
+  return cards.find((card) => card.effectType === 'reroll_personal_modifier_rewards') || null;
+});
 const canRerollRewardRoundModifiers = computed(() => {
   return Boolean(isMultiRoundRewardChoiceOpen.value && upcomingMultiRoundPreview.value && rewardRoundModifierRerollCard.value);
+});
+const canRerollPersonalModifierRewards = computed(() => {
+  return Boolean(isMultiRoundRewardChoiceOpen.value && multiRoundRewardChoices.value.length && personalModifierRewardRerollCard.value);
 });
 const hasBarricadeTileInRack = computed(() => myTiles.value.some((tile) => tile?.status === 'barricadeTile'));
 const cardDisabledReason = computed(() => {
@@ -1754,6 +1767,21 @@ const handleMultiRoundRewardChoice = (rewardKey) => {
   localMessage.value = `Next round starts with ${startingScore} points from saved time.`;
 };
 
+const discardHeldCard = (card) => {
+  if (!card || isTestingMode) {
+    return;
+  }
+
+  const handKey = card.kind === 'boon' ? 'boons' : 'attacks';
+  playerCards.value = {
+    ...playerCards.value,
+    [mySide.value]: {
+      ...playerCards.value[mySide.value],
+      [handKey]: (playerCards.value[mySide.value]?.[handKey] || []).filter((entry) => entry.id !== card.id)
+    }
+  };
+};
+
 const handleRewardRoundModifierReroll = () => {
   const card = rewardRoundModifierRerollCard.value;
   if (!card || !canRerollRewardRoundModifiers.value) {
@@ -1766,19 +1794,26 @@ const handleRewardRoundModifierReroll = () => {
     return;
   }
 
-  if (!isTestingMode) {
-    const handKey = card.kind === 'boon' ? 'boons' : 'attacks';
-    playerCards.value = {
-      ...playerCards.value,
-      [mySide.value]: {
-        ...playerCards.value[mySide.value],
-        [handKey]: (playerCards.value[mySide.value]?.[handKey] || []).filter((entry) => entry.id !== card.id)
-      }
-    };
-  }
-
+  discardHeldCard(card);
   saveCurrentMultiRoundCheckpoint();
   localMessage.value = 'Rerolled next round modifiers.';
+};
+
+const handlePersonalModifierRewardReroll = () => {
+  const card = personalModifierRewardRerollCard.value;
+  if (!card || !canRerollPersonalModifierRewards.value) {
+    return;
+  }
+
+  const choices = multiRoundRun.rerollRewardChoices();
+  if (!choices.length) {
+    localMessage.value = 'There are no rewards to reroll.';
+    return;
+  }
+
+  discardHeldCard(card);
+  saveCurrentMultiRoundCheckpoint();
+  localMessage.value = 'Rerolled personal modifier rewards.';
 };
 
 const validateActiveRoundModifiers = (selectedTiles = []) => {

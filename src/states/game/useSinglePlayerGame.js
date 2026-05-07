@@ -45,6 +45,7 @@ export const useSinglePlayerGame = ({
   onTimedSoloPauseTime,
   onTimedSoloGainTime,
   onMultiRoundRerollNextRoundModifiers,
+  onMultiRoundRerollRewardChoices,
   onMultiRoundReduceTargetScore,
   onBotPreparing,
   personalModifierEffects,
@@ -878,6 +879,20 @@ export const useSinglePlayerGame = ({
         message: rolledModifierLabels.length
           ? `Rerolled next round: ${rolledModifierLabels.join(', ')}.`
           : 'Rerolled next round: no modifiers.'
+      };
+    }
+
+    if (card.effectType === 'reroll_personal_modifier_rewards') {
+      const choices = onMultiRoundRerollRewardChoices?.();
+      if (!choices?.length) {
+        localMessage.value = 'There are no rewards to reroll.';
+        restoreAttackCard();
+        return false;
+      }
+
+      return {
+        success: true,
+        message: 'Rerolled personal modifier rewards.'
       };
     }
 

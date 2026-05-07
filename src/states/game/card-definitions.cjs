@@ -260,6 +260,21 @@ const CARD_DEFINITIONS = {
       cardBadgeBackground: 'rgba(82, 42, 22, 0.42)'
     }
   },
+  attack_reroll_personal_modifier_rewards: {
+    kind: 'attack',
+    label: 'Reroll Rewards',
+    description: 'Reroll the current personal modifier reward choices.',
+    rarityWeight: 0.68,
+    effectType: 'reroll_personal_modifier_rewards',
+    multiRoundOnly: true,
+    ui: {
+      cardGlow: 'rgba(218, 196, 255, 0.26)',
+      cardEdge: 'rgba(226, 209, 255, 0.36)',
+      cardPattern: 'rgba(244, 235, 255, 0.12)',
+      cardBackground: 'linear-gradient(180deg, rgba(134, 103, 218, 0.98), rgba(74, 46, 146, 0.96))',
+      cardBadgeBackground: 'rgba(45, 28, 92, 0.42)'
+    }
+  },
   attack_reduce_round_target: {
     kind: 'attack',
     label: 'Lower Target',
@@ -301,6 +316,7 @@ const TIMED_SOLO_ATTACK_CARD_KEYS = ['attack_pause_time', 'attack_gain_time', 'a
 const MULTI_ROUND_ATTACK_CARD_KEYS = [
   ...TIMED_SOLO_ATTACK_CARD_KEYS,
   'attack_reroll_next_round_modifier',
+  'attack_reroll_personal_modifier_rewards',
   'attack_reduce_round_target'
 ];
 

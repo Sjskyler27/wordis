@@ -18,14 +18,24 @@
           </template>
           <span v-else class="upcoming-round-empty">No round modifiers</span>
         </div>
-        <button
-          v-if="canRerollRoundModifiers"
-          type="button"
-          class="reroll-round-button"
-          @click="$emit('reroll-round-modifiers')"
-        >
-          Reroll round modifiers
-        </button>
+        <div class="reward-choice-actions">
+          <button
+            v-if="canRerollRoundModifiers"
+            type="button"
+            class="reward-choice-action"
+            @click="$emit('reroll-round-modifiers')"
+          >
+            Reroll round modifiers
+          </button>
+          <button
+            v-if="canRerollRewardChoices"
+            type="button"
+            class="reward-choice-action"
+            @click="$emit('reroll-reward-choices')"
+          >
+            Reroll rewards
+          </button>
+        </div>
       </div>
       <div class="reward-choice-grid">
         <button
@@ -78,10 +88,14 @@ const props = defineProps({
   canRerollRoundModifiers: {
     type: Boolean,
     default: false
+  },
+  canRerollRewardChoices: {
+    type: Boolean,
+    default: false
   }
 });
 
-defineEmits(['choose', 'reroll-round-modifiers']);
+defineEmits(['choose', 'reroll-round-modifiers', 'reroll-reward-choices']);
 
 const formatModifierKey = (modifierKey = '') => {
   return modifierKey
@@ -212,9 +226,15 @@ const choiceTitle = computed(() => {
   font-size: 0.76rem;
 }
 
-.reroll-round-button {
-  appearance: none;
+.reward-choice-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
   margin-top: 12px;
+}
+
+.reward-choice-action {
+  appearance: none;
   min-height: 34px;
   padding: 8px 12px;
   border-radius: 999px;
@@ -227,8 +247,8 @@ const choiceTitle = computed(() => {
   font-weight: 800;
 }
 
-.reroll-round-button:hover,
-.reroll-round-button:focus-visible {
+.reward-choice-action:hover,
+.reward-choice-action:focus-visible {
   background: rgba(255, 202, 103, 0.22);
 }
 
