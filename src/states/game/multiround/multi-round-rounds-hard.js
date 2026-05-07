@@ -129,7 +129,7 @@ export const HARD_MULTI_ROUND_ROUNDS = [
     modifierBudget: {
       [MULTI_ROUND_MODIFIER_DIFFICULTIES.MEDIUM]: 2
     },
-    rewardTiers: [MULTI_ROUND_REWARD_TIERS.EPIC]
+
   }),
   createRound({
     ...defaultHardChanceIncreases,
@@ -144,7 +144,7 @@ export const HARD_MULTI_ROUND_ROUNDS = [
     },
     rewardTiers: [
       MULTI_ROUND_REWARD_TIERS.RARE,
-      MULTI_ROUND_REWARD_TIERS.EPIC
+      MULTI_ROUND_REWARD_TIERS.COMMON
     ]
   }),
   createRound({
@@ -188,7 +188,7 @@ export const HARD_MULTI_ROUND_ROUNDS = [
     },
     rewardTiers: [
       MULTI_ROUND_REWARD_TIERS.RARE,
-      MULTI_ROUND_REWARD_TIERS.EPIC
+      MULTI_ROUND_REWARD_TIERS.COMMON
     ]
   }),
   createRound({
