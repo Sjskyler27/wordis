@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.0.53 - 2026-05-07
+
+Start: 2026-05-07 10:14:00 EDT
+Stop: 2026-05-07 10:17:33 EDT
+
+- Restored in-slot reward previews for available word slot bonuses.
+- Kept covered-tile reward badges separate so they only show rewards currently being received.
+
 ## 0.0.52 - 2026-05-06
 - fix save style showing circle
 - added large vernacular upgrade
