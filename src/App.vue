@@ -452,11 +452,12 @@ const DEFAULT_JOYSTICK_SENSITIVITY = 30;
   const showFirstRunAuthPrompt = () => {
     bootLog('first-run auth prompt check', {
       firebaseEnabled,
+      hasCurrentUser: Boolean(firebaseAuth?.currentUser),
       hasStreamerCode: Boolean(streamerCode),
       hasDismissedPrompt: Boolean(localStorage.getItem(AUTH_PROMPT_SEEN_KEY))
     });
 
-    if (!firebaseEnabled || streamerCode || localStorage.getItem(AUTH_PROMPT_SEEN_KEY)) {
+    if (!firebaseEnabled || firebaseAuth?.currentUser || streamerCode || localStorage.getItem(AUTH_PROMPT_SEEN_KEY)) {
       bootLog('first-run auth prompt skipped');
       return;
     }
@@ -780,17 +781,18 @@ const simulateTab = (reverse = false) => {
     });
 
     try {
-      stopUserSync = initUserSync(showFirstRunAuthPrompt);
+      stopUserSync = initUserSync(showFirstRunAuthPrompt, (user) => {
+        if (showAuthModal.value) {
+          bootLog('auth user restored; closing auth modal', {
+            uid: user?.uid ? `${user.uid.slice(0, 6)}...` : null
+          });
+          showAuthModal.value = false;
+        }
+      });
       bootLog('user sync listener initialized');
     } catch (error) {
       bootWarn('user sync listener failed safely', error);
       stopUserSync = null;
-    }
-
-    try {
-      showFirstRunAuthPrompt();
-    } catch (error) {
-      bootWarn('first-run auth prompt failed safely', error);
     }
 
     if(!localStorage.getItem('nativeControllerSupport')){ 

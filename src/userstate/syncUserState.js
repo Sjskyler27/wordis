@@ -241,7 +241,7 @@ export const syncUserState = async ({ force = false, user = auth?.currentUser } 
   }
 };
 
-export const initUserSync = (showAuthPrompt) => {
+export const initUserSync = (showAuthPrompt, onSignedIn) => {
   if (!firebaseEnabled || !auth) {
     userSyncLog('auth listener skipped: firebase auth unavailable');
     return () => {};
@@ -264,6 +264,8 @@ export const initUserSync = (showAuthPrompt) => {
         }
         return;
       }
+
+      onSignedIn?.(user);
 
       try {
         await syncUserState({ user });
