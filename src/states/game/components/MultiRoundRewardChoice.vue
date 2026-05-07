@@ -18,6 +18,14 @@
           </template>
           <span v-else class="upcoming-round-empty">No round modifiers</span>
         </div>
+        <button
+          v-if="canRerollRoundModifiers"
+          type="button"
+          class="reroll-round-button"
+          @click="$emit('reroll-round-modifiers')"
+        >
+          Reroll round modifiers
+        </button>
       </div>
       <div class="reward-choice-grid">
         <button
@@ -66,10 +74,14 @@ const props = defineProps({
   selectionsChosen: {
     type: Number,
     default: 0
+  },
+  canRerollRoundModifiers: {
+    type: Boolean,
+    default: false
   }
 });
 
-defineEmits(['choose']);
+defineEmits(['choose', 'reroll-round-modifiers']);
 
 const formatModifierKey = (modifierKey = '') => {
   return modifierKey
@@ -198,6 +210,26 @@ const choiceTitle = computed(() => {
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.08);
   font-size: 0.76rem;
+}
+
+.reroll-round-button {
+  appearance: none;
+  margin-top: 12px;
+  min-height: 34px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 220, 144, 0.3);
+  background: rgba(255, 202, 103, 0.14);
+  color: #ffe3a3;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.reroll-round-button:hover,
+.reroll-round-button:focus-visible {
+  background: rgba(255, 202, 103, 0.22);
 }
 
 .reward-card {

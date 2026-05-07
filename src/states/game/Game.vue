@@ -174,8 +174,10 @@
         :selection-total="multiRoundRun.rewardSelectionsTotal.value"
         :selections-remaining="multiRoundRun.rewardSelectionsRemaining.value"
         :selections-chosen="multiRoundRun.rewardSelectionsChosen.value"
+        :can-reroll-round-modifiers="canRerollRewardRoundModifiers"
         :controller-focused-reward-index="controllerRegion === 'reward' ? controllerRewardCursorIndex : -1"
         @choose="handleMultiRoundRewardChoice"
+        @reroll-round-modifiers="handleRewardRoundModifierReroll"
       />
 
       <HistoryOverlay
@@ -872,6 +874,16 @@ const isMySubmissionPaused = computed(() => Boolean(submissionPauseOwner.value) 
 const isSubmissionPauseActive = computed(() => Boolean(submissionPauseOwner.value));
 
 const myCards = computed(() => playerCards.value[mySide.value] || { boons: [], attacks: [] });
+const rewardRoundModifierRerollCard = computed(() => {
+  const cards = [
+    ...(myCards.value.boons || []),
+    ...(myCards.value.attacks || [])
+  ];
+  return cards.find((card) => card.effectType === 'reroll_next_round_modifier') || null;
+});
+const canRerollRewardRoundModifiers = computed(() => {
+  return Boolean(isMultiRoundRewardChoiceOpen.value && upcomingMultiRoundPreview.value && rewardRoundModifierRerollCard.value);
+});
 const hasBarricadeTileInRack = computed(() => myTiles.value.some((tile) => tile?.status === 'barricadeTile'));
 const cardDisabledReason = computed(() => {
   if (hasBarricadeTileInRack.value) {
@@ -1740,6 +1752,33 @@ const handleMultiRoundRewardChoice = (rewardKey) => {
   saveCurrentMultiRoundLocal();
   focusControllerTile(0);
   localMessage.value = `Next round starts with ${startingScore} points from saved time.`;
+};
+
+const handleRewardRoundModifierReroll = () => {
+  const card = rewardRoundModifierRerollCard.value;
+  if (!card || !canRerollRewardRoundModifiers.value) {
+    return;
+  }
+
+  const nextRound = multiRoundRun.rerollNextRoundModifiers();
+  if (!nextRound) {
+    localMessage.value = 'There is no next round to reroll.';
+    return;
+  }
+
+  if (!isTestingMode) {
+    const handKey = card.kind === 'boon' ? 'boons' : 'attacks';
+    playerCards.value = {
+      ...playerCards.value,
+      [mySide.value]: {
+        ...playerCards.value[mySide.value],
+        [handKey]: (playerCards.value[mySide.value]?.[handKey] || []).filter((entry) => entry.id !== card.id)
+      }
+    };
+  }
+
+  saveCurrentMultiRoundCheckpoint();
+  localMessage.value = 'Rerolled next round modifiers.';
 };
 
 const validateActiveRoundModifiers = (selectedTiles = []) => {
