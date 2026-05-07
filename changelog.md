@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.0.54 - 2026-05-07
+- CAHNGE PROFILE VISIBLE MAY FIX CRASHING
+- new attack reroll modifers 
+- add reroll buttons to the reward modal
+- added controller mapping, may break controllers  have not got to test it 
+- added button images
+- rack clears are reset every round 
+- round progress now overlays rewards 
+- add hint to reward overlay for round
+- indicater for fleaeting rack increase dificulty 
+
+
 ## 0.0.53 - 2026-05-07
 
 Start: 2026-05-07 10:14:00 EDT
