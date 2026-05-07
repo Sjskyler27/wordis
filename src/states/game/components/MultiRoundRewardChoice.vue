@@ -97,9 +97,9 @@ const choiceTitle = computed(() => {
 
 <style scoped>
 .reward-choice-overlay {
-  position: absolute;
-  inset: 16px;
-  z-index: 7;
+  position: fixed;
+  inset: 0;
+  z-index: var(--layer-reward-modal, 50);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -119,7 +119,7 @@ const choiceTitle = computed(() => {
   max-height: 40%;
   height: 40%;
   bottom: 20%;
-  z-index: 1;
+  z-index: calc(var(--layer-reward-modal, 50) + 1);
   visibility: hidden;
   width: min(100%, 820px);
   padding: 100px 80px;

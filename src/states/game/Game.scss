@@ -3,6 +3,9 @@ body {
 }
 
 .game-shell {
+  --layer-side-drawer: 20;
+  --layer-reward-modal: 50;
+  --layer-round-info: 70;
   --bg-top: #ca6937;
   --bg-mid: #b63e3b;
   --bg-bottom: #341137;
@@ -259,7 +262,7 @@ body {
 
   to {
     opacity: 1;
-    transform: translateY(0) scale(1);
+    transform: none;
     filter: blur(0);
   }
 }
@@ -296,7 +299,7 @@ body {
     position: fixed;
     top: 25%;
     left: 0;
-    z-index: 21;
+    z-index: calc(var(--layer-side-drawer) + 1);
     transform: translateY(-50%);
     border: 1px solid rgba(255, 238, 214, 0.16);
     cursor: pointer;
@@ -336,7 +339,7 @@ body {
     position: fixed;
     inset: 0;
     display: block;
-    z-index: 5;
+    z-index: calc(var(--layer-side-drawer) - 1);
     border: none;
     background: rgba(18, 6, 17, 0.00);
     pointer-events: none;
@@ -347,7 +350,7 @@ body {
     top: 0px;
     left: 0;
     bottom: 0px;
-    z-index: 19;
+    z-index: var(--layer-side-drawer);
     width: min(360px, calc(100vw - 52px));
     max-width: none;
     padding: 18px 16px 22px;
