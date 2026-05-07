@@ -1,7 +1,7 @@
 <template>
   <section class="word-console" :class="{ overtime: isOvertimeActive }">
     <div v-if="!hideConsoleTopline" class="console-topline">
-      <div class="console-label"><span v-if="currentWordScore < 10" style="visibility:hidden">_</span>{{ currentWordScore }} pts</div>
+      <div class="console-label"><span v-if="displayedCurrentWordScore < 10" style="visibility:hidden">_</span>{{ displayedCurrentWordScore }} pts</div>
       <div
         v-if="minimumVowels"
         class="vowel-toll-meter"
@@ -571,7 +571,21 @@ const selectedVowelCount = computed(() => {
 const vowelTollMet = computed(() => selectedVowelCount.value >= minimumVowels.value);
 
 const isShaking = ref(false);
+const displayedCurrentWordScore = ref(props.currentWordScore);
 let shakeTimeoutId = null;
+let scoreResetTimeoutId = null;
+
+watch(() => props.currentWordScore, (nextScore, previousScore = 0) => {
+  window.clearTimeout(scoreResetTimeoutId);
+  if (nextScore || !previousScore || !props.scorePopTiles.length) {
+    displayedCurrentWordScore.value = nextScore;
+    return;
+  }
+
+  scoreResetTimeoutId = window.setTimeout(() => {
+    displayedCurrentWordScore.value = props.currentWordScore;
+  }, 800);
+});
 
 watch(() => props.invalidPulse, (nextPulse) => {
   if (!nextPulse) {
@@ -822,6 +836,7 @@ const getPlaceholderStyle = (slot) => {
 onBeforeUnmount(() => {
   window.clearTimeout(shakeTimeoutId);
   window.clearTimeout(tooltipTimeoutId);
+  window.clearTimeout(scoreResetTimeoutId);
   window.removeEventListener('pointermove', handleBuiltPointerMove);
   window.removeEventListener('pointerup', endBuiltTileDrag);
   window.removeEventListener('pointercancel', cancelBuiltTileDrag);
