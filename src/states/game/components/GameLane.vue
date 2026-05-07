@@ -64,6 +64,7 @@
               'tile-bagged': isBaggedTile(tile),
               'tile-leecher': tile.status === 'leecherTile',
               'tile-leecher-drained': tile.leecherDrained,
+              'tile-fleeting-round': isFleetingRoundTile(tile),
               'tile-must-alert': mustAlertIds.has(tile.id),
               'tile-banned-letter': isBannedLetter(tile),
               'tile-in-use': selectedTileIds.has(tile.id) && tile.status !== 'waterTile',
@@ -94,6 +95,7 @@
             <span v-if="getRoundTileMarker(tile)" class="tile-round-marker">
               {{ getRoundTileMarker(tile) }}
             </span>
+            <span v-if="isFleetingRoundTile(tile)" class="tile-fleeting-marker" aria-hidden="true">↩</span>
             <span class="tile-score">{{ getTileScore(tile) }}</span>
             <span class="tile-letter">{{ tile.letter }}</span>
           </button>
@@ -533,6 +535,11 @@ const isBannedLetter = (tile) => {
 };
 const isHotBurnTile = (tile) => {
   return tile.status === 'burningTile' && (props.scoreOptions?.roundModifierEffects?.idlePenaltyMultiplier || 1) > 1;
+};
+const isFleetingRoundTile = (tile) => {
+  return Boolean(props.scoreOptions?.roundModifierEffects?.fleetingAllTiles)
+    && tile?.status
+    && tile.status !== 'normal';
 };
 const getRoundModifierCountdownLabel = (modifierKey) => {
   return props.scoreOptions?.roundModifierCountdowns?.[modifierKey]?.label || '';
@@ -1696,6 +1703,12 @@ onBeforeUnmount(() => {
   z-index: 6;
 }
 
+.tile-fleeting-round {
+  box-shadow:
+    var(--tile-shadow, inset 0 -4px 0 rgba(0, 0, 0, 0.12), 0 10px 18px rgba(45, 10, 24, 0.16)),
+    0 0 0 3px rgba(151, 235, 255, 0.24);
+}
+
 .tile-state-slash,
 .tile-state-drained {
   position: absolute;
@@ -2424,6 +2437,27 @@ onBeforeUnmount(() => {
     0 7px 13px rgba(63, 16, 13, 0.28);
   pointer-events: none;
   transform: translateX(-50%);
+}
+
+.tile-fleeting-marker {
+  position: absolute;
+  right: 7px;
+  bottom: 7px;
+  z-index: 7;
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  background: rgba(13, 33, 45, 0.86);
+  color: #c9f7ff;
+  font-size: 0.92rem;
+  font-weight: 950;
+  line-height: 1;
+  box-shadow:
+    0 0 0 2px rgba(196, 246, 255, 0.44),
+    0 6px 12px rgba(11, 22, 34, 0.28);
+  pointer-events: none;
 }
 
 .rack-tile-enter-active {

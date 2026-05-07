@@ -105,8 +105,8 @@ export const ROUND_MODIFIER_DEFINITIONS = {
   fleeting_tiles: {
     key: 'fleeting_tiles',
     label: 'Fleeting Rack',
-    description: 'All tiles are cleared after submitting a word',
-    difficulty: ROUND_MODIFIER_DIFFICULTIES.MEDIUM,
+    description: 'All Modified tiles are cleared after submitting a word',
+    difficulty: ROUND_MODIFIER_DIFFICULTIES.HARD,
     force_test: false,
     cantCombineWith: [],
     tags: ['tile-lifecycle'],
