@@ -261,6 +261,21 @@ export const PERSONAL_MODIFIER_DEFINITIONS = {
       }
     }
   },
+  large_vernacular: {
+    key: 'large_vernacular',
+    label: 'Large Vernacular',
+    description: '9-letter words score +30.',
+    rarity: 0.28,
+    tier: PERSONAL_MODIFIER_TIERS.COMMON,
+    tags: ['score', 'word-length'],
+    maxStacks: 2,
+    start_with: 0,
+    effects: {
+      lengthScoreBonus: {
+        8: 15
+      }
+    }
+  },
   strong_start: {
     key: 'strong_start',
     label: 'Strong Start',
