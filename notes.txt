@@ -163,10 +163,6 @@ only show sense if controller connected
 
 slight bug where a wild could be an s and it is disabled 
 
-bug where the shmr could be an S and it is spinning void S could likely be sucking the disabled sign
-
-twin tile and other tiles are not able to be in use style cause of layering afters
-
 the game needs to pause all functions when the app is out of focus its running 
 
 bagged tiles need to be removed if bag tile removed 
@@ -175,11 +171,8 @@ need to be able to drag letters around
 
 bot mode game is not ending on normal 
 
-hourgalss gain time is not working 
 
 update the wordbuilder to support dragging tiles around when  a used holds left click on a tile they should be able to pick it up and move it withing the word builder if they bring the fifth letter to the second slot it should shift everything down one space for example: cnesa drag a to second postion becomes canes
-
-hover on word builde rword needs to move  
 
 add a score system based on how fast you clear each round and how many points over you get on each round. speed should probably be worth more 
 
@@ -197,18 +190,12 @@ Can't click on rounds should hide scores mobile in between
 Increase pause screen to hide letters
 Increase chance for royal pair it's not happening much
 
-some tiles do not get the bag style bolt and i think shimmer 
 
 focus returns to the last selected letter with mouse 
 
-bag is affecting AFTER along with other things, there needs to be abetter way then having multiple afters 
-
-tile style needs a full rework have to edit to many places and the AFTER and BEFORE are not great 
 
 
 
-1 less reward choice easy 
-Always one burn 
 Splitting tile tiles next to this are removed at the end of turn 
 https://www.epidemicsound.com/artists/brendon-moeller/
 Music by Brendon Moeller | Epidemic Sound
@@ -229,19 +216,15 @@ Brendon Moeller - Sunshine Rain | Epidemic Sound
 Brendon Moeller - Sunshine Rain | Epidemic Sound
 Listen and use the track Sunshine Rain by Brendon Moeller with an Epidemic Sound subscription. Start your free trial here
 www.epidemicsound.com
-Svaeing a bagged item makes a blue circle 
-Water tile drag to duplicate
+
 
 consolidatet lower buttons to its own component, float left in singleplay bottom in multi player  
 
 move pause outside of drawer
 
-extra option upgrade per reward, common rare epic
-
 
 fix reward choice panel when 4 options 
 
-add indicaters above letters for the additional rewards
 
 choice overlay blocks the modifiers 
 
@@ -256,7 +239,6 @@ new letter should reapply styles currently if you new letter an s it still is cr
 void s same after image issue
 save letter has circle same issue as after bag
 
-addd  a drag from rack to word builder tile to replace tile. 
 
 if a tile is dragged to its same spot it should be removed some missclicks are happening when a user tries to remove tiles 
 do the same tile drag logic for the rack so the user still gets the tile in the word if it is dragged to the same spot/ if its dragged and let go
@@ -367,3 +349,5 @@ defaultHints	[{"hint":"The Alert will notify you when you are in danger!","hasSe
 A major bug has been occuring on wavedash since we added the log in to profile option. I am not sure what portion is breaking there are no errors other than the usual press p to start font. we need to add logs to determine how far it is getting, cause things are syncing but we get the 0 percent loading screen. here are the logs and the synced local storage. along with those logs ad some saftey checks with logs stating whats happening. 
 
 disable start with on wavedash and not dev
+
+add tile after image back in
