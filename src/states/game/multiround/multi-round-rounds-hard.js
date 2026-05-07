@@ -23,7 +23,11 @@ export const createRound = ({
   backgroundPalette = 'main',
   modifierBudget = {},
   rewardTiers = [MULTI_ROUND_REWARD_TIERS.COMMON],
-  startingScoreBonusMultiplier = 0.5
+  startingScoreBonusMultiplier = 0.5,
+  chanceIncrease = {},
+  goodChanceIncrease = chanceIncrease.good || 0,
+  badChanceIncrease = chanceIncrease.bad || 0,
+  neutralChanceIncrease = chanceIncrease.neutral || 0
 }) => ({
   id,
   label,
@@ -34,11 +38,23 @@ export const createRound = ({
   backgroundPalette,
   modifierBudget,
   rewardTiers,
-  startingScoreBonusMultiplier
+  startingScoreBonusMultiplier,
+  chanceIncrease: {
+    good: goodChanceIncrease || 0,
+    bad: badChanceIncrease || 0,
+    neutral: neutralChanceIncrease || 0
+  }
 });
+
+const defaultHardChanceIncreases = {
+  goodChanceIncrease: 0.003,
+  badChanceIncrease: 0.006,
+  neutralChanceIncrease: 0.001
+};
 
 export const HARD_MULTI_ROUND_ROUNDS = [
   createRound({
+    ...defaultHardChanceIncreases,
     id: 'round-1',
     label: 'Round 1',
     targetScore: 100,
@@ -48,6 +64,7 @@ export const HARD_MULTI_ROUND_ROUNDS = [
     rewardTiers: [MULTI_ROUND_REWARD_TIERS.COMMON]
   }),
   createRound({
+    ...defaultHardChanceIncreases,
     id: 'round-2',
     label: 'Round 2',
     targetScore: 120,
@@ -59,6 +76,7 @@ export const HARD_MULTI_ROUND_ROUNDS = [
     rewardTiers: [MULTI_ROUND_REWARD_TIERS.COMMON]
   }),
   createRound({
+    ...defaultHardChanceIncreases,
     id: 'round-3',
     label: 'Challenge 1',
     targetScore: 140,
@@ -71,6 +89,7 @@ export const HARD_MULTI_ROUND_ROUNDS = [
     rewardTiers: [MULTI_ROUND_REWARD_TIERS.RARE]
   }),
   createRound({
+    ...defaultHardChanceIncreases,
     id: 'round-4',
     label: 'Round 4',
     targetScore: 160,
@@ -85,6 +104,7 @@ export const HARD_MULTI_ROUND_ROUNDS = [
     ]
   }),
   createRound({
+    ...defaultHardChanceIncreases,
     id: 'round-5',
     label: 'Round 5',
     targetScore: 180,
@@ -100,6 +120,7 @@ export const HARD_MULTI_ROUND_ROUNDS = [
     ]
   }),
   createRound({
+    ...defaultHardChanceIncreases,
     id: 'round-6',
     label: 'Challenge 2',
     targetScore: 190,
@@ -111,6 +132,7 @@ export const HARD_MULTI_ROUND_ROUNDS = [
     rewardTiers: [MULTI_ROUND_REWARD_TIERS.EPIC]
   }),
   createRound({
+    ...defaultHardChanceIncreases,
     id: 'round-7',
     label: 'Round 7',
     targetScore: 150,
@@ -126,6 +148,7 @@ export const HARD_MULTI_ROUND_ROUNDS = [
     ]
   }),
   createRound({
+    ...defaultHardChanceIncreases,
     id: 'round-8',
     label: 'Round 8',
     targetScore: 180,
@@ -141,6 +164,7 @@ export const HARD_MULTI_ROUND_ROUNDS = [
     ]
   }),
   createRound({
+    ...defaultHardChanceIncreases,
     id: 'round-9',
     label: 'Challenge 3',
     targetScore: 160,
@@ -153,6 +177,7 @@ export const HARD_MULTI_ROUND_ROUNDS = [
     rewardTiers: [MULTI_ROUND_REWARD_TIERS.EPIC]
   }),
   createRound({
+    ...defaultHardChanceIncreases,
     id: 'round-10',
     label: 'Round 10',
     targetScore: 210,
@@ -167,6 +192,7 @@ export const HARD_MULTI_ROUND_ROUNDS = [
     ]
   }),
   createRound({
+    ...defaultHardChanceIncreases,
     id: 'round-11',
     label: 'Round 11',
     targetScore: 300,
@@ -182,6 +208,7 @@ export const HARD_MULTI_ROUND_ROUNDS = [
     ]
   }),
   createRound({
+    ...defaultHardChanceIncreases,
     id: 'round-12',
     label: 'Challenge 4',
     targetScore: 300,
@@ -193,6 +220,7 @@ export const HARD_MULTI_ROUND_ROUNDS = [
     rewardTiers: [MULTI_ROUND_REWARD_TIERS.EPIC]
   }),
   createRound({
+    ...defaultHardChanceIncreases,
     id: 'round-13',
     label: 'Final Challenge',
     targetScore: 400,

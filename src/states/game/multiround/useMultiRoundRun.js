@@ -201,6 +201,20 @@ export const useMultiRoundRun = ({ rounds = MULTI_ROUND_ROUNDS } = {}) => {
   const activeRoundModifiers = computed(() => activeRoundModifierKeys.value
     .map((modifierKey) => getRoundModifierDefinition(modifierKey))
     .filter(Boolean));
+  const accumulatedChanceIncrease = computed(() => {
+    return completedRounds.value.reduce((increase, round) => {
+      const chanceIncrease = round.chanceIncrease || {};
+      return {
+        good: increase.good + (Number(chanceIncrease.good) || 0),
+        bad: increase.bad + (Number(chanceIncrease.bad) || 0),
+        neutral: increase.neutral + (Number(chanceIncrease.neutral) || 0)
+      };
+    }, {
+      good: 0,
+      bad: 0,
+      neutral: 0
+    });
+  });
   const rewardTiers = computed(() => currentRound.value?.rewardTiers || []);
   const rewardChoiceOpen = computed(() => rewardChoices.value.length > 0);
   const runWon = computed(() => runEnded.value && !failureSummary.value);
@@ -482,6 +496,7 @@ export const useMultiRoundRun = ({ rounds = MULTI_ROUND_ROUNDS } = {}) => {
         timeSeconds: currentRoundTimeLimit.value,
         startingScoreBonus: startingScoreBonus.value,
         activeRoundModifierKeys: [...activeRoundModifierKeys.value],
+        chanceIncrease: { ...(currentRound.value?.chanceIncrease || {}) },
         ...roundRecord
       }
     ];
@@ -531,6 +546,7 @@ export const useMultiRoundRun = ({ rounds = MULTI_ROUND_ROUNDS } = {}) => {
     activePersonalModifierEffects,
     activeRoundModifierKeys,
     activeRoundModifiers,
+    accumulatedChanceIncrease,
     rewardTiers,
     rewardChoices,
     rewardChoiceOpen,

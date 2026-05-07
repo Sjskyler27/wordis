@@ -568,7 +568,7 @@ const clearBotMatchSave = () => {
   clearLocalGameSave(SAVE_MODES.BOT_MATCH);
 };
 const roundModifierEffects = computed(() => {
-  return activeRoundModifiers.value.reduce((effects, modifier) => {
+  const effects = activeRoundModifiers.value.reduce((effects, modifier) => {
     const rules = modifier.rules || {};
     const scoreEffects = modifier.scoreEffects || {};
     const tileEffects = modifier.tileEffects || {};
@@ -634,6 +634,13 @@ const roundModifierEffects = computed(() => {
     cardsDisabled: false,
     lengthTimePenalty: {}
   });
+
+  const accumulatedChanceIncrease = multiRoundRun.accumulatedChanceIncrease.value;
+  effects.goodChanceBonus += accumulatedChanceIncrease.good || 0;
+  effects.badChanceBonus += accumulatedChanceIncrease.bad || 0;
+  effects.neutralChanceBonus += accumulatedChanceIncrease.neutral || 0;
+
+  return effects;
 });
 const multiRoundScoreOptions = computed(() => ({
   personalModifierEffects: personalModifierEffects.value,

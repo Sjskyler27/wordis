@@ -4,8 +4,15 @@ import {
   createRound
 } from './multi-round-rounds-hard.js';
 
+const defaultEasyChanceIncreases = {
+  goodChanceIncrease: 0.01,
+  badChanceIncrease: 0.006,
+  neutralChanceIncrease: 0.005
+};
+
 export const EASY_MULTI_ROUND_ROUNDS = [
   createRound({
+    ...defaultEasyChanceIncreases,
     id: 'easy-round-1',
     label: 'Round 1',
     targetScore: 65,
@@ -16,6 +23,7 @@ export const EASY_MULTI_ROUND_ROUNDS = [
     startingScoreBonusMultiplier: 0.6
   }),
   createRound({
+    ...defaultEasyChanceIncreases,
     id: 'easy-round-2',
     label: 'Round 2',
     targetScore: 85,
@@ -26,6 +34,7 @@ export const EASY_MULTI_ROUND_ROUNDS = [
     startingScoreBonusMultiplier: 0.6
   }),
   createRound({
+    ...defaultEasyChanceIncreases,
     id: 'easy-round-3',
     label: 'Challenge 1',
     targetScore: 105,
@@ -41,6 +50,7 @@ export const EASY_MULTI_ROUND_ROUNDS = [
     startingScoreBonusMultiplier: 0.6
   }),
   createRound({
+    ...defaultEasyChanceIncreases,
     id: 'easy-round-4',
     label: 'Round 4',
     targetScore: 110,
@@ -56,6 +66,7 @@ export const EASY_MULTI_ROUND_ROUNDS = [
     startingScoreBonusMultiplier: 0.6
   }),
   createRound({
+    ...defaultEasyChanceIncreases,
     id: 'easy-round-5',
     label: 'Round 5',
     targetScore: 110,
@@ -72,6 +83,7 @@ export const EASY_MULTI_ROUND_ROUNDS = [
     startingScoreBonusMultiplier: 0.6
   }),
   createRound({
+    ...defaultEasyChanceIncreases,
     id: 'easy-round-6',
     label: 'Challenge 2',
     targetScore: 120,
@@ -85,6 +97,7 @@ export const EASY_MULTI_ROUND_ROUNDS = [
     startingScoreBonusMultiplier: 0.6
   }),
   createRound({
+    ...defaultEasyChanceIncreases,
     id: 'easy-round-7',
     label: 'Final Challenge',
     targetScore: 200,
