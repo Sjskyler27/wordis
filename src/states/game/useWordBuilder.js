@@ -1,8 +1,8 @@
 import { computed, ref } from 'vue';
 import { getLengthBonus, getWordScoreDetails, getDifference, getIdleScorePenalty, getMilestoneReward } from './tile-logic.js';
 
-const formatMilestoneReward = (length, options = {}, currentWordLength = 0) => {
-  if (length !== currentWordLength) {
+const formatMilestoneReward = (length, options = {}, rewardWordLength = length) => {
+  if (length !== rewardWordLength) {
     return '';
   }
 
@@ -106,9 +106,11 @@ export const useWordBuilder = ({ mySide, myTiles, playerScores, scoreOptions, le
         length,
         bonus: getLengthBonus(length, activeScoreOptions),
         difference: getDifference(length, activeScoreOptions, currentWordLength.value),
-        rewardLabel: formatMilestoneReward(length, activeScoreOptions, currentWordLength.value)
+        rewardLabel: formatMilestoneReward(length, activeScoreOptions, currentWordLength.value),
+        availableDifference: getDifference(length, activeScoreOptions, length),
+        availableRewardLabel: formatMilestoneReward(length, activeScoreOptions, length)
       }))
-      .filter((step) => step.bonus || step.rewardLabel);
+      .filter((step) => step.bonus || step.rewardLabel || step.availableRewardLabel);
   });
 
   const handleTileClick = (tile, options = {}) => {

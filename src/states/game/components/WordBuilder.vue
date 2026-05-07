@@ -64,7 +64,7 @@
           class="word-slot"
           :class="{
             filled: !!slot.tile,
-            milestone: !!slot.bonus,
+            milestone: !!slot.availableDifference || !!slot.availableRewardLabel,
             active: currentWordLength >= slot.position,
             'drag-target': isDragTarget(slot.index)
           }"
@@ -83,13 +83,13 @@
             <div
               class="word-slot-placeholder-surface"
               :class="{
-                milestone: !!slot.bonus,
+                milestone: !!slot.availableDifference || !!slot.availableRewardLabel,
                 'minimum-required': slot.minimumRequired
               }"
               :style="getPlaceholderStyle(slot)"
             >
-              <span v-if="slot.bonus" class="word-slot-bonus">+{{ slot.bonus }}</span>
-              <span v-if="slot.rewardLabel" class="word-slot-reward">{{ slot.rewardLabel }}</span>
+              <span v-if="slot.availableDifference" class="word-slot-bonus">+{{ slot.availableDifference }}</span>
+              <span v-if="slot.availableRewardLabel" class="word-slot-reward">{{ slot.availableRewardLabel }}</span>
               <span class="word-slot-index">{{ slot.position }}</span>
             </div>
           </div>
@@ -348,17 +348,19 @@ const wordSlots = computed(() => {
       bonus: bonusStep?.bonus || 0,
       difference: bonusStep?.difference || 0,
       rewardLabel: bonusStep?.rewardLabel || '',
+      availableDifference: bonusStep?.availableDifference || 0,
+      availableRewardLabel: bonusStep?.availableRewardLabel || '',
       coveredRewardLabels,
       minimumRequired: position <= requiredWordLength
     };
   });
 
-  const milestoneSlots = slots.filter((slot) => (slot.bonus || slot.rewardLabel) && !slot.minimumRequired);
+  const milestoneSlots = slots.filter((slot) => (slot.availableDifference || slot.availableRewardLabel) && !slot.minimumRequired);
   const milestoneCount = milestoneSlots.length || 1;
 
   return slots.map((slot) => ({
     ...slot,
-    milestoneIndex: (slot.bonus || slot.rewardLabel) ? milestoneSlots.findIndex((entry) => entry.index === slot.index) : -1,
+    milestoneIndex: (slot.availableDifference || slot.availableRewardLabel) ? milestoneSlots.findIndex((entry) => entry.index === slot.index) : -1,
     milestoneCount
   }));
 });
