@@ -660,7 +660,11 @@ const lengthBonusScoreOptions = computed(() => ({
     lengthTimePenalty: roundModifierEffects.value.lengthTimePenalty || {}
   }
 }));
-const wordBuilderMinimumWordLength = computed(() => roundModifierEffects.value.minimumWordLength || 0);
+const effectiveMinimumWordLength = computed(() => Math.max(
+  personalModifierEffects.value.minimumWordLength || MIN_WORD_LENGTH,
+  roundModifierEffects.value.minimumWordLength || 0
+));
+const wordBuilderMinimumWordLength = computed(() => effectiveMinimumWordLength.value);
 const buildLane = (side, label) => ({
   side,
   label,
@@ -1847,8 +1851,8 @@ const handleSubmit = async () => {
     return;
   }
 
-  if (selectedTiles.length < MIN_WORD_LENGTH) {
-    localMessage.value = `Words must use at least ${MIN_WORD_LENGTH} tiles.`;
+  if (selectedTiles.length < effectiveMinimumWordLength.value) {
+    localMessage.value = `Words must use at least ${effectiveMinimumWordLength.value} tiles.`;
     triggerInvalidWordShake();
     return;
   }

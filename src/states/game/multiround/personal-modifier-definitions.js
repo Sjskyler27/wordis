@@ -261,6 +261,19 @@ export const PERSONAL_MODIFIER_DEFINITIONS = {
       }
     }
   },
+  tiny_dictionary: {
+    key: 'tiny_dictionary',
+    label: 'Tiny Dictionary',
+    description: 'Three-letter words are playable.',
+    rarity: 0.48,
+    tier: PERSONAL_MODIFIER_TIERS.RARE,
+    tags: ['word-length'],
+    maxStacks: 1,
+    start_with: 0,
+    effects: {
+      minimumWordLength: 3
+    }
+  },
   large_vernacular: {
     key: 'large_vernacular',
     label: 'Large Vernacular',

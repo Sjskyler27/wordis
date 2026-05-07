@@ -240,6 +240,11 @@ export const useMultiRoundRun = ({ rounds = MULTI_ROUND_ROUNDS } = {}) => {
       effects.goodChanceCapDelta += (definitionEffects.goodChanceCapDelta || 0) * stacks;
       effects.badChanceCapDelta += (definitionEffects.badChanceCapDelta || 0) * stacks;
       effects.neutralChanceCapDelta += (definitionEffects.neutralChanceCapDelta || 0) * stacks;
+      if (definitionEffects.minimumWordLength) {
+        effects.minimumWordLength = effects.minimumWordLength
+          ? Math.min(effects.minimumWordLength, definitionEffects.minimumWordLength)
+          : definitionEffects.minimumWordLength;
+      }
       effects.rewardCountModifier += (definitionEffects.rewardCountModifier || 0) * stacks;
       effects.rewardSelectionCountBonus += (definitionEffects.rewardSelectionCountBonus || 0) * stacks;
       Object.entries(definitionEffects.modifierScoreBonus || {}).forEach(([key, bonus]) => {
@@ -300,6 +305,7 @@ export const useMultiRoundRun = ({ rounds = MULTI_ROUND_ROUNDS } = {}) => {
       goodChanceCapDelta: 0,
       badChanceCapDelta: 0,
       neutralChanceCapDelta: 0,
+      minimumWordLength: 0,
       rewardCountModifier: 0,
       rewardSelectionCountBonus: 0
     });

@@ -64,7 +64,7 @@
           class="word-slot"
           :class="{
             filled: !!slot.tile,
-            milestone: !!slot.availableDifference || !!slot.availableRewardLabel,
+            milestone: slot.isMilestone,
             active: currentWordLength >= slot.position,
             'drag-target': isDragTarget(slot.index)
           }"
@@ -83,7 +83,7 @@
             <div
               class="word-slot-placeholder-surface"
               :class="{
-                milestone: !!slot.availableDifference || !!slot.availableRewardLabel,
+                milestone: slot.isMilestone,
                 'minimum-required': slot.minimumRequired
               }"
               :style="getPlaceholderStyle(slot)"
@@ -332,7 +332,7 @@ const suppressNextClick = ref(false);
 let tooltipTimeoutId = null;
 
 const wordSlots = computed(() => {
-  const requiredWordLength = Math.max(MIN_WORD_LENGTH, props.minimumWordLength || 0);
+  const requiredWordLength = Math.max(1, props.minimumWordLength || MIN_WORD_LENGTH);
   const slots = Array.from({ length: 9 }, (_, index) => {
     const position = index + 1;
     const bonusStep = props.lengthBonusSteps.find((step) => step.length === position);
@@ -345,6 +345,12 @@ const wordSlots = computed(() => {
       coveredRewardLabels.push(...bonusStep.rewardLabel.split(' · ').filter(Boolean));
     }
 
+    const minimumRequired = position <= requiredWordLength;
+    const isMilestone = !minimumRequired && (
+      Boolean(bonusStep?.availableDifference || bonusStep?.availableRewardLabel)
+        || position === requiredWordLength + 1
+    );
+
     return {
       index,
       position,
@@ -355,16 +361,17 @@ const wordSlots = computed(() => {
       availableDifference: bonusStep?.availableDifference || 0,
       availableRewardLabel: bonusStep?.availableRewardLabel || '',
       coveredRewardLabels,
-      minimumRequired: position <= requiredWordLength
+      minimumRequired,
+      isMilestone
     };
   });
 
-  const milestoneSlots = slots.filter((slot) => (slot.availableDifference || slot.availableRewardLabel) && !slot.minimumRequired);
+  const milestoneSlots = slots.filter((slot) => slot.isMilestone);
   const milestoneCount = milestoneSlots.length || 1;
 
   return slots.map((slot) => ({
     ...slot,
-    milestoneIndex: (slot.availableDifference || slot.availableRewardLabel) ? milestoneSlots.findIndex((entry) => entry.index === slot.index) : -1,
+    milestoneIndex: slot.isMilestone ? milestoneSlots.findIndex((entry) => entry.index === slot.index) : -1,
     milestoneCount
   }));
 });
