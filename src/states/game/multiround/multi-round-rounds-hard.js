@@ -195,7 +195,7 @@ export const HARD_MULTI_ROUND_ROUNDS = [
     ...defaultHardChanceIncreases,
     id: 'round-11',
     label: 'Round 11',
-    targetScore: 300,
+    targetScore: 250,
     timeSeconds: 150,
     backgroundPalette: 4,
     modifierBudget: {
@@ -211,7 +211,7 @@ export const HARD_MULTI_ROUND_ROUNDS = [
     ...defaultHardChanceIncreases,
     id: 'round-12',
     label: 'Challenge 4',
-    targetScore: 300,
+    targetScore: 250,
     timeSeconds: 120,
     isChallenge: true,
     modifierBudget: {
@@ -223,7 +223,7 @@ export const HARD_MULTI_ROUND_ROUNDS = [
     ...defaultHardChanceIncreases,
     id: 'round-13',
     label: 'Final Challenge',
-    targetScore: 400,
+    targetScore: 300,
     timeSeconds: 180,
     isChallenge: true,
     isFinalRound: true,

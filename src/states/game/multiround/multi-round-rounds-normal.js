@@ -132,7 +132,7 @@ export const NORMAL_MULTI_ROUND_ROUNDS = [
     ...defaultNormalChanceIncrease,
     id: 'normal-round-9',
     label: 'Challenge 3',
-    targetScore: 250,
+    targetScore: 220,
     timeSeconds: 140,
     isChallenge: true,
     modifierBudget: {
@@ -146,13 +146,14 @@ export const NORMAL_MULTI_ROUND_ROUNDS = [
     ...defaultNormalChanceIncrease,
     id: 'normal-round-10',
     label: 'Final Challenge',
-    targetScore: 350,
+    targetScore: 250,
     timeSeconds: 155,
     isChallenge: true,
     isFinalRound: true,
     modifierBudget: {
       [MULTI_ROUND_MODIFIER_DIFFICULTIES.MEDIUM]: 1,
-      [MULTI_ROUND_MODIFIER_DIFFICULTIES.HARD]: 2
+      [MULTI_ROUND_MODIFIER_DIFFICULTIES.HARD]: 1,
+      [MULTI_ROUND_MODIFIER_DIFFICULTIES.EASY]: 1
     },
     rewardTiers: [],
     startingScoreBonusMultiplier: 0.55
