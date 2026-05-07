@@ -317,10 +317,13 @@ body {
     text-transform: uppercase;
     box-shadow: 0 12px 28px rgba(30, 8, 22, 0.22);
     transition: transform 180ms ease, background 180ms ease, color 180ms ease;
+
+
   }
 
   .side-drawer-handle.open {
     left: min(340px, calc(100vw - 220px));
+    transform: translate(120%, -50%);
   }
 
   .side-drawer-handle-grip {
