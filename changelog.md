@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.0.52 - 2026-05-06
+- fix save style showing circle
+- added large vernacular upgrade
+- increase base stats after every round by a little, changes based on difficulty and can be tuned to each round even 
+- increase upgrades better odds and cleaner rack 
+- fixed epic reward choice to give two choices for rewards
+- drag tile in place now appends it so accidental dragging is not keeping from placing a letter 
+
 ## 0.0.51 - 2026-05-06
 - upgrade drawer and card style change
 - over time bannner up a litte
