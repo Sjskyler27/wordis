@@ -8,13 +8,18 @@
         <strong>{{ upcomingRound.label }}</strong>
         <div class="upcoming-round-modifiers">
           <template v-if="upcomingRound.visibleModifierKeys?.length">
-            <span
+            <button
               v-for="modifierKey in upcomingRound.visibleModifierKeys"
               :key="`${upcomingRound.id}-${modifierKey}`"
+              type="button"
               class="upcoming-round-modifier"
             >
               {{ getModifierLabel(modifierKey) }}
-            </span>
+              <span class="upcoming-round-tooltip">
+                <strong>{{ getModifierLabel(modifierKey) }}</strong>
+                <span>{{ getModifierDescription(modifierKey) }}</span>
+              </span>
+            </button>
           </template>
           <span v-else class="upcoming-round-empty">No round modifiers</span>
         </div>
@@ -107,6 +112,10 @@ const formatModifierKey = (modifierKey = '') => {
 
 const getModifierLabel = (modifierKey = '') => {
   return getRoundModifierDefinition(modifierKey)?.label || formatModifierKey(modifierKey);
+};
+
+const getModifierDescription = (modifierKey = '') => {
+  return getRoundModifierDefinition(modifierKey)?.description || '';
 };
 
 const choiceTitle = computed(() => {
@@ -219,11 +228,52 @@ const choiceTitle = computed(() => {
 .upcoming-round-empty {
   display: inline-flex;
   align-items: center;
+  position: relative;
   min-height: 28px;
   padding: 4px 10px;
+  border: 0;
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.08);
+  color: inherit;
+  cursor: help;
+  font: inherit;
   font-size: 0.76rem;
+}
+
+.upcoming-round-tooltip {
+  position: absolute;
+  z-index: calc(var(--layer-reward-modal, 50) + 2);
+  left: 110%;
+  bottom: calc(100% + 8px);
+  width: min(280px, 74vw);
+  padding: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  color: #fff7e8;
+  background: rgba(57, 16, 38, 0.96);
+  box-shadow: 0 14px 28px rgba(20, 6, 14, 0.28);
+  opacity: 0;
+  pointer-events: none;
+  text-align: left;
+  transform: translate(-50%, 4px);
+  transition: opacity 160ms ease, transform 160ms ease;
+}
+
+.upcoming-round-tooltip strong,
+.upcoming-round-tooltip span {
+  display: block;
+  font-size: 0.82rem;
+  line-height: 1.35;
+}
+
+.upcoming-round-tooltip strong {
+  color: #ffb05f;
+}
+
+.upcoming-round-modifier:hover .upcoming-round-tooltip,
+.upcoming-round-modifier:focus-visible .upcoming-round-tooltip {
+  opacity: 1;
+  transform: translate(-50%, 0);
 }
 
 .reward-choice-actions {
