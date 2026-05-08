@@ -16,6 +16,7 @@ const createModifierDefinitions = ({ bloodTilePositionValues }) => ({
     gold: {
       badge: 'x2',
       description: 'Doubles this tile as a word multiplier when used.',
+      includeInTutorial: true,
       effects: { wordMultiplier: 2 },
       rarityWeight: 0.19,
       excludeFromTest: true,
@@ -62,6 +63,7 @@ const createModifierDefinitions = ({ bloodTilePositionValues }) => ({
     },
     wild: {
       description: 'Acts as any letter, but its tile score becomes -1.',
+      includeInTutorial: true,
       effects: {
          wild: true,
          setScore: -1,
@@ -100,6 +102,7 @@ const createModifierDefinitions = ({ bloodTilePositionValues }) => ({
     firsttile: {
       badge: '1st',
       description: 'Adds +10 if this tile is played in the first position.',
+      includeInTutorial: true,
       effects: { firstTileBonus: 10 },
       rarityWeight: 0.22,
       ui: {
@@ -113,6 +116,7 @@ const createModifierDefinitions = ({ bloodTilePositionValues }) => ({
     twinTile: {
       badge: 'TWIN',
       description: 'Scores +15 when this word contains another tile with the same letter.',
+      includeInTutorial: true,
       effects: {
         twinLetterBonus: 15
       },
@@ -311,6 +315,7 @@ const createModifierDefinitions = ({ bloodTilePositionValues }) => ({
       badge: 'ZERO',
       excludeFromTest: true,
       description: 'This tile always scores 0.',
+      includeInTutorial: true,
       effects: { setScore: 0 },
       rarityWeight: 0.95,
       canApply: ({ baseScore }) => baseScore <= 4,
@@ -359,6 +364,7 @@ const createModifierDefinitions = ({ bloodTilePositionValues }) => ({
     ghostTile: {
       badge: 'GHST',
       description: 'Worth +3, but disappears if you leave it unused.',
+      includeInTutorial: true,
       effects: { fadesIfUnused: true, bonusScore: 3 },
       rarityWeight: 0.52,
       excludeFromTest: true,
@@ -373,6 +379,7 @@ const createModifierDefinitions = ({ bloodTilePositionValues }) => ({
     burningTile: {
       badge: 'BURN',
       description: 'Scores as 1 if used. If left unused, it burns you for -3.',
+      includeInTutorial: true,
       effects: { setScore: 1, idleScorePenalty: 3 },
       rarityWeight: 0.5,
       excludeFromTest: true,

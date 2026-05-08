@@ -253,7 +253,7 @@ import {
   multiplayerSubmissionPauseOwner,
   multiplayerSettings
 } from './multiplayer.js';
-import { MIN_WORD_LENGTH, applyRackManipulationEffects, drawCards, getBaggedTileIds, getWordScoreDetails, isMissingBagTileForBaggedSelection, isMissingRequiredTile, selectedTilesMatchWord, tickLightningTiles, tickShimmerTiles } from './tile-logic.js';
+import { MIN_WORD_LENGTH, MODIFIER_DEFINITIONS, applyRackManipulationEffects, drawCards, getBaggedTileIds, getWordScoreDetails, isMissingBagTileForBaggedSelection, isMissingRequiredTile, selectedTilesMatchWord, tickLightningTiles, tickShimmerTiles } from './tile-logic.js';
 import { getPreferredLanguage } from './language.js';
 import { useWordBuilder } from './useWordBuilder.js';
 import { useSinglePlayerGame } from './useSinglePlayerGame.js';
@@ -302,6 +302,9 @@ import {
 
 const TUTORIAL_BAD_MODIFIERS = new Set(['zeroTile', 'mustuse', 'locked3', 'burningTile', 'rustingTile', 'lightningTile', 'barricadeTile', 'bagTile']);
 const TUTORIAL_NEUTRAL_MODIFIERS = new Set(['yinYang', 'ghostTile', 'bloodTile', 'wild', 'shimmer', 'voidTile', 'hourglassTile', 'waterTile', 'leecherTile']);
+const TUTORIAL_TILE_MODIFIER_KEYS = Object.entries(MODIFIER_DEFINITIONS)
+  .filter(([, definition]) => definition.includeInTutorial)
+  .map(([key]) => key);
 const TUTORIAL_NEUTRAL_MODIFIER_UNLOCK_ROUND_INDEX = 1;
 const TUTORIAL_BAD_MODIFIER_UNLOCK_ROUND_INDEX = 2;
 const hasCompletedTutorialRun = () => (
@@ -496,14 +499,16 @@ const {
   isControllerNavigationActive
 });
 const personalModifiersDrawerRef = ref(null);
-const multiRoundRun = useMultiRoundRun({
-  rounds: getMultiRoundRounds(props.multiRoundDifficulty)
-});
-const isTutorialMultiRound = computed(() => (
+const shouldUseTutorialLimits = () => (
   isMultiRoundMode.value
     && props.multiRoundDifficulty === 'tutorial'
     && !hasCompletedTutorialRun()
-));
+);
+const multiRoundRun = useMultiRoundRun({
+  rounds: getMultiRoundRounds(props.multiRoundDifficulty),
+  includeInTutorialOnly: shouldUseTutorialLimits
+});
+const isTutorialMultiRound = computed(shouldUseTutorialLimits);
 const getTutorialModifierChanceOverrides = () => {
   if (!isTutorialMultiRound.value) {
     return {};
@@ -511,6 +516,7 @@ const getTutorialModifierChanceOverrides = () => {
 
   const roundIndex = multiRoundRun.currentRoundIndex.value;
   return {
+    allowedModifierKeys: TUTORIAL_TILE_MODIFIER_KEYS,
     ...(roundIndex < TUTORIAL_NEUTRAL_MODIFIER_UNLOCK_ROUND_INDEX ? { neutralChance: 0 } : {}),
     ...(roundIndex < TUTORIAL_BAD_MODIFIER_UNLOCK_ROUND_INDEX ? { badChance: 0 } : {})
   };

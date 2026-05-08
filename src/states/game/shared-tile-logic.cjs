@@ -205,6 +205,14 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
 
     return modifiers.filter((modifier) => !blockedModifiers.has(modifier));
   };
+  const filterAllowedModifiers = (modifiers = [], allowedModifierKeys = null) => {
+    if (!Array.isArray(allowedModifierKeys) || !allowedModifierKeys.length) {
+      return modifiers;
+    }
+
+    const allowedModifiers = new Set(allowedModifierKeys);
+    return modifiers.filter((modifier) => allowedModifiers.has(modifier));
+  };
   const getScoreSwingBonus = (scoreDelta = 0, maxBonus = 0) => {
     const liveDelta = Math.max(0, Math.abs(scoreDelta) - MODIFIER_SWING_DEAD_ZONE);
 
@@ -693,9 +701,9 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
     const baseProfile = getModifierProfile(modifierProfile);
     const profile = {
       ...baseProfile,
-      goodModifiers: filterBlockedModifiers(baseProfile.goodModifiers, personalModifierEffects),
-      badModifiers: filterBlockedModifiers(baseProfile.badModifiers, personalModifierEffects),
-      neutralModifiers: filterBlockedModifiers(baseProfile.neutralModifiers || [], personalModifierEffects)
+      goodModifiers: filterAllowedModifiers(filterBlockedModifiers(baseProfile.goodModifiers, personalModifierEffects), options.allowedModifierKeys),
+      badModifiers: filterAllowedModifiers(filterBlockedModifiers(baseProfile.badModifiers, personalModifierEffects), options.allowedModifierKeys),
+      neutralModifiers: filterAllowedModifiers(filterBlockedModifiers(baseProfile.neutralModifiers || [], personalModifierEffects), options.allowedModifierKeys)
     };
     const modifierOddsBonus = {
       ...(personalModifierEffects.modifierOddsBonus || {})
@@ -752,9 +760,9 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
     const baseProfile = getModifierProfile(modifierProfile);
     const profile = {
       ...baseProfile,
-      goodModifiers: filterBlockedModifiers(baseProfile.goodModifiers, personalModifierEffects),
-      badModifiers: filterBlockedModifiers(baseProfile.badModifiers, personalModifierEffects),
-      neutralModifiers: filterBlockedModifiers(baseProfile.neutralModifiers || [], personalModifierEffects)
+      goodModifiers: filterAllowedModifiers(filterBlockedModifiers(baseProfile.goodModifiers, personalModifierEffects), chanceOverrides.allowedModifierKeys),
+      badModifiers: filterAllowedModifiers(filterBlockedModifiers(baseProfile.badModifiers, personalModifierEffects), chanceOverrides.allowedModifierKeys),
+      neutralModifiers: filterAllowedModifiers(filterBlockedModifiers(baseProfile.neutralModifiers || [], personalModifierEffects), chanceOverrides.allowedModifierKeys)
     };
     const { goodChance, badChance, neutralChance } = getModifierChances(null, scores, modifierProfile, options.turnCount || 0, options);
     const roll = Math.random();

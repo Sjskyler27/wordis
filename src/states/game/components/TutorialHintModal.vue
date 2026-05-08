@@ -88,7 +88,6 @@ onBeforeUnmount(() => {
   background: linear-gradient(180deg, rgba(77, 24, 43, 0.78), rgba(35, 13, 39, 0.88));
   box-shadow: 0 26px 56px rgba(0, 0, 0, 0.42);
   color: #fff4df;
-  text-shadow: 2px 2px black;
   font-family: 'Press Start 2P', system-ui, sans-serif;
   text-align: center;
 }
@@ -111,8 +110,9 @@ onBeforeUnmount(() => {
 
 .tutorial-modal-panel p {
   margin: 0;
+  text-shadow: 2px 2px black;
   color: rgba(255, 246, 226, 0.86);
-  font-size: 0.68rem;
+  font-size: 0.74rem;
   line-height: 1.85;
 }
 

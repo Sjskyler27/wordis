@@ -61,8 +61,22 @@
           <button ref="button5" class="modal-button" @click="emit('showTutorial')">How To Play</button>
         </div>
         <div class="menu-section">
-          <button type="button" class="modal-button" @click="emit('setTutorialHintsViewed', true)">Set Hints Viewed</button>
-          <button type="button" class="modal-button" @click="emit('setTutorialHintsViewed', false)">Set Hints Unviewed</button>
+          <button
+            v-if="props.isTutorialComplete"
+            type="button"
+            class="modal-button"
+            @click="emit('resetTutorial')"
+          >
+            Reset Tutorial
+          </button>
+          <button
+            v-else
+            type="button"
+            class="modal-button"
+            @click="emit('setTutorialComplete')"
+          >
+            Set Tutorial Complete
+          </button>
         </div>
         <div v-if="!hideControllerSupport" class="menu-section">
           <button title="requires refresh" ref="button4" class="modal-button" @click="toggleController">
@@ -138,6 +152,7 @@ const props = defineProps({
     default: () => ({ ...DEFAULT_CONTROLLER_ACTION_MAPPING })
   },
   canShowHowToPlay: Boolean,
+  isTutorialComplete: Boolean,
 });
 
 const emit = defineEmits([
@@ -157,7 +172,8 @@ const emit = defineEmits([
   "quickRestart",
   "feedback",
   "showTutorial",
-  "setTutorialHintsViewed"
+  "setTutorialComplete",
+  "resetTutorial"
 ]);
 
 const activeTab = ref("game");

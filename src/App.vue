@@ -72,6 +72,7 @@
       :controllerMapping="controllerMapping"
       :isControllerConnected="isControllerConnected"
       :canShowHowToPlay="isGameState"
+      :isTutorialComplete="isTutorialComplete"
       :names="names"
       @volumeChange="setVolume"
       @musicVolumeChange="setmusicVolume"
@@ -91,7 +92,8 @@
       @type="goToType"
       @feedback="showFeedback = true"
       @showTutorial="showHowToPlay"
-      @setTutorialHintsViewed="handleSetTutorialHintsViewed"
+      @setTutorialComplete="setTutorialComplete"
+      @resetTutorial="resetTutorial"
       @close="showSettings = false"></Settings>
       <AuthPrompt v-if="showAuthModal" @close="showAuthModal = false" @loggedIn="userLoggedIn" />
       <AssetLoader :monsterRoster="monsterRoster"/>
@@ -137,6 +139,7 @@ import {
   saveControllerMapping
 } from "./controllerMapping.js";
 const hasSeenIntro = ref(false);
+const isTutorialComplete = ref(false);
 const bootLog = (...args) => {
   console.log('[Wordis Boot]', ...args);
 };
@@ -596,16 +599,18 @@ const continueGame = (mode) => {
     });
   };
 
-  const handleSetTutorialHintsViewed = (hasSeen) => {
-    defaultHints.value = setAllTutorialHintsViewed(hasSeen);
-    if (hasSeen) {
-      localStorage.setItem('hasSeenWordisGameTutorial', 'true');
-      localStorage.setItem(TUTORIAL_COMPLETED_STORAGE_KEY, 'true');
-      return;
-    }
+  const setTutorialComplete = () => {
+    defaultHints.value = setAllTutorialHintsViewed(true);
+    localStorage.setItem('hasSeenWordisGameTutorial', 'true');
+    localStorage.setItem(TUTORIAL_COMPLETED_STORAGE_KEY, 'true');
+    isTutorialComplete.value = true;
+  };
 
+  const resetTutorial = () => {
+    defaultHints.value = setAllTutorialHintsViewed(false);
     localStorage.removeItem('hasSeenWordisGameTutorial');
     localStorage.removeItem(TUTORIAL_COMPLETED_STORAGE_KEY);
+    isTutorialComplete.value = false;
   };
   
 
@@ -830,6 +835,7 @@ const simulateTab = (reverse = false) => {
     if(!localStorage.getItem('theme')) localStorage.setItem('theme',"day")
     if(!localStorage.getItem('unlockSystem')) localStorage.setItem('unlockSystem',"hard")
     if(!localStorage.getItem('unlockedMonsters')) localStorage.setItem('unlockedMonsters','[1,2,3]')
+    isTutorialComplete.value = localStorage.getItem(TUTORIAL_COMPLETED_STORAGE_KEY) === 'true';
     bootLog('local defaults established');
     defaultHints.value = loadTutorialHints();
     localStorage.setItem('defaultHints', JSON.stringify(defaultHints.value));

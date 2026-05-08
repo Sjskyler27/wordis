@@ -58,16 +58,20 @@ const canAddRoundModifier = (modifierKey, selectedKeys = []) => {
   });
 };
 
-const resolveModifierBudget = (modifierBudget = {}, excludedModifierKeys = []) => {
+const resolveModifierBudget = (modifierBudget = {}, excludedModifierKeys = [], options = {}) => {
   const resolvedKeys = [];
   const excludedKeys = new Set(excludedModifierKeys);
+  const includeInTutorialOnly = Boolean(options.includeInTutorialOnly);
 
   Object.entries(modifierBudget).forEach(([difficulty, count]) => {
     const pool = ROUND_MODIFIER_KEYS_BY_DIFFICULTY[difficulty] || [];
 
     for (let index = 0; index < normalizeBudgetCount(count); index += 1) {
       const availableKeys = pool.filter((modifierKey) => {
-        return !excludedKeys.has(modifierKey) && canAddRoundModifier(modifierKey, resolvedKeys);
+        const definition = getRoundModifierDefinition(modifierKey);
+        return !excludedKeys.has(modifierKey)
+          && (!includeInTutorialOnly || definition?.includeInTutorial)
+          && canAddRoundModifier(modifierKey, resolvedKeys);
       });
       const key = chooseRandomEntry(availableKeys);
       if (!key) {
@@ -120,18 +124,33 @@ const applyRoundEffects = (round, resolvedModifierKeys = []) => {
   };
 };
 
-const resolveRounds = (rounds = MULTI_ROUND_ROUNDS) => {
+const applyTutorialIncompleteRoundBonus = (round) => ({
+  ...round,
+  timeSeconds: Math.max(10, (round.timeSeconds || 0) + 10),
+  targetScore: Math.max(1, (round.targetScore || 0) - 10)
+});
+
+const resolveRounds = (rounds = MULTI_ROUND_ROUNDS, options = {}) => {
+  const includeInTutorialOnly = Boolean(options.includeInTutorialOnly);
   return rounds.map((round, roundIndex) => {
     const contextExcludedKeys = getRoundContextExcludedModifierKeys(round, roundIndex, rounds.length);
-    const generatedModifierKeys = resolveModifierBudget(round.modifierBudget || {}, contextExcludedKeys);
+    const generatedModifierKeys = resolveModifierBudget(round.modifierBudget || {}, contextExcludedKeys, { includeInTutorialOnly });
     const resolvedModifierKeys = resolveCompatibleModifierKeys([
-      ...(round.roundModifierKeys || []).filter((modifierKey) => !contextExcludedKeys.includes(modifierKey)),
+      ...(round.roundModifierKeys || []).filter((modifierKey) => (
+        !contextExcludedKeys.includes(modifierKey)
+          && (!includeInTutorialOnly || getRoundModifierDefinition(modifierKey)?.includeInTutorial)
+      )),
       ...generatedModifierKeys,
-      ...FORCE_TEST_ROUND_MODIFIER_KEYS.filter((modifierKey) => !contextExcludedKeys.includes(modifierKey))
+      ...FORCE_TEST_ROUND_MODIFIER_KEYS.filter((modifierKey) => (
+        !contextExcludedKeys.includes(modifierKey)
+          && (!includeInTutorialOnly || getRoundModifierDefinition(modifierKey)?.includeInTutorial)
+      ))
     ]);
 
+    const resolvedRound = applyRoundEffects(round, resolvedModifierKeys);
+
     return {
-      ...applyRoundEffects(round, resolvedModifierKeys),
+      ...(includeInTutorialOnly ? applyTutorialIncompleteRoundBonus(resolvedRound) : resolvedRound),
       resolvedModifierKeys,
       resolvedBackgroundPaletteKey: resolveBackgroundPaletteKey(round)
     };
@@ -185,8 +204,16 @@ const createStartingPersonalModifiers = () => {
     .filter(Boolean);
 };
 
-export const useMultiRoundRun = ({ rounds = MULTI_ROUND_ROUNDS } = {}) => {
-  const resolvedRounds = ref(resolveRounds(rounds));
+export const useMultiRoundRun = ({ rounds = MULTI_ROUND_ROUNDS, includeInTutorialOnly = false } = {}) => {
+  const shouldIncludeInTutorialOnly = () => (
+    typeof includeInTutorialOnly === 'function'
+      ? Boolean(includeInTutorialOnly())
+      : Boolean(includeInTutorialOnly)
+  );
+  const resolveRunRounds = () => resolveRounds(rounds, {
+    includeInTutorialOnly: shouldIncludeInTutorialOnly()
+  });
+  const resolvedRounds = ref(resolveRunRounds());
   const currentRoundIndex = ref(0);
   const startingScoreBonus = ref(0);
   const timerRemainingSeconds = ref(resolvedRounds.value[0]?.timeSeconds || 0);
@@ -331,7 +358,7 @@ export const useMultiRoundRun = ({ rounds = MULTI_ROUND_ROUNDS } = {}) => {
   });
 
   const resetRun = () => {
-    resolvedRounds.value = resolveRounds(rounds);
+    resolvedRounds.value = resolveRunRounds();
     currentRoundIndex.value = 0;
     startingScoreBonus.value = 0;
     timerRemainingSeconds.value = resolvedRounds.value[0]?.timeSeconds || 0;
@@ -347,7 +374,7 @@ export const useMultiRoundRun = ({ rounds = MULTI_ROUND_ROUNDS } = {}) => {
   const restoreRunState = (state = {}) => {
     resolvedRounds.value = Array.isArray(state.resolvedRounds) && state.resolvedRounds.length
       ? state.resolvedRounds
-      : resolveRounds(rounds);
+      : resolveRunRounds();
     currentRoundIndex.value = Math.max(0, Math.min(
       Number(state.currentRoundIndex) || 0,
       Math.max(0, resolvedRounds.value.length - 1)
@@ -386,14 +413,24 @@ export const useMultiRoundRun = ({ rounds = MULTI_ROUND_ROUNDS } = {}) => {
     const currentModifierKeys = resolvedRounds.value[nextRoundIndex]?.resolvedModifierKeys || [];
     const contextExcludedKeys = getRoundContextExcludedModifierKeys(baseRound, nextRoundIndex, resolvedRounds.value.length);
     const excludedModifierKeys = new Set([...currentModifierKeys, ...contextExcludedKeys]);
-    const generatedModifierKeys = resolveModifierBudget(baseRound.modifierBudget || {}, [...excludedModifierKeys]);
+    const generatedModifierKeys = resolveModifierBudget(baseRound.modifierBudget || {}, [...excludedModifierKeys], {
+      includeInTutorialOnly: shouldIncludeInTutorialOnly()
+    });
     const resolvedModifierKeys = resolveCompatibleModifierKeys([
-      ...(baseRound.roundModifierKeys || []).filter((modifierKey) => !excludedModifierKeys.has(modifierKey)),
+      ...(baseRound.roundModifierKeys || []).filter((modifierKey) => (
+        !excludedModifierKeys.has(modifierKey)
+          && (!shouldIncludeInTutorialOnly() || getRoundModifierDefinition(modifierKey)?.includeInTutorial)
+      )),
       ...generatedModifierKeys,
-      ...FORCE_TEST_ROUND_MODIFIER_KEYS.filter((modifierKey) => !excludedModifierKeys.has(modifierKey))
+      ...FORCE_TEST_ROUND_MODIFIER_KEYS.filter((modifierKey) => (
+        !excludedModifierKeys.has(modifierKey)
+          && (!shouldIncludeInTutorialOnly() || getRoundModifierDefinition(modifierKey)?.includeInTutorial)
+      ))
     ]);
     const nextRound = {
-      ...applyRoundEffects(baseRound, resolvedModifierKeys),
+      ...(shouldIncludeInTutorialOnly()
+        ? applyTutorialIncompleteRoundBonus(applyRoundEffects(baseRound, resolvedModifierKeys))
+        : applyRoundEffects(baseRound, resolvedModifierKeys)),
       resolvedModifierKeys
     };
 
@@ -471,6 +508,7 @@ export const useMultiRoundRun = ({ rounds = MULTI_ROUND_ROUNDS } = {}) => {
     return Object.values(PERSONAL_MODIFIER_DEFINITIONS).filter((definition) => {
       const minimumRewardChoicesRemaining = Number(definition.minimumRewardChoicesRemainingToApear) || 0;
       return allowedTiers.includes(definition.tier)
+        && (!shouldIncludeInTutorialOnly() || definition.includeInTutorial)
         && rewardChoicesRemainingInRun.value >= minimumRewardChoicesRemaining
         && (currentStacks[definition.key] || 0) < (definition.maxStacks || 1);
     });
