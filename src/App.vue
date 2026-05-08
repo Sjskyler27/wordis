@@ -120,6 +120,7 @@ import { initUserSync, logoutCleanup, syncUserState } from "./userstate/syncUser
 import { signOut } from "firebase/auth";
 import AuthPrompt from "/src/assets/AuthPrompt.vue";
 import { auth as firebaseAuth, firebaseEnabled } from "./firebaseClient.js";
+import { isWavedashEnabled } from "./wavedash.js";
 import pkg from '../package.json';
 import {
   DEFAULT_CONTROLLER_ACTION_MAPPING,
@@ -767,7 +768,7 @@ const simulateTab = (reverse = false) => {
   onMounted( () => {
     bootLog('App mounted start', {
       firebaseEnabled,
-      wavedash: import.meta.env.VITE_WAVEDASH === 'true',
+      wavedash: isWavedashEnabled,
       currentState: currentState.value?.__name || currentState.value?.name || 'unknown',
       hasSharedGameId: Boolean(sharedGameId)
     });

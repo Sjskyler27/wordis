@@ -82,6 +82,7 @@
   import Credit from './Credits.vue'
   import ProfileModal from './ProfileModal.vue';
   import { auth, firebaseEnabled } from "../../firebaseClient.js";
+  import { isWavedashEnabled } from "../../wavedash.js";
   import { db } from "../../main.js";
   import { push, get, query, orderByChild, equalTo, ref as dbRef } from "firebase/database";
   import { isSavedGameSyncEnabled, setSavedGameSyncEnabled } from "../../userstate/syncUserState.js";
@@ -107,7 +108,7 @@
   const versionNumber = ref(pkg.version)
   const languageLabel = ref(getPreferredLanguage().label)
   const isVisible = ref(true)
-  const wavedash = import.meta.env.VITE_WAVEDASH === 'true';
+  const wavedash = isWavedashEnabled;
 
   const startMusic = new Audio(homeSoundUrl);
   startMusic.currentTime = 0

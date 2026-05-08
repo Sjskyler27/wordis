@@ -1,8 +1,15 @@
 let wavedashPromise = null;
 let wavedashInitStarted = false;
-export const isWavedashEnabled = import.meta.env.VITE_WAVEDASH === 'true';
-console.log('wavedash.js mounted')
 const WAVEDASH_SDK_TIMEOUT_MS = 2500;
+const WAVEDASH_HOST_PATTERN = /(^|\.)wavedash(?:cdn)?\.com$/i;
+
+const isWavedashHost = () => {
+  return typeof window !== 'undefined' && WAVEDASH_HOST_PATTERN.test(window.location.hostname);
+};
+
+export const isWavedashEnabled = import.meta.env.VITE_WAVEDASH === 'true'
+  || isWavedashHost()
+  || (typeof window !== 'undefined' && Boolean(window.WavedashJS));
 
 const logWavedash = (...args) => {
   if (isWavedashEnabled) {
@@ -37,26 +44,11 @@ const withTimeout = (promise, label, timeoutMs = WAVEDASH_SDK_TIMEOUT_MS) => {
 };
 
 export const cleanupWavedashServiceWorkers = async () => {
-  if (typeof window === 'undefined' || !/(^|\.)wavedash\.com$/i.test(window.location.hostname)) {
+  if (typeof window === 'undefined' || !isWavedashHost()) {
     return;
   }
 
-  if (!('serviceWorker' in navigator)) {
-    return;
-  }
-
-  try {
-    const registrations = await navigator.serviceWorker.getRegistrations();
-    if (!registrations.length) {
-      logWavedash('[Wavedash] No service workers to unregister');
-      return;
-    }
-
-    await Promise.all(registrations.map((registration) => registration.unregister()));
-    logWavedash('[Wavedash] Unregistered service workers for Wavedash host', registrations.length);
-  } catch (error) {
-    errorWavedash('[Wavedash] Failed to unregister service workers', error);
-  }
+  logWavedash('[Wavedash] Leaving Wavedash service workers intact');
 };
 
 const getWavedashPromise = () => {
