@@ -1,4 +1,18 @@
 # Changelog
+## 0.0.63 - 2026-05-08
+
+Start: 2026-05-08 11:55 EDT
+Stop: 2026-05-08 12:18 EDT
+
+- Water tiles are now consumed from the rack when scored.
+- Multi-letter tiles now satisfy Twin matches when they contain the twin letter.
+- Added reward timing gates for reward-option modifiers and blocked Minimization from final rounds.
+- Added controller X/Y shortcuts and button hints for multi-round reward rerolls.
+- Prevented duplicate Bag tiles from being pulled into a rack.
+- Added Quick Restart to the pause settings menu.
+- Stopped Shimmer tiles from shifting before the timer starts or once the final word is active.
+- Verified with `npm run build`.
+
 ## 0.0.56 - 2026-05-07
 - remove broken fire asset and remove cinzel and press p to start on app 
 ## 0.0.55 - 2026-05-07
