@@ -912,20 +912,6 @@ html {
   background-color: #1c1c1c;
 }
 
-  @font-face {
-  font-family: 'Press Start 2P';
-    src: url('/Press_Start_2P/PressStart2P-Regular.ttf') format('truetype');
-    font-weight: normal;
-    font-style: normal;
-    font-display: swap;
-  }
-@font-face {
-  font-family: 'Cinzel';
-  src: url('/Cinzel/Cinzel-VariableFont_wght.ttf') format('truetype');
-  font-weight: 400 900; /* variable font range */
-  font-style: normal;
-  font-display: swap;
-}
   /* Style for the scrollbar track */
 ::-webkit-scrollbar-track {
   background: #222; /* Dark background for the track */

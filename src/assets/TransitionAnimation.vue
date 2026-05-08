@@ -73,8 +73,13 @@ watch(() => props.action, (val) => {
   bottom: 0;
   width: 80px;
   transform: translateX(-80px);
-  background: url('/src/assets/images/fire.png') repeat-y;
-  background-size: contain;
+  background:
+    radial-gradient(circle at 72% 12%, rgba(255, 241, 150, 0.92) 0 7px, transparent 8px),
+    radial-gradient(circle at 62% 34%, rgba(255, 145, 38, 0.86) 0 12px, transparent 13px),
+    radial-gradient(circle at 74% 58%, rgba(255, 215, 89, 0.82) 0 8px, transparent 9px),
+    radial-gradient(circle at 58% 78%, rgba(255, 87, 32, 0.78) 0 15px, transparent 16px),
+    linear-gradient(90deg, transparent 0%, rgba(255, 216, 91, 0.75) 28%, rgba(255, 105, 24, 0.95) 58%, rgba(153, 28, 9, 0.72) 100%);
+  filter: drop-shadow(0 0 12px rgba(255, 129, 31, 0.62));
   background-position: right;
   z-index: 3;
 }
