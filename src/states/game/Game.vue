@@ -287,7 +287,8 @@ import {
 import TutorialHintModal from './components/TutorialHintModal.vue';
 import {
   getTutorialHint,
-  markTutorialHintViewed
+  markTutorialHintViewed,
+  TUTORIAL_COMPLETED_STORAGE_KEY
 } from './tutorial-hints.js';
 import WordBuilder from './components/WordBuilder.vue';
 import { getMultiRoundBackgroundPalette } from './multiround/multi-round-background-palettes.js';
@@ -303,6 +304,10 @@ const TUTORIAL_BAD_MODIFIERS = new Set(['zeroTile', 'mustuse', 'locked3', 'burni
 const TUTORIAL_NEUTRAL_MODIFIERS = new Set(['yinYang', 'ghostTile', 'bloodTile', 'wild', 'shimmer', 'voidTile', 'hourglassTile', 'waterTile', 'leecherTile']);
 const TUTORIAL_NEUTRAL_MODIFIER_UNLOCK_ROUND_INDEX = 1;
 const TUTORIAL_BAD_MODIFIER_UNLOCK_ROUND_INDEX = 2;
+const hasCompletedTutorialRun = () => (
+  typeof localStorage !== 'undefined'
+    && localStorage.getItem(TUTORIAL_COMPLETED_STORAGE_KEY) === 'true'
+);
 
 const props = defineProps({
   isMobile: Boolean,
@@ -494,7 +499,11 @@ const personalModifiersDrawerRef = ref(null);
 const multiRoundRun = useMultiRoundRun({
   rounds: getMultiRoundRounds(props.multiRoundDifficulty)
 });
-const isTutorialMultiRound = computed(() => isMultiRoundMode.value && props.multiRoundDifficulty === 'tutorial');
+const isTutorialMultiRound = computed(() => (
+  isMultiRoundMode.value
+    && props.multiRoundDifficulty === 'tutorial'
+    && !hasCompletedTutorialRun()
+));
 const getTutorialModifierChanceOverrides = () => {
   if (!isTutorialMultiRound.value) {
     return {};
@@ -1660,6 +1669,7 @@ const completeMultiRoundRound = () => {
     playUiSound(tileReplaceSound);
     localMessage.value = 'Run complete!';
     if (isTutorialMultiRound.value) {
+      localStorage.setItem(TUTORIAL_COMPLETED_STORAGE_KEY, 'true');
       showTutorialHint('game_won');
     }
     return;

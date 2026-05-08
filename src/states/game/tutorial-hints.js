@@ -1,4 +1,5 @@
 export const TUTORIAL_HINTS_STORAGE_KEY = 'wordisTutorialHints';
+export const TUTORIAL_COMPLETED_STORAGE_KEY = 'hasCompletedWordisTutorial';
 
 export const DEFAULT_TUTORIAL_HINTS = [
   {

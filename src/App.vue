@@ -120,7 +120,8 @@ import Settings from '/src/assets/Settings.vue'
 import MachineBackground from "./states/game/components/GlobalBackground.vue";
 import {
   loadTutorialHints,
-  setAllTutorialHintsViewed
+  setAllTutorialHintsViewed,
+  TUTORIAL_COMPLETED_STORAGE_KEY
 } from "./states/game/tutorial-hints.js";
 import { initUserSync, logoutCleanup, syncUserState } from "./userstate/syncUserState.js";
 import { signOut } from "firebase/auth";
@@ -599,10 +600,12 @@ const continueGame = (mode) => {
     defaultHints.value = setAllTutorialHintsViewed(hasSeen);
     if (hasSeen) {
       localStorage.setItem('hasSeenWordisGameTutorial', 'true');
+      localStorage.setItem(TUTORIAL_COMPLETED_STORAGE_KEY, 'true');
       return;
     }
 
     localStorage.removeItem('hasSeenWordisGameTutorial');
+    localStorage.removeItem(TUTORIAL_COMPLETED_STORAGE_KEY);
   };
   
 
