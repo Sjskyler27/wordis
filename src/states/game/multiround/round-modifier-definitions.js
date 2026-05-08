@@ -35,7 +35,7 @@ export const ROUND_MODIFIER_DEFINITIONS = {
     key: 'highest_consonant_zero',
     label: 'Muted Consonant',
     description: 'The highest-scoring consonant in each word scores 0.',
-    difficulty: ROUND_MODIFIER_DIFFICULTIES.MEDIUM,
+    difficulty: ROUND_MODIFIER_DIFFICULTIES.HARD,
     force_test: false,
     cantCombineWith: [],
     tags: ['score-transform'],
@@ -204,13 +204,13 @@ export const ROUND_MODIFIER_DEFINITIONS = {
   disorganised: {
     key: 'disorganised',
     label: 'Disorganised',
-    description: 'Rack tiles shuffle every 6 seconds, leaving built letters alone.',
+    description: 'Rack tiles shuffle every 8 seconds, leaving built letters alone.',
     difficulty: ROUND_MODIFIER_DIFFICULTIES.MEDIUM,
     force_test: false,
     cantCombineWith: ['chaotic_board'],
     tags: ['tile-lifecycle'],
     tileEffects: {
-      shuffleRackIntervalMs: 6000
+      shuffleRackIntervalMs: 8000
     }
   },
   chaotic_board: {

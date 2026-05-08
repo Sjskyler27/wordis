@@ -181,7 +181,7 @@ export const PERSONAL_MODIFIER_DEFINITIONS = {
     label: 'Seven Second Wind',
     description: 'Seven-letter words restore seven seconds.',
     rarity: 0.68,
-    tier: PERSONAL_MODIFIER_TIERS.COMMON,
+    tier: PERSONAL_MODIFIER_TIERS.EPIC,
     tags: ['time', 'word-length'],
     maxStacks: 1,
     start_with: 0,
