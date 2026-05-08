@@ -395,3 +395,26 @@ index-ddw2d89W.js:89707 [UserState Sync] sync skipped: ten minute guard
 index-ddw2d89W.js:89707 play index-1
 
 it mapped the actions to the buttons rather then the buttons to the actions, ie the keyboard can do only the same things as ususal so its hard to test
+
+Only do single bag
+ two bags bugged
+
+ Play again. Always on top along with main menu at a quick restart to the pause menu. Make sure that 1.3 and 1.5* or not adding decimals
+Time saying tile is not giving 5 seconds back. Even if it's the last word it should
+
+Does getting glass wrong break it
+E was the highest consonent for some reason 
+New racks still not between each round
+Profile modile still not hidden 
+Add unlock system for tiles 
+ 8:06 AM 
+Add inricater of fleeting rack
+No longer seeing seven second wind what happened 
+ 9:29 AM 
+New letter doesn't change the score may be fine 
+Epic reward choice should not show up on second to last round 
+ 6:14 PM 
+Large tile takes up 2 slots 
+water tiles are not being removed when played 
+Round 6 easy needs epic
+2 letter tiles need to count for twin so e gets it if ed is in word 
