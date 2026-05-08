@@ -1,4 +1,18 @@
 # Changelog
+## 0.0.65 - 2026-05-08
+- new dificulty tutorial/ easy
+- updated all dificulties names to better match
+- added tutorial logic
+- force pulls for first few turns
+- add hints for when user pull things hit a round etc
+- 
+## 0.0.64 - 2026-05-08
+- FINALLY FIXED BREAKING PAGE ON WAVEDASH
+- the issue was the PWA being registered on wavedash, this was due to the flag for the env 
+wavedash variable not being triggered
+- added env variable to explicity set the pwa to true and added three ways of getting wavedash is true
+- added more wavedash logs and mounting logs in general
+
 ## 0.0.63 - 2026-05-08
 
 Start: 2026-05-08 11:55 EDT
