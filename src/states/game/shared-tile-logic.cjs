@@ -2059,7 +2059,7 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
 
     const refillTiles = (tiles, usedTileIds, side = null, scores = {}, options = {}) => {
       const waterUseCounts = getWaterUseCounts(tiles, usedTileIds);
-      const usedIds = new Set(usedTileIds.filter((tileId) => !waterUseCounts.has(tileId)));
+      const usedIds = new Set(usedTileIds);
       // remove existing ghost tiles 
       const roundModifierEffects = options.roundModifierEffects || {};
       const fleetingAllTiles = Boolean(options.roundModifierEffects?.fleetingAllTiles);
