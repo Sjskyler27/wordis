@@ -1,6 +1,7 @@
 let wavedashPromise = null;
 let wavedashInitStarted = false;
 export const isWavedashEnabled = import.meta.env.VITE_WAVEDASH === 'true';
+console.log('wavedash.js mounted')
 const WAVEDASH_SDK_TIMEOUT_MS = 2500;
 
 const logWavedash = (...args) => {

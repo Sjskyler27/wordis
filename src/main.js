@@ -4,6 +4,7 @@ import './style.css'
 import App from './App.vue'
 import { auth, db, firebaseApp } from './firebaseClient.js'
 import { cleanupWavedashServiceWorkers, initWavedash, isWavedashEnabled, updateWavedashLoadProgress } from './wavedash.js'
+console.log('Main.js mounted')
 
 const logWavedash = (...args) => {
   if (isWavedashEnabled) {
