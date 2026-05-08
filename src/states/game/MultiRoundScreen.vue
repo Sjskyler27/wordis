@@ -229,8 +229,17 @@ const controllerFocusIndex = ref(0);
 const isExiting = ref(false);
 const difficulties = [
   {
-    value: 'easy',
+    value: 'tutorial',
     label: 'Easy',
+    rounds: 7,
+    challengeRounds: 4,
+    pace: 'Guided',
+    description: 'A guided run with the lowest targets, relaxed timers, and a softer modifier curve.',
+    summary: 'Best for learning the run flow before moving into full difficulty tracks.'
+  },
+  {
+    value: 'easy',
+    label: 'Normal',
     rounds: 7,
     challengeRounds: 3,
     pace: 'Lenient',
@@ -239,7 +248,7 @@ const difficulties = [
   },
   {
     value: 'normal',
-    label: 'Normal',
+    label: 'Hard',
     rounds: 10,
     challengeRounds: 4,
     pace: 'Steady',
@@ -248,7 +257,7 @@ const difficulties = [
   },
   {
     value: 'hard',
-    label: 'Hard',
+    label: 'Marathon',
     rounds: 13,
     challengeRounds: 5,
     pace: 'Punishing',
@@ -258,7 +267,9 @@ const difficulties = [
 ];
 
 const selectedDifficultyDetails = computed(() => {
-  return difficulties.find((difficulty) => difficulty.value === selectedDifficulty.value) || difficulties[1];
+  return difficulties.find((difficulty) => difficulty.value === selectedDifficulty.value)
+    || difficulties.find((difficulty) => difficulty.value === 'normal')
+    || difficulties[0];
 });
 const referenceTitle = computed(() => {
   if (selectedReferenceType.value === 'cards') {
@@ -282,6 +293,7 @@ const roundDifficultyRank = {
   hard: 3
 };
 const roundDifficultyLabels = {
+  tutorial: 'Tutorial',
   easy: 'Easy',
   medium: 'Medium',
   hard: 'Hard'

@@ -29,7 +29,9 @@ export const EASY_MULTI_ROUND_ROUNDS = [
     targetScore: 70,
     timeSeconds: 80,
     backgroundPalette: 6,
-    modifierBudget: {},
+    modifierBudget: {
+      [MULTI_ROUND_MODIFIER_DIFFICULTIES.EASY]: 1
+    },
     rewardTiers: [MULTI_ROUND_REWARD_TIERS.COMMON],
     startingScoreBonusMultiplier: 0.6
   }),
@@ -41,7 +43,7 @@ export const EASY_MULTI_ROUND_ROUNDS = [
     timeSeconds: 90,
     isChallenge: true,
     modifierBudget: {
-      [MULTI_ROUND_MODIFIER_DIFFICULTIES.EASY]: 1
+      [MULTI_ROUND_MODIFIER_DIFFICULTIES.MEDIUM]: 1
     },
     rewardTiers: [
       MULTI_ROUND_REWARD_TIERS.COMMON,
