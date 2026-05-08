@@ -51,6 +51,9 @@
         <div class="menu-section">
           <button ref="button2" class="modal-button" @click="goHome">Main Menu</button>
         </div>
+        <div v-if="props.canShowHowToPlay" class="menu-section">
+          <button type="button" class="modal-button" @click="emit('quickRestart')">Quick Restart</button>
+        </div>
         <div class="menu-section">
           <button ref="button3" class="modal-button" @click="emit('feedback')">Feedback</button>
         </div>
@@ -147,6 +150,7 @@ const emit = defineEmits([
   "controllerMappingChange",
   "resetControllerMapping",
   "home",
+  "quickRestart",
   "feedback",
   "showTutorial"
 ]);

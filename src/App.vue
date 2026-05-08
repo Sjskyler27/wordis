@@ -85,6 +85,7 @@
       @resetControllerMapping="resetControllerMapping"
       @nameChange="setNames"
       @reset="resetGame" 
+      @quickRestart="playAgain"
       @home="goToHome"
       @game="goToGame"
       @type="goToType"
