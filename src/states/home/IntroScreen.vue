@@ -42,6 +42,7 @@ const finishIntro = () => {
   if (finished.value) {
     return
   }
+  console.log('finished intro')
 
   finished.value = true
   show.value = false
@@ -68,6 +69,7 @@ const handleKeyDown = (event) => {
 }
 
 onMounted(() => {
+  console.log('mounted intro')
   window.addEventListener('keydown', handleKeyDown)
   schedule(() => {
     if(!skipPhase.value) phase.value = 'fadeIn'
