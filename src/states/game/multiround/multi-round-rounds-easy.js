@@ -77,7 +77,7 @@ export const EASY_MULTI_ROUND_ROUNDS = [
       [MULTI_ROUND_MODIFIER_DIFFICULTIES.HARD]: 1
     },
     rewardTiers: [
-      MULTI_ROUND_REWARD_TIERS.COMMON,
+      MULTI_ROUND_REWARD_TIERS.EPIC,
       MULTI_ROUND_REWARD_TIERS.RARE
     ],
     startingScoreBonusMultiplier: 0.6
@@ -93,7 +93,7 @@ export const EASY_MULTI_ROUND_ROUNDS = [
       [MULTI_ROUND_MODIFIER_DIFFICULTIES.EASY]: 1,
       [MULTI_ROUND_MODIFIER_DIFFICULTIES.MEDIUM]: 1
     },
-    rewardTiers: [MULTI_ROUND_REWARD_TIERS.RARE],
+    rewardTiers: [MULTI_ROUND_REWARD_TIERS.EPIC],
     startingScoreBonusMultiplier: 0.6
   }),
   createRound({
