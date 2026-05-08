@@ -30,7 +30,14 @@
             class="reward-choice-action"
             @click="$emit('reroll-round-modifiers')"
           >
-            Reroll round modifiers
+            <span>Reroll round modifiers</span>
+            <ControllerButtonHint
+              action-key="submitWord"
+              :controller-mapping="controllerMapping"
+              :controller-connected="isControllerConnected"
+              :size="22"
+              side="right"
+            />
           </button>
           <button
             v-if="canRerollRewardChoices"
@@ -38,7 +45,14 @@
             class="reward-choice-action"
             @click="$emit('reroll-reward-choices')"
           >
-            Reroll rewards
+            <span>Reroll rewards</span>
+            <ControllerButtonHint
+              action-key="clearWord"
+              :controller-mapping="controllerMapping"
+              :controller-connected="isControllerConnected"
+              :size="22"
+              side="right"
+            />
           </button>
         </div>
       </div>
@@ -301,8 +315,12 @@ const choiceTitle = computed(() => {
 
 .reward-choice-action {
   appearance: none;
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   min-height: 34px;
-  padding: 8px 12px;
+  padding: 8px 34px 8px 12px;
   border-radius: 999px;
   border: 1px solid rgba(255, 220, 144, 0.3);
   background: rgba(255, 202, 103, 0.14);

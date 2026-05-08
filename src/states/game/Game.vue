@@ -3203,7 +3203,19 @@ const handleKeydown = (event) => {
       return;
     }
 
-    if (event.key === 'Enter' || event.key === ' ' || event.key === 'x') {
+    if (event.key === 'x') {
+      event.preventDefault();
+      handleRewardRoundModifierReroll();
+      return;
+    }
+
+    if (event.key === 'y') {
+      event.preventDefault();
+      handlePersonalModifierRewardReroll();
+      return;
+    }
+
+    if (event.key === 'Enter' || event.key === ' ') {
       event.preventDefault();
       if (controllerRegion.value === 'rounds') {
         focusControllerRound(controllerRoundCursorIndex.value);
