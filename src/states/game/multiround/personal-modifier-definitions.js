@@ -26,6 +26,7 @@ export const PERSONAL_MODIFIER_DEFINITIONS = {
     tier: PERSONAL_MODIFIER_TIERS.RARE,
     tags: ['rewards'],
     maxStacks: 2,
+    minimumRewardChoicesRemainingToApear: 3,
     start_with: 0,
     effects: {
       rewardCountModifier: 1
@@ -39,6 +40,7 @@ export const PERSONAL_MODIFIER_DEFINITIONS = {
     tier: PERSONAL_MODIFIER_TIERS.EPIC,
     tags: ['rewards'],
     maxStacks: 1,
+    minimumRewardChoicesRemainingToApear: 2,
     start_with: 0,
     effects: {
       rewardSelectionCountBonus: 1

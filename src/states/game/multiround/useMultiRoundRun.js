@@ -81,6 +81,14 @@ const resolveModifierBudget = (modifierBudget = {}, excludedModifierKeys = []) =
   return resolvedKeys;
 };
 
+const getRoundContextExcludedModifierKeys = (round = {}, roundIndex = 0, totalRounds = 0) => {
+  const excludedKeys = [];
+  if (round.isFinalRound || roundIndex >= totalRounds - 1) {
+    excludedKeys.push('less_reward_options');
+  }
+  return excludedKeys;
+};
+
 const resolveCompatibleModifierKeys = (modifierKeys = []) => {
   return modifierKeys.reduce((selectedKeys, modifierKey) => {
     if (!canAddRoundModifier(modifierKey, selectedKeys)) {
@@ -113,12 +121,13 @@ const applyRoundEffects = (round, resolvedModifierKeys = []) => {
 };
 
 const resolveRounds = (rounds = MULTI_ROUND_ROUNDS) => {
-  return rounds.map((round) => {
-    const generatedModifierKeys = resolveModifierBudget(round.modifierBudget || {});
+  return rounds.map((round, roundIndex) => {
+    const contextExcludedKeys = getRoundContextExcludedModifierKeys(round, roundIndex, rounds.length);
+    const generatedModifierKeys = resolveModifierBudget(round.modifierBudget || {}, contextExcludedKeys);
     const resolvedModifierKeys = resolveCompatibleModifierKeys([
-      ...(round.roundModifierKeys || []),
+      ...(round.roundModifierKeys || []).filter((modifierKey) => !contextExcludedKeys.includes(modifierKey)),
       ...generatedModifierKeys,
-      ...FORCE_TEST_ROUND_MODIFIER_KEYS
+      ...FORCE_TEST_ROUND_MODIFIER_KEYS.filter((modifierKey) => !contextExcludedKeys.includes(modifierKey))
     ]);
 
     return {
@@ -192,6 +201,7 @@ export const useMultiRoundRun = ({ rounds = MULTI_ROUND_ROUNDS } = {}) => {
   const currentRound = computed(() => resolvedRounds.value[currentRoundIndex.value] || null);
   const currentRoundNumber = computed(() => currentRoundIndex.value + 1);
   const totalRounds = computed(() => resolvedRounds.value.length);
+  const rewardChoicesRemainingInRun = computed(() => Math.max(0, totalRounds.value - currentRoundIndex.value - 1));
   const currentTargetScore = computed(() => currentRound.value?.targetScore || 0);
   const currentRoundTimeLimit = computed(() => {
     return Math.max(
@@ -374,8 +384,9 @@ export const useMultiRoundRun = ({ rounds = MULTI_ROUND_ROUNDS } = {}) => {
 
     const baseRound = rounds[nextRoundIndex] || resolvedRounds.value[nextRoundIndex];
     const currentModifierKeys = resolvedRounds.value[nextRoundIndex]?.resolvedModifierKeys || [];
-    const excludedModifierKeys = new Set(currentModifierKeys);
-    const generatedModifierKeys = resolveModifierBudget(baseRound.modifierBudget || {}, currentModifierKeys);
+    const contextExcludedKeys = getRoundContextExcludedModifierKeys(baseRound, nextRoundIndex, resolvedRounds.value.length);
+    const excludedModifierKeys = new Set([...currentModifierKeys, ...contextExcludedKeys]);
+    const generatedModifierKeys = resolveModifierBudget(baseRound.modifierBudget || {}, [...excludedModifierKeys]);
     const resolvedModifierKeys = resolveCompatibleModifierKeys([
       ...(baseRound.roundModifierKeys || []).filter((modifierKey) => !excludedModifierKeys.has(modifierKey)),
       ...generatedModifierKeys,
@@ -458,7 +469,9 @@ export const useMultiRoundRun = ({ rounds = MULTI_ROUND_ROUNDS } = {}) => {
       return stacks;
     }, {});
     return Object.values(PERSONAL_MODIFIER_DEFINITIONS).filter((definition) => {
+      const minimumRewardChoicesRemaining = Number(definition.minimumRewardChoicesRemainingToApear) || 0;
       return allowedTiers.includes(definition.tier)
+        && rewardChoicesRemainingInRun.value >= minimumRewardChoicesRemaining
         && (currentStacks[definition.key] || 0) < (definition.maxStacks || 1);
     });
   };
