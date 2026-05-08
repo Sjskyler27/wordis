@@ -2337,6 +2337,20 @@ const canRunTimedTileModifiers = () => {
     && !isMultiRoundRewardChoiceOpen.value;
 };
 
+const canShiftShimmerTiles = () => {
+  if (!isTimedSoloMode.value && !isMultiRoundMode.value) {
+    return true;
+  }
+
+  if (!timedModeTimerStarted.value) {
+    return false;
+  }
+
+  return isMultiRoundMode.value
+    ? multiRoundRun.timerRemainingSeconds.value > 0
+    : timerRemainingSeconds.value > 0;
+};
+
 const returnBuiltLettersToRack = (message) => {
   if (!selectedTilesForCurrentSide.value.length) {
     return false;
@@ -2431,10 +2445,12 @@ const tickTimedTileModifiers = () => {
 
   Object.keys(nextTilesBySide).forEach((side) => {
     const tiles = nextTilesBySide[side] || [];
-    const shimmerTiles = tickShimmerTiles(tiles, {
-      now,
-      frozenTileIds: selectedTileIds.value[side] || new Set()
-    });
+    const shimmerTiles = canShiftShimmerTiles()
+      ? tickShimmerTiles(tiles, {
+          now,
+          frozenTileIds: selectedTileIds.value[side] || new Set()
+        })
+      : tiles;
     const lightningResult = tickLightningTiles(shimmerTiles, { now });
     const nextTiles = lightningResult.tiles;
 
