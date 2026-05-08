@@ -15,8 +15,8 @@ export const EASY_MULTI_ROUND_ROUNDS = [
     ...defaultEasyChanceIncreases,
     id: 'easy-round-1',
     label: 'Round 1',
-    targetScore: 65,
-    timeSeconds: 110,
+    targetScore: 50,
+    timeSeconds: 60,
     backgroundPalette: 1,
     modifierBudget: {},
     rewardTiers: [MULTI_ROUND_REWARD_TIERS.COMMON],
@@ -26,8 +26,8 @@ export const EASY_MULTI_ROUND_ROUNDS = [
     ...defaultEasyChanceIncreases,
     id: 'easy-round-2',
     label: 'Round 2',
-    targetScore: 85,
-    timeSeconds: 115,
+    targetScore: 70,
+    timeSeconds: 80,
     backgroundPalette: 6,
     modifierBudget: {},
     rewardTiers: [MULTI_ROUND_REWARD_TIERS.COMMON],
@@ -37,8 +37,8 @@ export const EASY_MULTI_ROUND_ROUNDS = [
     ...defaultEasyChanceIncreases,
     id: 'easy-round-3',
     label: 'Challenge 1',
-    targetScore: 105,
-    timeSeconds: 125,
+    targetScore: 90,
+    timeSeconds: 90,
     isChallenge: true,
     modifierBudget: {
       [MULTI_ROUND_MODIFIER_DIFFICULTIES.EASY]: 1
@@ -53,8 +53,8 @@ export const EASY_MULTI_ROUND_ROUNDS = [
     ...defaultEasyChanceIncreases,
     id: 'easy-round-4',
     label: 'Round 4',
-    targetScore: 110,
-    timeSeconds: 130,
+    targetScore: 100,
+    timeSeconds: 100,
     backgroundPalette: 0,
     modifierBudget: {
       [MULTI_ROUND_MODIFIER_DIFFICULTIES.EASY]: 1
