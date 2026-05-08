@@ -338,6 +338,10 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
       return false;
     }
 
+    if (status === 'bagTile' && hasModifierInRack(context.rackTiles || [], 'bagTile')) {
+      return false;
+    }
+
     if (status === 'mustuse' && !isSingleLetterTile(context.letter || '')) {
       return false;
     }
