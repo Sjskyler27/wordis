@@ -87,6 +87,8 @@ wavedash auth login
 create wavedash.toml with game id 
 swap env to prod
 wavedash build push 
+notes on wavedash, you need to make sure no other packages or services are installinga service worker the sdk is going to handle everything 
+
 # clean patches 
 keeping clean patches for the final build use 
 git rebase -i --root allows squashing commits

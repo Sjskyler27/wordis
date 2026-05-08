@@ -358,16 +358,6 @@ player does not scale as well as they should
 7 second wind is actually goated, since it can keep you in play indefinately i went from 150 away to playing 5 7 letter words with 4 letter words in between beating the insain 350 requirment 
 normal also took me an intermitant 1.5 hours. its a long game. the longest part is not the time for the rounds its the first and last word paralysis.
 shimmer should not turn on fist and last word 
-Does getting glass wrong break it
-E was the highest consonent for some reason 
-muted consonent still too hard. 
-New racks still not between each round
-Profile modile still not hidden 
-Add unlock system for tiles 
- 8:06 AM 
-Add inricater of fleeting rack
-No longer seeing seven second wind what happened 
- 9:29 AM 
 New letter doesn't change the score may be fine 
 Epic reward choice should not show up on second to last round 
 I didnt see any bad modifiers by the end of last round on normal 
@@ -402,19 +392,18 @@ Only do single bag
  Play again. Always on top along with main menu at a quick restart to the pause menu. Make sure that 1.3 and 1.5* or not adding decimals
 Time saying tile is not giving 5 seconds back. Even if it's the last word it should
 
+modiifer idea Large tile takes up 2 slots 
 Does getting glass wrong break it
 E was the highest consonent for some reason 
-New racks still not between each round
-Profile modile still not hidden 
+
 Add unlock system for tiles 
- 8:06 AM 
-Add inricater of fleeting rack
+
 No longer seeing seven second wind what happened 
  9:29 AM 
 New letter doesn't change the score may be fine 
 Epic reward choice should not show up on second to last round 
  6:14 PM 
-Large tile takes up 2 slots 
-water tiles are not being removed when played 
-Round 6 easy needs epic
-2 letter tiles need to count for twin so e gets it if ed is in word 
+
+water tiles are not being removed from the board when scored
+
+2 letter tiles need to count for twin modifier example e counts it if ed tile is in word 
