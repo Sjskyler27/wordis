@@ -789,9 +789,10 @@ const hasTwinMatch = (tile) => {
     return false;
   }
 
-  const letter = getTileLetter(tile);
-  return Boolean(letter) && props.selectedTiles.some((selectedTile) => {
-    return selectedTile.id !== tile.id && getTileLetter(selectedTile) === letter;
+  const letters = new Set(getTileLetter(tile).split('').filter(Boolean));
+  return Boolean(letters.size) && props.selectedTiles.some((selectedTile) => {
+    return selectedTile.id !== tile.id
+      && getTileLetter(selectedTile).split('').some((letter) => letters.has(letter));
   });
 };
 const getLightningAnimationDelay = (tile) => {

@@ -824,9 +824,10 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
       return false;
     }
 
-    const letter = (tile.baseLetter || tile.letter || '').toUpperCase();
-    return Boolean(letter) && wordTiles.some((wordTile) => {
-      return wordTile.id !== tile.id && (wordTile.baseLetter || wordTile.letter || '').toUpperCase() === letter;
+    const letters = new Set((tile.baseLetter || tile.letter || '').toUpperCase().split('').filter(Boolean));
+    return Boolean(letters.size) && wordTiles.some((wordTile) => {
+      const wordTileLetters = (wordTile.baseLetter || wordTile.letter || '').toUpperCase().split('');
+      return wordTile.id !== tile.id && wordTileLetters.some((letter) => letters.has(letter));
     });
   };
   const getTwinLetterBonus = (tile, options = {}) => {

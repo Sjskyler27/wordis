@@ -654,9 +654,11 @@ const hasSelectedTwinMatch = (tile) => {
     return false;
   }
 
-  const letter = getTileLetter(tile);
-  return Boolean(letter) && props.tiles.some((rackTile) => {
-    return rackTile.id !== tile.id && props.selectedTileIds.has(rackTile.id) && getTileLetter(rackTile) === letter;
+  const letters = new Set(getTileLetter(tile).split('').filter(Boolean));
+  return Boolean(letters.size) && props.tiles.some((rackTile) => {
+    return rackTile.id !== tile.id
+      && props.selectedTileIds.has(rackTile.id)
+      && getTileLetter(rackTile).split('').some((letter) => letters.has(letter));
   });
 };
 
