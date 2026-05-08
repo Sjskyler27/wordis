@@ -1,4 +1,6 @@
 # Changelog
+## 0.0.56 - 2026-05-07
+- remove broken fire asset and remove cinzel and press p to start on app 
 ## 0.0.55 - 2026-05-07
 - removed show auth prompt on launch
 
