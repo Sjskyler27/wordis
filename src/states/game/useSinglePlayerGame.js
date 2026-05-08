@@ -48,6 +48,8 @@ export const useSinglePlayerGame = ({
   onMultiRoundRerollRewardChoices,
   onMultiRoundReduceTargetScore,
   onBotPreparing,
+  getTutorialTilePlan,
+  onTutorialTurnAdvanced,
   personalModifierEffects,
   roundModifierEffects
 }) => {
@@ -127,6 +129,17 @@ export const useSinglePlayerGame = ({
     };
   };
   const getRoundModifierEffects = () => roundModifierEffects?.value || {};
+  const getTutorialPlan = (phase) => {
+    if (typeof getTutorialTilePlan !== 'function') {
+      return {};
+    }
+
+    return getTutorialTilePlan({
+      phase,
+      turnCount: getTurnCount(),
+      multiRoundWordsPlayedThisRound: multiRoundWordsPlayedThisRound.value
+    }) || {};
+  };
   const createTestingHands = () => {
     const boonKeys = Object.entries(CARD_DEFINITIONS)
       .filter(([, definition]) => definition.kind === 'boon')
@@ -251,13 +264,15 @@ export const useSinglePlayerGame = ({
       }
 
       if (isMultiRoundMode?.value) {
+        const tutorialPlan = getTutorialPlan('opening');
         playerTiles.value = {
           host: createRack('host', playerScores.value, {
             modifierProfile: modifierProfile(),
             personalModifierEffects: getPersonalModifierEffects(),
             roundModifierEffects: getRoundModifierEffects(),
             phase: 'opening',
-            turnCount: getTurnCount()
+            turnCount: getTurnCount(),
+            ...tutorialPlan
           }),
           opponent: []
         };
@@ -267,7 +282,7 @@ export const useSinglePlayerGame = ({
         };
         playerCards.value = {
           host: {
-            boons: drawCards('boon', 1),
+            boons: tutorialPlan.suppressStartingCards ? [] : drawCards('boon', 1),
             attacks: []
           },
           opponent: {
@@ -543,6 +558,7 @@ export const useSinglePlayerGame = ({
       opponent: playerCards.value.opponent
     };
 
+    const tutorialPlan = getTutorialPlan('submit');
     playerTiles.value = {
       
       host: refillTiles(playerTiles.value.host, selectedTiles.map((tile) => tile.id), 'host', playerScores.value, {
@@ -550,7 +566,8 @@ export const useSinglePlayerGame = ({
         personalModifierEffects: getPersonalModifierEffects(),
         roundModifierEffects: getRoundModifierEffects(),
         phase: 'submit',
-        turnCount: getTurnCount()
+        turnCount: getTurnCount(),
+        ...tutorialPlan
       }),
       opponent: playerTiles.value.opponent
     };
@@ -563,6 +580,11 @@ export const useSinglePlayerGame = ({
     localMessage.value = idlePenalty > 0
       ? `Submitted ${word} for ${scoreDelta} pts after a ${idlePenalty} pt burn penalty.`
       : `Submitted ${word} for ${scoreDelta} pts.`;
+    onTutorialTurnAdvanced?.({
+      phase: 'submit',
+      turnCount: getTurnCount(),
+      multiRoundWordsPlayedThisRound: multiRoundWordsPlayedThisRound.value
+    });
     return true;
   };
 
@@ -627,11 +649,13 @@ export const useSinglePlayerGame = ({
       multiRoundWordsPlayedThisRound.value = 0;
     }
 
+    const tutorialPlan = getTutorialPlan('round-start');
     const nextRack = createRack(side, playerScores.value, {
       modifierProfile: modifierProfile(),
       personalModifierEffects: getPersonalModifierEffects(),
       roundModifierEffects: getRoundModifierEffects(),
-      turnCount: getTurnCount()
+      turnCount: getTurnCount(),
+      ...tutorialPlan
     });
 
     playerTiles.value = {

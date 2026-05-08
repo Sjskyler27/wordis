@@ -91,6 +91,7 @@
       @type="goToType"
       @feedback="showFeedback = true"
       @showTutorial="showHowToPlay"
+      @setTutorialHintsViewed="handleSetTutorialHintsViewed"
       @close="showSettings = false"></Settings>
       <AuthPrompt v-if="showAuthModal" @close="showAuthModal = false" @loggedIn="userLoggedIn" />
       <AssetLoader :monsterRoster="monsterRoster"/>
@@ -117,6 +118,10 @@ import Feedback from "./states/home/Feedback.vue";
 import Banner from "/src/assets/Banner.vue";
 import Settings from '/src/assets/Settings.vue'
 import MachineBackground from "./states/game/components/GlobalBackground.vue";
+import {
+  loadTutorialHints,
+  setAllTutorialHintsViewed
+} from "./states/game/tutorial-hints.js";
 import { initUserSync, logoutCleanup, syncUserState } from "./userstate/syncUserState.js";
 import { signOut } from "firebase/auth";
 import AuthPrompt from "/src/assets/AuthPrompt.vue";
@@ -249,19 +254,7 @@ const DEFAULT_JOYSTICK_SENSITIVITY = 30;
 
   const defaultHints = ref([]);
   const resetHints = (setLocalStorage) => {
-    defaultHints.value = [
-      { hint: "The Alert will notify you when you are in danger!", hasSeen: false },
-      { hint: "Press x or tap a character image to view its actions", hasSeen: false },
-      { hint: "Right Click the Deck to see your Chances of Breaking!", hasSeen: false },
-      { hint: "Using all of your supplies gives bonus fame!", hasSeen: false },
-      { hint: "You can buy armor and supplies more than once!", hasSeen: false },
-      { hint: "Balance your supplies and armor", hasSeen: false },
-      { hint: "A massive Character could overflow your game", hasSeen: false },
-      { hint: "Be sure to select a character if it has an active action", hasSeen: false },
-      { hint: "Use the Deck to Draw a Character!", hasSeen: false },
-      { hint: "Use the Deck to view your cards and their fear.", hasSeen: false },
-      { hint: "Right Click on a character to view its action and other information.", hasSeen: false },
-    ]
+    defaultHints.value = loadTutorialHints();
     if(setLocalStorage) localStorage.setItem('defaultHints', JSON.stringify(defaultHints.value));
     localStorage.removeItem('seenHowShop')
     localStorage.removeItem('seenHowToPlay')
@@ -601,6 +594,16 @@ const continueGame = (mode) => {
       window.dispatchEvent(new CustomEvent('wordis:show-tutorial'));
     });
   };
+
+  const handleSetTutorialHintsViewed = (hasSeen) => {
+    defaultHints.value = setAllTutorialHintsViewed(hasSeen);
+    if (hasSeen) {
+      localStorage.setItem('hasSeenWordisGameTutorial', 'true');
+      return;
+    }
+
+    localStorage.removeItem('hasSeenWordisGameTutorial');
+  };
   
 
 
@@ -825,23 +828,8 @@ const simulateTab = (reverse = false) => {
     if(!localStorage.getItem('unlockSystem')) localStorage.setItem('unlockSystem',"hard")
     if(!localStorage.getItem('unlockedMonsters')) localStorage.setItem('unlockedMonsters','[1,2,3]')
     bootLog('local defaults established');
-    if(!localStorage.getItem('defaultHints')) localStorage.setItem('defaultHints', JSON.stringify(defaultHints.value))
-    else{
-      // Load saved user hints (may be partial or missing new keys)
-      let seenHints = JSON.parse(localStorage.getItem('defaultHints')) || {};
-
-      // Ensure we don't overwrite existing keys, only add new ones
-      for (const key in defaultHints.value) {
-        if (!(key in seenHints)) {
-          seenHints[key] = defaultHints.value[key];
-          console.log(seenHints[key])
-        }
-      }
-
-      // Save merged version back and set the reactive default
-      localStorage.setItem('defaultHints', JSON.stringify(seenHints));
-      defaultHints.value = seenHints;
-    }
+    defaultHints.value = loadTutorialHints();
+    localStorage.setItem('defaultHints', JSON.stringify(defaultHints.value));
     // hard reset turn if app is exited
     localStorage.removeItem('drawnMonsters')
     bootLog('drawnMonsters cleared');

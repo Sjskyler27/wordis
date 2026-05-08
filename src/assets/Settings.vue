@@ -60,6 +60,10 @@
         <div v-if="props.canShowHowToPlay" class="menu-section">
           <button ref="button5" class="modal-button" @click="emit('showTutorial')">How To Play</button>
         </div>
+        <div class="menu-section">
+          <button type="button" class="modal-button" @click="emit('setTutorialHintsViewed', true)">Set Hints Viewed</button>
+          <button type="button" class="modal-button" @click="emit('setTutorialHintsViewed', false)">Set Hints Unviewed</button>
+        </div>
         <div v-if="!hideControllerSupport" class="menu-section">
           <button title="requires refresh" ref="button4" class="modal-button" @click="toggleController">
             Native Controller: {{ nativeControllerSupport }}
@@ -152,7 +156,8 @@ const emit = defineEmits([
   "home",
   "quickRestart",
   "feedback",
-  "showTutorial"
+  "showTutorial",
+  "setTutorialHintsViewed"
 ]);
 
 const activeTab = ref("game");

@@ -1843,6 +1843,38 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
       }, status, 'onPull');
     };
 
+    const chooseForcedModifierForGroup = (group = '', tileContext = {}, options = {}) => {
+      const modifierProfile = options.modifierProfile || 'solo';
+      const personalModifierEffects = options.personalModifierEffects || {};
+      const roundModifierEffects = options.roundModifierEffects || {};
+      const baseProfile = getModifierProfile(modifierProfile);
+      const profile = {
+        ...baseProfile,
+        goodModifiers: filterBlockedModifiers(baseProfile.goodModifiers, personalModifierEffects),
+        badModifiers: filterBlockedModifiers(baseProfile.badModifiers, personalModifierEffects),
+        neutralModifiers: filterBlockedModifiers(baseProfile.neutralModifiers || [], personalModifierEffects)
+      };
+      const modifierPoolByGroup = {
+        good: profile.goodModifiers,
+        bad: profile.badModifiers,
+        neutral: profile.neutralModifiers || []
+      };
+      const modifierPool = modifierPoolByGroup[group] || [];
+      const eligibleModifiers = modifierPool.filter((modifier) => canApplyModifier(modifier, tileContext));
+      if (!eligibleModifiers.length) {
+        return 'normal';
+      }
+
+      const modifierOddsBonus = {
+        ...(personalModifierEffects.modifierOddsBonus || {})
+      };
+      Object.entries(roundModifierEffects.modifierOddsBonus || {}).forEach(([key, bonus]) => {
+        modifierOddsBonus[key] = (modifierOddsBonus[key] || 0) + (bonus || 0);
+      });
+
+      return chooseWeightedModifier(eligibleModifiers, modifierOddsBonus, tileContext);
+    };
+
     const canForceTurnMustTile = (options = {}) => {
       const roundModifierEffects = options.roundModifierEffects || options.chanceOverrides?.roundModifierEffects || {};
       const personalModifierEffects = options.personalModifierEffects || options.chanceOverrides?.personalModifierEffects || {};
@@ -1882,10 +1914,20 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
       const rack = [];
       const forceOpeningMust = canForceTurnMustTile(options);
       const forceOpeningBurn = canForceTurnBurnTile(options);
+      const forcedModifierGroups = [...(options.forcedModifierGroups || [])];
       while (rack.length < RACK_SIZE) {
         const forceMust = forceOpeningMust && rack.length === 0;
         const forceBurn = forceOpeningBurn && rack.length === 0;
-        rack.push(createTile(forceMust || forceBurn ? drawSingleLetter(rack) : drawLetter(rack), side, scores, forceMust ? 'mustuse' : forceBurn ? 'burningTile' : (options.forcedStatus || null), {
+        const letter = forceMust || forceBurn ? drawSingleLetter(rack) : drawLetter(rack);
+        const forcedModifierGroup = !forceMust && !forceBurn && !options.forcedStatus ? forcedModifierGroups.shift() : '';
+        const forcedGroupStatus = forcedModifierGroup
+          ? chooseForcedModifierForGroup(forcedModifierGroup, {
+              letter,
+              baseScore: letterConfig[letter]?.score || 0,
+              rackTiles: rack
+            }, options)
+          : null;
+        rack.push(createTile(letter, side, scores, forceMust ? 'mustuse' : forceBurn ? 'burningTile' : (options.forcedStatus || forcedGroupStatus || null), {
           ...(options.chanceOverrides || {}),
           rackTiles: rack,
           personalModifierEffects: options.personalModifierEffects || options.chanceOverrides?.personalModifierEffects || {},
@@ -2095,6 +2137,7 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
       const shouldForceReplacementBurn = canForceTurnBurnTile(options)
         && !rackHasAvailableBurnTile(nextTiles.filter((tile) => !replacedIds.has(tile.id)));
       let forcedReplacementBurn = false;
+      const forcedModifierGroups = [...(options.forcedModifierGroups || [])];
 
       nextTiles.forEach((tile, index) => {
         if (!replacedIds.has(tile.id)) {
@@ -2107,7 +2150,20 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
 
         const forceMust = shouldForceReplacementMust && !forcedReplacementMust;
         const forceBurn = shouldForceReplacementBurn && !forcedReplacementBurn;
-        nextTiles[index] = createTile(forceMust || forceBurn ? drawSingleLetter(remainingTiles) : drawLetter(remainingTiles), side, scores, forceMust ? 'mustuse' : forceBurn ? 'burningTile' :  null, {
+        const letter = forceMust || forceBurn ? drawSingleLetter(remainingTiles) : drawLetter(remainingTiles);
+        const forcedModifierGroup = !forceMust && !forceBurn ? forcedModifierGroups.shift() : '';
+        const forcedGroupStatus = forcedModifierGroup
+          ? chooseForcedModifierForGroup(forcedModifierGroup, {
+              letter,
+              baseScore: letterConfig[letter]?.score || 0,
+              rackTiles: remainingTiles
+            }, {
+              modifierProfile: options.modifierProfile || 'duel',
+              personalModifierEffects: options.personalModifierEffects || {},
+              roundModifierEffects
+            })
+          : null;
+        nextTiles[index] = createTile(letter, side, scores, forceMust ? 'mustuse' : forceBurn ? 'burningTile' : forcedGroupStatus, {
           rackTiles: remainingTiles,
           modifierProfile: options.modifierProfile || 'duel',
           personalModifierEffects: options.personalModifierEffects || {},

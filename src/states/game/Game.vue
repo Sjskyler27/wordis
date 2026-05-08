@@ -210,9 +210,9 @@
         @home="emit('home')"
       />
 
-      <TutorialOverlay
+      <TutorialHintModal
         v-if="showTutorialOverlay"
-        :isBotMode="isBotMode"
+        :hint="activeTutorialHint"
         @close="handleCloseTutorial"
       />
     </main>
@@ -284,7 +284,11 @@ import {
   saveLocalGame,
   unpackSave
 } from './save-state.js';
-import TutorialOverlay from './components/TutorialOverlay.vue';
+import TutorialHintModal from './components/TutorialHintModal.vue';
+import {
+  getTutorialHint,
+  markTutorialHintViewed
+} from './tutorial-hints.js';
 import WordBuilder from './components/WordBuilder.vue';
 import { getMultiRoundBackgroundPalette } from './multiround/multi-round-background-palettes.js';
 import { botDifficulty } from './play-config.js';
@@ -294,6 +298,11 @@ import {
   makePastGameId,
   savePastGame
 } from '../../userstate/pastGames.js';
+
+const TUTORIAL_BAD_MODIFIERS = new Set(['zeroTile', 'mustuse', 'locked3', 'burningTile', 'rustingTile', 'lightningTile', 'barricadeTile', 'bagTile']);
+const TUTORIAL_NEUTRAL_MODIFIERS = new Set(['yinYang', 'ghostTile', 'bloodTile', 'wild', 'shimmer', 'voidTile', 'hourglassTile', 'waterTile', 'leecherTile']);
+const TUTORIAL_NEUTRAL_MODIFIER_UNLOCK_ROUND_INDEX = 1;
+const TUTORIAL_BAD_MODIFIER_UNLOCK_ROUND_INDEX = 2;
 
 const props = defineProps({
   isMobile: Boolean,
@@ -462,7 +471,13 @@ let lastPlayerCogScoreAt = Date.now();
 const GAME_TUTORIAL_STORAGE_KEY = 'hasSeenWordisGameTutorial';
 const hasSeenGameTutorial = () => typeof localStorage !== 'undefined' && localStorage.getItem(GAME_TUTORIAL_STORAGE_KEY);
 const showHistoryOverlay = ref(false);
-const showTutorialOverlay = ref(!hasSeenGameTutorial());
+const activeTutorialHint = ref(getTutorialHint('welcome') || {
+  id: 'welcome',
+  title: 'How Wordis Works',
+  body: 'Build words from your tiles and submit them for points.',
+  closeLabel: 'Close'
+});
+const showTutorialOverlay = ref(false);
 const windowWidth = ref(typeof window !== 'undefined' ? window.innerWidth : 1440);
 const roundModifierCountdowns = ref({});
 const {
@@ -479,6 +494,18 @@ const personalModifiersDrawerRef = ref(null);
 const multiRoundRun = useMultiRoundRun({
   rounds: getMultiRoundRounds(props.multiRoundDifficulty)
 });
+const isTutorialMultiRound = computed(() => isMultiRoundMode.value && props.multiRoundDifficulty === 'tutorial');
+const getTutorialModifierChanceOverrides = () => {
+  if (!isTutorialMultiRound.value) {
+    return {};
+  }
+
+  const roundIndex = multiRoundRun.currentRoundIndex.value;
+  return {
+    ...(roundIndex < TUTORIAL_NEUTRAL_MODIFIER_UNLOCK_ROUND_INDEX ? { neutralChance: 0 } : {}),
+    ...(roundIndex < TUTORIAL_BAD_MODIFIER_UNLOCK_ROUND_INDEX ? { badChance: 0 } : {})
+  };
+};
 
 const mySide = computed(() => {
   if (props.isMultiplayer) {
@@ -820,6 +847,44 @@ const {
   onMultiRoundRerollRewardChoices: () => multiRoundRun.rerollRewardChoices(),
   onMultiRoundReduceTargetScore: (amount) => multiRoundRun.reduceCurrentTargetScore(amount),
   onBotPreparing: triggerBotCogBoost,
+  getTutorialTilePlan: ({ phase, multiRoundWordsPlayedThisRound }) => {
+    if (!isTutorialMultiRound.value || multiRoundRun.currentRoundIndex.value !== 0) {
+      return getTutorialModifierChanceOverrides();
+    }
+
+    if (phase === 'opening' || phase === 'round-start') {
+      return {
+        ...getTutorialModifierChanceOverrides(),
+        suppressStartingCards: true,
+        forcedStatus: 'normal',
+        goodChance: 0,
+        badChance: 0,
+        neutralChance: 0
+      };
+    }
+
+    if (phase === 'submit' && multiRoundWordsPlayedThisRound === 1) {
+      return {
+        ...getTutorialModifierChanceOverrides(),
+        forcedModifierGroups: ['good'],
+        goodChance: 0,
+        badChance: 0,
+        neutralChance: 0
+      };
+    }
+
+    return getTutorialModifierChanceOverrides();
+  },
+  onTutorialTurnAdvanced: ({ multiRoundWordsPlayedThisRound }) => {
+    if (isTutorialMultiRound.value && multiRoundRun.currentRoundIndex.value === 0 && multiRoundWordsPlayedThisRound === 1) {
+      showTutorialHint('first_good_modifier');
+      return;
+    }
+
+    if (isTutorialMultiRound.value && multiRoundRun.currentRoundIndex.value === 0 && multiRoundWordsPlayedThisRound === 2) {
+      showTutorialHint('larger_words');
+    }
+  },
   personalModifierEffects,
   roundModifierEffects
 });
@@ -1594,6 +1659,9 @@ const completeMultiRoundRound = () => {
     clearMultiRoundSaves();
     playUiSound(tileReplaceSound);
     localMessage.value = 'Run complete!';
+    if (isTutorialMultiRound.value) {
+      showTutorialHint('game_won');
+    }
     return;
   }
 
@@ -1602,6 +1670,9 @@ const completeMultiRoundRound = () => {
     (roundModifierEffects.value.rewardCountModifier || 0) + (personalModifierEffects.value.rewardCountModifier || 0),
     personalModifierEffects.value.rewardSelectionCountBonus || 0
   );
+  if (isTutorialMultiRound.value) {
+    showTutorialHint('rewards');
+  }
   saveCurrentMultiRoundCheckpoint();
   playUiSound(tileReplaceSound);
   localMessage.value = 'Round complete.';
@@ -1636,6 +1707,9 @@ const failMultiRoundRun = () => {
   saveMultiRoundPastGame('failed');
   clearMultiRoundSaves();
   localMessage.value = 'Run failed.';
+  if (isTutorialMultiRound.value) {
+    showTutorialHint('game_lost');
+  }
 };
 
 const applyImmediatePersonalModifierEffects = (modifier) => {
@@ -1667,6 +1741,9 @@ const applyImmediatePersonalModifierEffects = (modifier) => {
       ]
     }
   };
+  if (isTutorialMultiRound.value) {
+    showTutorialHint('card_received');
+  }
 };
 
 const applyMultiRoundWordTimeBonus = (tileCount = 0) => {
@@ -2855,13 +2932,39 @@ const syncTutorialPauseState = (visible) => {
   }
 };
 
-const handleCloseTutorial = ({ dontShowAgain } = {}) => {
-  if (dontShowAgain) {
+let pendingTutorialHintIds = [];
+const showTutorialHint = (hintId, { force = false } = {}) => {
+  const hint = getTutorialHint(hintId);
+  if (!hint || (!force && hint.hasSeen)) {
+    return false;
+  }
+
+  if (showTutorialOverlay.value) {
+    if (!pendingTutorialHintIds.includes(hintId)) {
+      pendingTutorialHintIds.push(hintId);
+    }
+    return false;
+  }
+
+  activeTutorialHint.value = hint;
+  markTutorialHintViewed(hint.id);
+  showTutorialOverlay.value = true;
+  syncTutorialPauseState(true);
+  return true;
+};
+
+const handleCloseTutorial = () => {
+  if (activeTutorialHint.value?.id === 'welcome') {
     localStorage.setItem(GAME_TUTORIAL_STORAGE_KEY, 'true');
   }
 
   showTutorialOverlay.value = false;
   nextTick(() => {
+    const nextHintId = pendingTutorialHintIds.shift();
+    if (nextHintId && showTutorialHint(nextHintId)) {
+      return;
+    }
+
     focusControllerTile(0);
   });
 };
@@ -2967,6 +3070,11 @@ const startSoloTimer = () => {
       return;
     }
 
+    if (!canRunTimedModeTimer()) {
+      stopSoloTimer();
+      return;
+    }
+
     timerRemainingSeconds.value = Math.max(0, timerRemainingSeconds.value - 1);
     if (timerRemainingSeconds.value <= 0) {
       stopSoloTimer();
@@ -2985,6 +3093,11 @@ const startMultiRoundTimer = () => {
   multiRoundTimerId = window.setInterval(() => {
     if (isMultiRoundTimerPausedByAttack.value) {
       console.log('timerpaused')
+      return;
+    }
+
+    if (!canRunTimedModeTimer()) {
+      stopMultiRoundTimer();
       return;
     }
     
@@ -3155,6 +3268,44 @@ watch(() => props.settingsShowing, (showingSettings) => {
 
 watch(showTutorialOverlay, (visible) => {
   syncTutorialPauseState(visible);
+});
+
+watch(() => myTiles.value.map((tile) => tile.status).join('|'), () => {
+  if (!isTutorialMultiRound.value) {
+    return;
+  }
+
+  const statuses = myTiles.value.map((tile) => tile.status);
+  if (statuses.some((status) => TUTORIAL_NEUTRAL_MODIFIERS.has(status))) {
+    showTutorialHint('neutral_modifier');
+  }
+  if (statuses.some((status) => TUTORIAL_BAD_MODIFIERS.has(status))) {
+    showTutorialHint('bad_modifier');
+  }
+  if (multiRoundRun.currentRoundIndex.value >= 3 && statuses.filter((status) => TUTORIAL_BAD_MODIFIERS.has(status)).length > 1) {
+    showTutorialHint('clear_rack');
+  }
+});
+
+watch(() => {
+  const cards = myCards.value;
+  return `${cards.boons?.length || 0}|${cards.attacks?.length || 0}`;
+}, (cardCounts) => {
+  if (!isTutorialMultiRound.value || cardCounts === '0|0') {
+    return;
+  }
+
+  showTutorialHint('card_received');
+});
+
+watch(() => multiRoundRun.currentRoundIndex.value, (roundIndex) => {
+  if (!isTutorialMultiRound.value) {
+    return;
+  }
+
+  if (roundIndex === 2) {
+    showTutorialHint('save_letters');
+  }
 });
 
 watch(() => multiRoundRun.activeRoundModifierKeys.value.join('|'), () => {
@@ -3404,12 +3555,14 @@ const syncWindowWidth = () => {
 
 const showTutorialFromSettings = () => {
   showHistoryOverlay.value = false;
-  showTutorialOverlay.value = true;
+  showTutorialHint('welcome', { force: true });
 };
 
 onMounted(() => {
-  if (!localStorage.getItem(GAME_TUTORIAL_STORAGE_KEY)) {
-    showTutorialOverlay.value = true;
+  if (isTutorialMultiRound.value) {
+    showTutorialHint('plain_tiles');
+  } else if (!localStorage.getItem(GAME_TUTORIAL_STORAGE_KEY)) {
+    showTutorialHint('welcome');
   }
   syncWindowWidth();
   speedyWordClockIntervalId = window.setInterval(() => {
