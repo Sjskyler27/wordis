@@ -12,7 +12,7 @@ update app_background in build
 netlify attach github no variables needed yet
 railway attach github, set port 8080 and copy the websocket url for netlify 
 
-in netlify add VITE_WS_HOST new url and VITE_WS_PORT 8080
+in netlify add VITE_WS_HOST new url and VITE_WS_PORT 8080 VITE_PWA=true
 
 
 
