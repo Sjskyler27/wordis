@@ -327,6 +327,7 @@ const TUTORIAL_TILE_MODIFIER_KEYS = Object.entries(MODIFIER_DEFINITIONS)
   .map(([key]) => key);
 const TUTORIAL_NEUTRAL_MODIFIER_UNLOCK_ROUND_INDEX = 1;
 const TUTORIAL_BAD_MODIFIER_UNLOCK_ROUND_INDEX = 2;
+const TUTORIAL_MODIFIER_UNLOCK_TURN_COUNT = 1;
 const hasCompletedTutorialRun = () => (
   typeof localStorage !== 'undefined'
     && localStorage.getItem(TUTORIAL_COMPLETED_STORAGE_KEY) === 'true'
@@ -541,16 +542,20 @@ const multiRoundRun = useMultiRoundRun({
   getAllowedModifierKeys: getAllowedMultiRoundModifierKeys
 });
 const isTutorialMultiRound = computed(shouldUseTutorialLimits);
-const getTutorialModifierChanceOverrides = () => {
+const getTutorialModifierChanceOverrides = ({ multiRoundWordsPlayedThisRound = 0 } = {}) => {
   if (!isTutorialMultiRound.value) {
     return {};
   }
 
   const roundIndex = multiRoundRun.currentRoundIndex.value;
+  const canPullNeutral = roundIndex >= TUTORIAL_NEUTRAL_MODIFIER_UNLOCK_ROUND_INDEX
+    && multiRoundWordsPlayedThisRound >= TUTORIAL_MODIFIER_UNLOCK_TURN_COUNT;
+  const canPullBad = roundIndex >= TUTORIAL_BAD_MODIFIER_UNLOCK_ROUND_INDEX
+    && multiRoundWordsPlayedThisRound >= TUTORIAL_MODIFIER_UNLOCK_TURN_COUNT;
   return {
     allowedModifierKeys: TUTORIAL_TILE_MODIFIER_KEYS,
-    ...(roundIndex < TUTORIAL_NEUTRAL_MODIFIER_UNLOCK_ROUND_INDEX ? { neutralChance: 0 } : {}),
-    ...(roundIndex < TUTORIAL_BAD_MODIFIER_UNLOCK_ROUND_INDEX ? { badChance: 0 } : {})
+    ...(!canPullNeutral ? { neutralChance: 0 } : {}),
+    ...(!canPullBad ? { badChance: 0 } : {})
   };
 };
 
@@ -896,13 +901,14 @@ const {
   onBotPreparing: triggerBotCogBoost,
   getAllowedModifierKeys: getAllowedMultiRoundModifierKeys,
   getTutorialTilePlan: ({ phase, multiRoundWordsPlayedThisRound }) => {
+    const tutorialModifierChanceOverrides = getTutorialModifierChanceOverrides({ multiRoundWordsPlayedThisRound });
     if (!isTutorialMultiRound.value || multiRoundRun.currentRoundIndex.value !== 0) {
-      return getTutorialModifierChanceOverrides();
+      return tutorialModifierChanceOverrides;
     }
 
     if (phase === 'opening' || phase === 'round-start') {
       return {
-        ...getTutorialModifierChanceOverrides(),
+        ...tutorialModifierChanceOverrides,
         suppressStartingCards: true,
         forcedStatus: 'normal',
         goodChance: 0,
@@ -913,7 +919,7 @@ const {
 
     if (phase === 'submit' && multiRoundWordsPlayedThisRound === 1) {
       return {
-        ...getTutorialModifierChanceOverrides(),
+        ...tutorialModifierChanceOverrides,
         forcedModifierGroups: ['good'],
         goodChance: 0,
         badChance: 0,
@@ -921,7 +927,7 @@ const {
       };
     }
 
-    return getTutorialModifierChanceOverrides();
+    return tutorialModifierChanceOverrides;
   },
   onTutorialTurnAdvanced: ({ multiRoundWordsPlayedThisRound }) => {
     if (isTutorialMultiRound.value && multiRoundRun.currentRoundIndex.value === 0 && multiRoundWordsPlayedThisRound === 1) {
