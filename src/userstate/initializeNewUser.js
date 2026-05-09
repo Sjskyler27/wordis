@@ -8,7 +8,8 @@ const initUserLog = (...args) => {
 export const createBlankUserState = () => ({
   gameData: {
     completedGames: {},
-    pstgms: {}
+    pstgms: {},
+    multiRoundHighScores: {}
   }
 });
 
@@ -43,6 +44,10 @@ export const initializeNewUser = async (user) => {
 
   if (existing.gameData && !existing.gameData.pstgms) {
     patch['gameData/pstgms'] = {};
+  }
+
+  if (existing.gameData && !existing.gameData.multiRoundHighScores) {
+    patch['gameData/multiRoundHighScores'] = {};
   }
 
   if (Object.keys(patch).length) {

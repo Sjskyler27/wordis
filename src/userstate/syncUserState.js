@@ -13,6 +13,10 @@ import {
 } from '../states/game/save-state.js';
 import { BOT_DIFFICULTIES, botDifficulty } from '../states/game/play-config.js';
 import { initializeNewUser } from './initializeNewUser.js';
+import {
+  clearLocalMultiRoundHighScores,
+  syncMultiRoundHighScores
+} from './multiRoundHighScores.js';
 
 export const USER_SYNC_INTERVAL_MS = 10 * 60 * 1000;
 export const LAST_USER_SYNC_KEY = 'wordis:userstate:last-sync-at';
@@ -219,21 +223,23 @@ export const syncUserState = async ({ force = false, user = auth?.currentUser } 
 
     const syncResult = await withTimeout(Promise.all([
       syncSavedGames(user.uid, userState),
-      syncBotDifficultyCompletion(user.uid, userState)
+      syncBotDifficultyCompletion(user.uid, userState),
+      syncMultiRoundHighScores(user.uid, userState)
     ]), 'merge user state');
     if (syncResult?.timedOut) {
       return { skipped: true, timedOut: true };
     }
 
-    const [savedGames, botDifficulty] = syncResult;
+    const [savedGames, botDifficulty, multiRoundHighScores] = syncResult;
     localStorage.setItem(LAST_USER_SYNC_KEY, String(Date.now()));
     window.dispatchEvent(new CustomEvent('wordis:saves-changed'));
-    userSyncLog('sync finished', { savedGames, botDifficulty });
+    userSyncLog('sync finished', { savedGames, botDifficulty, multiRoundHighScores });
 
     return {
       skipped: false,
       savedGames,
-      botDifficulty
+      botDifficulty,
+      multiRoundHighScores
     };
   } catch (error) {
     userSyncWarn('sync failed safely', error);
@@ -304,6 +310,7 @@ export const logoutCleanup = async () => {
   });
 
   localStorage.removeItem('botDefaultDifficulty');
+  clearLocalMultiRoundHighScores();
   localStorage.removeItem(LAST_USER_SYNC_KEY);
 };
 

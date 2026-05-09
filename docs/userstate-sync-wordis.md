@@ -8,6 +8,7 @@ Wordis stores per-user data under `users/${uid}`:
 
 - `gameData.completedGames`: Reserved for completed game records.
 - `gameData.botDifficultyCompletion`: The highest bot difficulty the player has unlocked.
+- `gameData.multiRoundHighScores`: Best Wordis Run score per difficulty.
 - `svgms`: Saved game payloads, created only when a save exists.
 
 The first login/sign-up initializer writes the blank user shell:
@@ -15,7 +16,9 @@ The first login/sign-up initializer writes the blank user shell:
 ```json
 {
   "gameData": {
-    "completedGames": {}
+    "completedGames": {},
+    "pstgms": {},
+    "multiRoundHighScores": {}
   }
 }
 ```
@@ -25,7 +28,8 @@ Realtime Database may omit empty child objects in the console until a real compl
 ## Files
 
 - `src/userstate/initializeNewUser.js`: Ensures `users/${uid}` exists after sign-up or login.
-- `src/userstate/syncUserState.js`: Handles up/down sync for saved games and bot difficulty progress.
+- `src/userstate/syncUserState.js`: Handles up/down sync for saved games, bot difficulty progress, and multi-round high scores.
+- `src/userstate/multiRoundHighScores.js`: Calculates, stores, and merges Wordis Run high scores.
 - `src/userstate/pastGames.js`: Saves completed game summaries and lazily syncs profile history.
 - `src/states/game/save-state.js`: Owns save validation, local save keys, and import/export helpers.
 
@@ -49,7 +53,19 @@ Each save has `v`, `m`, and `ts`. Sync compares local and remote `ts`:
 - Local newer: upload the local save to Firebase.
 - Same or missing: leave the newer known copy alone.
 
-Saved-game sync can be disabled per device with `wordis:sync:saved-games-enabled=false`. Bot difficulty progress still syncs.
+Saved-game sync can be disabled per device with `wordis:sync:saved-games-enabled=false`. Bot difficulty progress and multi-round high scores still sync.
+
+## Multi-Round High Scores
+
+Local high scores live under:
+
+- `wordis:mr-high-scores`
+
+Cloud high scores live under:
+
+- `users/${uid}/gameData/multiRoundHighScores/${difficulty}`
+
+Each difficulty keeps its own best score. A run score is the sum of each recorded round's remaining seconds plus points scored above that round's target. Sync resolves conflicts by keeping the larger score for each difficulty; if scores tie, the newer `updatedAt` record wins.
 
 ## Sync Timing
 

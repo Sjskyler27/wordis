@@ -63,6 +63,25 @@
         </div>
       </section>
 
+      <section class="score-section">
+        <div class="score-section-header">
+          <span class="kicker">High Scores</span>
+          <strong>{{ selectedDifficultyDetails.label }} Best: {{ formatHighScore(selectedDifficultyScore?.score) }}</strong>
+        </div>
+        <div class="score-grid">
+          <article
+            v-for="difficulty in difficulties"
+            :key="`score-${difficulty.value}`"
+            class="score-card"
+            :class="{ active: selectedDifficulty === difficulty.value }"
+          >
+            <span>{{ difficulty.label }}</span>
+            <strong>{{ formatHighScore(highScores[difficulty.value]?.score) }}</strong>
+            <small>{{ formatScoreDetail(highScores[difficulty.value]) }}</small>
+          </article>
+        </div>
+      </section>
+
       <!-- <section class="message-card">
         <span class="kicker">Rewards</span>
         <strong>Personal modifiers are not cards.</strong>
@@ -210,6 +229,7 @@ import { PERSONAL_MODIFIER_DEFINITIONS } from './multiround/personal-modifier-de
 import { ROUND_MODIFIER_DEFINITIONS } from './multiround/round-modifier-definitions.js';
 import { getMultiRoundRounds } from './multiround/multi-round-difficulties.js';
 import { resolveBackgroundPaletteKey } from './multiround/useMultiRoundRun.js';
+import { readLocalMultiRoundHighScores } from '../../userstate/multiRoundHighScores.js';
 import './card-definitions.cjs';
 
 const {
@@ -227,6 +247,7 @@ const selectedCardKind = ref('boon');
 const screenRoot = ref(null);
 const controllerFocusIndex = ref(0);
 const isExiting = ref(false);
+const highScores = ref(readLocalMultiRoundHighScores());
 const difficulties = [
   {
     value: 'tutorial',
@@ -271,6 +292,7 @@ const selectedDifficultyDetails = computed(() => {
     || difficulties.find((difficulty) => difficulty.value === 'normal')
     || difficulties[0];
 });
+const selectedDifficultyScore = computed(() => highScores.value[selectedDifficulty.value] || null);
 const referenceTitle = computed(() => {
   if (selectedReferenceType.value === 'cards') {
     return 'Available Cards';
@@ -365,6 +387,20 @@ const formatCardDetail = (card) => {
   }
   return card.effectType ? `Effect: ${card.effectType.replaceAll('_', ' ')}` : 'Card';
 };
+const formatHighScore = (score = 0) => {
+  return Math.max(0, Math.round(Number(score || 0))).toLocaleString();
+};
+const formatScoreDetail = (score) => {
+  if (!score?.score) {
+    return 'No run scored';
+  }
+
+  const rounds = `${score.roundsCleared || 0}/${score.totalRounds || 0}`;
+  return `${rounds} rounds · ${score.timeScore || 0} time · ${score.overScore || 0} over`;
+};
+const refreshHighScores = () => {
+  highScores.value = readLocalMultiRoundHighScores();
+};
 
 const startMultiRound = () => {
   if (isExiting.value) {
@@ -442,11 +478,14 @@ const handleControllerKeyDown = (event) => {
 };
 
 onMounted(() => {
+  refreshHighScores();
+  window.addEventListener('wordis:multi-round-high-scores-changed', refreshHighScores);
   window.addEventListener('keydown', handleControllerKeyDown);
   nextTick(focusSelectedDifficulty);
 });
 
 onBeforeUnmount(() => {
+  window.removeEventListener('wordis:multi-round-high-scores-changed', refreshHighScores);
   window.removeEventListener('keydown', handleControllerKeyDown);
 });
 </script>
@@ -517,6 +556,71 @@ onBeforeUnmount(() => {
 
 .message-card {
   background: linear-gradient(180deg, rgba(148, 31, 70, 0.95), rgba(93, 18, 52, 0.88));
+}
+
+.score-section {
+  border-radius: 30px;
+  padding: 20px 22px;
+  background: rgba(36, 11, 31, 0.72);
+  border: 2px solid rgba(255, 255, 255, 0.12);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    0 20px 50px rgba(38, 7, 22, 0.22);
+}
+
+.score-section-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.score-section-header strong {
+  font-size: 1rem;
+}
+
+.score-grid {
+  margin-top: 14px;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.score-card {
+  min-height: 116px;
+  padding: 14px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.score-card.active {
+  border-color: rgba(111, 245, 221, 0.5);
+  background: linear-gradient(180deg, rgba(93, 230, 203, 0.2), rgba(46, 179, 151, 0.26));
+}
+
+.score-card span,
+.score-card small {
+  display: block;
+  color: rgba(247, 239, 225, 0.72);
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.score-card strong {
+  display: block;
+  margin-top: 10px;
+  font-size: 1.55rem;
+  line-height: 1;
+}
+
+.score-card small {
+  margin-top: 12px;
+  line-height: 1.45;
+  text-transform: none;
+  letter-spacing: 0;
 }
 
 .reference-section {
@@ -890,6 +994,10 @@ p,
   .modifier-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+
+  .score-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 @media (max-width: 640px) {
@@ -904,6 +1012,10 @@ p,
   }
 
   .modifier-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .score-grid {
     grid-template-columns: 1fr;
   }
 }

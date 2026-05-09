@@ -299,6 +299,7 @@ import {
   makePastGameId,
   savePastGame
 } from '../../userstate/pastGames.js';
+import { saveMultiRoundHighScore } from '../../userstate/multiRoundHighScores.js';
 
 const TUTORIAL_BAD_MODIFIERS = new Set(['zeroTile', 'mustuse', 'locked3', 'burningTile', 'rustingTile', 'lightningTile', 'barricadeTile', 'bagTile']);
 const TUTORIAL_NEUTRAL_MODIFIERS = new Set(['yinYang', 'ghostTile', 'bloodTile', 'wild', 'shimmer', 'voidTile', 'hourglassTile', 'waterTile', 'leecherTile']);
@@ -1113,6 +1114,20 @@ const saveMultiRoundPastGame = (result) => {
   });
 };
 
+const saveMultiRoundScore = (result) => {
+  if (!isMultiRoundMode.value) {
+    return;
+  }
+
+  void saveMultiRoundHighScore({
+    difficulty: props.multiRoundDifficulty,
+    result,
+    completedRounds: multiRoundRun.completedRounds.value || [],
+    failedRound: multiRoundRun.failureSummary.value,
+    totalRounds: multiRoundRun.totalRounds.value
+  });
+};
+
 const saveBotMatchPastGame = () => {
   const saveKey = PAST_GAME_MODES.BOT_MATCH;
   const id = makePastGameId(PAST_GAME_MODES.BOT_MATCH);
@@ -1671,6 +1686,7 @@ const completeMultiRoundRound = () => {
   if (multiRoundRun.currentRoundIndex.value >= multiRoundRun.resolvedRounds.value.length - 1) {
     multiRoundRun.goToNextRound({ startingScore });
     saveMultiRoundPastGame('won');
+    saveMultiRoundScore('won');
     clearMultiRoundSaves();
     playUiSound(tileReplaceSound);
     localMessage.value = 'Run complete!';
@@ -1699,6 +1715,7 @@ const completeMultiRoundRound = () => {
       pendingMultiRoundStartingScore.value = 0;
       if (!advanced) {
         saveMultiRoundPastGame('won');
+        saveMultiRoundScore('won');
         clearMultiRoundSaves();
         localMessage.value = 'Run complete!';
         return;
@@ -1721,6 +1738,7 @@ const failMultiRoundRun = () => {
     secondsRemaining: Math.max(0, multiRoundRun.timerRemainingSeconds.value)
   });
   saveMultiRoundPastGame('failed');
+  saveMultiRoundScore('failed');
   clearMultiRoundSaves();
   localMessage.value = 'Run failed.';
   if (isTutorialMultiRound.value) {
@@ -1864,6 +1882,7 @@ const handleMultiRoundRewardChoice = (rewardKey) => {
 
   if (!advanced) {
     saveMultiRoundPastGame('won');
+    saveMultiRoundScore('won');
     clearMultiRoundSaves();
     playUiSound(tileReplaceSound);
     localMessage.value = 'Run complete!';
