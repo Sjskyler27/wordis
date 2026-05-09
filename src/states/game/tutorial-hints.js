@@ -11,7 +11,7 @@ export const DEFAULT_TUTORIAL_HINTS = [
   {
     id: 'plain_tiles',
     title: 'Start With Plain Tiles',
-    body: 'Your first tutorial rack has no modifiers. Pick a word, submit it, and watch the used tiles refill.',
+    body: 'Build words from the tiles in front of you. Words must be 4 letters. larger words score more. Beat the score before time runs out!',
     closeLabel: 'Got It'
   },
   {
@@ -22,8 +22,8 @@ export const DEFAULT_TUTORIAL_HINTS = [
   },
   {
     id: 'larger_words',
-    title: 'Longer Words Score More',
-    body: 'Try building larger words when your rack allows it. Longer words add bonus score, which helps you clear round targets faster.',
+    title: 'Longer Words Give rewards',
+    body: 'Larger words will give you benefits such as cards or higher points. Each milestone indicates the reward. covered milestones indicate the reward received.',
     closeLabel: 'Got It'
   },
   {
@@ -41,7 +41,7 @@ export const DEFAULT_TUTORIAL_HINTS = [
   {
     id: 'card_received',
     title: 'Card Received',
-    body: 'You gained a card. Boons help your own board, while attacks pressure the other side or give run-specific utility.',
+    body: 'You gained a card. Boons help you manipulate your tile, while attacks pressure the other side or give run-specific utility.',
     closeLabel: 'Got It'
   },
   {

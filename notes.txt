@@ -407,3 +407,5 @@ Epic reward choice should not show up on second to last round
 water tiles are not being removed from the board when scored
 
 2 letter tiles need to count for twin modifier example e counts it if ed tile is in word 
+
+wilds letter needs to be set to * if its an s its an issue if it matches a twin its an issue 
