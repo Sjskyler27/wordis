@@ -1,4 +1,6 @@
 # Changelog
+## 0.0.66 - 2026-05-08
+- fix options modifier key
 ## 0.0.65 - 2026-05-08
 - new dificulty tutorial/ easy
 - updated all dificulties names to better match

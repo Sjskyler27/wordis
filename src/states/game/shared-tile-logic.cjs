@@ -701,9 +701,9 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
     const baseProfile = getModifierProfile(modifierProfile);
     const profile = {
       ...baseProfile,
-      goodModifiers: filterAllowedModifiers(filterBlockedModifiers(baseProfile.goodModifiers, personalModifierEffects), options.allowedModifierKeys),
-      badModifiers: filterAllowedModifiers(filterBlockedModifiers(baseProfile.badModifiers, personalModifierEffects), options.allowedModifierKeys),
-      neutralModifiers: filterAllowedModifiers(filterBlockedModifiers(baseProfile.neutralModifiers || [], personalModifierEffects), options.allowedModifierKeys)
+      goodModifiers: filterAllowedModifiers(filterBlockedModifiers(baseProfile.goodModifiers, personalModifierEffects), chanceOverrides.allowedModifierKeys),
+      badModifiers: filterAllowedModifiers(filterBlockedModifiers(baseProfile.badModifiers, personalModifierEffects), chanceOverrides.allowedModifierKeys),
+      neutralModifiers: filterAllowedModifiers(filterBlockedModifiers(baseProfile.neutralModifiers || [], personalModifierEffects), chanceOverrides.allowedModifierKeys)
     };
     const modifierOddsBonus = {
       ...(personalModifierEffects.modifierOddsBonus || {})
