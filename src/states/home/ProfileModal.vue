@@ -1,6 +1,10 @@
 <template>
   <div class="profile-modal-backdrop animated-fade-in">
-    <div ref="modalRef" class="profile-modal animated-slide-up">
+    <div
+      ref="modalRef"
+      class="profile-modal animated-slide-up"
+      :class="{ 'profile-modal-modifiers': activeView === 'modifiers' }"
+    >
       <button ref="closeButton" class="profile-close" @click="emit('close')">&times;</button>
       <h2>Profile</h2>
 
@@ -21,6 +25,14 @@
           @click="openPastGames"
         >
           Past Games
+        </button>
+        <button
+          type="button"
+          class="profile-tab-button"
+          :class="{ active: activeView === 'modifiers' }"
+          @click="openModifiers"
+        >
+          Modifiers
         </button>
       </div>
 
@@ -57,7 +69,7 @@
         </div>
       </div>
 
-      <div v-else class="past-games-view">
+      <div v-else-if="activeView === 'past'" class="past-games-view">
         <div class="past-games-tabs">
           <button
             v-for="mode in visibleModes"
@@ -101,6 +113,69 @@
         <p v-else class="empty-games">No games saved for this mode yet.</p>
       </div>
 
+      <div v-else class="modifier-collection-view">
+        <div class="modifier-collection-heading">
+          <p class="sync-status">{{ modifierUnlockSummary }}</p>
+          <button type="button" class="profile-button unlock-all-button" @click="unlockEveryModifier">Unlock All</button>
+        </div>
+
+        <div class="past-games-tabs">
+          <button
+            v-for="type in modifierTypes"
+            :key="type.key"
+            type="button"
+            class="past-mode-tab"
+            :class="{ active: selectedModifierType === type.key }"
+            @click="selectModifierType(type.key)"
+          >
+            {{ type.label }}
+          </button>
+        </div>
+
+        <div class="past-games-tabs">
+          <button
+            v-for="group in activeModifierGroups"
+            :key="group.key"
+            type="button"
+            class="past-mode-tab"
+            :class="{ active: selectedModifierGroup === group.key }"
+            @click="selectedModifierGroup = group.key"
+          >
+            {{ group.label }}
+          </button>
+        </div>
+
+        <div class="modifier-collection-grid">
+          <article
+            v-for="modifier in activeModifierCatalog"
+            :key="`${modifier.type}-${modifier.key}`"
+            class="modifier-collection-card reward-card"
+            :class="[modifier.type, modifier.group, { locked: !modifier.unlocked }]"
+          >
+            <div
+              v-if="modifier.type === 'tile'"
+              class="modifier-preview-tile"
+              :style="modifier.preview?.style"
+            >
+              <span
+                v-if="modifier.preview?.badge && !modifier.preview?.hideBadge"
+                class="modifier-preview-tile-badge"
+                :style="modifier.preview?.badgeStyle"
+              >
+                {{ modifier.preview.badge }}
+              </span>
+              <span class="modifier-preview-tile-score">{{ modifier.preview?.score }}</span>
+              <span class="modifier-preview-tile-letter">{{ modifier.preview?.letter }}</span>
+            </div>
+            <div class="modifier-collection-card-heading">
+              <strong>{{ modifier.label }}</strong>
+              <span>{{ modifier.group }}</span>
+            </div>
+            <p>{{ modifier.unlocked ? modifier.description : '???' }}</p>
+          </article>
+        </div>
+      </div>
+
     </div>
   </div>
 </template>
@@ -116,6 +191,11 @@ import {
   getVisiblePastGameModes,
   syncPastGames
 } from '../../userstate/pastGames.js';
+import {
+  getModifierUnlockCatalog,
+  readLocalModifierUnlockState,
+  unlockAllModifiers
+} from '../../userstate/modifierUnlocks.js';
 
 const props = defineProps({
   user: Object,
@@ -140,6 +220,31 @@ const isSyncingPastGames = ref(false);
 const email = ref('');
 const password = ref('');
 const authError = ref('');
+const modifierUnlockState = ref(readLocalModifierUnlockState());
+const selectedModifierType = ref('tile');
+const selectedModifierGroup = ref('good');
+const modifierTypes = [
+  { key: 'tile', label: 'Tile' },
+  { key: 'round', label: 'Round' },
+  { key: 'personal', label: 'Upgrades' }
+];
+const modifierGroupsByType = {
+  tile: [
+    { key: 'good', label: 'Good' },
+    { key: 'neutral', label: 'Neutral' },
+    { key: 'bad', label: 'Bad' }
+  ],
+  round: [
+    { key: 'easy', label: 'Easy' },
+    { key: 'medium', label: 'Medium' },
+    { key: 'hard', label: 'Hard' }
+  ],
+  personal: [
+    { key: 'common', label: 'Common' },
+    { key: 'rare', label: 'Rare' },
+    { key: 'epic', label: 'Epic' }
+  ]
+};
 
 const profileLog = (...args) => {
   console.log('[Profile Modal]', ...args);
@@ -152,6 +257,18 @@ const profileWarn = (...args) => {
 const activeGames = computed(() => {
   pastGamesVersion.value;
   return selectedMode.value ? getPastGamesByMode(selectedMode.value) : [];
+});
+const modifierCatalog = computed(() => getModifierUnlockCatalog(modifierUnlockState.value));
+const activeModifierGroups = computed(() => modifierGroupsByType[selectedModifierType.value] || []);
+const activeModifierCatalog = computed(() => {
+  return (modifierCatalog.value[selectedModifierType.value] || [])
+    .filter((modifier) => modifier.group === selectedModifierGroup.value);
+});
+const modifierUnlockSummary = computed(() => {
+  const catalog = modifierCatalog.value;
+  const unlocked = [...catalog.tile, ...catalog.round, ...catalog.personal].filter((modifier) => modifier.unlocked).length;
+  const total = catalog.tile.length + catalog.round.length + catalog.personal.length;
+  return `${unlocked}/${total} unlocked`;
 });
 
 const getFocusTargets = () => {
@@ -204,6 +321,21 @@ const openPastGames = async () => {
     pastGamesVersion.value += 1;
     nextTick(() => focusTarget(0));
   }
+};
+
+const openModifiers = () => {
+  modifierUnlockState.value = readLocalModifierUnlockState();
+  activeView.value = 'modifiers';
+  nextTick(() => focusTarget(0));
+};
+
+const selectModifierType = (type) => {
+  selectedModifierType.value = type;
+  selectedModifierGroup.value = modifierGroupsByType[type]?.[0]?.key || '';
+};
+
+const unlockEveryModifier = () => {
+  modifierUnlockState.value = unlockAllModifiers();
 };
 
 const validateAuthForm = () => {
@@ -356,7 +488,7 @@ onBeforeUnmount(() => {
 .profile-modal {
   visibility: hidden;
   position: relative;
-  width: min(620px, calc(100vw - 32px));
+  width: min(880px, calc(100vw - 32px));
   max-height: 80%;
   height: 80%;
   overflow-y: auto;
@@ -367,6 +499,12 @@ onBeforeUnmount(() => {
   font-family: 'Press Start 2P', cursive;
   background: linear-gradient(180deg, rgba(36, 46, 62, 0.98), rgba(20, 25, 39, 0.98));
   box-shadow: 0 20px 42px rgba(0, 0, 0, 0.42);
+}
+
+.profile-modal-modifiers {
+  width: min(1220px, calc(100vw - 32px));
+  max-height: 88%;
+  height: 88%;
 }
 
 .profile-close {
@@ -556,6 +694,152 @@ h2 {
   background: rgba(0, 0, 0, 0.18);
 }
 
+.modifier-collection-view {
+  display: grid;
+  gap: 14px;
+}
+
+.modifier-collection-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.unlock-all-button {
+  min-width: 140px;
+  background: #b83945;
+  color: #fff;
+}
+
+.modifier-collection-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 14px;
+}
+
+.modifier-collection-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-areas:
+    "tile"
+    "heading"
+    "body";
+  gap: 12px;
+  min-height: 260px;
+  padding: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 18px;
+  color: #fff7e8;
+  background: linear-gradient(180deg, rgba(76, 156, 138, 0.96), rgba(43, 92, 98, 0.94));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14), 0 14px 24px rgba(20, 6, 18, 0.22);
+  font-size: 9px;
+  line-height: 1.45;
+}
+
+.modifier-collection-card.round,
+.modifier-collection-card.personal {
+  grid-template-areas:
+    "heading"
+    "body";
+  min-height: 180px;
+}
+
+.modifier-collection-card.rare,
+.modifier-collection-card.medium,
+.modifier-collection-card.neutral {
+  background: linear-gradient(180deg, rgba(82, 136, 215, 0.96), rgba(50, 62, 148, 0.94));
+}
+
+.modifier-collection-card.epic,
+.modifier-collection-card.hard,
+.modifier-collection-card.bad {
+  background: linear-gradient(180deg, rgba(215, 151, 68, 0.98), rgba(142, 62, 72, 0.96));
+}
+
+.modifier-collection-card.locked {
+  filter: grayscale(1);
+  opacity: 0.46;
+}
+
+.modifier-collection-card-heading {
+  grid-area: heading;
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  align-items: flex-start;
+}
+
+.modifier-collection-card-heading strong {
+  color: #f7d35d;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.modifier-collection-card-heading span {
+  color: #9ff0ff;
+  text-transform: uppercase;
+}
+
+.modifier-collection-card p {
+  grid-area: body;
+  margin: 0;
+  opacity: 0.86;
+  overflow-wrap: anywhere;
+}
+
+.modifier-preview-tile {
+  grid-area: tile;
+  align-self: center;
+  justify-self: center;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 82px;
+  height: 82px;
+  border-radius: 14px;
+  background: var(--tile-bg, linear-gradient(180deg, #fffef8 0%, #f2ebe0 70%, #d9cec0 100%));
+  color: var(--tile-text-color, #1c1930);
+  box-shadow: var(--tile-shadow, inset 0 -4px 0 rgba(0, 0, 0, 0.12), 0 10px 18px rgba(45, 10, 24, 0.16));
+}
+
+.modifier-preview-tile-letter {
+  position: relative;
+  z-index: 3;
+  font-size: 2.1rem;
+  font-weight: 900;
+  line-height: 1;
+  -webkit-text-stroke: var(--tile-letter-stroke, 0 transparent);
+  paint-order: stroke fill;
+}
+
+.modifier-preview-tile-score {
+  position: absolute;
+  z-index: 5;
+  top: 7px;
+  right: 9px;
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.modifier-preview-tile-badge {
+  position: absolute;
+  z-index: 6;
+  top: 6px;
+  left: 7px;
+  min-width: 26px;
+  padding: 3px 6px;
+  border-radius: 999px;
+  font-size: 0.5rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-align: center;
+  text-transform: uppercase;
+  box-shadow: 0 4px 10px rgba(27, 11, 20, 0.18);
+}
+
 
 @media (max-width: 1000px) {
 .profile-modal {
@@ -563,6 +847,11 @@ max-width: 90%;
 max-height: 90%;
 width: 90%;
 height: 90%;
+}
+
+.profile-modal-modifiers {
+  width: 96%;
+  max-width: 96%;
 }
 
 .profile-details {
@@ -590,6 +879,11 @@ height: 90%;
   border: 1px solid rgba(255, 255, 255, 0.12);
   font-size: 18px;
   line-height: 1.5;
+}
+
+.modifier-collection-card {
+  min-height: 220px;
+  font-size: 15px;
 }
 }
 </style>

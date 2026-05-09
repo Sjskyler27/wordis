@@ -194,6 +194,16 @@
         @reroll-reward-choices="handlePersonalModifierRewardReroll"
       />
 
+      <ModifierUnlockModal
+        :unlock="activeModifierUnlock"
+        :current-index="modifierUnlockModalIndex"
+        :total="pendingModifierUnlocks.length"
+        @previous="previousModifierUnlock"
+        @next="nextModifierUnlock"
+        @close="closeModifierUnlockModal"
+        @unlock-all="handleUnlockAllModifiers"
+      />
+
       <HistoryOverlay
         v-if="showHistoryOverlay"
         :result-title="historyResultTitle"
@@ -267,6 +277,7 @@ import GameCardsPanel from './components/GameCardsPanel.vue';
 import GameStatusCards from './components/GameStatusCards.vue';
 import GameLane from './components/GameLane.vue';
 import HistoryOverlay from './components/HistoryOverlay.vue';
+import ModifierUnlockModal from './components/ModifierUnlockModal.vue';
 import MultiRoundProgress from './components/MultiRoundProgress.vue';
 import MultiRoundRewardChoice from './components/MultiRoundRewardChoice.vue';
 import ScoreRibbon from './components/ScoreRibbon.vue';
@@ -300,6 +311,13 @@ import {
   savePastGame
 } from '../../userstate/pastGames.js';
 import { saveMultiRoundHighScore } from '../../userstate/multiRoundHighScores.js';
+import {
+  MODIFIER_UNLOCK_TYPES,
+  evaluateModifierUnlocksForRound,
+  getUnlockedModifierKeys,
+  readLocalModifierUnlockState,
+  unlockAllModifiers
+} from '../../userstate/modifierUnlocks.js';
 
 const TUTORIAL_BAD_MODIFIERS = new Set(['zeroTile', 'mustuse', 'locked3', 'burningTile', 'rustingTile', 'lightningTile', 'barricadeTile', 'bagTile']);
 const TUTORIAL_NEUTRAL_MODIFIERS = new Set(['yinYang', 'ghostTile', 'bloodTile', 'wild', 'shimmer', 'voidTile', 'hourglassTile', 'waterTile', 'leecherTile']);
@@ -489,6 +507,9 @@ const activeTutorialHint = ref(getTutorialHint('welcome') || {
 const showTutorialOverlay = ref(false);
 const windowWidth = ref(typeof window !== 'undefined' ? window.innerWidth : 1440);
 const roundModifierCountdowns = ref({});
+const modifierUnlockState = ref(readLocalModifierUnlockState());
+const pendingModifierUnlocks = ref([]);
+const modifierUnlockModalIndex = ref(0);
 const {
   isSideDrawerOpen,
   closeSideDrawer,
@@ -505,9 +526,18 @@ const shouldUseTutorialLimits = () => (
     && props.multiRoundDifficulty === 'tutorial'
     && !hasCompletedTutorialRun()
 );
+const getAllowedMultiRoundModifierKeys = (type) => {
+  if (!isMultiRoundMode.value) {
+    return null;
+  }
+
+  const unlockType = MODIFIER_UNLOCK_TYPES[type?.toUpperCase?.()] || type;
+  return getUnlockedModifierKeys(unlockType, modifierUnlockState.value);
+};
 const multiRoundRun = useMultiRoundRun({
   rounds: getMultiRoundRounds(props.multiRoundDifficulty),
-  includeInTutorialOnly: shouldUseTutorialLimits
+  includeInTutorialOnly: shouldUseTutorialLimits,
+  getAllowedModifierKeys: getAllowedMultiRoundModifierKeys
 });
 const isTutorialMultiRound = computed(shouldUseTutorialLimits);
 const getTutorialModifierChanceOverrides = () => {
@@ -863,6 +893,7 @@ const {
   onMultiRoundRerollRewardChoices: () => multiRoundRun.rerollRewardChoices(),
   onMultiRoundReduceTargetScore: (amount) => multiRoundRun.reduceCurrentTargetScore(amount),
   onBotPreparing: triggerBotCogBoost,
+  getAllowedModifierKeys: getAllowedMultiRoundModifierKeys,
   getTutorialTilePlan: ({ phase, multiRoundWordsPlayedThisRound }) => {
     if (!isTutorialMultiRound.value || multiRoundRun.currentRoundIndex.value !== 0) {
       return getTutorialModifierChanceOverrides();
@@ -1639,6 +1670,60 @@ const getMultiRoundStartingScoreBonus = () => {
   return Math.max(0, Math.floor(multiRoundRun.timerRemainingSeconds.value * multiplier));
 };
 
+const queueModifierUnlocksForRound = (round = {}, contextOverrides = {}, options = {}) => {
+  if (!isMultiRoundMode.value || props.isMultiplayer) {
+    return [];
+  }
+
+  const hostWords = wordHistory.value.host || [];
+  const bestWord = buildBestWordSummary(hostWords);
+  const unlocks = evaluateModifierUnlocksForRound({
+    round,
+    wordCount: hostWords.length,
+    bestWordLength: bestWord?.w?.length || 0,
+    bestWordScore: bestWord?.sc || 0,
+    completedRoundCount: multiRoundRun.completedRounds.value.length,
+    runWon: multiRoundRun.runWon.value,
+    isTutorial: isTutorialMultiRound.value,
+    ...contextOverrides
+  }, options);
+
+  if (!unlocks.length) {
+    return [];
+  }
+
+  modifierUnlockState.value = readLocalModifierUnlockState();
+  pendingModifierUnlocks.value = [
+    ...pendingModifierUnlocks.value,
+    ...unlocks
+  ];
+  modifierUnlockModalIndex.value = 0;
+  return unlocks;
+};
+
+const activeModifierUnlock = computed(() => pendingModifierUnlocks.value[modifierUnlockModalIndex.value] || null);
+const closeModifierUnlockModal = () => {
+  pendingModifierUnlocks.value = [];
+  modifierUnlockModalIndex.value = 0;
+};
+const nextModifierUnlock = () => {
+  if (!pendingModifierUnlocks.value.length) {
+    return;
+  }
+  modifierUnlockModalIndex.value = (modifierUnlockModalIndex.value + 1) % pendingModifierUnlocks.value.length;
+};
+const previousModifierUnlock = () => {
+  if (!pendingModifierUnlocks.value.length) {
+    return;
+  }
+  modifierUnlockModalIndex.value = (modifierUnlockModalIndex.value - 1 + pendingModifierUnlocks.value.length) % pendingModifierUnlocks.value.length;
+};
+const handleUnlockAllModifiers = () => {
+  modifierUnlockState.value = unlockAllModifiers();
+  closeModifierUnlockModal();
+  localMessage.value = 'All modifiers unlocked.';
+};
+
 const resetSpeedyWordClock = () => {
   const now = Date.now();
   speedyWordStartedAt.value = now;
@@ -1682,8 +1767,16 @@ const completeMultiRoundRound = () => {
     secondsRemaining,
     selectedRewardKey: null
   });
+  const isFinalRound = multiRoundRun.currentRoundIndex.value >= multiRoundRun.resolvedRounds.value.length - 1;
+  const completedRound = multiRoundRun.completedRounds.value.at(-1) || {};
+  const newUnlocks = queueModifierUnlocksForRound(completedRound, {
+    tutorialCompleted: isTutorialMultiRound.value && isFinalRound
+  });
+  if (newUnlocks.length) {
+    localMessage.value = `${newUnlocks.length} modifier${newUnlocks.length === 1 ? '' : 's'} unlocked.`;
+  }
 
-  if (multiRoundRun.currentRoundIndex.value >= multiRoundRun.resolvedRounds.value.length - 1) {
+  if (isFinalRound) {
     multiRoundRun.goToNextRound({ startingScore });
     saveMultiRoundPastGame('won');
     saveMultiRoundScore('won');
@@ -1737,10 +1830,17 @@ const failMultiRoundRun = () => {
     score: playerScores.value.host || 0,
     secondsRemaining: Math.max(0, multiRoundRun.timerRemainingSeconds.value)
   });
+  const lossUnlocks = queueModifierUnlocksForRound(multiRoundRun.failureSummary.value || {}, {
+    runLost: true
+  }, {
+    allowFallback: false
+  });
   saveMultiRoundPastGame('failed');
   saveMultiRoundScore('failed');
   clearMultiRoundSaves();
-  localMessage.value = 'Run failed.';
+  localMessage.value = lossUnlocks.length
+    ? `${lossUnlocks.length} modifier${lossUnlocks.length === 1 ? '' : 's'} unlocked.`
+    : 'Run failed.';
   if (isTutorialMultiRound.value) {
     showTutorialHint('game_lost');
   }
@@ -3592,6 +3692,9 @@ const showTutorialFromSettings = () => {
   showHistoryOverlay.value = false;
   showTutorialHint('welcome', { force: true });
 };
+const syncModifierUnlockState = (event) => {
+  modifierUnlockState.value = event?.detail || readLocalModifierUnlockState();
+};
 
 onMounted(() => {
   if (isTutorialMultiRound.value) {
@@ -3615,6 +3718,7 @@ onMounted(() => {
   window.addEventListener('resize', syncWindowWidth);
   window.addEventListener('keydown', handleKeydown);
   window.addEventListener('wordis:show-tutorial', showTutorialFromSettings);
+  window.addEventListener('wordis:modifier-unlocks-changed', syncModifierUnlockState);
   startGameMusic({ restart: true });
 });
 
@@ -3624,6 +3728,7 @@ onBeforeUnmount(() => {
   window.removeEventListener('resize', syncWindowWidth);
   window.removeEventListener('keydown', handleKeydown);
   window.removeEventListener('wordis:show-tutorial', showTutorialFromSettings);
+  window.removeEventListener('wordis:modifier-unlocks-changed', syncModifierUnlockState);
   stopSoloTimer();
   stopMultiRoundTimer();
   stopGameMusic();

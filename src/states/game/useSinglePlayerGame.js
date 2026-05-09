@@ -49,6 +49,7 @@ export const useSinglePlayerGame = ({
   onMultiRoundReduceTargetScore,
   onBotPreparing,
   getTutorialTilePlan,
+  getAllowedModifierKeys,
   onTutorialTurnAdvanced,
   personalModifierEffects,
   roundModifierEffects
@@ -129,6 +130,25 @@ export const useSinglePlayerGame = ({
     };
   };
   const getRoundModifierEffects = () => roundModifierEffects?.value || {};
+  const withModifierUnlocks = (options = {}) => {
+    if (!isMultiRoundMode?.value || typeof getAllowedModifierKeys !== 'function') {
+      return options;
+    }
+
+    const unlockedKeys = getAllowedModifierKeys('tile');
+    if (!Array.isArray(unlockedKeys) || !unlockedKeys.length) {
+      return options;
+    }
+
+    const allowedModifierKeys = Array.isArray(options.allowedModifierKeys)
+      ? options.allowedModifierKeys.filter((key) => unlockedKeys.includes(key))
+      : unlockedKeys;
+
+    return {
+      ...options,
+      allowedModifierKeys
+    };
+  };
   const getTutorialPlan = (phase) => {
     if (typeof getTutorialTilePlan !== 'function') {
       return {};
@@ -266,14 +286,14 @@ export const useSinglePlayerGame = ({
       if (isMultiRoundMode?.value) {
         const tutorialPlan = getTutorialPlan('opening');
         playerTiles.value = {
-          host: createRack('host', playerScores.value, {
+            host: createRack('host', playerScores.value, withModifierUnlocks({
             modifierProfile: modifierProfile(),
             personalModifierEffects: getPersonalModifierEffects(),
             roundModifierEffects: getRoundModifierEffects(),
             phase: 'opening',
             turnCount: getTurnCount(),
             ...tutorialPlan
-          }),
+          })),
           opponent: []
         };
         rackClears.value = {
@@ -332,14 +352,14 @@ export const useSinglePlayerGame = ({
 
     playerTiles.value = {
       ...playerTiles.value,
-      opponent: createRack('opponent', playerScores.value, {
+      opponent: createRack('opponent', playerScores.value, withModifierUnlocks({
         mode: 'clear',
         currentTiles: botTiles,
         modifierProfile: modifierProfile(),
         personalModifierEffects: getPersonalModifierEffects(),
         roundModifierEffects: getRoundModifierEffects(),
         turnCount: getTurnCount()
-      })
+      }))
     };
 
     return true;
@@ -439,11 +459,11 @@ export const useSinglePlayerGame = ({
 
     playerTiles.value = {
       host: playerTiles.value.host,
-      opponent: refillTiles(botTiles, selectedBotTiles.map((tile) => tile.id), 'opponent', playerScores.value, {
+      opponent: refillTiles(botTiles, selectedBotTiles.map((tile) => tile.id), 'opponent', playerScores.value, withModifierUnlocks({
         modifierProfile: modifierProfile(),
         phase: 'submit',
         turnCount: getTurnCount()
-      })
+      }))
     };
     if (submissionPauseOwner.value === 'opponent') {
       submissionPauseOwner.value = null;
@@ -561,14 +581,14 @@ export const useSinglePlayerGame = ({
     const tutorialPlan = getTutorialPlan('submit');
     playerTiles.value = {
       
-      host: refillTiles(playerTiles.value.host, selectedTiles.map((tile) => tile.id), 'host', playerScores.value, {
+      host: refillTiles(playerTiles.value.host, selectedTiles.map((tile) => tile.id), 'host', playerScores.value, withModifierUnlocks({
         modifierProfile: modifierProfile(),
         personalModifierEffects: getPersonalModifierEffects(),
         roundModifierEffects: getRoundModifierEffects(),
         phase: 'submit',
         turnCount: getTurnCount(),
         ...tutorialPlan
-      }),
+      })),
       opponent: playerTiles.value.opponent
     };
 
@@ -603,13 +623,13 @@ export const useSinglePlayerGame = ({
 
     playerTiles.value = {
       ...playerTiles.value,
-      [side]: createRack(side, playerScores.value, {
+      [side]: createRack(side, playerScores.value, withModifierUnlocks({
         mode: 'clear',
         currentTiles: playerTiles.value[side],
         modifierProfile: modifierProfile(),
         personalModifierEffects: getPersonalModifierEffects(),
         turnCount: getTurnCount()
-      })
+      }))
     };
 
     clearSelectionForSide(side);
@@ -650,13 +670,13 @@ export const useSinglePlayerGame = ({
     }
 
     const tutorialPlan = getTutorialPlan('round-start');
-    const nextRack = createRack(side, playerScores.value, {
+    const nextRack = createRack(side, playerScores.value, withModifierUnlocks({
       modifierProfile: modifierProfile(),
       personalModifierEffects: getPersonalModifierEffects(),
       roundModifierEffects: getRoundModifierEffects(),
       turnCount: getTurnCount(),
       ...tutorialPlan
-    });
+    }));
 
     playerTiles.value = {
       ...playerTiles.value,
@@ -750,11 +770,11 @@ export const useSinglePlayerGame = ({
           boons: keepTestingHand(hand, cardId)
         }
       };
-      const nextTiles = replaceSingleTile(playerTiles.value[side], tileId, side, playerScores.value, {
+      const nextTiles = replaceSingleTile(playerTiles.value[side], tileId, side, playerScores.value, withModifierUnlocks({
         modifierProfile: modifierProfile(),
         personalModifierEffects: getPersonalModifierEffects(),
         turnCount: getTurnCount()
-      });
+      }));
       const replacementTile = nextTiles.find((entry) => entry.id !== tileId && !playerTiles.value[side].some((tile) => tile.id === entry.id));
       playerTiles.value = {
         ...playerTiles.value,
@@ -782,11 +802,11 @@ export const useSinglePlayerGame = ({
         tileId,
         side,
         playerScores.value,
-        {
+        withModifierUnlocks({
           modifierProfile: modifierProfile(),
           personalModifierEffects: getPersonalModifierEffects(),
           turnCount: getTurnCount()
-        }
+        })
       ).find((entry) => entry.id !== tileId && !playerTiles.value[side].some((existingTile) => existingTile.id === entry.id));
 
       return {
@@ -826,11 +846,11 @@ export const useSinglePlayerGame = ({
     if (card.effectType === 'isolate_tile') {
       playerTiles.value = {
         ...playerTiles.value,
-        [side]: rerollRackExceptTile(playerTiles.value[side], tileId, side, playerScores.value, {
+        [side]: rerollRackExceptTile(playerTiles.value[side], tileId, side, playerScores.value, withModifierUnlocks({
           modifierProfile: modifierProfile(),
           personalModifierEffects: getPersonalModifierEffects(),
           turnCount: getTurnCount()
-        })
+        }))
       };
 
       return { success: true };

@@ -760,9 +760,9 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
     const baseProfile = getModifierProfile(modifierProfile);
     const profile = {
       ...baseProfile,
-      goodModifiers: filterAllowedModifiers(filterBlockedModifiers(baseProfile.goodModifiers, personalModifierEffects), chanceOverrides.allowedModifierKeys),
-      badModifiers: filterAllowedModifiers(filterBlockedModifiers(baseProfile.badModifiers, personalModifierEffects), chanceOverrides.allowedModifierKeys),
-      neutralModifiers: filterAllowedModifiers(filterBlockedModifiers(baseProfile.neutralModifiers || [], personalModifierEffects), chanceOverrides.allowedModifierKeys)
+      goodModifiers: filterAllowedModifiers(filterBlockedModifiers(baseProfile.goodModifiers, personalModifierEffects), options.allowedModifierKeys),
+      badModifiers: filterAllowedModifiers(filterBlockedModifiers(baseProfile.badModifiers, personalModifierEffects), options.allowedModifierKeys),
+      neutralModifiers: filterAllowedModifiers(filterBlockedModifiers(baseProfile.neutralModifiers || [], personalModifierEffects), options.allowedModifierKeys)
     };
     const { goodChance, badChance, neutralChance } = getModifierChances(null, scores, modifierProfile, options.turnCount || 0, options);
     const roll = Math.random();
@@ -1858,9 +1858,9 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
       const baseProfile = getModifierProfile(modifierProfile);
       const profile = {
         ...baseProfile,
-        goodModifiers: filterBlockedModifiers(baseProfile.goodModifiers, personalModifierEffects),
-        badModifiers: filterBlockedModifiers(baseProfile.badModifiers, personalModifierEffects),
-        neutralModifiers: filterBlockedModifiers(baseProfile.neutralModifiers || [], personalModifierEffects)
+        goodModifiers: filterAllowedModifiers(filterBlockedModifiers(baseProfile.goodModifiers, personalModifierEffects), options.allowedModifierKeys),
+        badModifiers: filterAllowedModifiers(filterBlockedModifiers(baseProfile.badModifiers, personalModifierEffects), options.allowedModifierKeys),
+        neutralModifiers: filterAllowedModifiers(filterBlockedModifiers(baseProfile.neutralModifiers || [], personalModifierEffects), options.allowedModifierKeys)
       };
       const modifierPoolByGroup = {
         good: profile.goodModifiers,
@@ -1923,9 +1923,14 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
       const forceOpeningMust = canForceTurnMustTile(options);
       const forceOpeningBurn = canForceTurnBurnTile(options);
       const forcedModifierGroups = [...(options.forcedModifierGroups || [])];
+      const canForceStatus = (status) => (
+        !Array.isArray(options.allowedModifierKeys)
+          || !options.allowedModifierKeys.length
+          || options.allowedModifierKeys.includes(status)
+      );
       while (rack.length < RACK_SIZE) {
-        const forceMust = forceOpeningMust && rack.length === 0;
-        const forceBurn = forceOpeningBurn && rack.length === 0;
+        const forceMust = forceOpeningMust && rack.length === 0 && canForceStatus('mustuse');
+        const forceBurn = forceOpeningBurn && rack.length === 0 && canForceStatus('burningTile');
         const letter = forceMust || forceBurn ? drawSingleLetter(rack) : drawLetter(rack);
         const forcedModifierGroup = !forceMust && !forceBurn && !options.forcedStatus ? forcedModifierGroups.shift() : '';
         const forcedGroupStatus = forcedModifierGroup
@@ -1940,6 +1945,7 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
           rackTiles: rack,
           personalModifierEffects: options.personalModifierEffects || options.chanceOverrides?.personalModifierEffects || {},
           roundModifierEffects: options.roundModifierEffects || options.chanceOverrides?.roundModifierEffects || {},
+          allowedModifierKeys: options.allowedModifierKeys || options.chanceOverrides?.allowedModifierKeys,
           phase: options.phase || options.chanceOverrides?.phase || 'normal',
           turnCount: options.turnCount || 0
         }));
@@ -1966,7 +1972,10 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
     };
 
     const applyTargetModifierGroup = (rack, modifierPool, targetCount, options = {}) => {
-      const availableModifierPool = filterBlockedModifiers(modifierPool, options.personalModifierEffects || {});
+      const availableModifierPool = filterAllowedModifiers(
+        filterBlockedModifiers(modifierPool, options.personalModifierEffects || {}),
+        options.allowedModifierKeys
+      );
       for (let appliedCount = 0; appliedCount < targetCount; appliedCount += 1) {
         const candidateIndexes = rack
           .map((tile, index) => ({
@@ -2017,6 +2026,7 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
           modifierProfile,
           personalModifierEffects: options.personalModifierEffects || {},
           roundModifierEffects: options.roundModifierEffects || {},
+          allowedModifierKeys: options.allowedModifierKeys,
           turnCount: options.turnCount || 0
         }
       });
@@ -2146,6 +2156,11 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
         && !rackHasAvailableBurnTile(nextTiles.filter((tile) => !replacedIds.has(tile.id)));
       let forcedReplacementBurn = false;
       const forcedModifierGroups = [...(options.forcedModifierGroups || [])];
+      const canForceStatus = (status) => (
+        !Array.isArray(options.allowedModifierKeys)
+          || !options.allowedModifierKeys.length
+          || options.allowedModifierKeys.includes(status)
+      );
 
       nextTiles.forEach((tile, index) => {
         if (!replacedIds.has(tile.id)) {
@@ -2156,8 +2171,8 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
           return entryIndex !== index && !replacedIds.has(entry.id);
         });
 
-        const forceMust = shouldForceReplacementMust && !forcedReplacementMust;
-        const forceBurn = shouldForceReplacementBurn && !forcedReplacementBurn;
+        const forceMust = shouldForceReplacementMust && !forcedReplacementMust && canForceStatus('mustuse');
+        const forceBurn = shouldForceReplacementBurn && !forcedReplacementBurn && canForceStatus('burningTile');
         const letter = forceMust || forceBurn ? drawSingleLetter(remainingTiles) : drawLetter(remainingTiles);
         const forcedModifierGroup = !forceMust && !forceBurn ? forcedModifierGroups.shift() : '';
         const forcedGroupStatus = forcedModifierGroup
@@ -2168,7 +2183,8 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
             }, {
               modifierProfile: options.modifierProfile || 'duel',
               personalModifierEffects: options.personalModifierEffects || {},
-              roundModifierEffects
+              roundModifierEffects,
+              allowedModifierKeys: options.allowedModifierKeys
             })
           : null;
         nextTiles[index] = createTile(letter, side, scores, forceMust ? 'mustuse' : forceBurn ? 'burningTile' : forcedGroupStatus, {
@@ -2176,6 +2192,7 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
           modifierProfile: options.modifierProfile || 'duel',
           personalModifierEffects: options.personalModifierEffects || {},
           roundModifierEffects,
+          allowedModifierKeys: options.allowedModifierKeys,
           phase: options.phase || 'submit',
           turnCount: options.turnCount || 0
         });
@@ -2211,6 +2228,7 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
         rackTiles: remainingTiles,
         modifierProfile: options.modifierProfile || 'duel',
         personalModifierEffects: options.personalModifierEffects || {},
+        allowedModifierKeys: options.allowedModifierKeys,
         phase: options.phase || 'replace',
         turnCount: options.turnCount || 0
       });
