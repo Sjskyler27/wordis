@@ -1677,19 +1677,25 @@ const getMultiRoundStartingScoreBonus = () => {
   return Math.max(0, Math.floor(multiRoundRun.timerRemainingSeconds.value * multiplier));
 };
 
-const queueModifierUnlocksForRound = (round = {}, contextOverrides = {}, options = {}) => {
+const queueModifierUnlocksForRun = (round = {}, contextOverrides = {}, options = {}) => {
   if (!isMultiRoundMode.value || props.isMultiplayer) {
     return [];
   }
 
   const hostWords = wordHistory.value.host || [];
   const bestWord = buildBestWordSummary(hostWords);
+  const completedRounds = multiRoundRun.completedRounds.value || [];
+  const bestSecondsRemaining = Math.max(
+    Number(round.secondsRemaining) || 0,
+    ...completedRounds.map((completedRound) => Number(completedRound.secondsRemaining) || 0)
+  );
   const unlocks = evaluateModifierUnlocksForRound({
     round,
     wordCount: hostWords.length,
     bestWordLength: bestWord?.w?.length || 0,
     bestWordScore: bestWord?.sc || 0,
-    completedRoundCount: multiRoundRun.completedRounds.value.length,
+    completedRoundCount: completedRounds.length,
+    bestSecondsRemaining,
     runWon: multiRoundRun.runWon.value,
     isTutorial: isTutorialMultiRound.value,
     ...contextOverrides
@@ -1776,9 +1782,12 @@ const completeMultiRoundRound = () => {
   });
   const isFinalRound = multiRoundRun.currentRoundIndex.value >= multiRoundRun.resolvedRounds.value.length - 1;
   const completedRound = multiRoundRun.completedRounds.value.at(-1) || {};
-  const newUnlocks = queueModifierUnlocksForRound(completedRound, {
-    tutorialCompleted: isTutorialMultiRound.value && isFinalRound
-  });
+  const newUnlocks = isFinalRound
+    ? queueModifierUnlocksForRun(completedRound, {
+      runWon: true,
+      tutorialCompleted: isTutorialMultiRound.value
+    })
+    : [];
   if (newUnlocks.length) {
     localMessage.value = `${newUnlocks.length} modifier${newUnlocks.length === 1 ? '' : 's'} unlocked.`;
   }
@@ -1839,7 +1848,7 @@ const failMultiRoundRun = () => {
     score: playerScores.value.host || 0,
     secondsRemaining: Math.max(0, multiRoundRun.timerRemainingSeconds.value)
   });
-  const lossUnlocks = queueModifierUnlocksForRound(multiRoundRun.failureSummary.value || {}, {
+  const lossUnlocks = queueModifierUnlocksForRun(multiRoundRun.failureSummary.value || {}, {
     runLost: true
   }, {
     allowFallback: false

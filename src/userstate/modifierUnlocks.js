@@ -185,7 +185,7 @@ export const MODIFIER_UNLOCK_CONDITIONS = [
     type: MODIFIER_UNLOCK_TYPES.TILE,
     key: 'bankTile',
     hint: 'Finish a round with at least 20 seconds remaining.',
-    test: ({ round }) => (round.secondsRemaining || 0) >= 20
+    test: ({ bestSecondsRemaining, round }) => (bestSecondsRemaining || round.secondsRemaining || 0) >= 20
   },
   {
     type: MODIFIER_UNLOCK_TYPES.TILE,
@@ -217,7 +217,7 @@ export const MODIFIER_UNLOCK_CONDITIONS = [
     type: MODIFIER_UNLOCK_TYPES.PERSONAL,
     key: 'time_reserve',
     hint: 'Finish a round with at least 15 seconds remaining.',
-    test: ({ round }) => (round.secondsRemaining || 0) >= 15
+    test: ({ bestSecondsRemaining, round }) => (bestSecondsRemaining || round.secondsRemaining || 0) >= 15
   },
   {
     type: MODIFIER_UNLOCK_TYPES.PERSONAL,
