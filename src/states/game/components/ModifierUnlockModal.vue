@@ -72,6 +72,7 @@ defineEmits(['previous', 'next', 'close', 'unlock-all']);
 }
 
 .modifier-unlock-modal {
+  visibility: hidden;
   width: min(620px, calc(100vw - 32px));
   display: grid;
   gap: 14px;
