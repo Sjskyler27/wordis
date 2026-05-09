@@ -311,6 +311,7 @@ import {
   savePastGame
 } from '../../userstate/pastGames.js';
 import { saveMultiRoundHighScore } from '../../userstate/multiRoundHighScores.js';
+import { unlockNextDifficultyForWonRun } from '../../userstate/multiRoundDifficultyUnlocks.js';
 import {
   MODIFIER_UNLOCK_TYPES,
   evaluateModifierUnlocksForRound,
@@ -1778,6 +1779,7 @@ const completeMultiRoundRound = () => {
 
   if (isFinalRound) {
     multiRoundRun.goToNextRound({ startingScore });
+    unlockNextDifficultyForWonRun(props.multiRoundDifficulty);
     saveMultiRoundPastGame('won');
     saveMultiRoundScore('won');
     clearMultiRoundSaves();
@@ -1807,6 +1809,7 @@ const completeMultiRoundRound = () => {
       const advanced = multiRoundRun.goToNextRound({ startingScore });
       pendingMultiRoundStartingScore.value = 0;
       if (!advanced) {
+        unlockNextDifficultyForWonRun(props.multiRoundDifficulty);
         saveMultiRoundPastGame('won');
         saveMultiRoundScore('won');
         clearMultiRoundSaves();
@@ -1981,6 +1984,7 @@ const handleMultiRoundRewardChoice = (rewardKey) => {
   pendingMultiRoundStartingScore.value = 0;
 
   if (!advanced) {
+    unlockNextDifficultyForWonRun(props.multiRoundDifficulty);
     saveMultiRoundPastGame('won');
     saveMultiRoundScore('won');
     clearMultiRoundSaves();

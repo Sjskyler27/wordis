@@ -10,7 +10,8 @@ export const createBlankUserState = () => ({
     completedGames: {},
     pstgms: {},
     multiRoundHighScores: {},
-    modifierUnlocks: {}
+    modifierUnlocks: {},
+    multiRoundDifficultyUnlocks: {}
   }
 });
 
@@ -53,6 +54,10 @@ export const initializeNewUser = async (user) => {
 
   if (existing.gameData && !existing.gameData.modifierUnlocks) {
     patch['gameData/modifierUnlocks'] = {};
+  }
+
+  if (existing.gameData && !existing.gameData.multiRoundDifficultyUnlocks) {
+    patch['gameData/multiRoundDifficultyUnlocks'] = {};
   }
 
   if (Object.keys(patch).length) {

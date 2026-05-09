@@ -32,14 +32,16 @@
               :key="difficulty.value"
               type="button"
               class="difficulty-chip"
-              :class="{ active: selectedDifficulty === difficulty.value }"
+              :class="{ active: selectedDifficulty === difficulty.value, locked: !isDifficultyUnlocked(difficulty.value) }"
+              :disabled="!isDifficultyUnlocked(difficulty.value)"
               :data-difficulty="difficulty.value"
-              @click="selectedDifficulty = difficulty.value"
+              @click="selectDifficulty(difficulty.value)"
             >
               {{ difficulty.label }}
+              <small v-if="!isDifficultyUnlocked(difficulty.value)">Locked</small>
             </button>
           </div>
-          <button class="arcade-button" :disabled="isExiting" @click="startMultiRound">Start Multi-Round</button>
+          <button class="arcade-button" :disabled="isExiting || !selectedDifficultyUnlocked" @click="startMultiRound">Start Multi-Round</button>
         </div>
 
         <div class="panel-card">
@@ -230,6 +232,17 @@ import { ROUND_MODIFIER_DEFINITIONS } from './multiround/round-modifier-definiti
 import { getMultiRoundRounds } from './multiround/multi-round-difficulties.js';
 import { resolveBackgroundPaletteKey } from './multiround/useMultiRoundRun.js';
 import { readLocalMultiRoundHighScores } from '../../userstate/multiRoundHighScores.js';
+import {
+  getFirstUnlockedMultiRoundDifficulty,
+  isMultiRoundDifficultyUnlocked,
+  readLocalMultiRoundDifficultyUnlockState,
+  unlockNextDifficultyForStartedRun
+} from '../../userstate/multiRoundDifficultyUnlocks.js';
+import {
+  MODIFIER_UNLOCK_TYPES,
+  getUnlockedModifierKeys,
+  readLocalModifierUnlockState
+} from '../../userstate/modifierUnlocks.js';
 import './card-definitions.cjs';
 
 const {
@@ -239,7 +252,12 @@ const {
 } = globalThis.__wordisCardDefinitions || {};
 
 const emit = defineEmits(['singleplayer', 'type']);
-const selectedDifficulty = ref(localStorage.getItem('multiRoundDifficulty') || 'normal');
+const difficultyUnlockState = ref(readLocalMultiRoundDifficultyUnlockState());
+const modifierUnlockState = ref(readLocalModifierUnlockState());
+const savedDifficulty = localStorage.getItem('multiRoundDifficulty') || 'normal';
+const selectedDifficulty = ref(isMultiRoundDifficultyUnlocked(savedDifficulty, difficultyUnlockState.value)
+  ? savedDifficulty
+  : getFirstUnlockedMultiRoundDifficulty(difficultyUnlockState.value));
 const selectedReferenceType = ref('personal');
 const selectedPersonalTier = ref('common');
 const selectedRoundDifficulty = ref('easy');
@@ -287,6 +305,7 @@ const difficulties = [
   }
 ];
 
+const selectedDifficultyUnlocked = computed(() => isDifficultyUnlocked(selectedDifficulty.value));
 const selectedDifficultyDetails = computed(() => {
   return difficulties.find((difficulty) => difficulty.value === selectedDifficulty.value)
     || difficulties.find((difficulty) => difficulty.value === 'normal')
@@ -325,8 +344,11 @@ const personalTierLabels = {
   rare: 'Rare',
   epic: 'Epic'
 };
+const unlockedPersonalModifierKeys = computed(() => new Set(getUnlockedModifierKeys(MODIFIER_UNLOCK_TYPES.PERSONAL, modifierUnlockState.value)));
+const unlockedRoundModifierKeys = computed(() => new Set(getUnlockedModifierKeys(MODIFIER_UNLOCK_TYPES.ROUND, modifierUnlockState.value)));
 const personalModifierGroups = computed(() => {
-  const modifiers = Object.values(PERSONAL_MODIFIER_DEFINITIONS);
+  const modifiers = Object.values(PERSONAL_MODIFIER_DEFINITIONS)
+    .filter((modifier) => unlockedPersonalModifierKeys.value.has(modifier.key));
   return Object.keys(personalTierRank).map((tier) => ({
     tier,
     label: personalTierLabels[tier] || tier,
@@ -341,7 +363,8 @@ const activePersonalModifierGroup = computed(() => {
     || { tier: 'common', label: 'Common', modifiers: [] };
 });
 const roundModifierGroups = computed(() => {
-  const modifiers = Object.values(ROUND_MODIFIER_DEFINITIONS).filter((modifier) => !modifier.force_test);
+  const modifiers = Object.values(ROUND_MODIFIER_DEFINITIONS)
+    .filter((modifier) => !modifier.force_test && unlockedRoundModifierKeys.value.has(modifier.key));
   return Object.keys(roundDifficultyRank).map((difficulty) => ({
     difficulty,
     label: roundDifficultyLabels[difficulty] || difficulty,
@@ -401,12 +424,40 @@ const formatScoreDetail = (score) => {
 const refreshHighScores = () => {
   highScores.value = readLocalMultiRoundHighScores();
 };
+const refreshDifficultyUnlocks = (event) => {
+  difficultyUnlockState.value = event?.detail || readLocalMultiRoundDifficultyUnlockState();
+  if (!isDifficultyUnlocked(selectedDifficulty.value)) {
+    selectedDifficulty.value = getFirstUnlockedMultiRoundDifficulty(difficultyUnlockState.value);
+  }
+};
+const refreshModifierUnlocks = (event) => {
+  modifierUnlockState.value = event?.detail || readLocalModifierUnlockState();
+  if (!personalModifierGroups.value.find((group) => group.tier === selectedPersonalTier.value)) {
+    selectedPersonalTier.value = personalModifierGroups.value[0]?.tier || 'common';
+  }
+  if (!roundModifierGroups.value.find((group) => group.difficulty === selectedRoundDifficulty.value)) {
+    selectedRoundDifficulty.value = roundModifierGroups.value[0]?.difficulty || 'easy';
+  }
+};
 
-const startMultiRound = () => {
-  if (isExiting.value) {
+const isDifficultyUnlocked = (difficulty) => {
+  return isMultiRoundDifficultyUnlocked(difficulty, difficultyUnlockState.value);
+};
+
+const selectDifficulty = (difficulty) => {
+  if (!isDifficultyUnlocked(difficulty)) {
     return;
   }
 
+  selectedDifficulty.value = difficulty;
+};
+
+const startMultiRound = () => {
+  if (isExiting.value || !selectedDifficultyUnlocked.value) {
+    return;
+  }
+
+  unlockNextDifficultyForStartedRun(selectedDifficulty.value);
   isExiting.value = true;
   window.setTimeout(() => {
     emit('singleplayer', {
@@ -479,13 +530,18 @@ const handleControllerKeyDown = (event) => {
 
 onMounted(() => {
   refreshHighScores();
+  refreshDifficultyUnlocks();
   window.addEventListener('wordis:multi-round-high-scores-changed', refreshHighScores);
+  window.addEventListener('wordis:multi-round-difficulty-unlocks-changed', refreshDifficultyUnlocks);
+  window.addEventListener('wordis:modifier-unlocks-changed', refreshModifierUnlocks);
   window.addEventListener('keydown', handleControllerKeyDown);
   nextTick(focusSelectedDifficulty);
 });
 
 onBeforeUnmount(() => {
   window.removeEventListener('wordis:multi-round-high-scores-changed', refreshHighScores);
+  window.removeEventListener('wordis:multi-round-difficulty-unlocks-changed', refreshDifficultyUnlocks);
+  window.removeEventListener('wordis:modifier-unlocks-changed', refreshModifierUnlocks);
   window.removeEventListener('keydown', handleControllerKeyDown);
 });
 </script>
@@ -924,6 +980,19 @@ p,
 .difficulty-chip.active {
   background: linear-gradient(180deg, rgba(93, 230, 203, 0.24), rgba(46, 179, 151, 0.38));
   border-color: rgba(111, 245, 221, 0.54);
+}
+
+.difficulty-chip.locked {
+  cursor: not-allowed;
+  filter: grayscale(1);
+  opacity: 0.46;
+}
+
+.difficulty-chip small {
+  display: block;
+  margin-top: 5px;
+  font-size: 0.56rem;
+  letter-spacing: 0.1em;
 }
 
 .difficulty-chip:focus-visible,

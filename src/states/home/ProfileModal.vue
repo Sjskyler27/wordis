@@ -116,7 +116,10 @@
       <div v-else class="modifier-collection-view">
         <div class="modifier-collection-heading">
           <p class="sync-status">{{ modifierUnlockSummary }}</p>
-          <button type="button" class="profile-button unlock-all-button" @click="unlockEveryModifier">Unlock All</button>
+          <div class="modifier-unlock-actions">
+            <button type="button" class="profile-button unlock-all-button" @click="unlockEveryModifier">Unlock All Upgrades</button>
+            <button type="button" class="profile-button unlock-all-button secondary" @click="unlockEveryDifficulty">Unlock All Difficulties</button>
+          </div>
         </div>
 
         <div class="past-games-tabs">
@@ -196,6 +199,7 @@ import {
   readLocalModifierUnlockState,
   unlockAllModifiers
 } from '../../userstate/modifierUnlocks.js';
+import { unlockAllMultiRoundDifficulties } from '../../userstate/multiRoundDifficultyUnlocks.js';
 
 const props = defineProps({
   user: Object,
@@ -336,6 +340,10 @@ const selectModifierType = (type) => {
 
 const unlockEveryModifier = () => {
   modifierUnlockState.value = unlockAllModifiers();
+};
+
+const unlockEveryDifficulty = () => {
+  unlockAllMultiRoundDifficulties();
 };
 
 const validateAuthForm = () => {
@@ -711,6 +719,17 @@ h2 {
   min-width: 140px;
   background: #b83945;
   color: #fff;
+}
+
+.unlock-all-button.secondary {
+  background: #4f6999;
+}
+
+.modifier-unlock-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
 }
 
 .modifier-collection-grid {

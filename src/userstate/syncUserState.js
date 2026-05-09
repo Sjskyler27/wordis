@@ -18,6 +18,7 @@ import {
   syncMultiRoundHighScores
 } from './multiRoundHighScores.js';
 import { syncModifierUnlocks } from './modifierUnlocks.js';
+import { syncMultiRoundDifficultyUnlocks } from './multiRoundDifficultyUnlocks.js';
 
 export const USER_SYNC_INTERVAL_MS = 10 * 60 * 1000;
 export const LAST_USER_SYNC_KEY = 'wordis:userstate:last-sync-at';
@@ -226,23 +227,25 @@ export const syncUserState = async ({ force = false, user = auth?.currentUser } 
       syncSavedGames(user.uid, userState),
       syncBotDifficultyCompletion(user.uid, userState),
       syncMultiRoundHighScores(user.uid, userState),
-      syncModifierUnlocks({ user, userState })
+      syncModifierUnlocks({ user, userState }),
+      syncMultiRoundDifficultyUnlocks({ user, userState })
     ]), 'merge user state');
     if (syncResult?.timedOut) {
       return { skipped: true, timedOut: true };
     }
 
-    const [savedGames, botDifficulty, multiRoundHighScores, modifierUnlocks] = syncResult;
+    const [savedGames, botDifficulty, multiRoundHighScores, modifierUnlocks, multiRoundDifficultyUnlocks] = syncResult;
     localStorage.setItem(LAST_USER_SYNC_KEY, String(Date.now()));
     window.dispatchEvent(new CustomEvent('wordis:saves-changed'));
-    userSyncLog('sync finished', { savedGames, botDifficulty, multiRoundHighScores, modifierUnlocks });
+    userSyncLog('sync finished', { savedGames, botDifficulty, multiRoundHighScores, modifierUnlocks, multiRoundDifficultyUnlocks });
 
     return {
       skipped: false,
       savedGames,
       botDifficulty,
       multiRoundHighScores,
-      modifierUnlocks
+      modifierUnlocks,
+      multiRoundDifficultyUnlocks
     };
   } catch (error) {
     userSyncWarn('sync failed safely', error);
