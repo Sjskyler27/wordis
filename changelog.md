@@ -1,4 +1,13 @@
 # Changelog
+## 0.0.67 - 2026-05-08
+- added new unlocking system 
+- players start with certain things unlocked and unlock specific ways, 
+- cahnged dificulty name
+- still having issues with manipulating modifiers for tutorial level 
+- added high scores 
+- tutorial documentation 
+- minimal modifiers for tutorial 
+
 ## 0.0.66 - 2026-05-08
 - fix options modifier key
 ## 0.0.65 - 2026-05-08
