@@ -229,7 +229,7 @@
 import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue';
 import { PERSONAL_MODIFIER_DEFINITIONS } from './multiround/personal-modifier-definitions.js';
 import { ROUND_MODIFIER_DEFINITIONS } from './multiround/round-modifier-definitions.js';
-import { getMultiRoundRounds } from './multiround/multi-round-difficulties.js';
+import { getMultiRoundRounds, normalizeMultiRoundDifficulty } from './multiround/multi-round-difficulties.js';
 import { resolveBackgroundPaletteKey } from './multiround/useMultiRoundRun.js';
 import { readLocalMultiRoundHighScores } from '../../userstate/multiRoundHighScores.js';
 import {
@@ -254,7 +254,7 @@ const {
 const emit = defineEmits(['singleplayer', 'type']);
 const difficultyUnlockState = ref(readLocalMultiRoundDifficultyUnlockState());
 const modifierUnlockState = ref(readLocalModifierUnlockState());
-const savedDifficulty = localStorage.getItem('multiRoundDifficulty') || 'normal';
+const savedDifficulty = normalizeMultiRoundDifficulty(localStorage.getItem('multiRoundDifficulty') || 'normal');
 const selectedDifficulty = ref(isMultiRoundDifficultyUnlocked(savedDifficulty, difficultyUnlockState.value)
   ? savedDifficulty
   : getFirstUnlockedMultiRoundDifficulty(difficultyUnlockState.value));
@@ -268,7 +268,7 @@ const isExiting = ref(false);
 const highScores = ref(readLocalMultiRoundHighScores());
 const difficulties = [
   {
-    value: 'tutorial',
+    value: 'micro',
     label: 'Easy',
     rounds: 7,
     challengeRounds: 4,
@@ -334,7 +334,6 @@ const roundDifficultyRank = {
   hard: 3
 };
 const roundDifficultyLabels = {
-  tutorial: 'Tutorial',
   easy: 'Easy',
   medium: 'Medium',
   hard: 'Hard'

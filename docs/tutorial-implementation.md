@@ -7,10 +7,10 @@ Add a guided tutorial layer for Wordis Run without changing normal play once the
 The tutorial is considered active only when all of these are true:
 
 - The current mode is `multi_round`.
-- The selected multi-round difficulty is `tutorial`.
+- The selected multi-round difficulty is `micro`.
 - `localStorage.hasCompletedWordisTutorial` is not `'true'`.
 
-When the tutorial is complete, Tutorial difficulty should behave like a regular run track. It should not suppress cards, restrict modifier pools, force pulls, adjust tutorial hints, or lock modifier timing.
+When the tutorial is complete, Micro difficulty should behave like a regular run track. It should not suppress cards, restrict modifier pools, force pulls, adjust tutorial hints, or lock modifier timing.
 
 ## Key Files
 
@@ -72,7 +72,7 @@ When the tutorial is incomplete:
 
 When the tutorial is complete:
 
-- The same Tutorial difficulty round list is used.
+- The same Micro difficulty round list is used.
 - No tutorial-only conditionals apply.
 - Normal card starts, modifier odds, reward pools, and round modifier pools are restored.
 

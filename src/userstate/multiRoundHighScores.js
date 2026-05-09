@@ -1,6 +1,9 @@
 import { ref as dbRef, set } from 'firebase/database';
 import { auth, db, firebaseEnabled } from '../firebaseClient.js';
-import { MULTI_ROUND_DIFFICULTIES } from '../states/game/multiround/multi-round-difficulties.js';
+import {
+  MULTI_ROUND_DIFFICULTIES,
+  normalizeMultiRoundDifficulty
+} from '../states/game/multiround/multi-round-difficulties.js';
 
 export const MULTI_ROUND_HIGH_SCORES_LOCAL_KEY = 'wordis:mr-high-scores';
 export const MULTI_ROUND_HIGH_SCORES_DB_KEY = 'multiRoundHighScores';
@@ -21,7 +24,8 @@ const safeParse = (raw) => {
 };
 
 const normalizeDifficulty = (difficulty) => {
-  return VALID_DIFFICULTIES.has(difficulty) ? difficulty : MULTI_ROUND_DIFFICULTIES.NORMAL;
+  const normalizedDifficulty = normalizeMultiRoundDifficulty(difficulty);
+  return VALID_DIFFICULTIES.has(normalizedDifficulty) ? normalizedDifficulty : MULTI_ROUND_DIFFICULTIES.NORMAL;
 };
 
 const normalizeNumber = (value) => {
@@ -69,7 +73,12 @@ export const calculateMultiRoundScore = ({ completedRounds = [], failedRound = n
 };
 
 export const readLocalMultiRoundHighScores = () => {
-  return safeParse(localStorage.getItem(MULTI_ROUND_HIGH_SCORES_LOCAL_KEY)) || {};
+  const scores = safeParse(localStorage.getItem(MULTI_ROUND_HIGH_SCORES_LOCAL_KEY)) || {};
+  if (scores.tutorial && !scores[MULTI_ROUND_DIFFICULTIES.MICRO]) {
+    scores[MULTI_ROUND_DIFFICULTIES.MICRO] = scores.tutorial;
+  }
+  delete scores.tutorial;
+  return scores;
 };
 
 export const writeLocalMultiRoundHighScores = (scores = {}) => {

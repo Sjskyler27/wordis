@@ -8,7 +8,7 @@ export const MULTI_ROUND_REWARD_TIERS = {
 };
 
 export const MULTI_ROUND_MODIFIER_DIFFICULTIES = {
-  TUTORIAL: 'tutorial',
+  MICRO: 'micro',
   EASY: 'easy',
   MEDIUM: 'medium',
   HARD: 'hard'

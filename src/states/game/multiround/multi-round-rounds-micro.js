@@ -10,10 +10,10 @@ const defaultTutorialChanceIncreases = {
   neutralChanceIncrease: 0.005
 };
 
-export const TUTORIAL_MULTI_ROUND_ROUNDS = [
+export const MICRO_MULTI_ROUND_ROUNDS = [
   createRound({
     ...defaultTutorialChanceIncreases,
-    id: 'tutorial-round-1',
+    id: 'micro-round-1',
     label: 'Round 1',
     targetScore: 40,
     timeSeconds: 50,
@@ -24,7 +24,7 @@ export const TUTORIAL_MULTI_ROUND_ROUNDS = [
   }),
   createRound({
     ...defaultTutorialChanceIncreases,
-    id: 'tutorial-round-2',
+    id: 'micro-round-2',
     label: 'Round 2',
     targetScore: 60,
     timeSeconds: 60,
@@ -35,7 +35,7 @@ export const TUTORIAL_MULTI_ROUND_ROUNDS = [
   }),
   createRound({
     ...defaultTutorialChanceIncreases,
-    id: 'tutorial-round-3',
+    id: 'micro-round-3',
     label: 'Challenge 1',
     targetScore: 70,
     timeSeconds: 60,
@@ -51,7 +51,7 @@ export const TUTORIAL_MULTI_ROUND_ROUNDS = [
   }),
   createRound({
     ...defaultTutorialChanceIncreases,
-    id: 'tutorial-round-4',
+    id: 'micro-round-4',
     label: 'Round 4',
     targetScore: 80,
     timeSeconds: 70,
@@ -67,7 +67,7 @@ export const TUTORIAL_MULTI_ROUND_ROUNDS = [
   }),
   createRound({
     ...defaultTutorialChanceIncreases,
-    id: 'tutorial-round-5',
+    id: 'micro-round-5',
     label: 'Round 5',
     targetScore: 100,
     timeSeconds: 100,
@@ -84,7 +84,7 @@ export const TUTORIAL_MULTI_ROUND_ROUNDS = [
   }),
   createRound({
     ...defaultTutorialChanceIncreases,
-    id: 'tutorial-round-6',
+    id: 'micro-round-6',
     label: 'Challenge 2',
     targetScore: 120,
     timeSeconds: 120,
@@ -96,7 +96,7 @@ export const TUTORIAL_MULTI_ROUND_ROUNDS = [
   }),
   createRound({
     ...defaultTutorialChanceIncreases,
-    id: 'tutorial-round-7',
+    id: 'micro-round-7',
     label: 'Final Challenge',
     targetScore: 150,
     timeSeconds: 150,

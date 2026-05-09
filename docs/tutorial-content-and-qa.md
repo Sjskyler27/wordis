@@ -76,7 +76,7 @@ Before testing, use Settings > `Reset Tutorial`, or clear:
 
 ### Incomplete Tutorial Run
 
-1. Start `Wordis Run` with `Tutorial` difficulty.
+1. Start `Wordis Run` with `Micro` difficulty.
 2. Confirm the first rack has no tile modifiers.
 3. Confirm the player starts with no boons or attacks.
 4. Submit the first word.
@@ -95,7 +95,7 @@ Before testing, use Settings > `Reset Tutorial`, or clear:
 ### Completed Tutorial Run
 
 1. Use Settings > `Set Tutorial Complete`.
-2. Start `Wordis Run` with `Tutorial` difficulty.
+2. Start `Wordis Run` with `Micro` difficulty.
 3. Confirm starting cards are not suppressed.
 4. Confirm the first rack is not forced to all normal tiles.
 5. Confirm tile modifiers are not restricted to only tutorial-safe definitions.

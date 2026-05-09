@@ -524,7 +524,7 @@ const {
 const personalModifiersDrawerRef = ref(null);
 const shouldUseTutorialLimits = () => (
   isMultiRoundMode.value
-    && props.multiRoundDifficulty === 'tutorial'
+    && props.multiRoundDifficulty === 'micro'
     && !hasCompletedTutorialRun()
 );
 const getAllowedMultiRoundModifierKeys = (type) => {
