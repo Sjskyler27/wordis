@@ -358,6 +358,19 @@ export const PERSONAL_MODIFIER_DEFINITIONS = {
       }
     }
   },
+  multiplier_mastery: {
+    key: 'multiplier_mastery',
+    label: 'Multiplier Mastery',
+    description: 'One extra word multiplier source can count.',
+    rarity: 0.24,
+    tier: PERSONAL_MODIFIER_TIERS.EPIC,
+    tags: ['score', 'multiplier'],
+    maxStacks: 3,
+    start_with: 0,
+    effects: {
+      wordMultiplierCapBonus: 1
+    }
+  },
   // good_ceiling: {
   //   key: 'good_ceiling',
   //   label: 'Good Ceiling',

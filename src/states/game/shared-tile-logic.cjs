@@ -1313,31 +1313,48 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
     return highestEntry ? new Set([highestEntry.index]) : new Set();
   };
 
-  const isDisabledGold = (tiles, tile) => {
+  const getWordMultiplierCap = (personalModifierEffects = {}) => {
+    return Math.max(1, 1 + (personalModifierEffects.wordMultiplierCapBonus || 0));
+  };
 
-  // get selected gold ids
-  const goldIds = tiles
-    .filter(t => t.status === 'gold')
-    .map(t => t.id);
+  const getPairWordMultiplierCombos = (tiles = []) => {
+    return Object.values(tiles.reduce((combos, tile) => {
+      const pairWordMultiplier = getModifierDefinition(tile?.status).effects.pairWordMultiplier;
+      if (!pairWordMultiplier?.status) {
+        return combos;
+      }
 
-  if(!goldIds.length) return false;
+      const combo = combos[pairWordMultiplier.status] || {
+        count: 0,
+        neededCount: pairWordMultiplier.count || 2,
+        multiplier: pairWordMultiplier.multiplier || 1
+      };
+      combos[pairWordMultiplier.status] = {
+        ...combo,
+        count: combo.count + 1
+      };
+      return combos;
+    }, {})).filter((combo) => combo.count >= combo.neededCount);
+  };
 
-  // get all royals
-  const royals = new Set(tiles.filter(t => t.status === 'royalPear'));
+  const getEnabledWordMultiplierTileIds = (tiles = [], personalModifierEffects = {}) => {
+    const cap = getWordMultiplierCap(personalModifierEffects);
+    const pairCombos = getPairWordMultiplierCombos(tiles);
+    const remainingTileMultiplierCap = Math.max(0, cap - Math.min(pairCombos.length, cap));
 
-  // if 2 or more royals all golds disabled
-  if (royals.size>1){
-    return tile.status === 'gold'
-  }
+    return new Set(tiles
+      .filter((tile) => (tile?.wordMultiplier || 1) > 1)
+      .slice(0, remainingTileMultiplierCap)
+      .map((tile) => tile.id));
+  };
 
-  // if 2 or more golds, don't disable the first selected gold
-  if (goldIds.length > 1) {
-    const [, ...disabledGoldIds] = goldIds;
-    return disabledGoldIds.includes(tile.id);
-  }
+  const isDisabledWordMultiplierTile = (tiles, tile, personalModifierEffects = {}) => {
+    if ((tile?.wordMultiplier || 1) <= 1) {
+      return false;
+    }
 
-  return false;
-};
+    return !getEnabledWordMultiplierTileIds(tiles, personalModifierEffects).has(tile.id);
+  };
 
   const getWordScoreDetails = (tiles, options = {}) => {
     const personalModifierEffects = options.personalModifierEffects || options.personalModifiers || {};
@@ -1382,25 +1399,10 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
     // we need to know if a gold tile is disabled 
 
 
-    const baseWordMultiplier = tiles.reduce((total, tile) => total * (isDisabledGold(tiles, tile) ? 1 :  tile?.wordMultiplier || 1), 1);
-    const comboWordMultiplier = Object.values(tiles.reduce((combos, tile) => {
-      const pairWordMultiplier = getModifierDefinition(tile?.status).effects.pairWordMultiplier;
-      if (!pairWordMultiplier?.status) {
-        return combos;
-      }
-
-      const combo = combos[pairWordMultiplier.status] || {
-        count: 0,
-        neededCount: pairWordMultiplier.count || 2,
-        multiplier: pairWordMultiplier.multiplier || 1
-      };
-      combos[pairWordMultiplier.status] = {
-        ...combo,
-        count: combo.count + 1
-      };
-      return combos;
-    }, {})).reduce((total, combo) => {
-      return combo.count >= combo.neededCount ? total * combo.multiplier : total;
+    const baseWordMultiplier = tiles.reduce((total, tile) => total * (isDisabledWordMultiplierTile(tiles, tile, personalModifierEffects) ? 1 :  tile?.wordMultiplier || 1), 1);
+    const wordMultiplierCap = getWordMultiplierCap(personalModifierEffects);
+    const comboWordMultiplier = getPairWordMultiplierCombos(tiles).slice(0, wordMultiplierCap).reduce((total, combo) => {
+      return total * combo.multiplier;
     }, 1);
     const wordMultiplier = baseWordMultiplier * comboWordMultiplier;
     const personalLengthMultiplier = lengthScoreMultiplier[tiles.length] || lengthScoreMultiplier[String(tiles.length)] || 1;

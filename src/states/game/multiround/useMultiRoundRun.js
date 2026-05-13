@@ -290,6 +290,7 @@ export const useMultiRoundRun = ({ rounds = MULTI_ROUND_ROUNDS, includeInTutoria
       effects.goodChanceCapDelta += (definitionEffects.goodChanceCapDelta || 0) * stacks;
       effects.badChanceCapDelta += (definitionEffects.badChanceCapDelta || 0) * stacks;
       effects.neutralChanceCapDelta += (definitionEffects.neutralChanceCapDelta || 0) * stacks;
+      effects.wordMultiplierCapBonus += (definitionEffects.wordMultiplierCapBonus || 0) * stacks;
       if (definitionEffects.minimumWordLength) {
         effects.minimumWordLength = effects.minimumWordLength
           ? Math.min(effects.minimumWordLength, definitionEffects.minimumWordLength)
@@ -355,6 +356,7 @@ export const useMultiRoundRun = ({ rounds = MULTI_ROUND_ROUNDS, includeInTutoria
       goodChanceCapDelta: 0,
       badChanceCapDelta: 0,
       neutralChanceCapDelta: 0,
+      wordMultiplierCapBonus: 0,
       minimumWordLength: 0,
       rewardCountModifier: 0,
       rewardSelectionCountBonus: 0

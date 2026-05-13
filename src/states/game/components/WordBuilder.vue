@@ -397,6 +397,10 @@ const wordSlots = computed(() => {
   }));
 });
 const disabledGoldIds = computed(() => {
+  const wordMultiplierCap = Math.max(
+    1,
+    1 + (props.scoreOptions?.personalModifierEffects?.wordMultiplierCapBonus || 0)
+  );
   // get golds 
   const goldIds = props.selectedTiles
     .filter(t => t.status === 'gold')
@@ -405,15 +409,9 @@ const disabledGoldIds = computed(() => {
   const royalCount = props.selectedTiles
     .filter(t => t.status === 'royalPear')
     .length;
-    // 2 pairs all golds disable
-  if (royalCount > 1) {
-    return goldIds;
-  }
-  // if more than one gold return all after 1st 
-  if (goldIds.length > 1) {
-    return goldIds.slice(1);
-  }
-  return [];
+  const royalMultiplierSources = royalCount > 1 ? 1 : 0;
+  const enabledGoldCount = Math.max(0, wordMultiplierCap - royalMultiplierSources);
+  return goldIds.slice(enabledGoldCount);
 
 });
 
@@ -588,7 +586,7 @@ const overrideMessage = computed(() => {
   if (!hoveredTile.value) return null;
 
   return isDisabledGold(hoveredTile.value)
-    ? 'Only 1 multiplier tile modifier per word'
+    ? `Only ${Math.max(1, 1 + (props.scoreOptions?.personalModifierEffects?.wordMultiplierCapBonus || 0))} word multiplier source${Math.max(1, 1 + (props.scoreOptions?.personalModifierEffects?.wordMultiplierCapBonus || 0)) === 1 ? '' : 's'} per word`
     : null;
 });
 
