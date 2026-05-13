@@ -439,6 +439,38 @@ const getLabel = (type, key) => (
     || key
 );
 
+const RANDOM_UNLOCK_HINT = 'Random unlock after completing a multi-round run.';
+
+const getConditionUnlockHints = (type, key) => {
+  return [...new Set(MODIFIER_UNLOCK_CONDITIONS
+    .filter((condition) => condition.type === type && condition.key === key && condition.hint)
+    .map((condition) => condition.hint))];
+};
+
+const getPairedUnlockHint = (type, key) => {
+  const targetId = getModifierEntityId(type, key);
+  const sourceEntry = Object.entries(MODIFIER_UNLOCK_PAIRINGS).find(([, pairedIds]) => pairedIds.includes(targetId));
+  if (!sourceEntry) {
+    return '';
+  }
+
+  const source = parseModifierEntityId(sourceEntry[0]);
+  return source ? `Unlocked with ${getLabel(source.type, source.key)}.` : '';
+};
+
+const getUnlockHint = (type, key, state) => {
+  if (isModifierUnlocked(type, key, state)) {
+    return 'Unlocked.';
+  }
+
+  const hints = [
+    ...getConditionUnlockHints(type, key),
+    getPairedUnlockHint(type, key)
+  ].filter(Boolean);
+
+  return hints.length ? hints.join(' ') : RANDOM_UNLOCK_HINT;
+};
+
 const getTilePreview = (key) => {
   const definition = TILE_DEFINITIONS[key] || {};
   const ui = definition.ui || TILE_DEFINITIONS.normal?.ui || {};
@@ -660,7 +692,8 @@ export const syncModifierUnlocks = async ({ force = false, user = auth?.currentU
     unlocked: {
       tile: mergedState.tile.length,
       round: mergedState.round.length,
-      personal: mergedState.personal.length
+      personal: mergedState.personal.length,
+      card: mergedState.card.length
     }
   };
 };
@@ -671,6 +704,7 @@ export const getModifierUnlockCatalog = (state = readLocalModifierUnlockState())
     key,
     label: getLabel(MODIFIER_UNLOCK_TYPES.TILE, key),
     description: getDefinition(MODIFIER_UNLOCK_TYPES.TILE, key)?.description || '',
+    unlockHint: getUnlockHint(MODIFIER_UNLOCK_TYPES.TILE, key, state),
     group: TILE_MODIFIER_GROUP_BY_KEY[key] || 'neutral',
     preview: getTilePreview(key),
     unlocked: isModifierUnlocked(MODIFIER_UNLOCK_TYPES.TILE, key, state)
@@ -680,6 +714,7 @@ export const getModifierUnlockCatalog = (state = readLocalModifierUnlockState())
     key,
     label: getLabel(MODIFIER_UNLOCK_TYPES.ROUND, key),
     description: getDefinition(MODIFIER_UNLOCK_TYPES.ROUND, key)?.description || '',
+    unlockHint: getUnlockHint(MODIFIER_UNLOCK_TYPES.ROUND, key, state),
     group: getDefinition(MODIFIER_UNLOCK_TYPES.ROUND, key)?.difficulty || 'easy',
     unlocked: isModifierUnlocked(MODIFIER_UNLOCK_TYPES.ROUND, key, state)
   })),
@@ -688,6 +723,7 @@ export const getModifierUnlockCatalog = (state = readLocalModifierUnlockState())
     key,
     label: getLabel(MODIFIER_UNLOCK_TYPES.PERSONAL, key),
     description: getDefinition(MODIFIER_UNLOCK_TYPES.PERSONAL, key)?.description || '',
+    unlockHint: getUnlockHint(MODIFIER_UNLOCK_TYPES.PERSONAL, key, state),
     group: getDefinition(MODIFIER_UNLOCK_TYPES.PERSONAL, key)?.tier || 'common',
     unlocked: isModifierUnlocked(MODIFIER_UNLOCK_TYPES.PERSONAL, key, state)
   })),
@@ -696,6 +732,7 @@ export const getModifierUnlockCatalog = (state = readLocalModifierUnlockState())
     key,
     label: getLabel(MODIFIER_UNLOCK_TYPES.CARD, key),
     description: getDefinition(MODIFIER_UNLOCK_TYPES.CARD, key)?.description || '',
+    unlockHint: getUnlockHint(MODIFIER_UNLOCK_TYPES.CARD, key, state),
     group: getDefinition(MODIFIER_UNLOCK_TYPES.CARD, key)?.kind || 'trayModifier',
     unlocked: isModifierUnlocked(MODIFIER_UNLOCK_TYPES.CARD, key, state)
   }))

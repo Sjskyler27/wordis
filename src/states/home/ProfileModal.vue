@@ -175,7 +175,7 @@
               <strong>{{ modifier.label }}</strong>
               <span>{{ modifier.group }}</span>
             </div>
-            <p>{{ modifier.unlocked ? modifier.description : '???' }}</p>
+            <p>{{ modifier.unlocked ? modifier.description : `Unlock: ${modifier.unlockHint}` }}</p>
           </article>
         </div>
       </div>
@@ -235,7 +235,8 @@ const selectedModifierGroup = ref('good');
 const modifierTypes = [
   { key: 'tile', label: 'Tile' },
   { key: 'round', label: 'Round' },
-  { key: 'personal', label: 'Upgrades' }
+  { key: 'personal', label: 'Upgrades' },
+  { key: 'card', label: 'Cards' }
 ];
 const modifierGroupsByType = {
   tile: [
@@ -252,6 +253,11 @@ const modifierGroupsByType = {
     { key: 'common', label: 'Common' },
     { key: 'rare', label: 'Rare' },
     { key: 'epic', label: 'Epic' }
+  ],
+  card: [
+    { key: 'trayModifier', label: 'Tray' },
+    { key: 'attack', label: 'Attack' },
+    { key: 'tactic', label: 'Tactic' }
   ]
 };
 
@@ -275,8 +281,9 @@ const activeModifierCatalog = computed(() => {
 });
 const modifierUnlockSummary = computed(() => {
   const catalog = modifierCatalog.value;
-  const unlocked = [...catalog.tile, ...catalog.round, ...catalog.personal].filter((modifier) => modifier.unlocked).length;
-  const total = catalog.tile.length + catalog.round.length + catalog.personal.length;
+  const allModifiers = Object.values(catalog).flat();
+  const unlocked = allModifiers.filter((modifier) => modifier.unlocked).length;
+  const total = allModifiers.length;
   return `${unlocked}/${total} unlocked`;
 });
 
