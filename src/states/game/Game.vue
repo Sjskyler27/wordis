@@ -3282,7 +3282,9 @@ const handleTooltipOpened = () => {
   tooltipPauseTimeoutId = window.setTimeout(clearTooltipTimerPause, Math.max(0, tooltipPauseConfig.value.durationSeconds || 0) * 1000);
 };
 
-const handleTooltipClosed = () => {};
+const handleTooltipClosed = () => {
+  clearTooltipTimerPause();
+};
 
 const startSoloTimer = () => {
   if (!isTimedSoloMode.value || effectiveGameEnded.value || !canRunTimedModeTimer()) {
