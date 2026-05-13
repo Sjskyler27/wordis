@@ -1,4 +1,13 @@
 # Changelog
+## 0.0.70 - 2026-05-13
+
+Start: 2026-05-13 10:14 EDT
+Stop: 2026-05-13 10:20 EDT
+
+- Added run score, score breakdown, and selected difficulty high score to the multi-round history overlay.
+- Moved earned personal modifier rewards into the round rows where they were collected and turned the final modifier list into visual badges.
+- Verified with `npm run build`.
+
 ## 0.0.69 - 2026-05-13
 
 Start: 2026-05-13 10:00 EDT
