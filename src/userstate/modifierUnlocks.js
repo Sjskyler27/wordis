@@ -185,6 +185,17 @@ export const MODIFIER_UNLOCK_PAIRINGS = {
   'personal:strong_start': ['round:bad_modifier_surge']
 };
 
+const PERSONAL_MODIFIER_TILE_PREREQUISITES = {
+  ghost_charge: ['ghostTile'],
+  golden_draft: ['gold'],
+  first_focus: ['firsttile'],
+  wild_spark: ['wild'],
+  cool_embers: ['burningTile'],
+  bank_interest: ['bankTile'],
+  must_shield: ['mustuse'],
+  burn_shield: ['burningTile']
+};
+
 export const MODIFIER_UNLOCK_CONDITIONS = [
   {
     type: MODIFIER_UNLOCK_TYPES.TILE,
@@ -288,6 +299,10 @@ const getContingentCardUnlockKeys = (tileKeys = []) => {
   });
 };
 
+const getPersonalPrerequisiteTileKeys = (personalKeys = []) => {
+  return normalizeUnlockArray(personalKeys.flatMap((key) => PERSONAL_MODIFIER_TILE_PREREQUISITES[key] || []));
+};
+
 const createDefaultUnlockState = () => ({
   v: 1,
   updatedAt: Date.now(),
@@ -299,9 +314,14 @@ const createDefaultUnlockState = () => ({
 
 export const normalizeModifierUnlockState = (state = {}) => {
   const defaults = createDefaultUnlockState();
+  const personalUnlocks = normalizeUnlockArray([
+    ...defaults.personal,
+    ...(state.personal || [])
+  ]).filter((key) => ALL_KEYS_BY_TYPE.personal.includes(key));
   const tileUnlocks = normalizeUnlockArray([
     ...defaults.tile,
-    ...(state.tile || [])
+    ...(state.tile || []),
+    ...getPersonalPrerequisiteTileKeys(personalUnlocks)
   ]).filter((key) => ALL_KEYS_BY_TYPE.tile.includes(key));
   return {
     v: 1,
@@ -311,10 +331,7 @@ export const normalizeModifierUnlockState = (state = {}) => {
       ...defaults.round,
       ...(state.round || [])
     ]).filter((key) => ALL_KEYS_BY_TYPE.round.includes(key)),
-    [MODIFIER_UNLOCK_TYPES.PERSONAL]: normalizeUnlockArray([
-      ...defaults.personal,
-      ...(state.personal || [])
-    ]).filter((key) => ALL_KEYS_BY_TYPE.personal.includes(key)),
+    [MODIFIER_UNLOCK_TYPES.PERSONAL]: personalUnlocks,
     [MODIFIER_UNLOCK_TYPES.CARD]: normalizeUnlockArray([
       ...defaults.card,
       ...(state.card || []),
@@ -384,7 +401,16 @@ const parseModifierEntityId = (entityId = '') => {
 
 const getRemainingKeys = (type, state) => {
   const unlocked = new Set(getUnlockedModifierKeys(type, state));
-  return (ALL_KEYS_BY_TYPE[type] || []).filter((key) => !unlocked.has(key));
+  return (ALL_KEYS_BY_TYPE[type] || [])
+    .filter((key) => !unlocked.has(key))
+    .filter((key) => {
+      if (type !== MODIFIER_UNLOCK_TYPES.PERSONAL) {
+        return true;
+      }
+
+      const tilePrerequisites = PERSONAL_MODIFIER_TILE_PREREQUISITES[key] || [];
+      return tilePrerequisites.every((tileKey) => isModifierUnlocked(MODIFIER_UNLOCK_TYPES.TILE, tileKey, state));
+    });
 };
 
 const getDefinition = (type, key) => {
@@ -543,7 +569,9 @@ export const evaluateModifierUnlocksForRound = (context = {}, options = {}) => {
       return false;
     }
 
-    return !isModifierUnlocked(condition.type, condition.key, state) && condition.test(context);
+    return !isModifierUnlocked(condition.type, condition.key, state)
+      && getRemainingKeys(condition.type, state).includes(condition.key)
+      && condition.test(context);
   });
 
   const primaryCandidates = candidates.length
