@@ -98,6 +98,8 @@
             :is-controller-connected="props.isControllerConnected"
             @tile-click="handleTileClickWithCards($event, leftLane.side)"
             @tile-drop-on-builder="handleRackTileDropOnBuilder($event, leftLane.side)"
+            @tooltip-opened="handleTooltipOpened"
+            @tooltip-closed="handleTooltipClosed"
           />
 
           <GameLane
@@ -124,6 +126,8 @@
             :is-controller-connected="props.isControllerConnected"
             @tile-click="handleTileClickWithCards($event, rightLane.side)"
             @tile-drop-on-builder="handleRackTileDropOnBuilder($event, rightLane.side)"
+            @tooltip-opened="handleTooltipOpened"
+            @tooltip-closed="handleTooltipClosed"
           />
         </div>
 
@@ -167,6 +171,8 @@
           @remove-specific="removeSpecificTile"
           @tile-click="handleBuiltTileClick"
           @reorder="handleBuiltTileReorder"
+          @tooltip-opened="handleTooltipOpened"
+          @tooltip-closed="handleTooltipClosed"
         />
 
       </section>
@@ -280,7 +286,7 @@ import ModifierUnlockModal from './components/ModifierUnlockModal.vue';
 import MultiRoundProgress from './components/MultiRoundProgress.vue';
 import MultiRoundRewardChoice from './components/MultiRoundRewardChoice.vue';
 import ScoreRibbon from './components/ScoreRibbon.vue';
-import { getMultiRoundRounds } from './multiround/multi-round-difficulties.js';
+import { MULTI_ROUND_TOOLTIP_TIME_PAUSES, getMultiRoundRounds, normalizeMultiRoundDifficulty } from './multiround/multi-round-difficulties.js';
 import PersonalModifiersDrawer from './components/PersonalModifiersDrawer.vue';
 import {
   SAVE_MODES,
@@ -471,10 +477,18 @@ const SOLO_TIMER_SECONDS = isTestingMode ? 25 : 180;
 const timerRemainingSeconds = ref(SOLO_TIMER_SECONDS);
 const isSoloTimerPausedByAttack = ref(false);
 const isMultiRoundTimerPausedByAttack = ref(false);
+const isSoloTimerPausedByTooltip = ref(false);
+const isMultiRoundTimerPausedByTooltip = ref(false);
 const timedModeTimerStarted = ref(false);
 const timedSoloFinalWordSpent = ref(false);
 const multiRoundFinalWordSpent = ref(false);
 const pendingMultiRoundStartingScore = ref(0);
+const tooltipPauseConfig = computed(() => (
+  MULTI_ROUND_TOOLTIP_TIME_PAUSES[normalizeMultiRoundDifficulty(props.multiRoundDifficulty)]
+    || MULTI_ROUND_TOOLTIP_TIME_PAUSES.normal
+));
+const tooltipPauseUsesRemaining = ref(Math.max(0, tooltipPauseConfig.value.amount || 0));
+let tooltipPauseTimeoutId = null;
 const speedyWordStartedAt = ref(Date.now());
 const speedyWordClockNow = ref(Date.now());
 const tilePickupSound = new Audio(tilePickupSoundUrl);
@@ -3136,6 +3150,8 @@ const handlePlayAgain = () => {
   clearSelectionForSide(mySide.value);
   isSoloTimerPausedByAttack.value = false;
   isMultiRoundTimerPausedByAttack.value = false;
+  clearTooltipTimerPause();
+  tooltipPauseUsesRemaining.value = Math.max(0, tooltipPauseConfig.value.amount || 0);
   timedModeTimerStarted.value = false;
   timedSoloFinalWordSpent.value = false;
   pendingMultiRoundStartingScore.value = 0;
@@ -3215,6 +3231,27 @@ const canRunTimedModeTimer = () => {
   return timedModeTimerStarted.value && !isPaused.value && !props.settingsShowing && !showTutorialOverlay.value;
 };
 
+const clearTooltipTimerPause = () => {
+  window.clearTimeout(tooltipPauseTimeoutId);
+  tooltipPauseTimeoutId = null;
+  isSoloTimerPausedByTooltip.value = false;
+  isMultiRoundTimerPausedByTooltip.value = false;
+};
+
+const handleTooltipOpened = () => {
+  if ((!isTimedSoloMode.value && !isMultiRoundMode.value) || tooltipPauseUsesRemaining.value <= 0) {
+    return;
+  }
+
+  tooltipPauseUsesRemaining.value = Math.max(0, tooltipPauseUsesRemaining.value - 1);
+  isSoloTimerPausedByTooltip.value = isTimedSoloMode.value;
+  isMultiRoundTimerPausedByTooltip.value = isMultiRoundMode.value;
+  window.clearTimeout(tooltipPauseTimeoutId);
+  tooltipPauseTimeoutId = window.setTimeout(clearTooltipTimerPause, Math.max(0, tooltipPauseConfig.value.durationSeconds || 0) * 1000);
+};
+
+const handleTooltipClosed = () => {};
+
 const startSoloTimer = () => {
   if (!isTimedSoloMode.value || effectiveGameEnded.value || !canRunTimedModeTimer()) {
     stopSoloTimer();
@@ -3223,7 +3260,7 @@ const startSoloTimer = () => {
 
   window.clearInterval(soloTimerId);
   soloTimerId = window.setInterval(() => {
-    if (isSoloTimerPausedByAttack.value) {
+    if (isSoloTimerPausedByAttack.value || isSoloTimerPausedByTooltip.value) {
       return;
     }
 
@@ -3248,7 +3285,7 @@ const startMultiRoundTimer = () => {
 
   window.clearInterval(multiRoundTimerId);
   multiRoundTimerId = window.setInterval(() => {
-    if (isMultiRoundTimerPausedByAttack.value) {
+    if (isMultiRoundTimerPausedByAttack.value || isMultiRoundTimerPausedByTooltip.value) {
       console.log('timerpaused')
       return;
     }
@@ -3422,6 +3459,11 @@ watch(() => props.settingsShowing, (showingSettings) => {
   // Keep the solo timer and bot loop in sync with the visible pause/settings state.
   setPauseState(showingSettings);
 }, { immediate: true });
+
+watch(tooltipPauseConfig, (config) => {
+  tooltipPauseUsesRemaining.value = Math.max(0, config.amount || 0);
+  clearTooltipTimerPause();
+});
 
 watch(showTutorialOverlay, (visible) => {
   syncTutorialPauseState(visible);
@@ -3753,6 +3795,7 @@ onBeforeUnmount(() => {
   window.removeEventListener('wordis:modifier-unlocks-changed', syncModifierUnlockState);
   stopSoloTimer();
   stopMultiRoundTimer();
+  clearTooltipTimerPause();
   stopGameMusic();
   window.clearTimeout(historyOverlayTimeoutId);
   window.clearTimeout(multiRoundRewardTimeoutId);
@@ -3788,6 +3831,7 @@ const resetAndGoHome = () => {
   window.clearTimeout(historyOverlayTimeoutId);
   isSoloTimerPausedByAttack.value = false;
   isMultiRoundTimerPausedByAttack.value = false;
+  clearTooltipTimerPause();
   timedSoloFinalWordSpent.value = false;
   pendingMultiRoundStartingScore.value = 0;
   window.clearTimeout(multiRoundRewardTimeoutId);

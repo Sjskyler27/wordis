@@ -229,7 +229,7 @@ const rackDragState = ref(null);
 const suppressNextClick = ref(false);
 let tooltipTimeoutId = null;
 
-const emit = defineEmits(['tile-click', 'tile-drop-on-builder']);
+const emit = defineEmits(['tile-click', 'tile-drop-on-builder', 'tooltip-opened', 'tooltip-closed']);
 const canShowTooltip = computed(() => isTooltipVisible.value && (!props.isMobile || mobileInspectEnabled.value));
 const rackDragPreviewTile = computed(() => rackDragState.value?.isDragging ? rackDragState.value.tile : null);
 
@@ -257,6 +257,7 @@ const showTooltipLater = (tile, event) => {
   tooltipTimeoutId = window.setTimeout(() => {
     hoveredTile.value = tile;
     isTooltipVisible.value = true;
+    emit('tooltip-opened');
   }, 1000);
 };
 
@@ -271,6 +272,9 @@ const updateTooltipPosition = (event) => {
 
 const hideTooltip = () => {
   window.clearTimeout(tooltipTimeoutId);
+  if (isTooltipVisible.value) {
+    emit('tooltip-closed');
+  }
   isTooltipVisible.value = false;
   hoveredTile.value = null;
 };

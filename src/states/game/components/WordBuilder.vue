@@ -343,7 +343,7 @@ const props = defineProps({
   }
 });
 
-const emit = defineEmits(['undo', 'clear', 'submit', 'remove-specific', 'clear-rack', 'save-letters', 'tile-click', 'reorder']);
+const emit = defineEmits(['undo', 'clear', 'submit', 'remove-specific', 'clear-rack', 'save-letters', 'tile-click', 'reorder', 'tooltip-opened', 'tooltip-closed']);
 const hoveredTile = ref(null);
 const isTooltipVisible = ref(false);
 const tooltipPosition = ref({ x: 0, y: 0 });
@@ -652,6 +652,7 @@ const showTooltipLater = (tile, event) => {
   tooltipTimeoutId = window.setTimeout(() => {
     hoveredTile.value = tile;
     isTooltipVisible.value = true;
+    emit('tooltip-opened');
   }, 1000);
 };
 
@@ -669,6 +670,9 @@ const updateTooltipPosition = (event) => {
 
 const hideTooltip = () => {
   window.clearTimeout(tooltipTimeoutId);
+  if (isTooltipVisible.value) {
+    emit('tooltip-closed');
+  }
   isTooltipVisible.value = false;
   hoveredTile.value = null;
 };
