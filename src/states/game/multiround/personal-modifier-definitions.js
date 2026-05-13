@@ -24,6 +24,7 @@ export const PERSONAL_MODIFIER_DEFINITIONS = {
     description: 'Upgrade reward options contain 1 extra reward.',
     rarity: .29,
     tier: PERSONAL_MODIFIER_TIERS.RARE,
+    includeInTutorial: true,
     tags: ['rewards'],
     maxStacks: 2,
     minimumRewardChoicesRemainingToApear: 3,
@@ -78,6 +79,7 @@ export const PERSONAL_MODIFIER_DEFINITIONS = {
     description: 'Gold tiles appear more often, with a 5% chance to force one when you have none.',
     rarity: 0.55,
     tier: PERSONAL_MODIFIER_TIERS.EPIC,
+    includeInTutorial: true,
     tags: ['tile-odds', 'gold'],
     maxStacks: 3,
     start_with: 0,
@@ -119,6 +121,7 @@ export const PERSONAL_MODIFIER_DEFINITIONS = {
     label: 'Wild Spark',
     description: 'Wild tiles gain +1 score and appear more often.',
     rarity: 0.72,
+    includeInTutorial: true,
     tier: PERSONAL_MODIFIER_TIERS.COMMON,
     tags: ['score', 'tile-odds', 'wild'],
     maxStacks: 5,
@@ -286,7 +289,7 @@ export const PERSONAL_MODIFIER_DEFINITIONS = {
   large_vernacular: {
     key: 'large_vernacular',
     label: 'Large Vernacular',
-    description: '9-letter words score +30.',
+    description: '8 and 9-letter words score +15 more.',
     rarity: 0.28,
     tier: PERSONAL_MODIFIER_TIERS.COMMON,
     tags: ['score', 'word-length'],
@@ -294,7 +297,8 @@ export const PERSONAL_MODIFIER_DEFINITIONS = {
     start_with: 0,
     effects: {
       lengthScoreBonus: {
-        8: 15
+        8: 15,
+        9: 15
       }
     }
   },
@@ -367,6 +371,7 @@ export const PERSONAL_MODIFIER_DEFINITIONS = {
     description: 'One extra word multiplier source can count.',
     rarity: 0.24,
     tier: PERSONAL_MODIFIER_TIERS.EPIC,
+    includeInTutorial: true,
     tags: ['score', 'multiplier'],
     maxStacks: 3,
     start_with: 0,
