@@ -33,10 +33,10 @@ const createModifierDefinitions = ({ bloodTilePositionValues }) => ({
         badgeColor: '#8e4b00'
       }
     },
-    gainboon: {
-      badge: 'BOON',
-      description: 'Grants 1 boon card when this tile is used.',
-      effects: { grantBoon: 1 },
+    gainTrayModifier: {
+      badge: 'TRAY',
+      description: 'Grants 1 tray modifier card when this tile is used.',
+      effects: { grantTrayModifier: 1 },
       rarityWeight: 0.20,
       canApply: ({ baseScore }) => baseScore <= 0, // disabled
       ui: {
@@ -47,7 +47,7 @@ const createModifierDefinitions = ({ bloodTilePositionValues }) => ({
         badgeColor: '#537f18'
       }
     },
-    gainattack: {
+    gainAttack: {
       badge: 'ATK',
       description: 'Grants 1 attack card when this tile is used.',
       effects: { grantAttack: 1 },
@@ -59,6 +59,20 @@ const createModifierDefinitions = ({ bloodTilePositionValues }) => ({
         textColor: '#311610',
         badgeBackground: 'rgba(255, 238, 228, 0.95)',
         badgeColor: '#9c3f18'
+      }
+    },
+    gainTactic: {
+      badge: 'TAC',
+      description: 'Grants 1 tactic card when this tile is used.',
+      effects: { grantTactic: 1 },
+      rarityWeight: 0.20,
+      canApply: ({ baseScore }) => baseScore <= 0, // disabled
+      ui: {
+        tileBackground: 'linear-gradient(180deg, #e8f3ff 0%, #8fb5ff 72%, #3156b7 100%)',
+        tileShadow: 'inset 0 -4px 0 rgba(26, 55, 128, 0.24), 0 12px 20px rgba(45, 10, 24, 0.18), 0 0 0 1px rgba(165, 197, 255, 0.42)',
+        textColor: '#101f3f',
+        badgeBackground: 'rgba(233, 242, 255, 0.95)',
+        badgeColor: '#264f9f'
       }
     },
     wild: {

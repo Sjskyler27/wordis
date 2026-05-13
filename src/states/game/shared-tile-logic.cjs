@@ -8,17 +8,17 @@ const modifierDefinitionsApi = typeof require === 'function'
 
 const {
   CARD_DEFINITIONS,
-  BOON_CARD_KEYS,
+  TRAY_MODIFIER_CARD_KEYS,
   ATTACK_CARD_KEYS,
-  TIMED_SOLO_ATTACK_CARD_KEYS,
-  MULTI_ROUND_ATTACK_CARD_KEYS
+  TIMED_SOLO_TACTIC_CARD_KEYS,
+  MULTI_ROUND_TACTIC_CARD_KEYS
 } = cardDefinitionsApi || {};
 const {
   createModifierDefinitions
 } = modifierDefinitionsApi || {};
 
 
-const GOOD_MODIFIERS = ['gold', 'firsttile', 'royalPear', 'twinTile', 'glassTile', 'cornucopiaTile', 'bankTile', 'gainboon', 'gainattack'];
+const GOOD_MODIFIERS = ['gold', 'firsttile', 'royalPear', 'twinTile', 'glassTile', 'cornucopiaTile', 'bankTile', 'gainTrayModifier', 'gainAttack', 'gainTactic'];
 const BAD_MODIFIERS = ['zeroTile', 'mustuse', 'locked3', 'burningTile', 'rustingTile', 'lightningTile', 'barricadeTile', 'bagTile'];
 const NEUTRAL_MODIFIERS = ['yinYang', 'ghostTile','bloodTile', 'wild', 'shimmer', 'voidTile', 'hourglassTile', 'waterTile', 'leecherTile'];
 
@@ -1286,8 +1286,9 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
     const reward = milestoneRewards[length] || milestoneRewards[String(length)] || {};
 
     return {
-      boons: reward.boons || 0,
-      attacks: options.includeAttacks === false ? 0 : (reward.attacks || 0)
+      trayModifiers: reward.trayModifiers || 0,
+      attacks: options.includeAttacks === false ? 0 : (reward.attacks || 0),
+      tactics: options.includeTactics === false ? 0 : (reward.tactics || 0)
     };
   };
 
@@ -1431,16 +1432,19 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
 
   const getResourceGrants = (tiles = [], options = {}) => {
     const includeAttacks = options.includeAttacks !== false;
+    const includeTactics = options.includeTactics !== false;
     const totals = tiles.reduce((totals, tile) => {
       const definition = getModifierDefinition(tile.status);
-      totals.boons += definition.effects.grantBoon || 0;
+      totals.trayModifiers += definition.effects.grantTrayModifier || 0;
       totals.attacks += includeAttacks ? (definition.effects.grantAttack || 0) : 0;
+      totals.tactics += includeTactics ? (definition.effects.grantTactic || 0) : 0;
       return totals;
-    }, { boons: 0, attacks: 0 });
+    }, { trayModifiers: 0, attacks: 0, tactics: 0 });
 
-    const milestoneReward = getMilestoneReward(tiles.length, { includeAttacks });
-    totals.boons += milestoneReward.boons;
+    const milestoneReward = getMilestoneReward(tiles.length, { includeAttacks, includeTactics });
+    totals.trayModifiers += milestoneReward.trayModifiers;
     totals.attacks += milestoneReward.attacks;
+    totals.tactics += milestoneReward.tactics;
 
     return totals;
   };
@@ -1468,16 +1472,20 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
         return cardKeys.filter((cardKey) => allowedCardKeys.has(cardKey));
       };
 
-      if (kind === 'boon') {
-        return filterAllowedCards(filterDisabledCards(BOON_CARD_KEYS));
+      if (kind === 'trayModifier') {
+        return filterAllowedCards(filterDisabledCards(TRAY_MODIFIER_CARD_KEYS));
       }
 
-      if (options.deck === 'timed_solo') {
-        return filterAllowedCards(filterDisabledCards(TIMED_SOLO_ATTACK_CARD_KEYS));
+      if (kind === 'tactic' && options.deck === 'timed_solo') {
+        return filterAllowedCards(filterDisabledCards(TIMED_SOLO_TACTIC_CARD_KEYS));
       }
 
-      if (options.deck === 'multi_round') {
-        return filterAllowedCards(filterDisabledCards(MULTI_ROUND_ATTACK_CARD_KEYS));
+      if (kind === 'tactic' && options.deck === 'multi_round') {
+        return filterAllowedCards(filterDisabledCards(MULTI_ROUND_TACTIC_CARD_KEYS));
+      }
+
+      if (kind === 'tactic') {
+        return filterAllowedCards(filterDisabledCards(TIMED_SOLO_TACTIC_CARD_KEYS));
       }
 
       return filterAllowedCards(filterDisabledCards(ATTACK_CARD_KEYS)).filter((cardKey) => {

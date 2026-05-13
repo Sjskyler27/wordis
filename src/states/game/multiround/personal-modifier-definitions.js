@@ -412,29 +412,29 @@ export const PERSONAL_MODIFIER_DEFINITIONS = {
   // },
   boon_cache: {
     key: 'boon_cache',
-    label: 'Boon Cache',
-    description: 'Immediately gain 3 boons when selected.',
+    label: 'Tray Cache',
+    description: 'Immediately gain 3 tray modifiers when selected.',
     includeInTutorial: true,
     rarity: 9.35,
     tier: PERSONAL_MODIFIER_TIERS.COMMON,
-    tags: ['boons', 'immediate'],
+    tags: ['tray-modifiers', 'immediate'],
     maxStacks: 20,
     start_with: 0,
     effects: {
-      immediateBoons: 3
+      immediateTrayModifiers: 3
     }
   },
   attack_cache: {
     key: 'attack_cache',
-    label: 'Attack Cache',
-    description: 'Immediately gain 2 attacks when selected.',
+    label: 'Tactic Cache',
+    description: 'Immediately gain 2 tactics when selected.',
     rarity: 0.25,
     tier: PERSONAL_MODIFIER_TIERS.COMMON,
-    tags: ['attacks', 'immediate'],
+    tags: ['tactics', 'immediate'],
     maxStacks: 20,
     start_with: 0,
     effects: {
-      immediateAttacks: 2
+      immediateTactics: 2
     }
   },
   bright_letters: {

@@ -2,26 +2,26 @@
   <div class="bonus-card accent-purple">
     <span v-if="!isMobile" class="bonus-kicker">Cards </span>
     <strong>{{ cardSummary }}</strong>
-    <span v-if="activeBoonCard">
-      {{ activeBoonCard.label }} is ready. Select a tile!
+    <span v-if="activeTrayModifierCard">
+      {{ activeTrayModifierCard.label }} is ready. Select a tile!
     </span>
     <span v-else> &#x200b;</span>
     <div class="card-hand">
       <button
-        v-for="(cardGroup, index) in groupedBoonCards"
+        v-for="(cardGroup, index) in groupedTrayModifierCards"
         :key="cardGroup.key"
         type="button"
         class="action-card"
         :style="getCardStyle(cardGroup.card)"
         :class="{
-          armed: cardGroup.cards.some((card) => activeBoonCardId === card.id),
+          armed: cardGroup.cards.some((card) => activeTrayModifierCardId === card.id),
           'action-card-controller-focus': controllerRegion === 'cards' && controllerCardCursorIndex === index
         }"
         :disabled="cardControlsDisabled"
         :data-controller-card="index"
-        @click="$emit('select-boon', cardGroup.card)"
+        @click="$emit('select-tray-modifier', cardGroup.card)"
       >
-        <span class="action-card-type">Boon</span>
+        <span class="action-card-type">Tray Modifier</span>
         <span v-if="cardGroup.count > 1" class="action-card-count">x{{ cardGroup.count }}</span>
         <strong>{{ cardGroup.card.label }}</strong>
         <span>{{ cardGroup.card.description }}</span>
@@ -41,18 +41,18 @@
         class="action-card"
         :style="getCardStyle(cardGroup.card)"
         :class="{
-          'action-card-controller-focus': controllerRegion === 'cards' && controllerCardCursorIndex === groupedBoonCards.length + attackIndex
+          'action-card-controller-focus': controllerRegion === 'cards' && controllerCardCursorIndex === groupedTrayModifierCards.length + attackIndex
         }"
         :disabled="cardControlsDisabled"
-        :data-controller-card="groupedBoonCards.length + attackIndex"
+        :data-controller-card="groupedTrayModifierCards.length + attackIndex"
         @click="$emit('use-attack', cardGroup.card)"
       >
-        <span class="action-card-type">Attack</span>
+        <span class="action-card-type">{{ actionCardLabel }}</span>
         <span v-if="cardGroup.count > 1" class="action-card-count">x{{ cardGroup.count }}</span>
         <strong>{{ cardGroup.card.label }}</strong>
         <span>{{ cardGroup.card.description }}</span>
         <ControllerButtonHint
-          v-if="controllerRegion === 'cards' && controllerCardCursorIndex === groupedBoonCards.length + attackIndex"
+          v-if="controllerRegion === 'cards' && controllerCardCursorIndex === groupedTrayModifierCards.length + attackIndex"
           action-key="select"
           :controller-mapping="controllerMapping"
           :controller-connected="isControllerConnected"
@@ -66,7 +66,7 @@
 <script setup>
 import ControllerButtonHint from './ControllerButtonHint.vue';
 
-defineEmits(['select-boon', 'use-attack']);
+defineEmits(['select-tray-modifier', 'use-attack']);
 
 defineProps({
   isMobile: Boolean,
@@ -74,11 +74,11 @@ defineProps({
     type: String,
     default: ''
   },
-  activeBoonCard: {
+  activeTrayModifierCard: {
     type: Object,
     default: null
   },
-  groupedBoonCards: {
+  groupedTrayModifierCards: {
     type: Array,
     default: () => []
   },
@@ -86,9 +86,13 @@ defineProps({
     type: Array,
     default: () => []
   },
+  actionCardLabel: {
+    type: String,
+    default: 'Attack'
+  },
   attacksEnabled: Boolean,
   cardControlsDisabled: Boolean,
-  activeBoonCardId: {
+  activeTrayModifierCardId: {
     type: String,
     default: null
   },

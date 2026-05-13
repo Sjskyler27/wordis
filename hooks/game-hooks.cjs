@@ -64,8 +64,8 @@ const { createCards, drawCard, drawCards } = createCardLogic({
 });
 
 const createTestingHands = () => {
-  const boonKeys = Object.entries(CARD_DEFINITIONS)
-    .filter(([, definition]) => definition.kind === 'boon')
+  const trayModifierKeys = Object.entries(CARD_DEFINITIONS)
+    .filter(([, definition]) => definition.kind === 'trayModifier')
     .map(([key]) => key);
   const attackKeys = Object.entries(CARD_DEFINITIONS)
     .filter(([, definition]) => definition.kind === 'attack')
@@ -73,12 +73,14 @@ const createTestingHands = () => {
 
   return {
     host: {
-      boons: createCards(boonKeys),
-      attacks: createCards(attackKeys)
+      trayModifiers: createCards(trayModifierKeys),
+      attacks: createCards(attackKeys),
+      tactics: []
     },
     opponent: {
-      boons: createCards(boonKeys),
-      attacks: createCards(attackKeys)
+      trayModifiers: createCards(trayModifierKeys),
+      attacks: createCards(attackKeys),
+      tactics: []
     }
   };
 };
@@ -257,20 +259,22 @@ const createInitialState = ({ hostId, players = [hostId], isPrivate = true, over
     },
     cards: {
       host: {
-        boons: drawCards('boon', 1, cardOptions),
+        trayModifiers: drawCards('trayModifier', 1, cardOptions),
         attacks: drawCards('attack', 1, {
           side: 'host',
           scores: { host: 0, opponent: 0 },
           ...cardOptions
-        })
+        }),
+        tactics: []
       },
       opponent: {
-        boons: drawCards('boon', 1, cardOptions),
+        trayModifiers: drawCards('trayModifier', 1, cardOptions),
         attacks: drawCards('attack', 1, {
           side: 'opponent',
           scores: { host: 0, opponent: 0 },
           ...cardOptions
-        })
+        }),
+        tactics: []
       }
     },
     tiles: createOpeningRackPair({ host: 0, opponent: 0 }, tileModifierOptions)
@@ -378,16 +382,16 @@ const useBoon = (roomCode, clientId, cardId, tileId) => {
   }
 
   const side = clientId === state.host ? 'host' : 'opponent';
-  const card = state.cards[side].boons.find((entry) => entry.id === cardId);
+  const card = state.cards[side].trayModifiers.find((entry) => entry.id === cardId);
   if (!card) {
-    return { success: false, error: 'No boons remaining' };
+    return { success: false, error: 'No tray modifiers remaining' };
   }
   if ((state.settings?.disabledCards || []).includes(card.key)) {
-    return { success: false, error: 'That boon is disabled in this room' };
+    return { success: false, error: 'That tray modifier is disabled in this room' };
   }
 
   if (card.effectType === 'clear_negative_modifiers') {
-    state.cards[side].boons = keepTestingHand(state.cards[side].boons, cardId);
+    state.cards[side].trayModifiers = keepTestingHand(state.cards[side].trayModifiers, cardId);
     state.tiles[side] = state.tiles[side].map((entry) => {
       if (!BAD_TILES.includes(entry.status)) {
         return entry;
@@ -399,19 +403,13 @@ const useBoon = (roomCode, clientId, cardId, tileId) => {
     return { success: true, state };
   }
 
-  if (card.effectType === 'gain_rack_clear') {
-    state.cards[side].boons = keepTestingHand(state.cards[side].boons, cardId);
-    state.rackClears[side] = (state.rackClears[side] || 0) + (card.amount || 1);
-    return { success: true, state };
-  }
-
   const tile = state.tiles[side].find((entry) => entry.id === tileId);
   if (!tile) {
-    return { success: false, error: 'That tile cannot take a boon' };
+    return { success: false, error: 'That tile cannot take a tray modifier' };
   }
 
   if (card.effectType === 'delete_tile') {
-    state.cards[side].boons = keepTestingHand(state.cards[side].boons, cardId);
+    state.cards[side].trayModifiers = keepTestingHand(state.cards[side].trayModifiers, cardId);
     state.tiles[side] = replaceSingleTile(state.tiles[side], tileId, side, state.scores, {
       personalModifierEffects: getDisabledTileModifierEffects(state),
       turnCount: getTurnCount(state)
@@ -420,13 +418,13 @@ const useBoon = (roomCode, clientId, cardId, tileId) => {
   }
 
   if (tile.locked) {
-    return { success: false, error: 'That tile cannot take a boon' };
+    return { success: false, error: 'That tile cannot take a tray modifier' };
   }
   if (tile.mustuse) {
-    return { success: false, error: 'That tile cannot take a boon' };
+    return { success: false, error: 'That tile cannot take a tray modifier' };
   }
 
-  state.cards[side].boons = keepTestingHand(state.cards[side].boons, cardId);
+  state.cards[side].trayModifiers = keepTestingHand(state.cards[side].trayModifiers, cardId);
 
   if (card.effectType === 'isolate_tile') {
     state.tiles[side] = rerollRackExceptTile(state.tiles[side], tileId, side, state.scores, {
@@ -437,47 +435,25 @@ const useBoon = (roomCode, clientId, cardId, tileId) => {
   }
 
   if (card.effectType === 'change_letter') {
-  playerCards.value = {
-    ...playerCards.value,
-    [side]: {
-      ...playerCards.value[side],
-      boons: keepTestingHand(hand, cardId)
-    }
-  };
+    const replacementTile = replaceSingleTile(state.tiles[side], tileId, side, state.scores, {
+      personalModifierEffects: getDisabledTileModifierEffects(state),
+      turnCount: getTurnCount(state)
+    }).find((entry) => (
+      entry.id !== tileId &&
+      !state.tiles[side].some((existingTile) => existingTile.id === entry.id)
+    ));
 
+    state.tiles[side] = state.tiles[side].map((tile) => {
+      if (tile.id !== tileId) return tile;
 
-  // may need to be updated to match actual versions in this file
-  if (card.effectType === 'change_letter') {
-  const replacementTile = replaceSingleTile(state.tiles[side], tileId, side, state.scores, {
-    personalModifierEffects: getDisabledTileModifierEffects(state),
-    turnCount: getTurnCount(state)
-  }).find((entry) => (
-    entry.id !== tileId &&
-    !state.tiles[side].some((existingTile) => existingTile.id === entry.id)
-  ));
+      return {
+        ...tile,
+        letter: replacementTile?.letter || tile.letter
+      };
+    });
 
-  state.tiles[side] = state.tiles[side].map((tile) => {
-    if (tile.id !== tileId) return tile;
-
-    return {
-      ...tile,
-      letter: replacementTile?.letter || tile.letter
-    };
-  });
-
-  return { success: true, state };
-}
-
-  playerTiles.value = {
-    ...playerTiles.value,
-    [side]: nextTiles
-  };
-
-  return {
-    success: true,
-    replacementTileId: tileId
-  };
-}
+    return { success: true, state };
+  }
 
   state.tiles[side] = replaceTileWithModifier(state.tiles[side], tileId, card.modifier);
   return { success: true, state };
@@ -490,7 +466,7 @@ const useAttack = (roomCode, clientId, cardId) => {
   }
 
   if (hasOvertimeStarted(state)) {
-    return { success: false, error: 'Overtime only allows boons' };
+    return { success: false, error: 'Overtime only allows tray modifiers' };
   }
 
   const side = clientId === state.host ? 'host' : 'opponent';
@@ -650,7 +626,10 @@ const submitWord = async (roomCode, clientId, word, tileIds, languageCode = 'en'
   }).total;
   const idlePenalty = getIdleScorePenalty(state.tiles[side], tileIds);
   const scoreDelta = wordScore - idlePenalty;
-  const grantedResources = getResourceGrants(selectedTiles);
+  const grantedResources = getResourceGrants(selectedTiles, {
+    includeAttacks: true,
+    includeTactics: false
+  });
 
   state.words[side] = resolvedWord;
   state.history[side].unshift({
@@ -665,7 +644,7 @@ const submitWord = async (roomCode, clientId, word, tileIds, languageCode = 'en'
     netScore: scoreDelta
   };
   state.scores[side] += scoreDelta;
-  state.cards[side].boons.push(...drawCards('boon', grantedResources.boons, getDisabledCardOptions(state)));
+  state.cards[side].trayModifiers.push(...drawCards('trayModifier', grantedResources.trayModifiers, getDisabledCardOptions(state)));
   state.cards[side].attacks.push(...drawCards('attack', grantedResources.attacks, {
     side,
     scores: state.scores,

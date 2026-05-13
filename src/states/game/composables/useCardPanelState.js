@@ -28,37 +28,43 @@ const groupCardsByKey = (cards = []) => {
 export function useCardPanelState({
   myCards,
   attacksEnabled,
-  activeBoonCardId,
+  actionCardKind,
+  activeTrayModifierCardId,
   cardControlsDisabled
 }) {
-  const groupedBoonCards = computed(() => groupCardsByKey(myCards.value.boons));
-  const groupedAttackCards = computed(() => attacksEnabled.value ? groupCardsByKey(myCards.value.attacks) : []);
+  const groupedTrayModifierCards = computed(() => groupCardsByKey(myCards.value.trayModifiers || []));
+  const actionCards = computed(() => {
+    const handKey = actionCardKind.value === 'tactic' ? 'tactics' : 'attacks';
+    return myCards.value[handKey] || [];
+  });
+  const groupedAttackCards = computed(() => attacksEnabled.value ? groupCardsByKey(actionCards.value) : []);
   const controllerCards = computed(() => {
     return [
-      ...groupedBoonCards.value.map((group) => group.card),
+      ...groupedTrayModifierCards.value.map((group) => group.card),
       ...groupedAttackCards.value.map((group) => group.card)
     ];
   });
-  const activeBoonCard = computed(() => {
-    return myCards.value.boons.find((card) => card.id === activeBoonCardId.value) || null;
+  const activeTrayModifierCard = computed(() => {
+    return (myCards.value.trayModifiers || []).find((card) => card.id === activeTrayModifierCardId.value) || null;
   });
-  const visibleAttackCount = computed(() => attacksEnabled.value ? myCards.value.attacks.length : 0);
+  const visibleAttackCount = computed(() => attacksEnabled.value ? actionCards.value.length : 0);
   const cardSummary = computed(() => {
     if (cardControlsDisabled.value) {
       return 'Cards blocked';
     }
 
+    const actionLabel = actionCardKind.value === 'tactic' ? 'Tactic' : 'Attack';
     return attacksEnabled.value
-      ? `${myCards.value.boons.length} Boon · ${visibleAttackCount.value} Attack`
-      : `${myCards.value.boons.length} Boon`;
+      ? `${(myCards.value.trayModifiers || []).length} Tray Modifier · ${visibleAttackCount.value} ${actionLabel}`
+      : `${(myCards.value.trayModifiers || []).length} Tray Modifier`;
   });
-  const hasCardsInHand = computed(() => myCards.value.boons.length > 0 || visibleAttackCount.value > 0);
+  const hasCardsInHand = computed(() => (myCards.value.trayModifiers || []).length > 0 || visibleAttackCount.value > 0);
 
   return {
-    groupedBoonCards,
+    groupedTrayModifierCards,
     groupedAttackCards,
     controllerCards,
-    activeBoonCard,
+    activeTrayModifierCard,
     visibleAttackCount,
     cardSummary,
     hasCardsInHand

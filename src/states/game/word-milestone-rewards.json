@@ -1,10 +1,12 @@
 {
   "5": {
     "attacks": 0,
-    "boons": 1
+    "tactics": 0,
+    "trayModifiers": 1
   },
   "6": {
     "attacks": 1,
-    "boons": 0
+    "tactics": 1,
+    "trayModifiers": 0
   }
 }

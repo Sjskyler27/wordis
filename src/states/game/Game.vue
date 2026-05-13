@@ -37,17 +37,18 @@
         <GameCardsPanel
           :is-mobile="isMobile"
           :card-summary="cardSummary"
-          :active-boon-card="activeBoonCard"
-          :grouped-boon-cards="groupedBoonCards"
+          :active-tray-modifier-card="activeTrayModifierCard"
+          :grouped-tray-modifier-cards="groupedTrayModifierCards"
           :grouped-attack-cards="groupedAttackCards"
           :attacks-enabled="attacksEnabled"
+          :action-card-label="actionCardLabel"
           :card-controls-disabled="cardControlsDisabled"
-          :active-boon-card-id="activeBoonCardId"
+          :active-tray-modifier-card-id="activeTrayModifierCardId"
           :controller-region="controllerRegion"
           :controller-card-cursor-index="controllerCardCursorIndex"
           :controller-mapping="props.controllerMapping"
           :is-controller-connected="props.isControllerConnected"
-          @select-boon="selectBoonCard"
+          @select-tray-modifier="selectTrayModifierCard"
           @use-attack="useAttackCard"
         />
       <button class="pause-button" @click="emit('showSettings')">{{ isPaused ? 'Paused' : 'Pause' }}</button>
@@ -260,7 +261,7 @@ import {
   gameStarted,
   submitWord as submitMultiplayerWord,
   clearRack as clearMultiplayerRack,
-  useBoon as useMultiplayerBoon,
+  useBoon as useMultiplayerTrayModifier,
   useAttack as useMultiplayerAttack,
   playAgain as playMultiplayerAgain,
   resetGame as resetMultiplayer,
@@ -399,7 +400,7 @@ const localMessage = ref('');
 const gameStartedAt = Date.now();
 const savedPastGameIds = ref(new Set());
 const isPaused = ref(false);
-const activeBoonCardId = ref(null);
+const activeTrayModifierCardId = ref(null);
 const invalidWordPulse = ref(0);
 const scorePopPulse = ref(0);
 const scorePopTiles = ref([]);
@@ -472,6 +473,8 @@ const matchOvertimeEnabled = computed(() => {
 const attacksEnabled = computed(() => {
   return !isOvertimeActive.value && (isTestingMode || isTimedSoloMode.value || isMultiRoundMode.value || isBotMode.value || props.isMultiplayer);
 });
+const actionCardKind = computed(() => (isBotMode.value || props.isMultiplayer) ? 'attack' : 'tactic');
+const actionCardLabel = computed(() => actionCardKind.value === 'tactic' ? 'Tactic' : 'Attack');
 const showOpponentLane = computed(() => props.isMultiplayer || isBotMode.value);
 const isSideDrawerMode = computed(() => windowWidth.value < 1250);
 const preferredLanguage = getPreferredLanguage();
@@ -874,8 +877,8 @@ const {
   checkBotWin,
   clearSinglePlayerRack,
   resetSinglePlayerRound,
-  useSinglePlayerBoon,
-  useSinglePlayerAttack,
+  useSinglePlayerTrayModifier,
+  useSinglePlayerActionCard,
   submitSinglePlayerWord,
   submissionPauseOwner: singlePlayerSubmissionPauseOwner,
   overtimePendingSide: singlePlayerOvertimePendingSide,
@@ -1034,10 +1037,11 @@ const submissionPauseOwner = computed(() => {
 const isMySubmissionPaused = computed(() => Boolean(submissionPauseOwner.value) && submissionPauseOwner.value !== mySide.value);
 const isSubmissionPauseActive = computed(() => Boolean(submissionPauseOwner.value));
 
-const myCards = computed(() => playerCards.value[mySide.value] || { boons: [], attacks: [] });
+const myCards = computed(() => playerCards.value[mySide.value] || { trayModifiers: [], attacks: [], tactics: [] });
 const myPlayableCards = computed(() => [
-  ...(myCards.value.boons || []),
-  ...(myCards.value.attacks || [])
+  ...(myCards.value.trayModifiers || []),
+  ...(myCards.value.attacks || []),
+  ...(myCards.value.tactics || [])
 ]);
 const rewardRoundModifierRerollCard = computed(() => {
   return myPlayableCards.value.find((card) => card.effectType === 'reroll_next_round_modifier') || null;
@@ -1070,17 +1074,18 @@ const cardDisabledReason = computed(() => {
 });
 const cardControlsDisabled = computed(() => Boolean(cardDisabledReason.value));
 const {
-  groupedBoonCards,
+  groupedTrayModifierCards,
   groupedAttackCards,
   controllerCards,
-  activeBoonCard,
+  activeTrayModifierCard,
   visibleAttackCount,
   cardSummary,
   hasCardsInHand
 } = useCardPanelState({
   myCards,
   attacksEnabled,
-  activeBoonCardId,
+  actionCardKind,
+  activeTrayModifierCardId,
   cardControlsDisabled
 });
 const myReplayVote = computed(() => playAgainVotes.value[mySide.value]);
@@ -1402,7 +1407,7 @@ const modeSubtitle = computed(() => {
     return 'Play alone against the clock and squeeze out the highest score before time expires.';
   }
 
-  return `Beat the Machine by spelling words fast and using different tiles to get high scoring words. The first to reach the required score wins. Use your attacks to slow the Machine down and your boons to give yourself an advantage!`;
+  return `Beat the Machine by spelling words fast and using different tiles to get high scoring words. The first to reach the required score wins. Use attacks to slow the Machine down and tray modifiers to give yourself an advantage!`;
 });
 const statusHeadline = computed(() => {
   if (showTutorialOverlay.value) {
@@ -1879,9 +1884,9 @@ const failMultiRoundRun = () => {
 };
 
 const applyImmediatePersonalModifierEffects = (modifier) => {
-  const immediateBoons = modifier?.effects?.immediateBoons || 0;
-  const immediateAttacks = modifier?.effects?.immediateAttacks || 0;
-  if (!immediateBoons && !immediateAttacks) {
+  const immediateTrayModifiers = modifier?.effects?.immediateTrayModifiers || 0;
+  const immediateTactics = modifier?.effects?.immediateTactics || 0;
+  if (!immediateTrayModifiers && !immediateTactics) {
     return;
   }
 
@@ -1889,22 +1894,22 @@ const applyImmediatePersonalModifierEffects = (modifier) => {
     ...playerCards.value,
     host: {
       ...playerCards.value.host,
-      boons: [
-        ...(playerCards.value.host?.boons || []),
-        ...drawCards('boon', immediateBoons, {
+      trayModifiers: [
+        ...(playerCards.value.host?.trayModifiers || []),
+        ...drawCards('trayModifier', immediateTrayModifiers, {
           side: 'host',
           allowedCardKeys: getAllowedMultiRoundModifierKeys('card'),
-          heldCards: playerCards.value.host?.boons || []
+          heldCards: playerCards.value.host?.trayModifiers || []
         })
       ],
-      attacks: [
-        ...(playerCards.value.host?.attacks || []),
-        ...drawCards('attack', immediateAttacks, {
-          deck: (isTimedSoloMode.value || isMultiRoundMode.value) ? 'timed_solo' : 'duel',
+      tactics: [
+        ...(playerCards.value.host?.tactics || []),
+        ...drawCards('tactic', immediateTactics, {
+          deck: isMultiRoundMode.value ? 'multi_round' : 'timed_solo',
           side: 'host',
           scores: playerScores.value,
           allowedCardKeys: getAllowedMultiRoundModifierKeys('card'),
-          heldCards: playerCards.value.host?.attacks || []
+          heldCards: playerCards.value.host?.tactics || []
         })
       ]
     }
@@ -2035,7 +2040,9 @@ const discardHeldCard = (card) => {
     return;
   }
 
-  const handKey = card.kind === 'boon' ? 'boons' : 'attacks';
+  const handKey = card.kind === 'trayModifier'
+    ? 'trayModifiers'
+    : card.kind === 'tactic' ? 'tactics' : 'attacks';
   playerCards.value = {
     ...playerCards.value,
     [mySide.value]: {
@@ -2119,7 +2126,7 @@ const validateActiveRoundModifiers = (selectedTiles = []) => {
 };
 
 watch(myCards, () => {
-  if (activeBoonCardId.value && !activeBoonCard.value) {
+  if (activeTrayModifierCardId.value && !activeTrayModifierCard.value) {
     resetActionMode();
   }
 }, { deep: true });
@@ -2321,24 +2328,24 @@ const handleSubmit = async () => {
 };
 
 const resetActionMode = () => {
-  activeBoonCardId.value = null;
+  activeTrayModifierCardId.value = null;
 };
 
-const selectBoonCard = (card) => {
+const selectTrayModifierCard = (card) => {
   if (cardControlsDisabled.value) {
     localMessage.value = cardDisabledReason.value;
     return;
   }
 
-  if (['clear_negative_modifiers', 'gain_rack_clear'].includes(card.effectType)) {
+  if (card.effectType === 'clear_negative_modifiers') {
     if (props.isMultiplayer) {
-      useMultiplayerBoon({ cardId: card.id, tileId: null });
+      useMultiplayerTrayModifier({ cardId: card.id, tileId: null });
       localMessage.value = `Played ${card.label}.`;
       resetActionMode();
       return;
     }
 
-    const result = useSinglePlayerBoon(mySide.value, card.id, null);
+    const result = useSinglePlayerTrayModifier(mySide.value, card.id, null);
     if (result?.success) {
       localMessage.value = result.message || `Played ${card.label}.`;
       resetActionMode();
@@ -2346,13 +2353,13 @@ const selectBoonCard = (card) => {
     return;
   }
 
-  if (activeBoonCardId.value === card.id) {
+  if (activeTrayModifierCardId.value === card.id) {
     resetActionMode();
-    localMessage.value = 'Boon selection cleared.';
+    localMessage.value = 'Tray Modifier selection cleared.';
     return;
   }
 
-  activeBoonCardId.value = card.id;
+  activeTrayModifierCardId.value = card.id;
   localMessage.value = `Ready ${card.label}. Select a tile!`;
   focusControllerTile(controllerTileCursorIndex.value);
 };
@@ -2364,7 +2371,7 @@ const useAttackCard = (card) => {
   }
 
   if (!attacksEnabled.value) {
-    localMessage.value = isOvertimeActive.value ? 'Overtime only allows boons.' : 'Solo sprint does not use attacks.';
+    localMessage.value = isOvertimeActive.value ? 'Overtime only allows tray modifiers.' : 'Solo sprint does not use tactics.';
     return;
   }
 
@@ -2382,7 +2389,7 @@ const useAttackCard = (card) => {
     return;
   }
 
-  const result = useSinglePlayerAttack(mySide.value, card.id);
+  const result = useSinglePlayerActionCard(mySide.value, card.id, card.kind);
   if (result?.success) {
     localMessage.value = result.message || `Played ${card.label}.`;
     resetActionMode();
@@ -2922,7 +2929,7 @@ const handleTileClickWithCards = (payload, side) => {
     return;
   }
 
-  if (activeBoonCard.value) {
+  if (activeTrayModifierCard.value) {
     if (cardControlsDisabled.value) {
       localMessage.value = cardDisabledReason.value;
       resetActionMode();
@@ -2930,19 +2937,19 @@ const handleTileClickWithCards = (payload, side) => {
     }
 
     if (side !== mySide.value) {
-      localMessage.value = 'Boons can only target your own tiles.';
+      localMessage.value = 'Tray modifiers can only target your own tiles.';
       return;
     }
 
     if (props.isMultiplayer) {
-      useMultiplayerBoon({ cardId: activeBoonCard.value.id, tileId: tile.id });
-      localMessage.value = `Played ${activeBoonCard.value.label} on your tile.`;
+      useMultiplayerTrayModifier({ cardId: activeTrayModifierCard.value.id, tileId: tile.id });
+      localMessage.value = `Played ${activeTrayModifierCard.value.label} on your tile.`;
       resetActionMode();
       return;
     }
 
-    if (useSinglePlayerBoon(mySide.value, activeBoonCard.value.id, tile.id)) {
-      localMessage.value = `Played ${activeBoonCard.value.label} on your tile.`;
+    if (useSinglePlayerTrayModifier(mySide.value, activeTrayModifierCard.value.id, tile.id)) {
+      localMessage.value = `Played ${activeTrayModifierCard.value.label} on your tile.`;
       resetActionMode();
     }
     return;
@@ -2967,7 +2974,7 @@ const handleBuiltTileClick = (payload) => {
     return;
   }
 
-  if (activeBoonCard.value) {
+  if (activeTrayModifierCard.value) {
     if (cardControlsDisabled.value) {
       localMessage.value = cardDisabledReason.value;
       resetActionMode();
@@ -2975,18 +2982,18 @@ const handleBuiltTileClick = (payload) => {
     }
 
     if (props.isMultiplayer) {
-      useMultiplayerBoon({ cardId: activeBoonCard.value.id, tileId: tile.id });
-      localMessage.value = `Played ${activeBoonCard.value.label} on your tile.`;
+      useMultiplayerTrayModifier({ cardId: activeTrayModifierCard.value.id, tileId: tile.id });
+      localMessage.value = `Played ${activeTrayModifierCard.value.label} on your tile.`;
       resetActionMode();
       return;
     }
 
-    const result = useSinglePlayerBoon(mySide.value, activeBoonCard.value.id, tile.id);
+    const result = useSinglePlayerTrayModifier(mySide.value, activeTrayModifierCard.value.id, tile.id);
     if (result?.success) {
       if (result.replacementTileId) {
         replaceSelectedTileId(mySide.value, tile.id, result.replacementTileId);
       }
-      localMessage.value = `Played ${activeBoonCard.value.label} on your tile.`;
+      localMessage.value = `Played ${activeTrayModifierCard.value.label} on your tile.`;
       resetActionMode();
     }
     return;
@@ -3004,7 +3011,7 @@ const handleBuiltTileClick = (payload) => {
 };
 
 const handleBuiltTileReorder = ({ fromIndex, toIndex } = {}) => {
-  if (effectiveGameEnded.value || activeBoonCard.value) {
+  if (effectiveGameEnded.value || activeTrayModifierCard.value) {
     return;
   }
 
@@ -3015,7 +3022,7 @@ const handleBuiltTileReorder = ({ fromIndex, toIndex } = {}) => {
 };
 
 const handleRackTileDropOnBuilder = ({ tile, targetIndex, animationSync } = {}, side) => {
-  if (effectiveGameEnded.value || activeBoonCard.value) {
+  if (effectiveGameEnded.value || activeTrayModifierCard.value) {
     return;
   }
 
@@ -3326,8 +3333,8 @@ const restoreCommonSaveState = (common = {}) => {
   playerScores.value = common.scores || { host: 0, opponent: 0 };
   playerTiles.value = common.tiles || { host: [], opponent: [] };
   playerCards.value = common.cards || {
-    host: { boons: [], attacks: [] },
-    opponent: { boons: [], attacks: [] }
+    host: { trayModifiers: [], attacks: [], tactics: [] },
+    opponent: { trayModifiers: [], attacks: [], tactics: [] }
   };
   wordHistory.value = common.wordHistory || { host: [], opponent: [] };
   submittedWords.value = common.submittedWords || { host: '', opponent: '' };
@@ -3492,7 +3499,7 @@ watch(() => myTiles.value.map((tile) => tile.status).join('|'), () => {
 
 watch(() => {
   const cards = myCards.value;
-  return `${cards.boons?.length || 0}|${cards.attacks?.length || 0}`;
+  return `${cards.trayModifiers?.length || 0}|${cards.attacks?.length || 0}|${cards.tactics?.length || 0}`;
 }, (cardCounts) => {
   if (!isTutorialMultiRound.value || cardCounts === '0|0') {
     return;

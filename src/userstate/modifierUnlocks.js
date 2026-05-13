@@ -22,7 +22,7 @@ export const MODIFIER_UNLOCK_TYPES = {
 };
 
 export const TILE_MODIFIER_GROUPS = {
-  good: ['gold', 'firsttile', 'royalPear', 'twinTile', 'glassTile', 'cornucopiaTile', 'bankTile', 'gainboon', 'gainattack'],
+  good: ['gold', 'firsttile', 'royalPear', 'twinTile', 'glassTile', 'cornucopiaTile', 'bankTile', 'gainTrayModifier', 'gainAttack', 'gainTactic'],
   bad: ['zeroTile', 'mustuse', 'locked3', 'burningTile', 'rustingTile', 'lightningTile', 'barricadeTile', 'bagTile'],
   neutral: ['yinYang', 'ghostTile', 'bloodTile', 'wild', 'shimmer', 'voidTile', 'hourglassTile', 'waterTile', 'leecherTile']
 };
@@ -36,8 +36,9 @@ export const MODIFIER_UNLOCK_DISPLAY_NAMES = {
     glassTile: 'Glass',
     cornucopiaTile: 'Cornucopia',
     bankTile: 'Bank',
-    gainboon: 'Boon Tile',
-    gainattack: 'Attack Tile',
+    gainTrayModifier: 'Tray Modifier Tile',
+    gainAttack: 'Attack Tile',
+    gainTactic: 'Tactic Tile',
     zeroTile: 'Zero',
     mustuse: 'Must Use',
     locked3: 'Locked',
@@ -100,8 +101,8 @@ export const MODIFIER_UNLOCK_DISPLAY_NAMES = {
     time_reserve: 'Time Reserve',
     speedy: 'Speedy Multiplier',
     speedy_addition: 'Speedy Addition',
-    boon_cache: 'Boon Cache',
-    attack_cache: 'Attack Cache',
+    boon_cache: 'Tray Cache',
+    attack_cache: 'Tactic Cache',
     bright_letters: 'Bright Letters',
     must_shield: 'Must Shield',
     burn_shield: 'Burn Shield',
@@ -685,7 +686,7 @@ export const getModifierUnlockCatalog = (state = readLocalModifierUnlockState())
     key,
     label: getLabel(MODIFIER_UNLOCK_TYPES.CARD, key),
     description: getDefinition(MODIFIER_UNLOCK_TYPES.CARD, key)?.description || '',
-    group: getDefinition(MODIFIER_UNLOCK_TYPES.CARD, key)?.kind || 'boon',
+    group: getDefinition(MODIFIER_UNLOCK_TYPES.CARD, key)?.kind || 'trayModifier',
     unlocked: isModifierUnlocked(MODIFIER_UNLOCK_TYPES.CARD, key, state)
   }))
 });

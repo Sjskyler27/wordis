@@ -87,7 +87,7 @@
       <!-- <section class="message-card">
         <span class="kicker">Rewards</span>
         <strong>Personal modifiers are not cards.</strong>
-        <p>They stack across the run and can change tile values, modifier odds, word-length scoring, or grant immediate boons and time cards.</p>
+        <p>They stack across the run and can change tile values, modifier odds, word-length scoring, or grant immediate tray modifiers and tactics.</p>
       </section> -->
       <section class="reference-section">
         <div class="reference-header">
@@ -247,8 +247,8 @@ import './card-definitions.cjs';
 
 const {
   CARD_DEFINITIONS = {},
-  BOON_CARD_KEYS = [],
-  MULTI_ROUND_ATTACK_CARD_KEYS = []
+  TRAY_MODIFIER_CARD_KEYS = [],
+  MULTI_ROUND_TACTIC_CARD_KEYS = []
 } = globalThis.__wordisCardDefinitions || {};
 
 const emit = defineEmits(['singleplayer', 'type']);
@@ -261,7 +261,7 @@ const selectedDifficulty = ref(isMultiRoundDifficultyUnlocked(savedDifficulty, d
 const selectedReferenceType = ref('personal');
 const selectedPersonalTier = ref('common');
 const selectedRoundDifficulty = ref('easy');
-const selectedCardKind = ref('boon');
+const selectedCardKind = ref('trayModifier');
 const screenRoot = ref(null);
 const controllerFocusIndex = ref(0);
 const isExiting = ref(false);
@@ -387,20 +387,20 @@ const buildCardEntries = (keys = []) => {
 };
 const cardGroups = computed(() => ([
   {
-    kind: 'boon',
-    label: 'Boons',
-    cards: buildCardEntries(BOON_CARD_KEYS)
+    kind: 'trayModifier',
+    label: 'Tray Modifiers',
+    cards: buildCardEntries(TRAY_MODIFIER_CARD_KEYS)
   },
   {
-    kind: 'attack',
-    label: 'Attacks',
-    cards: buildCardEntries(MULTI_ROUND_ATTACK_CARD_KEYS)
+    kind: 'tactic',
+    label: 'Tactics',
+    cards: buildCardEntries(MULTI_ROUND_TACTIC_CARD_KEYS)
   }
 ]));
 const activeCardGroup = computed(() => {
   return cardGroups.value.find((group) => group.kind === selectedCardKind.value)
     || cardGroups.value[0]
-    || { kind: 'boon', label: 'Boons', cards: [] };
+    || { kind: 'trayModifier', label: 'Tray Modifiers', cards: [] };
 });
 const formatCardDetail = (card) => {
   if (card.amount) {
@@ -866,24 +866,24 @@ onBeforeUnmount(() => {
   color: #ffdf86;
 }
 
-.modifier-card.card-kind-boon,
-.tier-heading.card-kind-boon {
+.modifier-card.card-kind-trayModifier,
+.tier-heading.card-kind-trayModifier {
   background: linear-gradient(180deg, rgba(68, 160, 138, 0.32), rgba(28, 92, 84, 0.26));
   border-color: rgba(142, 255, 222, 0.3);
 }
 
-.modifier-card.card-kind-attack,
-.tier-heading.card-kind-attack {
+.modifier-card.card-kind-tactic,
+.tier-heading.card-kind-tactic {
   background: linear-gradient(180deg, rgba(168, 83, 111, 0.34), rgba(104, 34, 65, 0.28));
   border-color: rgba(255, 154, 184, 0.32);
 }
 
-.card-kind-boon .modifier-pill {
+.card-kind-trayModifier .modifier-pill {
   background: rgba(142, 255, 222, 0.18);
   color: #a6ffe5;
 }
 
-.card-kind-attack .modifier-pill {
+.card-kind-tactic .modifier-pill {
   background: rgba(255, 154, 184, 0.18);
   color: #ffb8ca;
 }

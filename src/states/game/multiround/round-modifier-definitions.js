@@ -47,7 +47,7 @@ export const ROUND_MODIFIER_DEFINITIONS = {
   no_cards: {
     key: 'no_cards',
     label: 'No Cards',
-    description: 'Boons and attacks cannot be played this round.',
+    description: 'Cards cannot be played this round.',
     difficulty: ROUND_MODIFIER_DIFFICULTIES.MEDIUM,
     force_test: false,
     cantCombineWith: [],

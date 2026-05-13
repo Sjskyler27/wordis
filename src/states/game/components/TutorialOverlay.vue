@@ -96,8 +96,9 @@ const sampleLettersByStatus = {
   locked3: 'L',
   ghostTile: 'R',
   burningTile: 'S',
-  gainboon: 'G',
-  gainattack: 'T'
+  gainTrayModifier: 'G',
+  gainAttack: 'A',
+  gainTactic: 'T'
 };
 const titleByStatus = {
   firsttile: 'First Tile',
@@ -110,8 +111,9 @@ const titleByStatus = {
   locked3: 'Locked Tile',
   ghostTile: 'Ghost Tile',
   burningTile: 'Burn Tile',
-  gainboon: 'Boon Tile',
-  gainattack: 'Attack Tile'
+  gainTrayModifier: 'Tray Modifier Tile',
+  gainAttack: 'Attack Tile',
+  gainTactic: 'Tactic Tile'
 };
 
 const formatModifierTitle = (status = 'normal') => {

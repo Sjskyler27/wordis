@@ -243,13 +243,15 @@ const unpackCardsBySide = (cardsBySide = {}) => ({
 });
 
 const packCardHand = (hand = {}) => ({
-  b: packCards(hand.boons || []),
-  a: packCards(hand.attacks || [])
+  tm: packCards(hand.trayModifiers || []),
+  a: packCards(hand.attacks || []),
+  t: packCards(hand.tactics || [])
 });
 
 const unpackCardHand = (hand = {}) => ({
-  boons: unpackCards(hand.b || []),
-  attacks: unpackCards(hand.a || [])
+  trayModifiers: unpackCards(hand.tm || []),
+  attacks: unpackCards(hand.a || []),
+  tactics: unpackCards(hand.t || [])
 });
 
 const packCards = (cards = []) => cards.map((card) => ({

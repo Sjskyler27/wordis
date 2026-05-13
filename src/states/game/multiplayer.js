@@ -45,8 +45,8 @@ export const rackClears = ref({
   opponent: 2
 });
 export const playerCards = ref({
-  host: { boons: [], attacks: [] },
-  opponent: { boons: [], attacks: [] }
+  host: { trayModifiers: [], attacks: [], tactics: [] },
+  opponent: { trayModifiers: [], attacks: [], tactics: [] }
 });
 export const isPrivateRoom = ref(true);
 export const availableLobbies = ref([]);
@@ -269,8 +269,8 @@ export const resetGame = () => {
     opponent: 2
   };
   playerCards.value = {
-    host: { boons: [], attacks: [] },
-    opponent: { boons: [], attacks: [] }
+    host: { trayModifiers: [], attacks: [], tactics: [] },
+    opponent: { trayModifiers: [], attacks: [], tactics: [] }
   };
   isPrivateRoom.value = true;
   availableLobbies.value = [];

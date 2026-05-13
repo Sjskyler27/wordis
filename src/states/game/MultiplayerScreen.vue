@@ -164,7 +164,7 @@
 
         <div v-else-if="selectedSettingsTab === 'cards'" class="settings-panel">
           <div class="settings-subhead">
-            <strong>Boons</strong>
+            <strong>Tray Modifiers</strong>
             <span>{{ enabledBoonCount }}/{{ boonCardOptions.length }} enabled</span>
           </div>
           <div class="option-grid">
@@ -172,7 +172,7 @@
               v-for="card in boonCardOptions"
               :key="card.key"
               type="button"
-              class="option-card boon-card-option"
+              class="option-card tray-modifier-card-option"
               :class="{ disabled: isCardDisabled(card.key) }"
               :disabled="isConnecting || !isSocketConnected"
               @click="toggleCard(card.key)"
@@ -236,7 +236,7 @@ import './card-definitions.cjs';
 
 const {
   CARD_DEFINITIONS = {},
-  BOON_CARD_KEYS = [],
+  TRAY_MODIFIER_CARD_KEYS = [],
   ATTACK_CARD_KEYS = []
 } = globalThis.__wordisCardDefinitions || {};
 
@@ -293,7 +293,7 @@ const cardOptionsFromKeys = (keys = []) => keys
   .map((key) => ({ key, ...(CARD_DEFINITIONS[key] || {}) }))
   .filter((card) => card.label)
   .sort((first, second) => first.label.localeCompare(second.label));
-const boonCardOptions = computed(() => cardOptionsFromKeys(BOON_CARD_KEYS));
+const boonCardOptions = computed(() => cardOptionsFromKeys(TRAY_MODIFIER_CARD_KEYS));
 const attackCardOptions = computed(() => cardOptionsFromKeys(ATTACK_CARD_KEYS));
 const tileModifierOptions = computed(() => Object.entries(MODIFIER_DEFINITIONS)
   .filter(([key, definition]) => key !== 'normal' && (definition.rarityWeight || 0) > 0)

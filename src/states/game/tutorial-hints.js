@@ -35,13 +35,13 @@ export const DEFAULT_TUTORIAL_HINTS = [
   {
     id: 'bad_modifier',
     title: 'Bad Modifier Pulled',
-    body: 'Bad modifiers make your rack harder to use. You can often play around them, clear your rack, or use boons to remove the pressure.',
+    body: 'Bad modifiers make your rack harder to use. You can often play around them, clear your rack, or use tray modifiers to remove the pressure.',
     closeLabel: 'Got It'
   },
   {
     id: 'card_received',
     title: 'Card Received',
-    body: 'You gained a card. Boons help you manipulate your tile, while attacks pressure the other side or give run-specific utility.',
+    body: 'You gained a card. Tray modifiers help your tiles, attacks pressure the other side, and tactics give single-player utility.',
     closeLabel: 'Got It'
   },
   {

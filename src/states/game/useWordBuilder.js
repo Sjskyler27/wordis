@@ -15,8 +15,12 @@ const formatMilestoneReward = (length, options = {}, rewardWordLength = length) 
     labels.push(`+${reward.attacks} ATK`);
   }
 
-  if (reward.boons) {
-    labels.push(`+${reward.boons} BOON`);
+  if (reward.tactics) {
+    labels.push(`+${reward.tactics} TAC`);
+  }
+
+  if (reward.trayModifiers) {
+    labels.push(`+${reward.trayModifiers} TRAY`);
   }
 
   const lengthScoreMultiplier = personalEffects.lengthScoreMultiplier?.[length] || personalEffects.lengthScoreMultiplier?.[String(length)] || 0;

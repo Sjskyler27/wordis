@@ -87,16 +87,19 @@ export const useSinglePlayerGame = ({
     hard: 13250
   };
   const modifierProfile = () => (isTimedSoloMode.value || isMultiRoundMode?.value) ? 'solo' : 'bot';
-  const attackDeck = () => {
+  const tacticDeck = () => {
     if (isMultiRoundMode?.value) {
       return 'multi_round';
     }
 
     return isTimedSoloMode.value ? 'timed_solo' : 'duel';
   };
-  const shouldDrawAttacks = () => true; // may set to false for multiplayer if too rough
+  const shouldDrawAttacks = () => botEnabled.value;
+  const shouldDrawTactics = () => !botEnabled.value;
   const getHeldCards = (side, kind) => {
-    const handKey = kind === 'boon' ? 'boons' : 'attacks';
+    const handKey = kind === 'trayModifier'
+      ? 'trayModifiers'
+      : kind === 'tactic' ? 'tactics' : 'attacks';
     return playerCards.value[side]?.[handKey] || [];
   };
   const drawCardsForSide = (kind, count, side, options = {}) => {
@@ -169,21 +172,26 @@ export const useSinglePlayerGame = ({
     }) || {};
   };
   const createTestingHands = () => {
-    const boonKeys = Object.entries(CARD_DEFINITIONS)
-      .filter(([, definition]) => definition.kind === 'boon')
+    const trayModifierKeys = Object.entries(CARD_DEFINITIONS)
+      .filter(([, definition]) => definition.kind === 'trayModifier')
       .map(([key]) => key);
     const attackKeys = Object.entries(CARD_DEFINITIONS)
       .filter(([, definition]) => definition.kind === 'attack')
       .map(([key]) => key);
+    const tacticKeys = Object.entries(CARD_DEFINITIONS)
+      .filter(([, definition]) => definition.kind === 'tactic')
+      .map(([key]) => key);
 
     return {
       host: {
-        boons: createCards(boonKeys),
-        attacks: createCards(attackKeys)
+        trayModifiers: createCards(trayModifierKeys),
+        attacks: createCards(attackKeys),
+        tactics: createCards(tacticKeys)
       },
       opponent: {
-        boons: createCards(boonKeys),
-        attacks: createCards(attackKeys)
+        trayModifiers: createCards(trayModifierKeys),
+        attacks: createCards(attackKeys),
+        tactics: createCards(tacticKeys)
       }
     };
   };
@@ -272,8 +280,9 @@ export const useSinglePlayerGame = ({
           playerCards.value = {
             host: createTestingHands().host,
             opponent: {
-              boons: [],
-              attacks: []
+              trayModifiers: [],
+              attacks: [],
+              tactics: []
             }
           };
           return;
@@ -310,12 +319,14 @@ export const useSinglePlayerGame = ({
         };
         playerCards.value = {
           host: {
-            boons: tutorialPlan.suppressStartingCards ? [] : drawCardsForSide('boon', 1, 'host'),
-            attacks: []
+            trayModifiers: tutorialPlan.suppressStartingCards ? [] : drawCardsForSide('trayModifier', 1, 'host'),
+            attacks: [],
+            tactics: []
           },
           opponent: {
-            boons: [],
-            attacks: []
+            trayModifiers: [],
+            attacks: [],
+            tactics: []
           }
         };
         return;
@@ -331,18 +342,21 @@ export const useSinglePlayerGame = ({
       };
       playerCards.value = {
         host: {
-          boons: drawCardsForSide('boon', 1, 'host'),
+          trayModifiers: drawCardsForSide('trayModifier', 1, 'host'),
           attacks: shouldDrawAttacks() ? drawCardsForSide('attack', 1, 'host', {
-            deck: attackDeck(),
+            scores: playerScores.value
+          }) : [],
+          tactics: shouldDrawTactics() ? drawCardsForSide('tactic', 1, 'host', {
+            deck: tacticDeck(),
             scores: playerScores.value
           }) : []
         },
         opponent: {
-          boons: drawCardsForSide('boon', 1, 'opponent'),
+          trayModifiers: drawCardsForSide('trayModifier', 1, 'opponent'),
           attacks: botEnabled.value ? drawCardsForSide('attack', 1, 'opponent', {
-            deck: attackDeck(),
             scores: playerScores.value
-          }) : []
+          }) : [],
+          tactics: []
         }
       };
     }
@@ -415,7 +429,8 @@ export const useSinglePlayerGame = ({
     const botIdlePenalty = getIdleScorePenalty(botTiles, selectedBotTiles.map((tile) => tile.id));
     const botScoreDelta = botScoreDetails.total - botIdlePenalty;
     const grantedResources = getResourceGrants(selectedBotTiles, {
-      includeAttacks: shouldDrawAttacks()
+      includeAttacks: true,
+      includeTactics: false
     });
 
     submittedWords.value = {
@@ -451,17 +466,17 @@ export const useSinglePlayerGame = ({
     playerCards.value = {
       host: playerCards.value.host,
       opponent: {
-        boons: [
-          ...playerCards.value.opponent.boons,
-          ...drawCardsForSide('boon', grantedResources.boons, 'opponent')
+        trayModifiers: [
+          ...playerCards.value.opponent.trayModifiers,
+          ...drawCardsForSide('trayModifier', grantedResources.trayModifiers, 'opponent')
         ],
         attacks: [
           ...playerCards.value.opponent.attacks,
           ...drawCardsForSide('attack', grantedResources.attacks, 'opponent', {
-            deck: attackDeck(),
             scores: playerScores.value
           })
-        ]
+        ],
+        tactics: playerCards.value.opponent.tactics || []
       }
     };
 
@@ -533,7 +548,8 @@ export const useSinglePlayerGame = ({
     });
     const scoreDelta = scoreDetails.total - idlePenalty;
     const grantedResources = getResourceGrants(selectedTiles, {
-      includeAttacks: shouldDrawAttacks()
+      includeAttacks: shouldDrawAttacks(),
+      includeTactics: shouldDrawTactics()
     });
 
     submittedWords.value = {
@@ -571,14 +587,20 @@ export const useSinglePlayerGame = ({
     };
     playerCards.value = {
       host: {
-        boons: [
-          ...playerCards.value.host.boons,
-          ...drawCardsForSide('boon', grantedResources.boons, 'host')
+        trayModifiers: [
+          ...playerCards.value.host.trayModifiers,
+          ...drawCardsForSide('trayModifier', grantedResources.trayModifiers, 'host')
         ],
         attacks: [
           ...playerCards.value.host.attacks,
           ...drawCardsForSide('attack', grantedResources.attacks, 'host', {
-            deck: attackDeck(),
+            scores: playerScores.value
+          })
+        ],
+        tactics: [
+          ...(playerCards.value.host.tactics || []),
+          ...drawCardsForSide('tactic', grantedResources.tactics, 'host', {
+            deck: tacticDeck(),
             scores: playerScores.value
           })
         ]
@@ -703,19 +725,25 @@ export const useSinglePlayerGame = ({
       playerCards.value = {
         ...playerCards.value,
         [side]: {
-          boons: drawCardsForSide('boon', 1, side),
-          attacks: []
+          trayModifiers: drawCardsForSide('trayModifier', 1, side),
+          attacks: shouldDrawAttacks() ? drawCardsForSide('attack', 1, side, {
+            scores: playerScores.value
+          }) : [],
+          tactics: shouldDrawTactics() ? drawCardsForSide('tactic', 1, side, {
+            deck: tacticDeck(),
+            scores: playerScores.value
+          }) : []
         }
       };
     }
     return true;
   };
 
-  const useSinglePlayerBoon = (side, cardId, tileId) => {
-    const hand = playerCards.value[side]?.boons || [];
+  const useSinglePlayerTrayModifier = (side, cardId, tileId) => {
+    const hand = playerCards.value[side]?.trayModifiers || [];
     const card = hand.find((entry) => entry.id === cardId);
     if (!card) {
-      localMessage.value = 'That boon is no longer available.';
+      localMessage.value = 'That tray modifier is no longer available.';
       return false;
     }
 
@@ -724,7 +752,7 @@ export const useSinglePlayerGame = ({
         ...playerCards.value,
         [side]: {
           ...playerCards.value[side],
-          boons: keepTestingHand(hand, cardId)
+          trayModifiers: keepTestingHand(hand, cardId)
         }
       };
 
@@ -745,28 +773,9 @@ export const useSinglePlayerGame = ({
       return { success: true };
     }
 
-    if (card.effectType === 'gain_rack_clear') {
-      playerCards.value = {
-        ...playerCards.value,
-        [side]: {
-          ...playerCards.value[side],
-          boons: keepTestingHand(hand, cardId)
-        }
-      };
-      rackClears.value = {
-        ...rackClears.value,
-        [side]: (rackClears.value[side] || 0) + (card.amount || 1)
-      };
-
-      return {
-        success: true,
-        message: `Gained ${card.amount || 1} rack clear.`
-      };
-    }
-
     const tile = playerTiles.value[side]?.find((entry) => entry.id === tileId);
     if (!tile) {
-      localMessage.value = 'That tile cannot take a boon.';
+      localMessage.value = 'That tile cannot take a tray modifier.';
       return false;
     }
 
@@ -775,7 +784,7 @@ export const useSinglePlayerGame = ({
         ...playerCards.value,
         [side]: {
           ...playerCards.value[side],
-          boons: keepTestingHand(hand, cardId)
+          trayModifiers: keepTestingHand(hand, cardId)
         }
       };
       const nextTiles = replaceSingleTile(playerTiles.value[side], tileId, side, playerScores.value, withModifierUnlocks({
@@ -798,7 +807,7 @@ export const useSinglePlayerGame = ({
       ...playerCards.value,
       [side]: {
         ...playerCards.value[side],
-        boons: keepTestingHand(hand, cardId)
+        trayModifiers: keepTestingHand(hand, cardId)
       }
     };
 
@@ -835,11 +844,11 @@ export const useSinglePlayerGame = ({
     }
 
     if (tile.locked) {
-      localMessage.value = 'That tile cannot take a boon.';
+      localMessage.value = 'That tile cannot take a tray modifier.';
       return false;
     }
     if (tile.status === "mustuse") {
-      localMessage.value = 'That tile cannot take a boon.';
+      localMessage.value = 'That tile cannot take a tray modifier.';
       return false;
     }
 
@@ -847,7 +856,7 @@ export const useSinglePlayerGame = ({
       ...playerCards.value,
       [side]: {
         ...playerCards.value[side],
-        boons: keepTestingHand(hand, cardId)
+        trayModifiers: keepTestingHand(hand, cardId)
       }
     };
 
@@ -872,26 +881,28 @@ export const useSinglePlayerGame = ({
     return { success: true };
   };
 
-  const useSinglePlayerAttack = (side, cardId) => {
+  const useSinglePlayerActionCard = (side, cardId, kind = 'attack') => {
     if (overtimeTrailingSide()) {
-      localMessage.value = 'Overtime only allows boons.';
+      localMessage.value = 'Overtime only allows tray modifiers.';
       return false;
     }
 
     const opponentSide = side === 'host' ? 'opponent' : 'host';
-    const hand = playerCards.value[side]?.attacks || [];
+    const handKey = kind === 'tactic' ? 'tactics' : 'attacks';
+    const cardTypeLabel = kind === 'tactic' ? 'tactic' : 'attack';
+    const hand = playerCards.value[side]?.[handKey] || [];
     const card = hand.find((entry) => entry.id === cardId);
     const restoreAttackCard = () => {
       playerCards.value = {
         ...playerCards.value,
         [side]: {
           ...playerCards.value[side],
-          attacks: hand
+          [handKey]: hand
         }
       };
     };
     if (!card) {
-      localMessage.value = 'That attack is no longer available.';
+      localMessage.value = `That ${cardTypeLabel} is no longer available.`;
       return false;
     }
 
@@ -904,14 +915,26 @@ export const useSinglePlayerGame = ({
       ...playerCards.value,
       [side]: {
         ...playerCards.value[side],
-        attacks: keepTestingHand(hand, cardId)
+        [handKey]: keepTestingHand(hand, cardId)
       }
     };
 
     if (card.multiRoundOnly && !isMultiRoundMode?.value) {
-      localMessage.value = 'That attack only works in multi-round.';
+      localMessage.value = `That ${cardTypeLabel} only works in multi-round.`;
       restoreAttackCard();
       return false;
+    }
+
+    if (card.effectType === 'gain_rack_clear') {
+      rackClears.value = {
+        ...rackClears.value,
+        [side]: (rackClears.value[side] || 0) + (card.amount || 1)
+      };
+
+      return {
+        success: true,
+        message: `Gained ${card.amount || 1} rack clear.`
+      };
     }
 
     if (card.effectType === 'reroll_next_round_modifier') {
@@ -1049,8 +1072,8 @@ export const useSinglePlayerGame = ({
     checkBotWin,
     clearSinglePlayerRack,
     resetSinglePlayerRound,
-    useSinglePlayerBoon,
-    useSinglePlayerAttack,
+    useSinglePlayerTrayModifier,
+    useSinglePlayerActionCard,
     submitSinglePlayerWord,
     submissionPauseOwner,
     overtimePendingSide,

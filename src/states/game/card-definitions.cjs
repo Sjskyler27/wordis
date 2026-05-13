@@ -1,6 +1,6 @@
 const CARD_DEFINITIONS = {
   boon_delete_tile: {
-    kind: 'boon',
+    kind: 'trayModifier',
     label: 'Delete Tile',
     description: 'Delete one of your tiles and draw a replacement.',
     rarityWeight: 0.35,
@@ -14,7 +14,7 @@ const CARD_DEFINITIONS = {
     }
   },
   boon_isolate_tile: {
-    kind: 'boon',
+    kind: 'trayModifier',
     label: 'Keep Only',
     description: 'Keep the chosen tile and redraw every other tile on your rack.',
     rarityWeight: 0.55,
@@ -28,7 +28,7 @@ const CARD_DEFINITIONS = {
     }
   },
   boon_clear_negative: {
-    kind: 'boon',
+    kind: 'trayModifier',
     label: 'Cleanse',
     description: 'Remove all negative modifiers from your rack.',
     rarityWeight: 0.48,
@@ -42,7 +42,7 @@ const CARD_DEFINITIONS = {
     }
   },
   boon_extra_clear: {
-    kind: 'boon',
+    kind: 'tactic',
     label: 'Extra Clear',
     description: 'Gain one extra rack clear.',
     rarityWeight: 0.42,
@@ -57,7 +57,7 @@ const CARD_DEFINITIONS = {
     }
   },
   boon_firsttile: {
-    kind: 'boon',
+    kind: 'trayModifier',
     label: 'First Tile',
     description: 'Give one of your tiles the first-tile bonus. +10',
     rarityWeight: .68,
@@ -72,7 +72,7 @@ const CARD_DEFINITIONS = {
     }
   },
   boon_wild: {
-    kind: 'boon',
+    kind: 'trayModifier',
     label: 'Wild',
     description: 'Turn one of your tiles into a wild.',
     rarityWeight: 0.68,
@@ -87,14 +87,14 @@ const CARD_DEFINITIONS = {
     }
   },
   boon_newLetter: {
-    kind: 'boon',
+    kind: 'trayModifier',
     label: 'New Letter',
     description: 'Turn one of your tiles into a new letter.',
     rarityWeight: 0.78,
     effectType: 'change_letter',
   },
   boon_gold: {
-    kind: 'boon',
+    kind: 'trayModifier',
     label: 'Gold',
     description: 'Give one of your tiles the gold modifier.',
     rarityWeight: 0.25,
@@ -154,7 +154,7 @@ const CARD_DEFINITIONS = {
     }
   },
   boon_ghostTile: {
-    kind: 'boon',
+    kind: 'trayModifier',
     label: 'Ghost Tile',
     description: 'Give a tile the ghostTile modifier. + 3',
     rarityWeight: 0.62,
@@ -169,7 +169,7 @@ const CARD_DEFINITIONS = {
     }
   },
   boon_pair: {
-    kind: 'boon',
+    kind: 'trayModifier',
     label: 'Lost Royalty',
     description: 'Give a tile the royal pair modifier.',
     rarityWeight: 0.32,
@@ -184,7 +184,7 @@ const CARD_DEFINITIONS = {
       }
   },
   attack_pause_submissions: {
-    kind: 'attack',
+    kind: 'tactic',
     label: 'Pause Submissions',
     description: 'Stop your opponent from submitting until you submit a word. Cannot be played while another pause is active.',
     rarityWeight: 0.18,
@@ -199,7 +199,7 @@ const CARD_DEFINITIONS = {
     }
   },
   attack_pause_time: {
-    kind: 'attack',
+    kind: 'tactic',
     label: 'Pause Time',
     description: 'Pause the clock until your next word.',
     rarityWeight: 0.32,
@@ -214,7 +214,7 @@ const CARD_DEFINITIONS = {
     }
   },
   attack_gain_time: {
-    kind: 'attack',
+    kind: 'tactic',
     label: 'Gain Time',
     description: 'Add 10 seconds to the timer.',
     rarityWeight: .8,
@@ -230,7 +230,7 @@ const CARD_DEFINITIONS = {
     }
   },
   attack_reduce_bad_modifiers: {
-    kind: 'attack',
+    kind: 'tactic',
     label: 'Clean Odds',
     description: 'Lower the chance of pulling bad tiles (by a hair)',
     rarityWeight: 0.78,
@@ -246,7 +246,7 @@ const CARD_DEFINITIONS = {
     }
   },
   attack_reroll_next_round_modifier: {
-    kind: 'attack',
+    kind: 'tactic',
     label: 'Reroll Round',
     description: "Reroll the next round's modifiers.",
     rarityWeight: 0.82,
@@ -261,7 +261,7 @@ const CARD_DEFINITIONS = {
     }
   },
   attack_reroll_personal_modifier_rewards: {
-    kind: 'attack',
+    kind: 'tactic',
     label: 'Reroll Rewards',
     description: 'Reroll the current personal modifier reward choices.',
     rarityWeight: 0.68,
@@ -293,11 +293,10 @@ const CARD_DEFINITIONS = {
   }
 };
 
-const BOON_CARD_KEYS = [
+const TRAY_MODIFIER_CARD_KEYS = [
   'boon_delete_tile',
   'boon_isolate_tile',
   'boon_clear_negative',
-  'boon_extra_clear',
   'boon_firsttile',
   'boon_wild',
   'boon_newLetter',
@@ -312,20 +311,22 @@ const ATTACK_CARD_KEYS = [
   'attack_pause_submissions'
 ];
 
-const TIMED_SOLO_ATTACK_CARD_KEYS = ['attack_pause_time', 'attack_gain_time', 'attack_reduce_bad_modifiers'];
-const MULTI_ROUND_ATTACK_CARD_KEYS = [
-  ...TIMED_SOLO_ATTACK_CARD_KEYS,
+const TIMED_SOLO_TACTIC_CARD_KEYS = ['boon_extra_clear', 'attack_pause_time', 'attack_gain_time', 'attack_reduce_bad_modifiers'];
+const MULTI_ROUND_TACTIC_CARD_KEYS = [
+  ...TIMED_SOLO_TACTIC_CARD_KEYS,
   'attack_reroll_next_round_modifier',
   'attack_reroll_personal_modifier_rewards',
   'attack_reduce_round_target'
 ];
+const TACTIC_CARD_KEYS = MULTI_ROUND_TACTIC_CARD_KEYS;
 
 const cardDefinitionsApi = {
   CARD_DEFINITIONS,
-  BOON_CARD_KEYS,
+  TRAY_MODIFIER_CARD_KEYS,
   ATTACK_CARD_KEYS,
-  TIMED_SOLO_ATTACK_CARD_KEYS,
-  MULTI_ROUND_ATTACK_CARD_KEYS
+  TACTIC_CARD_KEYS,
+  TIMED_SOLO_TACTIC_CARD_KEYS,
+  MULTI_ROUND_TACTIC_CARD_KEYS
 };
 
 if (typeof globalThis !== 'undefined') {
