@@ -318,7 +318,11 @@ import {
   makePastGameId,
   savePastGame
 } from '../../userstate/pastGames.js';
-import { saveMultiRoundHighScore } from '../../userstate/multiRoundHighScores.js';
+import {
+  calculateMultiRoundScore,
+  readLocalMultiRoundHighScores,
+  saveMultiRoundHighScore
+} from '../../userstate/multiRoundHighScores.js';
 import { unlockNextDifficultyForWonRun } from '../../userstate/multiRoundDifficultyUnlocks.js';
 import {
   MODIFIER_UNLOCK_TYPES,
@@ -1104,10 +1108,27 @@ const multiRoundHistorySummary = computed(() => {
     return null;
   }
 
+  const completedRounds = multiRoundRun.completedRounds.value || [];
+  const failedRound = multiRoundRun.failureSummary.value;
+  const scoreSummary = calculateMultiRoundScore({
+    completedRounds,
+    failedRound
+  });
+  const difficultyHighScore = readLocalMultiRoundHighScores()[props.multiRoundDifficulty] || null;
+  const displayedHighScore = Math.max(scoreSummary.score, Number(difficultyHighScore?.score || 0));
+
   return {
-    completedRounds: multiRoundRun.completedRounds.value,
-    failedRound: multiRoundRun.failureSummary.value,
-    personalModifiers: multiRoundRun.personalModifiers.value
+    completedRounds,
+    failedRound,
+    personalModifiers: multiRoundRun.personalModifiers.value,
+    scoreSummary,
+    difficulty: props.multiRoundDifficulty,
+    totalRounds: multiRoundRun.totalRounds.value,
+    difficultyHighScore: {
+      ...(difficultyHighScore || {}),
+      score: displayedHighScore
+    },
+    isNewHighScore: scoreSummary.score > Number(difficultyHighScore?.score || 0)
   };
 });
 

@@ -8,28 +8,64 @@
       <p class="history-copy">Every scored word from the match lives here.</p>
 
       <section v-if="multiRoundSummary" class="multi-round-summary">
-        <div class="multi-round-summary-head">
-          <span>Rounds Cleared</span>
-          <strong>{{ multiRoundSummary.completedRounds.length }}</strong>
+        <div class="multi-round-score-grid">
+          <div class="multi-round-score-card">
+            <span>Run Score</span>
+            <strong>{{ formatNumber(multiRoundSummary.scoreSummary?.score) }}</strong>
+            <small>{{ formatScoreBreakdown(multiRoundSummary.scoreSummary) }}</small>
+          </div>
+          <div class="multi-round-score-card">
+            <span>{{ difficultyLabel }} High Score</span>
+            <strong>{{ formatNumber(multiRoundSummary.difficultyHighScore?.score) }}</strong>
+            <small>{{ multiRoundSummary.isNewHighScore ? 'New best' : 'Best saved run' }}</small>
+          </div>
+          <div class="multi-round-score-card">
+            <span>Rounds Cleared</span>
+            <strong>{{ multiRoundSummary.completedRounds.length }}</strong>
+            <small>{{ roundTotalLabel }}</small>
+          </div>
         </div>
         <ul class="multi-round-rounds">
           <li
             v-for="round in multiRoundSummary.completedRounds"
             :key="`multi-round-complete-${round.roundId}-${round.roundNumber}`"
           >
-            <span>{{ round.roundLabel }}</span>
+            <div class="multi-round-round-main">
+              <span>{{ round.roundLabel }}</span>
+              <div v-if="getRoundRewards(round).length" class="round-reward-chips">
+                <span
+                  v-for="reward in getRoundRewards(round)"
+                  :key="`round-reward-${round.roundNumber}-${reward.key}`"
+                  class="round-reward-chip"
+                >
+                  {{ reward.label }}
+                </span>
+              </div>
+            </div>
             <strong>{{ round.score }}/{{ round.targetScore }}</strong>
-            <small>{{ formatTime(round.secondsRemaining) }} left</small>
+            <small class="round-time">{{ formatTime(round.secondsRemaining) }} left</small>
           </li>
           <li v-if="multiRoundSummary.failedRound" class="failed">
-            <span>{{ multiRoundSummary.failedRound.roundLabel }}</span>
+            <div class="multi-round-round-main">
+              <span>{{ multiRoundSummary.failedRound.roundLabel }}</span>
+            </div>
             <strong>{{ multiRoundSummary.failedRound.score }}/{{ multiRoundSummary.failedRound.targetScore }}</strong>
-            <small>failed</small>
+            <small class="round-time">failed</small>
           </li>
         </ul>
-        <div class="multi-round-modifiers">
+        <div class="multi-round-modifiers" :class="{ empty: !personalModifierBadges.length }">
           <span>Personal Modifiers</span>
-          <strong>{{ personalModifierSummary }}</strong>
+          <div class="personal-modifier-badges">
+            <span
+              v-for="modifier in personalModifierBadges"
+              :key="`personal-modifier-${modifier.key}`"
+              class="personal-modifier-badge"
+            >
+              <strong>{{ modifier.label }}</strong>
+              <small v-if="modifier.stacks > 1">x{{ modifier.stacks }}</small>
+            </span>
+            <strong v-if="!personalModifierBadges.length">None yet</strong>
+          </div>
         </div>
       </section>
 
@@ -278,13 +314,25 @@ const normalizeEntry = (entry) => {
 
 const normalizedLeftHistory = computed(() => props.leftHistory.map(normalizeEntry));
 const normalizedRightHistory = computed(() => props.rightHistory.map(normalizeEntry));
-const personalModifierSummary = computed(() => {
+const difficultyLabels = {
+  micro: 'Easy',
+  easy: 'Normal',
+  normal: 'Hard',
+  hard: 'Marathon'
+};
+const difficultyLabel = computed(() => difficultyLabels[props.multiRoundSummary?.difficulty] || 'Difficulty');
+const personalModifierBadges = computed(() => {
   const modifiers = props.multiRoundSummary?.personalModifiers || [];
-  if (!modifiers.length) {
-    return 'None yet';
-  }
 
-  return modifiers.map((modifier) => modifier.label || modifier.key || modifier).join(', ');
+  return modifiers.map((modifier) => ({
+    key: modifier.key || modifier.label || modifier,
+    label: modifier.label || modifier.key || modifier,
+    stacks: Math.max(1, Number(modifier.stacks || 1))
+  }));
+});
+const roundTotalLabel = computed(() => {
+  const totalRounds = props.multiRoundSummary?.totalRounds || props.multiRoundSummary?.difficultyHighScore?.totalRounds || props.multiRoundSummary?.scoreSummary?.rounds?.length || 0;
+  return totalRounds ? `of ${totalRounds}` : 'current run';
 });
 const getBestEntry = (entries = []) => {
   if (!entries.length) {
@@ -329,6 +377,27 @@ const formatTime = (seconds = 0) => {
   const minutes = Math.floor(safeSeconds / 60);
   const remainingSeconds = safeSeconds % 60;
   return `${minutes}:${String(remainingSeconds).padStart(2, '0')}`;
+};
+const formatNumber = (value = 0) => {
+  return Math.max(0, Math.round(Number(value) || 0)).toLocaleString();
+};
+const formatScoreBreakdown = (scoreSummary = {}) => {
+  const timeScore = Math.max(0, Math.round(Number(scoreSummary.timeScore) || 0));
+  const overScore = Math.max(0, Math.round(Number(scoreSummary.overScore) || 0));
+  return `${timeScore} time + ${overScore} over`;
+};
+const getRoundRewards = (round = {}) => {
+  const rewardKeys = round.selectedRewardKeys?.length
+    ? round.selectedRewardKeys
+    : (round.selectedRewardKey ? [round.selectedRewardKey] : []);
+  const rewardLabels = round.selectedRewardLabels?.length
+    ? round.selectedRewardLabels
+    : (round.selectedRewardLabel ? [round.selectedRewardLabel] : []);
+
+  return rewardKeys.map((key, index) => ({
+    key,
+    label: rewardLabels[index] || key
+  })).filter((reward) => reward.key || reward.label);
 };
 
 const focusPlayAgainButton = () => {
@@ -459,15 +528,23 @@ watch(() => props.playAgainDisabled, (disabled, wasDisabled) => {
   border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-.multi-round-summary-head,
-.multi-round-modifiers {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
+.multi-round-score-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 12px;
 }
 
-.multi-round-summary-head span,
+.multi-round-score-card {
+  min-width: 0;
+  display: grid;
+  gap: 5px;
+  padding: 12px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+}
+
+.multi-round-score-card span,
 .multi-round-modifiers span {
   font-size: 0.68rem;
   letter-spacing: 0.12em;
@@ -475,9 +552,16 @@ watch(() => props.playAgainDisabled, (disabled, wasDisabled) => {
   opacity: 0.76;
 }
 
-.multi-round-summary-head strong,
-.multi-round-modifiers strong {
+.multi-round-score-card strong,
+.multi-round-modifiers > strong,
+.personal-modifier-badges > strong {
   color: var(--gold, #ffd265);
+}
+
+.multi-round-score-card small {
+  min-height: 1em;
+  font-size: 0.72rem;
+  opacity: 0.72;
 }
 
 .multi-round-rounds {
@@ -492,10 +576,16 @@ watch(() => props.playAgainDisabled, (disabled, wasDisabled) => {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto auto;
   gap: 10px;
-  align-items: center;
+  align-items: start;
   padding: 9px 10px;
   border-radius: 12px;
   background: rgba(255, 255, 255, 0.06);
+}
+
+.multi-round-round-main {
+  min-width: 0;
+  display: grid;
+  gap: 7px;
 }
 
 .multi-round-rounds li.failed {
@@ -504,6 +594,60 @@ watch(() => props.playAgainDisabled, (disabled, wasDisabled) => {
 
 .multi-round-rounds small {
   opacity: 0.72;
+}
+
+.round-time {
+  white-space: nowrap;
+}
+
+.round-reward-chips,
+.personal-modifier-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.round-reward-chip,
+.personal-modifier-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 210, 101, 0.22);
+  background: rgba(255, 210, 101, 0.12);
+  color: #fff3c0;
+  font-size: 0.62rem;
+  font-weight: 900;
+  line-height: 1.1;
+}
+
+.round-reward-chip {
+  padding: 5px 7px;
+}
+
+.personal-modifier-badge {
+  padding: 7px 9px;
+}
+
+.personal-modifier-badge strong {
+  color: inherit;
+  font-size: 0.66rem;
+}
+
+.personal-modifier-badge small {
+  opacity: 0.72;
+}
+
+.multi-round-modifiers {
+  display: grid;
+  gap: 9px;
+}
+
+.multi-round-modifiers.empty {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
 .history-columns {
@@ -718,6 +862,10 @@ watch(() => props.playAgainDisabled, (disabled, wasDisabled) => {
     grid-template-columns: 1fr;
   }
 
+  .multi-round-score-grid {
+    grid-template-columns: 1fr;
+  }
+
   .history-tile {
     min-width: 50px;
     min-height: 50px;
@@ -752,6 +900,15 @@ watch(() => props.playAgainDisabled, (disabled, wasDisabled) => {
 
   .history-copy {
     font-size: 0.84rem;
+  }
+
+  .multi-round-rounds li {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .round-time {
+    grid-column: 1 / -1;
+    justify-self: end;
   }
 
   .history-column {
