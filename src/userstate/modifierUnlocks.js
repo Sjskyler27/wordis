@@ -462,6 +462,16 @@ const getTilePreview = (key) => {
   };
 };
 
+const getPersonalRoundPairKeys = (personalKey, state) => {
+  const availableKeys = getRemainingKeys(MODIFIER_UNLOCK_TYPES.ROUND, state);
+  if (getDefinition(MODIFIER_UNLOCK_TYPES.PERSONAL, personalKey)?.tier !== 'epic') {
+    return availableKeys;
+  }
+
+  const hardKeys = availableKeys.filter((key) => getDefinition(MODIFIER_UNLOCK_TYPES.ROUND, key)?.difficulty === 'hard');
+  return hardKeys.length ? hardKeys : availableKeys;
+};
+
 const getPairedCandidate = (candidate, state) => {
   const entityId = getModifierEntityId(candidate.type, candidate.key);
   const explicitPair = (MODIFIER_UNLOCK_PAIRINGS[entityId] || [])
@@ -484,7 +494,7 @@ const getPairedCandidate = (candidate, state) => {
   }
 
   if (candidate.type === MODIFIER_UNLOCK_TYPES.PERSONAL) {
-    const availableKeys = getRemainingKeys(MODIFIER_UNLOCK_TYPES.ROUND, state);
+    const availableKeys = getPersonalRoundPairKeys(candidate.key, state);
     const key = availableKeys[Math.floor(Math.random() * availableKeys.length)];
     return key ? { type: MODIFIER_UNLOCK_TYPES.ROUND, key } : null;
   }
