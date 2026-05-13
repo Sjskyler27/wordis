@@ -156,7 +156,7 @@ const CARD_DEFINITIONS = {
   boon_ghostTile: {
     kind: 'boon',
     label: 'Ghost Tile',
-    description: 'Give a random enemy tile the ghostTile modifier. + 3',
+    description: 'Give a tile the ghostTile modifier. + 3',
     rarityWeight: 0.62,
     effectType: 'apply_modifier',
     modifier: 'ghostTile',
