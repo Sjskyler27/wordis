@@ -1,4 +1,13 @@
 # Changelog
+## 0.0.69 - 2026-05-13
+
+Start: 2026-05-13 10:00 EDT
+Stop: 2026-05-13 10:14 EDT
+
+- Reused one forced tile pull path for MUST and Burn round effects.
+- Added reusable personal forced tile pulls and gave Golden Draft a 5% chance per stack to force Gold when none is present.
+- Verified with `node --check` on touched game logic files and `npm run build`.
+
 ## 0.0.68 - 2026-05-12
 
 Start: 2026-05-12 22:00 EDT
