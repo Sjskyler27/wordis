@@ -1728,8 +1728,9 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
 
   const applyModifierToTile = (tile, status = 'normal', options = {}) => {
     const definition = getModifierDefinition(status);
-    const baseScore = letterConfig[tile.letter]?.score || tile.baseScore || tile.score || 0;
-    const tileLetter = definition.effects.wild ? '*' : (tile.baseLetter || tile.letter);
+    const sourceLetter = tile.baseLetter || (tile.letter === '*' ? '' : tile.letter);
+    const baseScore = letterConfig[sourceLetter]?.score || tile.baseScore || tile.score || 0;
+    const tileLetter = definition.effects.wild || status === 'wild' ? '*' : (sourceLetter || tile.letter);
     const nextScore = getModifierStartingScore(definition.effects, baseScore);
     const lockTurns = definition.effects.lockTurns || 0;
     const lockRestoreTile = status === 'locked3' && options.preserveTile
@@ -1745,7 +1746,7 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
     return attachTileAnimationHooks({
       ...tile,
       letter: tileLetter,
-      baseLetter: tile.baseLetter || tile.letter,
+      baseLetter: sourceLetter || tile.baseLetter || tile.letter,
       score: nextScore,
       baseScore,
       bonusScore: definition.effects.bonusScore || 0,

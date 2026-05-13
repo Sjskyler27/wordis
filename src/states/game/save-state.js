@@ -207,7 +207,7 @@ const packTile = (tile = {}) => packTiles([tile])[0] || null;
 
 const unpackTiles = (tiles = []) => tiles.map((tile) => ({
   id: tile.i,
-  letter: tile.l,
+  letter: tile.st === 'wild' ? '*' : tile.l,
   baseLetter: tile.bl,
   score: tile.sc,
   baseScore: tile.bs,
