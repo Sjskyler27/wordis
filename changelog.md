@@ -1,4 +1,21 @@
 # Changelog
+## 0.0.68 - 2026-05-12
+
+Start: 2026-05-12 22:00 EDT
+Stop: 2026-05-12 22:51 EDT
+
+- Suppressed non-reward tutorial hints during reward windows while preserving unseen tile hints for later pulls.
+- Hard-gated tutorial tile pulls so neutral and bad modifiers appear only after their intended rounds.
+- Added card unlock tracking, tile-contingent card unlocks, and card pool filtering.
+- Added difficulty-based tooltip time pause budgets.
+- Added reward reroll counts to the multi-round reward screen.
+- Gated personal modifier unlocks behind prerequisite tile unlocks.
+- Kept Lockstep's locked tiles scoped to the active column.
+- Normalized Wild tile display letters to `*` on pull and save restore.
+- Added first-launch screen bounds calibration with game zoom controls.
+- Forced pending multi-round high scores to sync to Firebase on the next user-state sync.
+- Verified with `npm run build`.
+
 ## 0.0.67 - 2026-05-08
 - added new unlocking system 
 - players start with certain things unlocked and unlock specific ways, 
