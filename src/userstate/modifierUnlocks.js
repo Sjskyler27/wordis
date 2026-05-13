@@ -392,6 +392,16 @@ export const unlockAllModifiers = () => writeLocalModifierUnlockState({
   card: ALL_KEYS_BY_TYPE.card
 });
 
+export const resetModifierUnlocks = () => {
+  const nextState = writeLocalModifierUnlockState(createDefaultUnlockState());
+  if (firebaseEnabled && db && auth?.currentUser?.uid && navigator.onLine) {
+    void update(dbRef(db, `users/${auth.currentUser.uid}/gameData`), {
+      [MODIFIER_UNLOCKS_CLOUD_KEY]: nextState
+    });
+  }
+  return nextState;
+};
+
 const getModifierEntityId = (type, key) => `${type}:${key}`;
 
 const parseModifierEntityId = (entityId = '') => {

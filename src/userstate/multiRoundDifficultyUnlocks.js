@@ -111,6 +111,16 @@ export const unlockAllMultiRoundDifficulties = () => {
   return nextState;
 };
 
+export const resetMultiRoundDifficultyUnlocks = () => {
+  const nextState = writeLocalMultiRoundDifficultyUnlockState(normalizeDifficultyUnlockState());
+  if (firebaseEnabled && db && auth?.currentUser?.uid && navigator.onLine) {
+    void update(dbRef(db, `users/${auth.currentUser.uid}/gameData`), {
+      [MULTI_ROUND_DIFFICULTY_UNLOCK_CLOUD_KEY]: nextState
+    });
+  }
+  return nextState;
+};
+
 export const mergeMultiRoundDifficultyUnlockStates = (...states) => {
   return normalizeDifficultyUnlockState(states.reduce((merged, state) => ({
     v: 1,

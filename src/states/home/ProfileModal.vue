@@ -119,6 +119,7 @@
           <div class="modifier-unlock-actions">
             <button type="button" class="profile-button unlock-all-button" @click="unlockEveryModifier">Unlock All Upgrades</button>
             <button type="button" class="profile-button unlock-all-button secondary" @click="unlockEveryDifficulty">Unlock All Difficulties</button>
+            <button type="button" class="profile-button unlock-all-button reset" @click="resetEveryUnlock">Reset Unlocks</button>
           </div>
         </div>
 
@@ -197,9 +198,13 @@ import {
 import {
   getModifierUnlockCatalog,
   readLocalModifierUnlockState,
+  resetModifierUnlocks,
   unlockAllModifiers
 } from '../../userstate/modifierUnlocks.js';
-import { unlockAllMultiRoundDifficulties } from '../../userstate/multiRoundDifficultyUnlocks.js';
+import {
+  resetMultiRoundDifficultyUnlocks,
+  unlockAllMultiRoundDifficulties
+} from '../../userstate/multiRoundDifficultyUnlocks.js';
 
 const props = defineProps({
   user: Object,
@@ -344,6 +349,11 @@ const unlockEveryModifier = () => {
 
 const unlockEveryDifficulty = () => {
   unlockAllMultiRoundDifficulties();
+};
+
+const resetEveryUnlock = () => {
+  modifierUnlockState.value = resetModifierUnlocks();
+  resetMultiRoundDifficultyUnlocks();
 };
 
 const validateAuthForm = () => {
@@ -723,6 +733,10 @@ h2 {
 
 .unlock-all-button.secondary {
   background: #4f6999;
+}
+
+.unlock-all-button.reset {
+  background: #6b2630;
 }
 
 .modifier-unlock-actions {
