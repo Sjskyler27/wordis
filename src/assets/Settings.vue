@@ -28,6 +28,18 @@
           <label for="effectsVolume">Effects Volume: {{ props.effectsVolume }}</label>
           <input id="effectsVolume" type="range" min="0" max="10" :value="props.effectsVolume" @input="oneffectsVolumeInput" />
         </div>
+        <MusicPlayer
+          :tracks="props.musicTracks"
+          :current-track-id="props.currentMusicTrackId"
+          :is-playing="props.isMusicPlaying"
+          :shuffle-enabled="props.musicShuffleEnabled"
+          @play="emit('musicPlay')"
+          @pause="emit('musicPause')"
+          @next="emit('musicNext')"
+          @previous="emit('musicPrevious')"
+          @shuffle-change="emit('musicShuffleChange', $event)"
+          @track-select="emit('musicTrackSelect', $event)"
+        />
       </section>
 
       <!-- Display -->
@@ -136,6 +148,7 @@ import {
   normalizeControllerMapping
 } from "../controllerMapping.js";
 import ControllerButtonHint from "../states/game/components/ControllerButtonHint.vue";
+import MusicPlayer from "./MusicPlayer.vue";
 
 const props = defineProps({
   volume: Number,
@@ -147,6 +160,16 @@ const props = defineProps({
   joystickSensitivity: Number,
   nativeControllerSupport: Boolean,
   isControllerConnected: Boolean,
+  musicTracks: {
+    type: Array,
+    default: () => []
+  },
+  currentMusicTrackId: {
+    type: String,
+    default: ''
+  },
+  isMusicPlaying: Boolean,
+  musicShuffleEnabled: Boolean,
   controllerMapping: {
     type: Object,
     default: () => ({ ...DEFAULT_CONTROLLER_ACTION_MAPPING })
@@ -173,7 +196,13 @@ const emit = defineEmits([
   "feedback",
   "showTutorial",
   "setTutorialComplete",
-  "resetTutorial"
+  "resetTutorial",
+  "musicPlay",
+  "musicPause",
+  "musicNext",
+  "musicPrevious",
+  "musicShuffleChange",
+  "musicTrackSelect"
 ]);
 
 const activeTab = ref("game");

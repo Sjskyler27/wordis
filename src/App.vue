@@ -55,6 +55,9 @@
       @home="goToHome"
       @playAgain="playAgain"
       @backgroundState="handleBackgroundState"
+      @startBackgroundMusic="startBackgroundMusic"
+      @pauseBackgroundMusic="pauseBackgroundMusic"
+      @stopBackgroundMusic="stopBackgroundMusic"
       @volumeChange="setVolume"
       @musicVolumeChange="setmusicVolume"
       @effectsVolumeChange="seteffectsVolume"
@@ -74,9 +77,19 @@
       :canShowHowToPlay="isGameState"
       :isTutorialComplete="isTutorialComplete"
       :names="names"
+      :musicTracks="musicTracks"
+      :currentMusicTrackId="currentMusicTrack?.id || ''"
+      :isMusicPlaying="isBackgroundMusicPlaying"
+      :musicShuffleEnabled="musicShuffleEnabled"
       @volumeChange="setVolume"
       @musicVolumeChange="setmusicVolume"
       @effectsVolumeChange="seteffectsVolume"
+      @musicPlay="startBackgroundMusic"
+      @musicPause="pauseBackgroundMusic"
+      @musicNext="playNextBackgroundTrack"
+      @musicPrevious="playPreviousBackgroundTrack"
+      @musicShuffleChange="setMusicShuffleEnabled"
+      @musicTrackSelect="selectBackgroundTrack"
       @zoomChange="setZoom"
       @gameZoomChange="setgameZoom"
       @joystickSensitivityChange="setJoystickSensitivity"
@@ -97,6 +110,10 @@
       @close="showSettings = false"></Settings>
       <AuthPrompt v-if="showAuthModal" @close="showAuthModal = false" @loggedIn="userLoggedIn" />
       <AssetLoader :monsterRoster="monsterRoster"/>
+    </div>
+    <div v-if="nowPlayingToastVisible" class="now-playing-toast">
+      <span>Now Playing</span>
+      <strong>{{ nowPlayingToastTitle }}</strong>
     </div>
     <StreamerCode v-if="showStreamerModal" @close="showStreamerModal = false" :passedCode="streamerCode" />
     <Feedback v-if="showFeedback" @close="showFeedback = false"/>
@@ -120,6 +137,7 @@ import Feedback from "./states/home/Feedback.vue";
 import Banner from "/src/assets/Banner.vue";
 import Settings from '/src/assets/Settings.vue'
 import MachineBackground from "./states/game/components/GlobalBackground.vue";
+import { musicTracks } from "./assets/music-tracks.js";
 import {
   loadTutorialHints,
   setAllTutorialHintsViewed,
@@ -290,6 +308,14 @@ const DEFAULT_JOYSTICK_SENSITIVITY = 30;
   const volume = ref(Number(localStorage.getItem('volume') ?? 5))
   const musicVolume = ref(Number(localStorage.getItem('musicVolume') ?? 5))
   const effectsVolume = ref(Number(localStorage.getItem('effectsVolume') ?? 5))
+  const musicShuffleEnabled = ref(JSON.parse(localStorage.getItem('musicShuffleEnabled') ?? 'false'))
+  const storedMusicTrackIndex = Number(localStorage.getItem('musicTrackIndex') ?? 0)
+  const currentMusicTrackIndex = ref(Number.isFinite(storedMusicTrackIndex) ? storedMusicTrackIndex : 0)
+  const isBackgroundMusicPlaying = ref(false)
+  const nowPlayingToastVisible = ref(false)
+  const nowPlayingToastTitle = ref('')
+  let nowPlayingToastTimeoutId = null
+  const backgroundMusic = typeof Audio !== 'undefined' ? new Audio() : null
   const nativeControllerSupport = ref(JSON.parse(localStorage.getItem('nativeControllerSupport')))
   const joystickSensitivity = ref(Number(localStorage.getItem('joystickSensitivity') ?? DEFAULT_JOYSTICK_SENSITIVITY))
   const controllerMapping = ref(loadControllerMapping())
@@ -327,6 +353,126 @@ const DEFAULT_JOYSTICK_SENSITIVITY = 30;
     playerCogStyle: {}
   });
   const backgroundState = ref(createDefaultBackgroundState());
+  const currentMusicTrack = computed(() => musicTracks[currentMusicTrackIndex.value] || musicTracks[0] || null);
+
+  const normalizeMusicTrackIndex = (index) => {
+    if (!musicTracks.length) return 0;
+    return (index + musicTracks.length) % musicTracks.length;
+  };
+
+  currentMusicTrackIndex.value = normalizeMusicTrackIndex(currentMusicTrackIndex.value);
+
+  const syncBackgroundMusicLevel = () => {
+    if (!backgroundMusic) return;
+    backgroundMusic.volume = (volume.value || 0) * (musicVolume.value || 0) / 100;
+  };
+
+  const showNowPlayingToast = (track) => {
+    if (!track) return;
+    nowPlayingToastTitle.value = track.title;
+    nowPlayingToastVisible.value = true;
+    window.clearTimeout(nowPlayingToastTimeoutId);
+    nowPlayingToastTimeoutId = window.setTimeout(() => {
+      nowPlayingToastVisible.value = false;
+    }, 2600);
+  };
+
+  const setBackgroundMusicSource = ({ restart = false } = {}) => {
+    const track = currentMusicTrack.value;
+    if (!backgroundMusic || !track) return track;
+
+    if (backgroundMusic.src !== new URL(track.src, window.location.href).href) {
+      backgroundMusic.src = track.src;
+      backgroundMusic.load();
+      restart = true;
+    }
+
+    if (restart) {
+      backgroundMusic.currentTime = 0;
+    }
+
+    localStorage.setItem('musicTrackIndex', currentMusicTrackIndex.value);
+    return track;
+  };
+
+  const startBackgroundMusic = async (options = {}) => {
+    if (!backgroundMusic || !musicTracks.length) return;
+    syncBackgroundMusicLevel();
+    const wasPlaying = isBackgroundMusicPlaying.value && !backgroundMusic.paused;
+    const previousSrc = backgroundMusic.src;
+    const track = setBackgroundMusicSource({ restart: Boolean(options?.restart) });
+    const trackChanged = previousSrc !== backgroundMusic.src || Boolean(options?.restart);
+
+    if (backgroundMusic.volume <= 0) {
+      isBackgroundMusicPlaying.value = false;
+      return;
+    }
+
+    try {
+      await backgroundMusic.play();
+      isBackgroundMusicPlaying.value = true;
+      if (!wasPlaying || trackChanged) {
+        showNowPlayingToast(track);
+      }
+    } catch (error) {
+      isBackgroundMusicPlaying.value = false;
+    }
+  };
+
+  const pauseBackgroundMusic = () => {
+    if (!backgroundMusic) return;
+    backgroundMusic.pause();
+    isBackgroundMusicPlaying.value = false;
+  };
+
+  const stopBackgroundMusic = () => {
+    if (!backgroundMusic) return;
+    backgroundMusic.pause();
+    backgroundMusic.currentTime = 0;
+    isBackgroundMusicPlaying.value = false;
+  };
+
+  const getNextShuffledTrackIndex = () => {
+    if (musicTracks.length <= 1) return currentMusicTrackIndex.value;
+    let nextIndex = currentMusicTrackIndex.value;
+    while (nextIndex === currentMusicTrackIndex.value) {
+      nextIndex = Math.floor(Math.random() * musicTracks.length);
+    }
+    return nextIndex;
+  };
+
+  const playMusicTrackAtIndex = (index, { restart = true, play = true } = {}) => {
+    currentMusicTrackIndex.value = normalizeMusicTrackIndex(index);
+    const track = setBackgroundMusicSource({ restart });
+
+    if (play) {
+      startBackgroundMusic({ restart: false });
+    } else {
+      showNowPlayingToast(track);
+    }
+  };
+
+  const playNextBackgroundTrack = () => {
+    const nextIndex = musicShuffleEnabled.value
+      ? getNextShuffledTrackIndex()
+      : currentMusicTrackIndex.value + 1;
+    playMusicTrackAtIndex(nextIndex);
+  };
+
+  const playPreviousBackgroundTrack = () => {
+    playMusicTrackAtIndex(currentMusicTrackIndex.value - 1);
+  };
+
+  const selectBackgroundTrack = (trackId) => {
+    const trackIndex = musicTracks.findIndex((track) => track.id === trackId);
+    if (trackIndex === -1) return;
+    playMusicTrackAtIndex(trackIndex);
+  };
+
+  const setMusicShuffleEnabled = (enabled) => {
+    musicShuffleEnabled.value = Boolean(enabled);
+    localStorage.setItem('musicShuffleEnabled', JSON.stringify(musicShuffleEnabled.value));
+  };
 
   const clearLiftedGameUi = () => {
     // console.log('background:app-clear', {
@@ -348,10 +494,12 @@ const DEFAULT_JOYSTICK_SENSITIVITY = 30;
   function setVolume(val) {
     volume.value = val
     localStorage.setItem('volume', val)
+    syncBackgroundMusicLevel()
   }
   function setmusicVolume(val) {
     musicVolume.value = val
     localStorage.setItem('musicVolume', val)
+    syncBackgroundMusicLevel()
   }
   function seteffectsVolume(val) {
     effectsVolume.value = val
@@ -784,6 +932,9 @@ const simulateTab = (reverse = false) => {
       currentState: currentState.value?.__name || currentState.value?.name || 'unknown',
       hasSharedGameId: Boolean(sharedGameId)
     });
+    syncBackgroundMusicLevel();
+    setBackgroundMusicSource();
+    backgroundMusic?.addEventListener('ended', playNextBackgroundTrack);
 
     try {
       stopUserSync = initUserSync(showFirstRunAuthPrompt, (user) => {
@@ -887,6 +1038,9 @@ const simulateTab = (reverse = false) => {
     window.removeEventListener('blur', handleAppWindowBlur);
     document.removeEventListener('freeze', handleAppPageHide);
     cancelAnimationFrame(gamepadAnimationFrameId);
+    backgroundMusic?.removeEventListener('ended', playNextBackgroundTrack);
+    stopBackgroundMusic();
+    window.clearTimeout(nowPlayingToastTimeoutId);
   });
 
   watch(currentState, () => {
@@ -937,6 +1091,49 @@ html {
 }
 img {
   -webkit-user-drag: none;
+}
+
+.now-playing-toast {
+  position: fixed;
+  left: 18px;
+  bottom: 18px;
+  z-index: 10020;
+  display: grid;
+  gap: 7px;
+  max-width: min(360px, calc(100vw - 36px));
+  padding: 14px 16px;
+  border: 1px solid rgba(255, 229, 190, 0.26);
+  border-radius: 12px;
+  background:
+    linear-gradient(180deg, rgba(78, 25, 43, 0.96), rgba(34, 12, 34, 0.96));
+  color: #fff2ce;
+  font-family: 'Press Start 2P', cursive;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.14),
+    0 16px 32px rgba(16, 6, 18, 0.38);
+  animation: now-playing-slide 220ms ease-out;
+}
+
+.now-playing-toast span {
+  color: rgba(255, 244, 223, 0.66);
+  font-size: 0.52rem;
+  line-height: 1.5;
+}
+
+.now-playing-toast strong {
+  font-size: 0.68rem;
+  line-height: 1.6;
+}
+
+@keyframes now-playing-slide {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .crt::before {

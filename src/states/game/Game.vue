@@ -231,7 +231,6 @@
 
 <script setup>
 import { computed, defineProps, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
-import gameMusicUrl from '/public/audio/gameMusic.mp3';
 import tilePickupSoundUrl from '/public/audio/blank.mp3';
 import tilePutBackSoundUrl from '/public/audio/tile_put_back.mp3';
 import tileReplaceSoundUrl from '/public/audio/blank.mp3';
@@ -383,7 +382,10 @@ const emit = defineEmits([
   'musicVolumeChange',
   'effectsVolumeChange',
   'update:botDifficulty',
-  'backgroundState'
+  'backgroundState',
+  'startBackgroundMusic',
+  'pauseBackgroundMusic',
+  'stopBackgroundMusic'
 ]);
 const localMessage = ref('');
 const gameStartedAt = Date.now();
@@ -475,8 +477,6 @@ const multiRoundFinalWordSpent = ref(false);
 const pendingMultiRoundStartingScore = ref(0);
 const speedyWordStartedAt = ref(Date.now());
 const speedyWordClockNow = ref(Date.now());
-const gameMusic = new Audio(gameMusicUrl);
-gameMusic.loop = true;
 const tilePickupSound = new Audio(tilePickupSoundUrl);
 const tilePutBackSound = new Audio(tilePutBackSoundUrl);
 const tileReplaceSound = new Audio(tileReplaceSoundUrl);
@@ -1523,9 +1523,7 @@ const playUiSound = (audio) => {
 };
 
 const syncAudioLevels = () => {
-  const musicLevel = (props.volume || 0) * (props.musicVolume || 0) / 100;
   const effectsLevel = (props.volume || 0) * (props.effectsVolume || 0) / 100;
-  gameMusic.volume = musicLevel;
   tilePickupSound.volume = effectsLevel;
   tilePutBackSound.volume = effectsLevel;
   tileReplaceSound.volume = effectsLevel;
@@ -1542,25 +1540,16 @@ const stopResultAudio = () => {
 };
 
 const stopGameMusic = () => {
-  gameMusic.pause();
-  gameMusic.currentTime = 0;
+  emit('stopBackgroundMusic');
 };
 
 const startGameMusic = async ({ restart = false } = {}) => {
   syncAudioLevels();
-  if (restart) {
-    gameMusic.currentTime = 0;
-  }
-
-  if (gameMusic.volume <= 0 || effectiveGameEnded.value) {
+  if (effectiveGameEnded.value) {
     return;
   }
 
-  try {
-    await gameMusic.play();
-  } catch (error) {
-    // Ignore autoplay failures until the user interacts again.
-  }
+  emit('startBackgroundMusic', { restart });
 };
 
 const playScoreAnimation = async (tileCount) => {
@@ -2143,8 +2132,9 @@ watch(isBotMode, (enabled) => {
 watch(() => [props.volume, props.musicVolume, props.effectsVolume], () => {
   syncAudioLevels();
 
-  if (gameMusic.volume <= 0) {
-    gameMusic.pause();
+  const musicLevel = (props.volume || 0) * (props.musicVolume || 0) / 100;
+  if (musicLevel <= 0) {
+    emit('pauseBackgroundMusic');
     return;
   }
 
@@ -3054,7 +3044,7 @@ const setPauseState = (nextPaused) => {
     stopBotLoop();
     stopSoloTimer();
     stopMultiRoundTimer();
-    gameMusic.pause();
+    emit('pauseBackgroundMusic');
     localMessage.value = 'Game paused.';
     return;
   }
@@ -3161,7 +3151,7 @@ watch(effectiveGameEnded, (ended) => {
   if (ended) {
     stopBotLoop();
     stopSoloTimer();
-    gameMusic.pause();
+    emit('pauseBackgroundMusic');
     showHistoryOverlay.value = false;
     window.clearTimeout(historyOverlayTimeoutId);
     // Let the final word resolve on screen before the results overlay appears.
@@ -3185,7 +3175,7 @@ watch(effectiveGameEnded, async (ended, wasEnded) => {
   }
 
   const audio = historyResultState.value === 'defeat' ? defeatSound : victorySound;
-  gameMusic.pause();
+  emit('pauseBackgroundMusic');
   syncAudioLevels();
   stopResultAudio();
 
