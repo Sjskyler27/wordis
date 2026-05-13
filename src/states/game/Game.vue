@@ -192,6 +192,8 @@
         :selections-chosen="multiRoundRun.rewardSelectionsChosen.value"
         :can-reroll-round-modifiers="canRerollRewardRoundModifiers"
         :can-reroll-reward-choices="canRerollPersonalModifierRewards"
+        :round-modifier-reroll-count="rewardRoundModifierRerollCount"
+        :reward-choice-reroll-count="personalModifierRewardRerollCount"
         :controller-focused-reward-index="controllerRegion === 'reward' ? controllerRewardCursorIndex : -1"
         :controller-mapping="props.controllerMapping"
         :is-controller-connected="props.isControllerConnected"
@@ -1033,19 +1035,21 @@ const isMySubmissionPaused = computed(() => Boolean(submissionPauseOwner.value) 
 const isSubmissionPauseActive = computed(() => Boolean(submissionPauseOwner.value));
 
 const myCards = computed(() => playerCards.value[mySide.value] || { boons: [], attacks: [] });
+const myPlayableCards = computed(() => [
+  ...(myCards.value.boons || []),
+  ...(myCards.value.attacks || [])
+]);
 const rewardRoundModifierRerollCard = computed(() => {
-  const cards = [
-    ...(myCards.value.boons || []),
-    ...(myCards.value.attacks || [])
-  ];
-  return cards.find((card) => card.effectType === 'reroll_next_round_modifier') || null;
+  return myPlayableCards.value.find((card) => card.effectType === 'reroll_next_round_modifier') || null;
 });
 const personalModifierRewardRerollCard = computed(() => {
-  const cards = [
-    ...(myCards.value.boons || []),
-    ...(myCards.value.attacks || [])
-  ];
-  return cards.find((card) => card.effectType === 'reroll_personal_modifier_rewards') || null;
+  return myPlayableCards.value.find((card) => card.effectType === 'reroll_personal_modifier_rewards') || null;
+});
+const rewardRoundModifierRerollCount = computed(() => {
+  return myPlayableCards.value.filter((card) => card.effectType === 'reroll_next_round_modifier').length;
+});
+const personalModifierRewardRerollCount = computed(() => {
+  return myPlayableCards.value.filter((card) => card.effectType === 'reroll_personal_modifier_rewards').length;
 });
 const canRerollRewardRoundModifiers = computed(() => {
   return Boolean(isMultiRoundRewardChoiceOpen.value && upcomingMultiRoundPreview.value && rewardRoundModifierRerollCard.value);

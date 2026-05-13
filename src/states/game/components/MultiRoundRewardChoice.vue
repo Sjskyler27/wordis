@@ -31,6 +31,7 @@
             @click="$emit('reroll-round-modifiers')"
           >
             <span>Reroll round modifiers</span>
+            <span class="reward-choice-count">x{{ roundModifierRerollCount }}</span>
             <ControllerButtonHint
               action-key="submitWord"
               :controller-mapping="controllerMapping"
@@ -46,6 +47,7 @@
             @click="$emit('reroll-reward-choices')"
           >
             <span>Reroll rewards</span>
+            <span class="reward-choice-count">x{{ rewardChoiceRerollCount }}</span>
             <ControllerButtonHint
               action-key="clearWord"
               :controller-mapping="controllerMapping"
@@ -119,6 +121,14 @@ const props = defineProps({
   canRerollRewardChoices: {
     type: Boolean,
     default: false
+  },
+  roundModifierRerollCount: {
+    type: Number,
+    default: 0
+  },
+  rewardChoiceRerollCount: {
+    type: Number,
+    default: 0
   },
   controllerMapping: {
     type: Object,
@@ -334,6 +344,19 @@ const choiceTitle = computed(() => {
 .reward-choice-action:hover,
 .reward-choice-action:focus-visible {
   background: rgba(255, 202, 103, 0.22);
+}
+
+.reward-choice-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  height: 22px;
+  margin-left: 8px;
+  border-radius: 999px;
+  color: #321723;
+  background: #ffd265;
+  font-size: 0.68rem;
 }
 
 .reward-card {
