@@ -774,6 +774,10 @@ const continueGame = (mode) => {
     localStorage.removeItem(TUTORIAL_COMPLETED_STORAGE_KEY);
     isTutorialComplete.value = false;
   };
+
+  const syncTutorialCompleteState = () => {
+    isTutorialComplete.value = localStorage.getItem(TUTORIAL_COMPLETED_STORAGE_KEY) === 'true';
+  };
   
 
 
@@ -986,6 +990,7 @@ const simulateTab = (reverse = false) => {
     setZoom(zoom.value)
     setgameZoom(gameZoom.value)
     window.addEventListener('resize', handleScreenWidthChange)
+    window.addEventListener('wordis:tutorial-completed', syncTutorialCompleteState);
     bootLog('zoom initialized', { zoom: zoom.value, gameZoom: gameZoom.value });
 
 
@@ -1049,6 +1054,7 @@ const simulateTab = (reverse = false) => {
     window.removeEventListener('resize', handleScreenWidthChange);
     window.removeEventListener("gamepadconnected", onGamepadConnected);
     window.removeEventListener("gamepaddisconnected", onGamepadDisconnected);
+    window.removeEventListener('wordis:tutorial-completed', syncTutorialCompleteState);
     window.removeEventListener('keydown', handleGlobalKeyDown);
     document.removeEventListener('visibilitychange', handleAppVisibilityChange);
     window.removeEventListener('pagehide', handleAppPageHide);

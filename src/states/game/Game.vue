@@ -1842,6 +1842,7 @@ const completeMultiRoundRound = () => {
     localMessage.value = 'Run complete!';
     if (isTutorialMultiRound.value) {
       localStorage.setItem(TUTORIAL_COMPLETED_STORAGE_KEY, 'true');
+      window.dispatchEvent(new CustomEvent('wordis:tutorial-completed'));
       showTutorialHint('game_won');
     }
     return;
