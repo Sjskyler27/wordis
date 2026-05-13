@@ -409,3 +409,51 @@ water tiles are not being removed from the board when scored
 2 letter tiles need to count for twin modifier example e counts it if ed tile is in word 
 
 wilds letter needs to be set to * if its an s its an issue if it matches a twin its an issue 
+
+no royal boon being pulled 
+
+shimmer tile shouldnt animate first or final word 
+
+scroll upgrades not working 
+
+need more then three upgrade options to begin with 
+add run time for total time unpaused
+
+show score in history 
+
+add highest word score to high score.
+
+Easier tutorial mode needed 
+Buggy tutorials with when they show up 
+ 2:08 PM 
+What is the method for showing hint we need to show hint if not seen first time.
+No hints during reward modal except reward hint 
+For disabled tile it needs to not be by the chance it just needs to be can return  false 
+Limit cards gained from tutorial add cards to unlocks 
+ 9:34 AM 
+Add two bars to difficulties tooltip pause timer times and tooltip pause timer seconds 
+This is how long a tooltip pause the time and how many times a user can activate it in a game 
+Add screen bounding first time you open game to make sure it's in size
+Remove in meaningful upgrades and cards 
+Boons and attacks in multiplyer tile modifiers and perks? In multi round 
+Lock cards that give time modifier behind the modifier behind unlocked
+Status banner needs to go it should be toast notifications 
+Show how many rerolls in reward
+Round history show rewards and when collected 
+Videos plus 2 not over
+Must shield and burn shield are not that great should not be epic 
+Increase given draft amount I didn't see any
+Lock step should not lock other tiles
+Make it like burn and mist add flat percent that it will be pulled if there is none 
+Ghosting a new lettered k to t turned it back to a k
+If I need letter a consonent into a vowel is it plus 2 times two? 
+Tile tray instead of rack 
+High scores need to sync
+Unlocks need contingencies, such as first tile plus ten needs first tile unlocked before unlocking. Run through any potential issues.
+Starting tiles
+Gold, first, twin 
+Must burn locked
+Wild Ghost shimmer
+Add reset progress button 
+Epic Vowels should give plus 2 instead of plus 1 
+Add rare personal upgrade increase multiplayer modifier cap by one 
