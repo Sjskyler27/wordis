@@ -548,14 +548,21 @@ const getTutorialModifierChanceOverrides = ({ multiRoundWordsPlayedThisRound = 0
   }
 
   const roundIndex = multiRoundRun.currentRoundIndex.value;
-  const canPullNeutral = roundIndex >= TUTORIAL_NEUTRAL_MODIFIER_UNLOCK_ROUND_INDEX
-    && multiRoundWordsPlayedThisRound >= TUTORIAL_MODIFIER_UNLOCK_TURN_COUNT;
-  const canPullBad = roundIndex >= TUTORIAL_BAD_MODIFIER_UNLOCK_ROUND_INDEX
-    && multiRoundWordsPlayedThisRound >= TUTORIAL_MODIFIER_UNLOCK_TURN_COUNT;
+  const canPullNeutral = roundIndex >= TUTORIAL_NEUTRAL_MODIFIER_UNLOCK_ROUND_INDEX;
+  const canPullBad = roundIndex >= TUTORIAL_BAD_MODIFIER_UNLOCK_ROUND_INDEX;
+  const allowedModifierKeys = TUTORIAL_TILE_MODIFIER_KEYS.filter((modifierKey) => {
+    if (!canPullNeutral && TUTORIAL_NEUTRAL_MODIFIERS.has(modifierKey)) {
+      return false;
+    }
+
+    if (!canPullBad && TUTORIAL_BAD_MODIFIERS.has(modifierKey)) {
+      return false;
+    }
+
+    return true;
+  });
   return {
-    allowedModifierKeys: TUTORIAL_TILE_MODIFIER_KEYS,
-    ...(!canPullNeutral ? { neutralChance: 0 } : {}),
-    ...(!canPullBad ? { badChance: 0 } : {})
+    allowedModifierKeys
   };
 };
 
