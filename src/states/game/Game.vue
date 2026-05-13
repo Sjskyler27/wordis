@@ -1738,6 +1738,7 @@ const queueModifierUnlocksForRun = (round = {}, contextOverrides = {}, options =
     bestSecondsRemaining,
     runWon: multiRoundRun.runWon.value,
     isTutorial: isTutorialMultiRound.value,
+    unlockedPersonalCount: getAllowedMultiRoundModifierKeys('personal')?.length || 0,
     ...contextOverrides
   }, options);
 

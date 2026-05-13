@@ -164,7 +164,7 @@ export const STARTING_MODIFIER_UNLOCKS = {
     'boon_ghostTile', 'boon_gold', 'attack_mustuse', 'attack_locked3',
     'attack_pause_submissions', 'attack_pause_time', 'attack_gain_time',
     'attack_reduce_bad_modifiers', 'attack_reroll_next_round_modifier',
-    'attack_reroll_personal_modifier_rewards', 'attack_reduce_round_target'
+    'attack_reduce_round_target'
   ]
 };
 
@@ -195,6 +195,10 @@ const PERSONAL_MODIFIER_TILE_PREREQUISITES = {
   bank_interest: ['bankTile'],
   must_shield: ['mustuse'],
   burn_shield: ['burningTile']
+};
+
+const CARD_PERSONAL_UNLOCK_PREREQUISITES = {
+  attack_reroll_personal_modifier_rewards: 15
 };
 
 export const MODIFIER_UNLOCK_CONDITIONS = [
@@ -278,6 +282,12 @@ export const MODIFIER_UNLOCK_CONDITIONS = [
     hint: 'Complete the tutorial run.',
     allowInTutorial: true,
     test: ({ tutorialCompleted }) => Boolean(tutorialCompleted)
+  },
+  {
+    type: MODIFIER_UNLOCK_TYPES.CARD,
+    key: 'attack_reroll_personal_modifier_rewards',
+    hint: 'Unlock 15 personal modifiers.',
+    test: ({ unlockedPersonalCount = 0 }) => unlockedPersonalCount >= 15
   }
 ];
 
@@ -337,7 +347,10 @@ export const normalizeModifierUnlockState = (state = {}) => {
       ...defaults.card,
       ...(state.card || []),
       ...getContingentCardUnlockKeys(tileUnlocks)
-    ]).filter((key) => ALL_KEYS_BY_TYPE.card.includes(key))
+    ]).filter((key) => (
+      ALL_KEYS_BY_TYPE.card.includes(key)
+        && personalUnlocks.length >= (CARD_PERSONAL_UNLOCK_PREREQUISITES[key] || 0)
+    ))
   };
 };
 
@@ -415,6 +428,11 @@ const getRemainingKeys = (type, state) => {
   return (ALL_KEYS_BY_TYPE[type] || [])
     .filter((key) => !unlocked.has(key))
     .filter((key) => {
+      if (type === MODIFIER_UNLOCK_TYPES.CARD) {
+        const requiredPersonalUnlocks = CARD_PERSONAL_UNLOCK_PREREQUISITES[key] || 0;
+        return getUnlockedModifierKeys(MODIFIER_UNLOCK_TYPES.PERSONAL, state).length >= requiredPersonalUnlocks;
+      }
+
       if (type !== MODIFIER_UNLOCK_TYPES.PERSONAL) {
         return true;
       }
