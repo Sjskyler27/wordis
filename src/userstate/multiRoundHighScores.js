@@ -7,6 +7,7 @@ import {
 
 export const MULTI_ROUND_HIGH_SCORES_LOCAL_KEY = 'wordis:mr-high-scores';
 export const MULTI_ROUND_HIGH_SCORES_DB_KEY = 'multiRoundHighScores';
+export const MULTI_ROUND_HIGH_SCORES_PENDING_SYNC_KEY = 'wordis:mr-high-scores:pending-sync';
 
 const VALID_DIFFICULTIES = new Set(Object.values(MULTI_ROUND_DIFFICULTIES));
 
@@ -88,7 +89,20 @@ export const writeLocalMultiRoundHighScores = (scores = {}) => {
 
 export const clearLocalMultiRoundHighScores = () => {
   localStorage.removeItem(MULTI_ROUND_HIGH_SCORES_LOCAL_KEY);
+  localStorage.removeItem(MULTI_ROUND_HIGH_SCORES_PENDING_SYNC_KEY);
   window.dispatchEvent(new CustomEvent('wordis:multi-round-high-scores-changed'));
+};
+
+const markMultiRoundHighScoresPendingSync = () => {
+  localStorage.setItem(MULTI_ROUND_HIGH_SCORES_PENDING_SYNC_KEY, String(Date.now()));
+};
+
+const clearMultiRoundHighScoresPendingSync = () => {
+  localStorage.removeItem(MULTI_ROUND_HIGH_SCORES_PENDING_SYNC_KEY);
+};
+
+export const hasPendingMultiRoundHighScoreSync = () => {
+  return Boolean(localStorage.getItem(MULTI_ROUND_HIGH_SCORES_PENDING_SYNC_KEY));
 };
 
 export const normalizeMultiRoundHighScoreRecord = (record = {}, difficulty = '') => {
@@ -154,6 +168,7 @@ export const syncMultiRoundHighScores = async (uid, userState = {}) => {
   if (remoteChanged) {
     await set(dbRef(db, `users/${uid}/gameData/${MULTI_ROUND_HIGH_SCORES_DB_KEY}`), mergedScores);
   }
+  clearMultiRoundHighScoresPendingSync();
 
   return {
     changed: localChanged || remoteChanged,
@@ -191,6 +206,7 @@ export const saveMultiRoundHighScore = async ({
 
   if (improved) {
     writeLocalMultiRoundHighScores(mergedScores);
+    markMultiRoundHighScoresPendingSync();
   }
 
   if (improved && firebaseEnabled && db && user?.uid && navigator.onLine) {

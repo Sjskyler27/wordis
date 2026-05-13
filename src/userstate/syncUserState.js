@@ -15,6 +15,7 @@ import { BOT_DIFFICULTIES, botDifficulty } from '../states/game/play-config.js';
 import { initializeNewUser } from './initializeNewUser.js';
 import {
   clearLocalMultiRoundHighScores,
+  hasPendingMultiRoundHighScoreSync,
   syncMultiRoundHighScores
 } from './multiRoundHighScores.js';
 import { syncModifierUnlocks } from './modifierUnlocks.js';
@@ -105,7 +106,7 @@ const canSyncNow = (force = false) => {
   }
 
   const lastSyncedAt = Number(localStorage.getItem(LAST_USER_SYNC_KEY) || 0);
-  return !lastSyncedAt || Date.now() - lastSyncedAt >= USER_SYNC_INTERVAL_MS;
+  return hasPendingMultiRoundHighScoreSync() || !lastSyncedAt || Date.now() - lastSyncedAt >= USER_SYNC_INTERVAL_MS;
 };
 
 const getSaveTimestamp = (save) => {
