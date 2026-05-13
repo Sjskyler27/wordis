@@ -111,6 +111,12 @@
       <AuthPrompt v-if="showAuthModal" @close="showAuthModal = false" @loggedIn="userLoggedIn" />
       <AssetLoader :monsterRoster="monsterRoster"/>
     </div>
+    <ScreenBoundsCalibration
+      v-if="showScreenBoundsCalibration"
+      :gameZoom="gameZoom"
+      @gameZoomChange="setgameZoom"
+      @close="dismissScreenBoundsCalibration"
+    />
     <div v-if="nowPlayingToastVisible" class="now-playing-toast">
       <span>Now Playing</span>
       <strong>{{ nowPlayingToastTitle }}</strong>
@@ -136,6 +142,7 @@ import { hideGoogleTranslateIframesAfterDelay,hideGoogleTranslateExtras } from "
 import Feedback from "./states/home/Feedback.vue";
 import Banner from "/src/assets/Banner.vue";
 import Settings from '/src/assets/Settings.vue'
+import ScreenBoundsCalibration from '/src/assets/ScreenBoundsCalibration.vue'
 import MachineBackground from "./states/game/components/GlobalBackground.vue";
 import { musicTracks } from "./assets/music-tracks.js";
 import {
@@ -179,6 +186,7 @@ const showStreamerModal = ref(false);
 const loadingAuth = ref(true);
 const showAuthModal = ref(false);
 const AUTH_PROMPT_SEEN_KEY = "userAgreed";
+const SCREEN_BOUNDS_CALIBRATED_KEY = "wordis:screen-bounds-calibrated";
 let stopUserSync = null;
 
 if (streamerCode) {
@@ -199,6 +207,7 @@ const createStableId = () => {
 const cacheSeed = ref(localStorage.getItem("cacheSeed") || null);
 const validSeed = ref(false);
 const showFeedback = ref(false)
+const showScreenBoundsCalibration = ref(false)
 const DEFAULT_JOYSTICK_SENSITIVITY = 30;
 
 
@@ -564,6 +573,11 @@ const DEFAULT_JOYSTICK_SENSITIVITY = 30;
       localStorage.setItem('gameZoom', val)
     }
   }
+
+  const dismissScreenBoundsCalibration = () => {
+    localStorage.setItem(SCREEN_BOUNDS_CALIBRATED_KEY, 'true');
+    showScreenBoundsCalibration.value = false;
+  };
 
   function setJoystickSensitivity(val) {
     joystickSensitivity.value = val
@@ -1012,6 +1026,9 @@ const simulateTab = (reverse = false) => {
 
     setTimeout(() => {
       hasSeenIntro.value = true;
+      if (!localStorage.getItem(SCREEN_BOUNDS_CALIBRATED_KEY)) {
+        showScreenBoundsCalibration.value = true;
+      }
     }, 2000);
     // Hide Google Translate banner
     hideGoogleTranslateIframesAfterDelay(400);
