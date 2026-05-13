@@ -781,13 +781,17 @@ const multiRoundScoreOptions = computed(() => ({
   personalModifierEffects: personalModifierEffects.value,
   roundModifierEffects: roundModifierEffects.value,
   roundModifierCountdowns: roundModifierCountdowns.value,
+  includeAttacks: actionCardKind.value === 'attack',
+  includeTactics: actionCardKind.value === 'tactic',
   wordElapsedSeconds: Math.max(0, (speedyWordClockNow.value - speedyWordStartedAt.value) / 1000)
 }));
 const lengthBonusScoreOptions = computed(() => ({
   personalModifierEffects: personalModifierEffects.value,
   roundModifierEffects: {
     lengthTimePenalty: roundModifierEffects.value.lengthTimePenalty || {}
-  }
+  },
+  includeAttacks: actionCardKind.value === 'attack',
+  includeTactics: actionCardKind.value === 'tactic'
 }));
 const effectiveMinimumWordLength = computed(() => Math.max(
   personalModifierEffects.value.minimumWordLength || MIN_WORD_LENGTH,

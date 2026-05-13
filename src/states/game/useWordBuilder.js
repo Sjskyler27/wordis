@@ -6,7 +6,7 @@ const formatMilestoneReward = (length, options = {}, rewardWordLength = length) 
     return '';
   }
 
-  const reward = getMilestoneReward(length);
+  const reward = getMilestoneReward(length, options);
   const personalEffects = options.personalModifierEffects || {};
   const roundEffects = options.roundModifierEffects || {};
   const labels = [];
