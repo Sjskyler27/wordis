@@ -1910,28 +1910,95 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
       return chooseWeightedModifier(eligibleModifiers, modifierOddsBonus, tileContext);
     };
 
-    const canForceTurnMustTile = (options = {}) => {
-      const roundModifierEffects = options.roundModifierEffects || options.chanceOverrides?.roundModifierEffects || {};
-      const personalModifierEffects = options.personalModifierEffects || options.chanceOverrides?.personalModifierEffects || {};
-      return Boolean(roundModifierEffects.mustTileEachTurn)
-        && !(personalModifierEffects.blockedModifiers || []).includes('mustuse');
-    };
-    const canForceTurnBurnTile = (options = {}) => {
-      const roundModifierEffects = options.roundModifierEffects || options.chanceOverrides?.roundModifierEffects || {};
-      const personalModifierEffects = options.personalModifierEffects || options.chanceOverrides?.personalModifierEffects || {};
-      const chance = roundModifierEffects.burnTileEachTurn || 0;
-      const shouldForceReplacementBurnBasedOffChance = Math.random() < chance 
-      console.log(chance)
-      console.log(shouldForceReplacementBurnBasedOffChance)
-      return shouldForceReplacementBurnBasedOffChance &&
-        !(personalModifierEffects.blockedModifiers || []).includes('burningTile');
+    const getResolvedModifierEffects = (options = {}) => ({
+      roundModifierEffects: options.roundModifierEffects || options.chanceOverrides?.roundModifierEffects || {},
+      personalModifierEffects: options.personalModifierEffects || options.chanceOverrides?.personalModifierEffects || {}
+    });
+
+    const getModifierForceChance = (chance = 0) => {
+      if (chance === true) {
+        return 1;
+      }
+
+      return Math.max(0, Math.min(1, Number(chance) || 0));
     };
 
-    const rackHasAvailableMustTile = (tiles = []) => {
-      return tiles.some((tile) => tile.status === 'mustuse' && !tile.locked);
+    const isForcedModifierBlocked = (status = 'normal', personalModifierEffects = {}, aliases = []) => {
+      const blockedModifiers = personalModifierEffects.blockedModifiers || [];
+      return [status, ...aliases].some((modifierKey) => blockedModifiers.includes(modifierKey));
     };
-    const rackHasAvailableBurnTile = (tiles = []) => {
-      return tiles.some((tile) => tile.status === 'burningTile' && !tile.locked);
+
+    const addForcedTileRule = (rules, rule) => {
+      const chance = getModifierForceChance(rule.chance);
+      if (!chance) {
+        return rules;
+      }
+
+      const existingRule = rules.find((entry) => entry.status === rule.status);
+      if (existingRule) {
+        existingRule.chance = Math.max(existingRule.chance, chance);
+        existingRule.blockedAliases = [...new Set([
+          ...(existingRule.blockedAliases || []),
+          ...(rule.blockedAliases || [])
+        ])];
+        return rules;
+      }
+
+      rules.push({
+        status: rule.status,
+        chance,
+        blockedAliases: rule.blockedAliases || []
+      });
+      return rules;
+    };
+
+    const getForcedTileRules = (options = {}) => {
+      const { roundModifierEffects, personalModifierEffects } = getResolvedModifierEffects(options);
+      const rules = [];
+
+      addForcedTileRule(rules, {
+        status: 'mustuse',
+        chance: roundModifierEffects.mustTileEachTurn ? 1 : 0
+      });
+      addForcedTileRule(rules, {
+        status: 'burningTile',
+        chance: roundModifierEffects.burnTileEachTurn || 0,
+        blockedAliases: ['burn']
+      });
+      Object.entries(personalModifierEffects.forcedTilePulls || {}).forEach(([status, chance]) => {
+        addForcedTileRule(rules, { status, chance });
+      });
+      Object.entries(roundModifierEffects.forcedTilePulls || {}).forEach(([status, chance]) => {
+        addForcedTileRule(rules, { status, chance });
+      });
+
+      return rules.filter((rule) => {
+        return !isForcedModifierBlocked(rule.status, personalModifierEffects, rule.blockedAliases);
+      });
+    };
+
+    const shouldForceTileRule = (rule) => Math.random() < rule.chance;
+
+    const rackHasAvailableStatus = (tiles = [], status = 'normal') => {
+      return tiles.some((tile) => tile.status === status && !tile.locked);
+    };
+
+    const canForceStatus = (status, options = {}) => (
+      !Array.isArray(options.allowedModifierKeys)
+        || !options.allowedModifierKeys.length
+        || options.allowedModifierKeys.includes(status)
+    );
+
+    const createForcedTileDecisions = (options = {}, existingTiles = []) => {
+      return getForcedTileRules(options)
+        .filter((rule) => shouldForceTileRule(rule))
+        .filter((rule) => canForceStatus(rule.status, options))
+        .filter((rule) => !rackHasAvailableStatus(existingTiles, rule.status))
+        .map((rule) => rule.status);
+    };
+
+    const chooseForcedTileStatus = (forcedTileDecisions = [], forcedStatuses = new Set()) => {
+      return forcedTileDecisions.find((status) => !forcedStatuses.has(status)) || '';
     };
 
     const drawSingleLetter = (rack = []) => {
@@ -1945,21 +2012,36 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
       return LETTER_KEYS.find((letter) => isSingleLetterTile(letter)) || drawLetter(rack);
     };
 
+    const drawForcedTileLetter = (status = 'normal', rack = []) => {
+      for (let attempt = 0; attempt < 30; attempt += 1) {
+        const letter = drawLetter(rack);
+        if (canApplyModifier(status, {
+          letter,
+          baseScore: letterConfig[letter]?.score || 0,
+          rackTiles: rack
+        })) {
+          return letter;
+        }
+      }
+
+      return LETTER_KEYS.find((letter) => canApplyModifier(status, {
+        letter,
+        baseScore: letterConfig[letter]?.score || 0,
+        rackTiles: rack
+      })) || drawSingleLetter(rack);
+    };
+
     const buildFreshRack = (side = null, scores = {}, options = {}) => {
       const rack = [];
-      const forceOpeningMust = canForceTurnMustTile(options);
-      const forceOpeningBurn = canForceTurnBurnTile(options);
+      const forcedTileDecisions = createForcedTileDecisions(options, rack);
+      const forcedStatuses = new Set();
       const forcedModifierGroups = [...(options.forcedModifierGroups || [])];
-      const canForceStatus = (status) => (
-        !Array.isArray(options.allowedModifierKeys)
-          || !options.allowedModifierKeys.length
-          || options.allowedModifierKeys.includes(status)
-      );
       while (rack.length < RACK_SIZE) {
-        const forceMust = forceOpeningMust && rack.length === 0 && canForceStatus('mustuse');
-        const forceBurn = forceOpeningBurn && rack.length === 0 && canForceStatus('burningTile');
-        const letter = forceMust || forceBurn ? drawSingleLetter(rack) : drawLetter(rack);
-        const forcedModifierGroup = !forceMust && !forceBurn && !options.forcedStatus ? forcedModifierGroups.shift() : '';
+        const forcedTileStatus = !options.forcedStatus
+          ? chooseForcedTileStatus(forcedTileDecisions, forcedStatuses)
+          : '';
+        const letter = forcedTileStatus ? drawForcedTileLetter(forcedTileStatus, rack) : drawLetter(rack);
+        const forcedModifierGroup = !forcedTileStatus && !options.forcedStatus ? forcedModifierGroups.shift() : '';
         const forcedGroupStatus = forcedModifierGroup
           ? chooseForcedModifierForGroup(forcedModifierGroup, {
               letter,
@@ -1967,7 +2049,7 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
               rackTiles: rack
             }, options)
           : null;
-        rack.push(createTile(letter, side, scores, forceMust ? 'mustuse' : forceBurn ? 'burningTile' : (options.forcedStatus || forcedGroupStatus || null), {
+        rack.push(createTile(letter, side, scores, forcedTileStatus || options.forcedStatus || forcedGroupStatus || null, {
           ...(options.chanceOverrides || {}),
           rackTiles: rack,
           personalModifierEffects: options.personalModifierEffects || options.chanceOverrides?.personalModifierEffects || {},
@@ -1976,6 +2058,9 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
           phase: options.phase || options.chanceOverrides?.phase || 'normal',
           turnCount: options.turnCount || 0
         }));
+        if (forcedTileStatus) {
+          forcedStatuses.add(forcedTileStatus);
+        }
       }
       return rack;
     };
@@ -2174,20 +2259,10 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
         }), { trigger: 'onNewTurn' });
       });
 
-      const shouldForceReplacementMust = canForceTurnMustTile(options)
-        && !rackHasAvailableMustTile(nextTiles.filter((tile) => !replacedIds.has(tile.id)));
-      let forcedReplacementMust = false;
-      console.log('not has available burn' + !rackHasAvailableBurnTile(nextTiles.filter((tile) => !replacedIds.has(tile.id))))
-      console.log('not has available must' + !rackHasAvailableMustTile(nextTiles.filter((tile) => !replacedIds.has(tile.id))))
-      const shouldForceReplacementBurn = canForceTurnBurnTile(options)
-        && !rackHasAvailableBurnTile(nextTiles.filter((tile) => !replacedIds.has(tile.id)));
-      let forcedReplacementBurn = false;
+      const survivingTiles = nextTiles.filter((tile) => !replacedIds.has(tile.id));
+      const forcedTileDecisions = createForcedTileDecisions(options, survivingTiles);
+      const forcedStatuses = new Set();
       const forcedModifierGroups = [...(options.forcedModifierGroups || [])];
-      const canForceStatus = (status) => (
-        !Array.isArray(options.allowedModifierKeys)
-          || !options.allowedModifierKeys.length
-          || options.allowedModifierKeys.includes(status)
-      );
 
       nextTiles.forEach((tile, index) => {
         if (!replacedIds.has(tile.id)) {
@@ -2198,10 +2273,9 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
           return entryIndex !== index && !replacedIds.has(entry.id);
         });
 
-        const forceMust = shouldForceReplacementMust && !forcedReplacementMust && canForceStatus('mustuse');
-        const forceBurn = shouldForceReplacementBurn && !forcedReplacementBurn && canForceStatus('burningTile');
-        const letter = forceMust || forceBurn ? drawSingleLetter(remainingTiles) : drawLetter(remainingTiles);
-        const forcedModifierGroup = !forceMust && !forceBurn ? forcedModifierGroups.shift() : '';
+        const forcedTileStatus = chooseForcedTileStatus(forcedTileDecisions, forcedStatuses);
+        const letter = forcedTileStatus ? drawForcedTileLetter(forcedTileStatus, remainingTiles) : drawLetter(remainingTiles);
+        const forcedModifierGroup = !forcedTileStatus ? forcedModifierGroups.shift() : '';
         const forcedGroupStatus = forcedModifierGroup
           ? chooseForcedModifierForGroup(forcedModifierGroup, {
               letter,
@@ -2214,7 +2288,7 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
               allowedModifierKeys: options.allowedModifierKeys
             })
           : null;
-        nextTiles[index] = createTile(letter, side, scores, forceMust ? 'mustuse' : forceBurn ? 'burningTile' : forcedGroupStatus, {
+        nextTiles[index] = createTile(letter, side, scores, forcedTileStatus || forcedGroupStatus, {
           rackTiles: remainingTiles,
           modifierProfile: options.modifierProfile || 'duel',
           personalModifierEffects: options.personalModifierEffects || {},
@@ -2223,11 +2297,8 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
           phase: options.phase || 'submit',
           turnCount: options.turnCount || 0
         });
-        if (forceMust) {
-          forcedReplacementMust = true;
-        }
-        if (forceBurn && !forceMust) {
-          forcedReplacementBurn = true;
+        if (forcedTileStatus) {
+          forcedStatuses.add(forcedTileStatus);
         }
       });
       if (isDevLoggingEnabled()) console.log(nextTiles) // logs something callled status so modifier is determined by this point 
