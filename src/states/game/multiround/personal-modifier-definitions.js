@@ -75,7 +75,7 @@ export const PERSONAL_MODIFIER_DEFINITIONS = {
   golden_draft: {
     key: 'golden_draft',
     label: 'Golden Draft',
-    description: 'Gold tiles appear more often.',
+    description: 'Gold tiles appear more often, with a 5% chance to force one when you have none.',
     rarity: 0.55,
     tier: PERSONAL_MODIFIER_TIERS.EPIC,
     tags: ['tile-odds', 'gold'],
@@ -84,6 +84,9 @@ export const PERSONAL_MODIFIER_DEFINITIONS = {
     effects: {
       modifierOddsBonus: {
         gold: 0.35
+      },
+      forcedTilePulls: {
+        gold: 0.05
       },
       // offset other pulls
       goodChanceBonus: 0.001,

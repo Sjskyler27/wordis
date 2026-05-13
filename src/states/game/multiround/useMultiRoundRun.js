@@ -328,6 +328,9 @@ export const useMultiRoundRun = ({ rounds = MULTI_ROUND_ROUNDS, includeInTutoria
       Object.entries(definitionEffects.modifierOddsBonus || {}).forEach(([key, bonus]) => {
         effects.modifierOddsBonus[key] = (effects.modifierOddsBonus[key] || 0) + (bonus * stacks);
       });
+      Object.entries(definitionEffects.forcedTilePulls || {}).forEach(([key, chance]) => {
+        effects.forcedTilePulls[key] = (effects.forcedTilePulls[key] || 0) + (chance * stacks);
+      });
       (definitionEffects.blockedModifiers || []).forEach((modifierKey) => {
         if (!effects.blockedModifiers.includes(modifierKey)) {
           effects.blockedModifiers.push(modifierKey);
@@ -346,6 +349,7 @@ export const useMultiRoundRun = ({ rounds = MULTI_ROUND_ROUNDS, includeInTutoria
       timedWordMultipliers: [],
       timedWordScoreBonuses: [],
       modifierOddsBonus: {},
+      forcedTilePulls: {},
       blockedModifiers: [],
       badChanceMultiplier: 1,
       openingGoodChanceBonus: 0,
