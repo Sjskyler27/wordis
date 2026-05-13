@@ -1114,9 +1114,11 @@ const multiRoundHistorySummary = computed(() => {
 
   const completedRounds = multiRoundRun.completedRounds.value || [];
   const failedRound = multiRoundRun.failureSummary.value;
+  const bestWord = buildBestWordSummary(wordHistory.value.host || []);
   const scoreSummary = calculateMultiRoundScore({
     completedRounds,
-    failedRound
+    failedRound,
+    bestWordScore: bestWord?.sc || 0
   });
   const difficultyHighScore = readLocalMultiRoundHighScores()[props.multiRoundDifficulty] || null;
   const displayedHighScore = Math.max(scoreSummary.score, Number(difficultyHighScore?.score || 0));
@@ -1217,7 +1219,8 @@ const saveMultiRoundScore = (result) => {
     result,
     completedRounds: multiRoundRun.completedRounds.value || [],
     failedRound: multiRoundRun.failureSummary.value,
-    totalRounds: multiRoundRun.totalRounds.value
+    totalRounds: multiRoundRun.totalRounds.value,
+    bestWordScore: buildBestWordSummary(wordHistory.value.host || [])?.sc || 0
   });
 };
 

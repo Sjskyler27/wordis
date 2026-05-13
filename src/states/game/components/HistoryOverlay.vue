@@ -384,7 +384,8 @@ const formatNumber = (value = 0) => {
 const formatScoreBreakdown = (scoreSummary = {}) => {
   const timeScore = Math.max(0, Math.round(Number(scoreSummary.timeScore) || 0));
   const overScore = Math.max(0, Math.round(Number(scoreSummary.overScore) || 0));
-  return `${timeScore} time + ${overScore} over`;
+  const bestWordScore = Math.max(0, Math.round(Number(scoreSummary.bestWordScore) || 0));
+  return `${timeScore} time + ${overScore} over + ${bestWordScore} best word`;
 };
 const getRoundRewards = (round = {}) => {
   const rewardKeys = round.selectedRewardKeys?.length

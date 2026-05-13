@@ -53,13 +53,14 @@ const scoreRound = (round = {}) => {
   };
 };
 
-export const calculateMultiRoundScore = ({ completedRounds = [], failedRound = null } = {}) => {
+export const calculateMultiRoundScore = ({ completedRounds = [], failedRound = null, bestWordScore = 0 } = {}) => {
   const scoredRounds = [
     ...(Array.isArray(completedRounds) ? completedRounds : []),
     ...(failedRound ? [failedRound] : [])
   ].map(scoreRound);
+  const normalizedBestWordScore = Math.max(0, Math.round(normalizeNumber(bestWordScore)));
 
-  return scoredRounds.reduce((summary, round) => {
+  const roundSummary = scoredRounds.reduce((summary, round) => {
     summary.score += round.roundScore;
     summary.timeScore += round.timeScore;
     summary.overScore += round.overScore;
@@ -69,8 +70,14 @@ export const calculateMultiRoundScore = ({ completedRounds = [], failedRound = n
     score: 0,
     timeScore: 0,
     overScore: 0,
+    bestWordScore: normalizedBestWordScore,
     rounds: []
   });
+
+  return {
+    ...roundSummary,
+    score: roundSummary.score + normalizedBestWordScore
+  };
 };
 
 export const readLocalMultiRoundHighScores = () => {
@@ -117,6 +124,7 @@ export const normalizeMultiRoundHighScoreRecord = (record = {}, difficulty = '')
     score,
     timeScore: Math.max(0, Math.round(normalizeNumber(record.timeScore))),
     overScore: Math.max(0, Math.round(normalizeNumber(record.overScore))),
+    bestWordScore: Math.max(0, Math.round(normalizeNumber(record.bestWordScore))),
     roundsCleared: Math.max(0, Math.round(normalizeNumber(record.roundsCleared))),
     totalRounds: Math.max(0, Math.round(normalizeNumber(record.totalRounds))),
     result: record.result === 'won' ? 'won' : 'failed',
@@ -181,16 +189,18 @@ export const saveMultiRoundHighScore = async ({
   result,
   completedRounds = [],
   failedRound = null,
-  totalRounds = 0
+  totalRounds = 0,
+  bestWordScore = 0
 } = {}, { user = auth?.currentUser } = {}) => {
   const normalizedDifficulty = normalizeDifficulty(difficulty);
-  const scoreSummary = calculateMultiRoundScore({ completedRounds, failedRound });
+  const scoreSummary = calculateMultiRoundScore({ completedRounds, failedRound, bestWordScore });
   const updatedAt = Date.now();
   const nextRecord = normalizeMultiRoundHighScoreRecord({
     difficulty: normalizedDifficulty,
     score: scoreSummary.score,
     timeScore: scoreSummary.timeScore,
     overScore: scoreSummary.overScore,
+    bestWordScore: scoreSummary.bestWordScore,
     roundsCleared: completedRounds.length,
     totalRounds,
     result,

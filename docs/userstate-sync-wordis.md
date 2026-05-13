@@ -65,7 +65,7 @@ Cloud high scores live under:
 
 - `users/${uid}/gameData/multiRoundHighScores/${difficulty}`
 
-Each difficulty keeps its own best score. A run score is the sum of each recorded round's remaining seconds plus points scored above that round's target. Sync resolves conflicts by keeping the larger score for each difficulty; if scores tie, the newer `updatedAt` record wins.
+Each difficulty keeps its own best score. A run score is the sum of each recorded round's remaining seconds, points scored above that round's target, and the run's highest single-word score. Sync resolves conflicts by keeping the larger score for each difficulty; if scores tie, the newer `updatedAt` record wins.
 
 ## Sync Timing
 

@@ -420,7 +420,7 @@ const formatScoreDetail = (score) => {
   }
 
   const rounds = `${score.roundsCleared || 0}/${score.totalRounds || 0}`;
-  return `${rounds} rounds · ${score.timeScore || 0} time · ${score.overScore || 0} over`;
+  return `${rounds} rounds · ${score.timeScore || 0} time · ${score.overScore || 0} over · ${score.bestWordScore || 0} word`;
 };
 const refreshHighScores = () => {
   highScores.value = readLocalMultiRoundHighScores();
