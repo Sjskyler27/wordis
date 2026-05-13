@@ -205,6 +205,13 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
 
     return modifiers.filter((modifier) => !blockedModifiers.has(modifier));
   };
+  const filterRoundBlockedModifiers = (modifiers = [], roundModifierEffects = {}) => {
+    if (!roundModifierEffects.lockNextColumn) {
+      return modifiers;
+    }
+
+    return modifiers.filter((modifier) => modifier !== 'locked3');
+  };
   const filterAllowedModifiers = (modifiers = [], allowedModifierKeys = null) => {
     if (!Array.isArray(allowedModifierKeys) || !allowedModifierKeys.length) {
       return modifiers;
@@ -701,9 +708,9 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
     const baseProfile = getModifierProfile(modifierProfile);
     const profile = {
       ...baseProfile,
-      goodModifiers: filterAllowedModifiers(filterBlockedModifiers(baseProfile.goodModifiers, personalModifierEffects), chanceOverrides.allowedModifierKeys),
-      badModifiers: filterAllowedModifiers(filterBlockedModifiers(baseProfile.badModifiers, personalModifierEffects), chanceOverrides.allowedModifierKeys),
-      neutralModifiers: filterAllowedModifiers(filterBlockedModifiers(baseProfile.neutralModifiers || [], personalModifierEffects), chanceOverrides.allowedModifierKeys)
+      goodModifiers: filterAllowedModifiers(filterRoundBlockedModifiers(filterBlockedModifiers(baseProfile.goodModifiers, personalModifierEffects), roundModifierEffects), chanceOverrides.allowedModifierKeys),
+      badModifiers: filterAllowedModifiers(filterRoundBlockedModifiers(filterBlockedModifiers(baseProfile.badModifiers, personalModifierEffects), roundModifierEffects), chanceOverrides.allowedModifierKeys),
+      neutralModifiers: filterAllowedModifiers(filterRoundBlockedModifiers(filterBlockedModifiers(baseProfile.neutralModifiers || [], personalModifierEffects), roundModifierEffects), chanceOverrides.allowedModifierKeys)
     };
     const modifierOddsBonus = {
       ...(personalModifierEffects.modifierOddsBonus || {})
@@ -757,12 +764,13 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
   const rollSharedOpeningModifier = (scores = {}, contexts = [], options = {}) => {
     const modifierProfile = options.modifierProfile || 'duel';
     const personalModifierEffects = options.personalModifierEffects || {};
+    const roundModifierEffects = options.roundModifierEffects || {};
     const baseProfile = getModifierProfile(modifierProfile);
     const profile = {
       ...baseProfile,
-      goodModifiers: filterAllowedModifiers(filterBlockedModifiers(baseProfile.goodModifiers, personalModifierEffects), options.allowedModifierKeys),
-      badModifiers: filterAllowedModifiers(filterBlockedModifiers(baseProfile.badModifiers, personalModifierEffects), options.allowedModifierKeys),
-      neutralModifiers: filterAllowedModifiers(filterBlockedModifiers(baseProfile.neutralModifiers || [], personalModifierEffects), options.allowedModifierKeys)
+      goodModifiers: filterAllowedModifiers(filterRoundBlockedModifiers(filterBlockedModifiers(baseProfile.goodModifiers, personalModifierEffects), roundModifierEffects), options.allowedModifierKeys),
+      badModifiers: filterAllowedModifiers(filterRoundBlockedModifiers(filterBlockedModifiers(baseProfile.badModifiers, personalModifierEffects), roundModifierEffects), options.allowedModifierKeys),
+      neutralModifiers: filterAllowedModifiers(filterRoundBlockedModifiers(filterBlockedModifiers(baseProfile.neutralModifiers || [], personalModifierEffects), roundModifierEffects), options.allowedModifierKeys)
     };
     const { goodChance, badChance, neutralChance } = getModifierChances(null, scores, modifierProfile, options.turnCount || 0, options);
     const roll = Math.random();
@@ -1868,9 +1876,9 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
       const baseProfile = getModifierProfile(modifierProfile);
       const profile = {
         ...baseProfile,
-        goodModifiers: filterAllowedModifiers(filterBlockedModifiers(baseProfile.goodModifiers, personalModifierEffects), options.allowedModifierKeys),
-        badModifiers: filterAllowedModifiers(filterBlockedModifiers(baseProfile.badModifiers, personalModifierEffects), options.allowedModifierKeys),
-        neutralModifiers: filterAllowedModifiers(filterBlockedModifiers(baseProfile.neutralModifiers || [], personalModifierEffects), options.allowedModifierKeys)
+        goodModifiers: filterAllowedModifiers(filterRoundBlockedModifiers(filterBlockedModifiers(baseProfile.goodModifiers, personalModifierEffects), roundModifierEffects), options.allowedModifierKeys),
+        badModifiers: filterAllowedModifiers(filterRoundBlockedModifiers(filterBlockedModifiers(baseProfile.badModifiers, personalModifierEffects), roundModifierEffects), options.allowedModifierKeys),
+        neutralModifiers: filterAllowedModifiers(filterRoundBlockedModifiers(filterBlockedModifiers(baseProfile.neutralModifiers || [], personalModifierEffects), roundModifierEffects), options.allowedModifierKeys)
       };
       const modifierPoolByGroup = {
         good: profile.goodModifiers,
@@ -1983,7 +1991,7 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
 
     const applyTargetModifierGroup = (rack, modifierPool, targetCount, options = {}) => {
       const availableModifierPool = filterAllowedModifiers(
-        filterBlockedModifiers(modifierPool, options.personalModifierEffects || {}),
+        filterRoundBlockedModifiers(filterBlockedModifiers(modifierPool, options.personalModifierEffects || {}), options.roundModifierEffects || {}),
         options.allowedModifierKeys
       );
       for (let appliedCount = 0; appliedCount < targetCount; appliedCount += 1) {
@@ -2238,6 +2246,7 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
         rackTiles: remainingTiles,
         modifierProfile: options.modifierProfile || 'duel',
         personalModifierEffects: options.personalModifierEffects || {},
+        roundModifierEffects: options.roundModifierEffects || {},
         allowedModifierKeys: options.allowedModifierKeys,
         phase: options.phase || 'replace',
         turnCount: options.turnCount || 0
@@ -2270,6 +2279,7 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
           rackTiles: remainingTiles,
           modifierProfile: options.modifierProfile || 'duel',
           personalModifierEffects: options.personalModifierEffects || {},
+          roundModifierEffects: options.roundModifierEffects || {},
           phase: options.phase || 'reroll',
           turnCount: options.turnCount || 0
         });
