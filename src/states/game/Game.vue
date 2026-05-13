@@ -3083,6 +3083,10 @@ const showTutorialHint = (hintId, { force = false } = {}) => {
     return false;
   }
 
+  if (isMultiRoundRewardChoiceOpen.value && hintId !== 'rewards') {
+    return false;
+  }
+
   if (showTutorialOverlay.value) {
     if (!pendingTutorialHintIds.includes(hintId)) {
       pendingTutorialHintIds.push(hintId);
