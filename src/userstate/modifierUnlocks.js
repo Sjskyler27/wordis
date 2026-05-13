@@ -7,6 +7,9 @@ import {
 import {
   ROUND_MODIFIER_DEFINITIONS
 } from '../states/game/multiround/round-modifier-definitions.js';
+import {
+  CARD_DEFINITIONS
+} from '../states/game/tile-logic.js';
 
 export const MODIFIER_UNLOCK_STORAGE_KEY = 'wordis:modifier-unlocks';
 export const MODIFIER_UNLOCKS_CLOUD_KEY = 'modifierUnlocks';
@@ -14,7 +17,8 @@ export const MODIFIER_UNLOCKS_CLOUD_KEY = 'modifierUnlocks';
 export const MODIFIER_UNLOCK_TYPES = {
   TILE: 'tile',
   ROUND: 'round',
-  PERSONAL: 'personal'
+  PERSONAL: 'personal',
+  CARD: 'card'
 };
 
 export const TILE_MODIFIER_GROUPS = {
@@ -103,7 +107,10 @@ export const MODIFIER_UNLOCK_DISPLAY_NAMES = {
     burn_shield: 'Burn Shield',
     compact_double: 'Compact Multiplier',
     semi_compact_double: 'Semi Compact Multiplier'
-  }
+  },
+  card: Object.fromEntries(
+    Object.entries(CARD_DEFINITIONS || {}).map(([key, definition]) => [key, definition.label || key])
+  )
 };
 
 const TILE_MODIFIER_GROUP_BY_KEY = Object.entries(TILE_MODIFIER_GROUPS).reduce((groups, [group, keys]) => {
@@ -130,7 +137,8 @@ const TILE_DEFINITIONS = globalThis.__wordisModifierDefinitions?.createModifierD
 const ALL_KEYS_BY_TYPE = {
   [MODIFIER_UNLOCK_TYPES.TILE]: Object.keys(TILE_DEFINITIONS).filter((key) => key !== 'normal'),
   [MODIFIER_UNLOCK_TYPES.ROUND]: Object.keys(ROUND_MODIFIER_DEFINITIONS),
-  [MODIFIER_UNLOCK_TYPES.PERSONAL]: Object.keys(PERSONAL_MODIFIER_DEFINITIONS)
+  [MODIFIER_UNLOCK_TYPES.PERSONAL]: Object.keys(PERSONAL_MODIFIER_DEFINITIONS),
+  [MODIFIER_UNLOCK_TYPES.CARD]: Object.keys(CARD_DEFINITIONS)
 };
 
 export const STARTING_MODIFIER_UNLOCKS = {
@@ -148,11 +156,26 @@ export const STARTING_MODIFIER_UNLOCKS = {
     'five_letter_form', 'first_focus', 'boon_cache', 'strong_start',
     'better_odds', 'cleaner_rack', 'time_reserve', 'tiny_dictionary',
     'golden_draft', 'seven_second_wind', 'bright_letters'
+  ],
+  [MODIFIER_UNLOCK_TYPES.CARD]: [
+    'boon_delete_tile', 'boon_isolate_tile', 'boon_clear_negative',
+    'boon_extra_clear', 'boon_firsttile', 'boon_wild', 'boon_newLetter',
+    'boon_ghostTile', 'boon_gold', 'attack_mustuse', 'attack_locked3',
+    'attack_pause_submissions', 'attack_pause_time', 'attack_gain_time',
+    'attack_reduce_bad_modifiers', 'attack_reroll_next_round_modifier',
+    'attack_reroll_personal_modifier_rewards', 'attack_reduce_round_target'
   ]
 };
 
 export const MODIFIER_UNLOCK_PAIRINGS = {
-  'tile:royalPear': ['tile:locked3'],
+  'tile:firsttile': ['card:boon_firsttile'],
+  'tile:wild': ['card:boon_wild'],
+  'tile:ghostTile': ['card:boon_ghostTile'],
+  'tile:gold': ['card:boon_gold'],
+  'tile:royalPear': ['tile:locked3', 'card:boon_pair'],
+  'tile:zeroTile': ['card:attack_zeroTile'],
+  'tile:mustuse': ['card:attack_mustuse'],
+  'tile:locked3': ['card:attack_locked3'],
   'tile:glassTile': ['tile:burningTile'],
   'tile:cornucopiaTile': ['tile:rustingTile'],
   'tile:bankTile': ['tile:barricadeTile'],
@@ -250,23 +273,40 @@ const normalizeUnlockArray = (value = []) => (
   Array.isArray(value) ? [...new Set(value.filter(Boolean).map(String))] : []
 );
 
+const getContingentCardUnlockKeys = (tileKeys = []) => {
+  const unlockedTiles = new Set(tileKeys);
+  return Object.entries(MODIFIER_UNLOCK_PAIRINGS).flatMap(([entityId, pairings]) => {
+    const entity = parseModifierEntityId(entityId);
+    if (entity?.type !== MODIFIER_UNLOCK_TYPES.TILE || !unlockedTiles.has(entity.key)) {
+      return [];
+    }
+
+    return pairings
+      .map(parseModifierEntityId)
+      .filter((pair) => pair?.type === MODIFIER_UNLOCK_TYPES.CARD)
+      .map((pair) => pair.key);
+  });
+};
+
 const createDefaultUnlockState = () => ({
   v: 1,
   updatedAt: Date.now(),
   [MODIFIER_UNLOCK_TYPES.TILE]: normalizeUnlockArray(STARTING_MODIFIER_UNLOCKS.tile),
   [MODIFIER_UNLOCK_TYPES.ROUND]: normalizeUnlockArray(STARTING_MODIFIER_UNLOCKS.round),
-  [MODIFIER_UNLOCK_TYPES.PERSONAL]: normalizeUnlockArray(STARTING_MODIFIER_UNLOCKS.personal)
+  [MODIFIER_UNLOCK_TYPES.PERSONAL]: normalizeUnlockArray(STARTING_MODIFIER_UNLOCKS.personal),
+  [MODIFIER_UNLOCK_TYPES.CARD]: normalizeUnlockArray(STARTING_MODIFIER_UNLOCKS.card)
 });
 
 export const normalizeModifierUnlockState = (state = {}) => {
   const defaults = createDefaultUnlockState();
+  const tileUnlocks = normalizeUnlockArray([
+    ...defaults.tile,
+    ...(state.tile || [])
+  ]).filter((key) => ALL_KEYS_BY_TYPE.tile.includes(key));
   return {
     v: 1,
     updatedAt: Math.max(Number(state.updatedAt) || 0, defaults.updatedAt),
-    [MODIFIER_UNLOCK_TYPES.TILE]: normalizeUnlockArray([
-      ...defaults.tile,
-      ...(state.tile || [])
-    ]).filter((key) => ALL_KEYS_BY_TYPE.tile.includes(key)),
+    [MODIFIER_UNLOCK_TYPES.TILE]: tileUnlocks,
     [MODIFIER_UNLOCK_TYPES.ROUND]: normalizeUnlockArray([
       ...defaults.round,
       ...(state.round || [])
@@ -274,7 +314,12 @@ export const normalizeModifierUnlockState = (state = {}) => {
     [MODIFIER_UNLOCK_TYPES.PERSONAL]: normalizeUnlockArray([
       ...defaults.personal,
       ...(state.personal || [])
-    ]).filter((key) => ALL_KEYS_BY_TYPE.personal.includes(key))
+    ]).filter((key) => ALL_KEYS_BY_TYPE.personal.includes(key)),
+    [MODIFIER_UNLOCK_TYPES.CARD]: normalizeUnlockArray([
+      ...defaults.card,
+      ...(state.card || []),
+      ...getContingentCardUnlockKeys(tileUnlocks)
+    ]).filter((key) => ALL_KEYS_BY_TYPE.card.includes(key))
   };
 };
 
@@ -308,7 +353,8 @@ export const mergeModifierUnlockStates = (...states) => {
     updatedAt: Math.max(Number(merged.updatedAt) || 0, Number(state?.updatedAt) || 0),
     tile: [...(merged.tile || []), ...(state?.tile || [])],
     round: [...(merged.round || []), ...(state?.round || [])],
-    personal: [...(merged.personal || []), ...(state?.personal || [])]
+    personal: [...(merged.personal || []), ...(state?.personal || [])],
+    card: [...(merged.card || []), ...(state?.card || [])]
   }), createDefaultUnlockState()));
 };
 
@@ -325,7 +371,8 @@ export const unlockAllModifiers = () => writeLocalModifierUnlockState({
   updatedAt: Date.now(),
   tile: ALL_KEYS_BY_TYPE.tile,
   round: ALL_KEYS_BY_TYPE.round,
-  personal: ALL_KEYS_BY_TYPE.personal
+  personal: ALL_KEYS_BY_TYPE.personal,
+  card: ALL_KEYS_BY_TYPE.card
 });
 
 const getModifierEntityId = (type, key) => `${type}:${key}`;
@@ -344,6 +391,7 @@ const getDefinition = (type, key) => {
   if (type === MODIFIER_UNLOCK_TYPES.TILE) return TILE_DEFINITIONS[key] || null;
   if (type === MODIFIER_UNLOCK_TYPES.ROUND) return ROUND_MODIFIER_DEFINITIONS[key] || null;
   if (type === MODIFIER_UNLOCK_TYPES.PERSONAL) return PERSONAL_MODIFIER_DEFINITIONS[key] || null;
+  if (type === MODIFIER_UNLOCK_TYPES.CARD) return CARD_DEFINITIONS[key] || null;
   return null;
 };
 
@@ -413,6 +461,13 @@ const getPairedCandidate = (candidate, state) => {
   return null;
 };
 
+const getExplicitPairedCandidates = (candidate, state) => {
+  const entityId = getModifierEntityId(candidate.type, candidate.key);
+  return (MODIFIER_UNLOCK_PAIRINGS[entityId] || [])
+    .map(parseModifierEntityId)
+    .filter((pair) => pair && !isModifierUnlocked(pair.type, pair.key, state));
+};
+
 const addUnlock = (state, unlocks, candidate, reason = '') => {
   if (!candidate?.type || !candidate?.key || isModifierUnlocked(candidate.type, candidate.key, state)) {
     return state;
@@ -446,7 +501,8 @@ const findFallbackCandidate = (state, options = {}) => {
       ? []
       : getRemainingKeys(MODIFIER_UNLOCK_TYPES.TILE, state),
     [MODIFIER_UNLOCK_TYPES.PERSONAL]: getRemainingKeys(MODIFIER_UNLOCK_TYPES.PERSONAL, state),
-    [MODIFIER_UNLOCK_TYPES.ROUND]: getRemainingKeys(MODIFIER_UNLOCK_TYPES.ROUND, state)
+    [MODIFIER_UNLOCK_TYPES.ROUND]: getRemainingKeys(MODIFIER_UNLOCK_TYPES.ROUND, state),
+    [MODIFIER_UNLOCK_TYPES.CARD]: getRemainingKeys(MODIFIER_UNLOCK_TYPES.CARD, state)
   };
   const allRemaining = Object.entries(remainingByType).flatMap(([type, keys]) => keys.map((key) => ({ type, key })));
   if (!allRemaining.length) {
@@ -463,7 +519,8 @@ const findFallbackCandidate = (state, options = {}) => {
   const tileRemaining = remainingByType[MODIFIER_UNLOCK_TYPES.TILE];
   const pairedRemaining = [
     ...remainingByType[MODIFIER_UNLOCK_TYPES.PERSONAL].map((key) => ({ type: MODIFIER_UNLOCK_TYPES.PERSONAL, key })),
-    ...remainingByType[MODIFIER_UNLOCK_TYPES.ROUND].map((key) => ({ type: MODIFIER_UNLOCK_TYPES.ROUND, key }))
+    ...remainingByType[MODIFIER_UNLOCK_TYPES.ROUND].map((key) => ({ type: MODIFIER_UNLOCK_TYPES.ROUND, key })),
+    ...remainingByType[MODIFIER_UNLOCK_TYPES.CARD].map((key) => ({ type: MODIFIER_UNLOCK_TYPES.CARD, key }))
   ];
   const shouldPickTile = tileRemaining.length
     && (!pairedRemaining.length || Math.random() < 0.5);
@@ -503,6 +560,16 @@ export const evaluateModifierUnlocksForRound = (context = {}, options = {}) => {
     }
 
     if (context.isTutorial && primary.allowInTutorial) {
+      return;
+    }
+
+    const explicitPairs = getExplicitPairedCandidates(primary, state);
+    if (explicitPairs.length) {
+      explicitPairs.forEach((pair) => {
+        state = addUnlock(state, unlocks, pair, pair.type === MODIFIER_UNLOCK_TYPES.CARD
+          ? 'Unlocked with its matching tile.'
+          : 'Unlocked as its paired modifier.');
+      });
       return;
     }
 
@@ -574,5 +641,13 @@ export const getModifierUnlockCatalog = (state = readLocalModifierUnlockState())
     description: getDefinition(MODIFIER_UNLOCK_TYPES.PERSONAL, key)?.description || '',
     group: getDefinition(MODIFIER_UNLOCK_TYPES.PERSONAL, key)?.tier || 'common',
     unlocked: isModifierUnlocked(MODIFIER_UNLOCK_TYPES.PERSONAL, key, state)
+  })),
+  card: ALL_KEYS_BY_TYPE.card.map((key) => ({
+    type: MODIFIER_UNLOCK_TYPES.CARD,
+    key,
+    label: getLabel(MODIFIER_UNLOCK_TYPES.CARD, key),
+    description: getDefinition(MODIFIER_UNLOCK_TYPES.CARD, key)?.description || '',
+    group: getDefinition(MODIFIER_UNLOCK_TYPES.CARD, key)?.kind || 'boon',
+    unlocked: isModifierUnlocked(MODIFIER_UNLOCK_TYPES.CARD, key, state)
   }))
 });

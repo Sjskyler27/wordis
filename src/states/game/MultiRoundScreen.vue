@@ -345,6 +345,7 @@ const personalTierLabels = {
 };
 const unlockedPersonalModifierKeys = computed(() => new Set(getUnlockedModifierKeys(MODIFIER_UNLOCK_TYPES.PERSONAL, modifierUnlockState.value)));
 const unlockedRoundModifierKeys = computed(() => new Set(getUnlockedModifierKeys(MODIFIER_UNLOCK_TYPES.ROUND, modifierUnlockState.value)));
+const unlockedCardKeys = computed(() => new Set(getUnlockedModifierKeys(MODIFIER_UNLOCK_TYPES.CARD, modifierUnlockState.value)));
 const personalModifierGroups = computed(() => {
   const modifiers = Object.values(PERSONAL_MODIFIER_DEFINITIONS)
     .filter((modifier) => unlockedPersonalModifierKeys.value.has(modifier.key));
@@ -379,6 +380,7 @@ const activeRoundModifierGroup = computed(() => {
 });
 const buildCardEntries = (keys = []) => {
   return keys
+    .filter((key) => unlockedCardKeys.value.has(key))
     .map((key) => ({ key, ...(CARD_DEFINITIONS[key] || {}) }))
     .filter((card) => card.label)
     .sort((first, second) => first.label.localeCompare(second.label));

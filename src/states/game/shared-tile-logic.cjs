@@ -1448,21 +1448,29 @@ const createSharedTileLogic = ({ letterConfig, wordBonuses, milestoneRewards = {
 
     const getCardPool = (kind, options = {}) => {
       const disabledCardKeys = new Set(options.disabledCardKeys || options.disabledCards || []);
+      const allowedCardKeys = new Set(options.allowedCardKeys || options.allowedCards || []);
       const filterDisabledCards = (cardKeys = []) => cardKeys.filter((cardKey) => !disabledCardKeys.has(cardKey));
+      const filterAllowedCards = (cardKeys = []) => {
+        if (!allowedCardKeys.size) {
+          return cardKeys;
+        }
+
+        return cardKeys.filter((cardKey) => allowedCardKeys.has(cardKey));
+      };
 
       if (kind === 'boon') {
-        return filterDisabledCards(BOON_CARD_KEYS);
+        return filterAllowedCards(filterDisabledCards(BOON_CARD_KEYS));
       }
 
       if (options.deck === 'timed_solo') {
-        return filterDisabledCards(TIMED_SOLO_ATTACK_CARD_KEYS);
+        return filterAllowedCards(filterDisabledCards(TIMED_SOLO_ATTACK_CARD_KEYS));
       }
 
       if (options.deck === 'multi_round') {
-        return filterDisabledCards(MULTI_ROUND_ATTACK_CARD_KEYS);
+        return filterAllowedCards(filterDisabledCards(MULTI_ROUND_ATTACK_CARD_KEYS));
       }
 
-      return filterDisabledCards(ATTACK_CARD_KEYS).filter((cardKey) => {
+      return filterAllowedCards(filterDisabledCards(ATTACK_CARD_KEYS)).filter((cardKey) => {
         const definition = getCardDefinition(cardKey);
         if (!definition?.requiresBehind) {
           return true;

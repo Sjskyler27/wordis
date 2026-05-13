@@ -103,6 +103,7 @@ export const useSinglePlayerGame = ({
     return drawCards(kind, count, {
       ...options,
       side,
+      allowedCardKeys: options.allowedCardKeys || getAllowedCardKeys(),
       heldCards: getHeldCards(side, kind)
     });
   };
@@ -130,6 +131,13 @@ export const useSinglePlayerGame = ({
     };
   };
   const getRoundModifierEffects = () => roundModifierEffects?.value || {};
+  const getAllowedCardKeys = () => {
+    if (!isMultiRoundMode?.value || typeof getAllowedModifierKeys !== 'function') {
+      return null;
+    }
+
+    return getAllowedModifierKeys('card');
+  };
   const withModifierUnlocks = (options = {}) => {
     if (!isMultiRoundMode?.value || typeof getAllowedModifierKeys !== 'function') {
       return options;
@@ -302,7 +310,7 @@ export const useSinglePlayerGame = ({
         };
         playerCards.value = {
           host: {
-            boons: tutorialPlan.suppressStartingCards ? [] : drawCards('boon', 1),
+            boons: tutorialPlan.suppressStartingCards ? [] : drawCardsForSide('boon', 1, 'host'),
             attacks: []
           },
           opponent: {
@@ -323,14 +331,14 @@ export const useSinglePlayerGame = ({
       };
       playerCards.value = {
         host: {
-          boons: drawCards('boon', 1),
+          boons: drawCardsForSide('boon', 1, 'host'),
           attacks: shouldDrawAttacks() ? drawCardsForSide('attack', 1, 'host', {
             deck: attackDeck(),
             scores: playerScores.value
           }) : []
         },
         opponent: {
-          boons: drawCards('boon', 1),
+          boons: drawCardsForSide('boon', 1, 'opponent'),
           attacks: botEnabled.value ? drawCardsForSide('attack', 1, 'opponent', {
             deck: attackDeck(),
             scores: playerScores.value
@@ -695,7 +703,7 @@ export const useSinglePlayerGame = ({
       playerCards.value = {
         ...playerCards.value,
         [side]: {
-          boons: drawCards('boon', 1),
+          boons: drawCardsForSide('boon', 1, side),
           attacks: []
         }
       };
