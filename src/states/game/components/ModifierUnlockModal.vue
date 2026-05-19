@@ -4,27 +4,38 @@
       <span class="reward-kicker">Modifier Unlocked</span>
       <strong>{{ unlock.label }}</strong>
       <div
-        class="modifier-unlock-card reward-card"
-        :class="[unlock.group || unlock.type]"
+        class="modifier-unlock-card"
+        :class="[
+          unlock.type === 'card' ? 'action-card modifier-unlock-action-card' : 'reward-card',
+          unlock.group || unlock.type
+        ]"
+        :style="unlock.type === 'card' ? unlock.preview?.style : null"
       >
-        <div
-          v-if="unlock.type === 'tile'"
-          class="modifier-preview-tile"
-          :style="unlock.preview?.style"
-        >
-          <span
-            v-if="unlock.preview?.badge && !unlock.preview?.hideBadge"
-            class="modifier-preview-tile-badge"
-            :style="unlock.preview?.badgeStyle"
+        <template v-if="unlock.type === 'card'">
+          <span class="action-card-type">{{ formatCardKind(unlock.group) }}</span>
+          <strong>{{ unlock.label }}</strong>
+          <span class="modifier-unlock-card-description">{{ unlock.description }}</span>
+        </template>
+        <template v-else>
+          <div
+            v-if="unlock.type === 'tile'"
+            class="modifier-preview-tile"
+            :style="unlock.preview?.style"
           >
-            {{ unlock.preview.badge }}
-          </span>
-          <span class="modifier-preview-tile-score">{{ unlock.preview?.score }}</span>
-          <span class="modifier-preview-tile-letter">{{ unlock.preview?.letter }}</span>
-        </div>
-        <span>{{ unlock.group || unlock.type }}</span>
-        <strong>{{ unlock.label }}</strong>
-        <p>{{ unlock.description }}</p>
+            <span
+              v-if="unlock.preview?.badge && !unlock.preview?.hideBadge"
+              class="modifier-preview-tile-badge"
+              :style="unlock.preview?.badgeStyle"
+            >
+              {{ unlock.preview.badge }}
+            </span>
+            <span class="modifier-preview-tile-score">{{ unlock.preview?.score }}</span>
+            <span class="modifier-preview-tile-letter">{{ unlock.preview?.letter }}</span>
+          </div>
+          <span>{{ unlock.group || unlock.type }}</span>
+          <strong>{{ unlock.label }}</strong>
+          <p>{{ unlock.description }}</p>
+        </template>
       </div>
       <p class="modifier-unlock-reason">{{ unlock.reason }}</p>
       <div class="modifier-unlock-meta">
@@ -58,6 +69,13 @@ defineProps({
 });
 
 defineEmits(['previous', 'next', 'close', 'unlock-all']);
+
+const formatCardKind = (kind = '') => {
+  if (kind === 'trayModifier') return 'Tray Modifier';
+  if (kind === 'tactic') return 'Tactic';
+  if (kind === 'attack') return 'Attack';
+  return kind || 'Card';
+};
 </script>
 
 <style scoped>
@@ -194,6 +212,80 @@ defineEmits(['previous', 'next', 'close', 'unlock-all']);
   margin: 0;
   line-height: 1.42;
   opacity: 0.86;
+}
+
+.modifier-unlock-card.action-card {
+  --card-glow: rgba(255, 255, 255, 0.16);
+  --card-edge: rgba(255, 255, 255, 0.22);
+  --card-pattern: rgba(255, 255, 255, 0.08);
+  --card-background: linear-gradient(180deg, rgba(119, 206, 113, 0.96), rgba(63, 129, 84, 0.96));
+  --card-badge-background: rgba(24, 8, 22, 0.26);
+  --card-ink: #fff7ee;
+  position: relative;
+  display: grid;
+  gap: 12px;
+  min-height: 190px;
+  padding: 20px;
+  overflow: hidden;
+  border: 1px solid var(--card-edge);
+  border-radius: 22px;
+  color: var(--card-ink);
+  background: var(--card-background);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.16),
+    inset 0 -3px 0 rgba(39, 11, 25, 0.28),
+    0 14px 24px rgba(20, 6, 18, 0.22);
+}
+
+.modifier-unlock-card.action-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 18% 20%, var(--card-glow) 0, transparent 36%),
+    linear-gradient(135deg, var(--card-pattern) 0%, transparent 35%, var(--card-pattern) 100%);
+  opacity: 0.9;
+  pointer-events: none;
+}
+
+.modifier-unlock-card.action-card::after {
+  content: '';
+  position: absolute;
+  inset: 7px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.01));
+  pointer-events: none;
+}
+
+.modifier-unlock-card.action-card > * {
+  position: relative;
+  z-index: 1;
+}
+
+.modifier-unlock-card.action-card > strong {
+  color: #fff7ee;
+  font-size: 1.28rem;
+  line-height: 1.1;
+  text-shadow: 0 1px 0 rgba(48, 18, 8, 0.28);
+}
+
+.modifier-unlock-card-description {
+  color: rgba(255, 248, 236, 0.84);
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+
+.action-card-type {
+  justify-self: start;
+  padding: 5px 9px 4px;
+  border-radius: 999px;
+  color: rgba(255, 248, 236, 0.92);
+  background: var(--card-badge-background);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  font-size: 0.68rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
 }
 
 .modifier-preview-tile {

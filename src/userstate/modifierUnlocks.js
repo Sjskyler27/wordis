@@ -512,6 +512,21 @@ const getTilePreview = (key) => {
   };
 };
 
+const getCardPreview = (key) => {
+  const definition = getDefinition(MODIFIER_UNLOCK_TYPES.CARD, key) || {};
+  const ui = definition.ui || {};
+  return {
+    kind: definition.kind || 'card',
+    style: {
+      '--card-glow': ui.cardGlow || 'rgba(255, 255, 255, 0.16)',
+      '--card-edge': ui.cardEdge || 'rgba(255, 255, 255, 0.24)',
+      '--card-pattern': ui.cardPattern || 'rgba(255, 255, 255, 0.08)',
+      '--card-background': ui.cardBackground || 'linear-gradient(180deg, rgba(119, 206, 113, 0.96), rgba(63, 129, 84, 0.96))',
+      '--card-badge-background': ui.cardBadgeBackground || 'rgba(24, 8, 22, 0.26)'
+    }
+  };
+};
+
 const getPersonalRoundPairKeys = (personalKey, state) => {
   const availableKeys = getRemainingKeys(MODIFIER_UNLOCK_TYPES.ROUND, state);
   if (getDefinition(MODIFIER_UNLOCK_TYPES.PERSONAL, personalKey)?.tier !== 'epic') {
@@ -582,10 +597,16 @@ const addUnlock = (state, unlocks, candidate, reason = '') => {
     ...candidate,
     label: getLabel(candidate.type, candidate.key),
     description: getDefinition(candidate.type, candidate.key)?.description || '',
-    preview: candidate.type === MODIFIER_UNLOCK_TYPES.TILE ? getTilePreview(candidate.key) : null,
+    preview: candidate.type === MODIFIER_UNLOCK_TYPES.TILE
+      ? getTilePreview(candidate.key)
+      : candidate.type === MODIFIER_UNLOCK_TYPES.CARD
+        ? getCardPreview(candidate.key)
+        : null,
     group: candidate.type === MODIFIER_UNLOCK_TYPES.TILE
       ? TILE_MODIFIER_GROUP_BY_KEY[candidate.key] || 'neutral'
-      : getDefinition(candidate.type, candidate.key)?.tier || getDefinition(candidate.type, candidate.key)?.difficulty || '',
+      : candidate.type === MODIFIER_UNLOCK_TYPES.CARD
+        ? getDefinition(candidate.type, candidate.key)?.kind || 'card'
+        : getDefinition(candidate.type, candidate.key)?.tier || getDefinition(candidate.type, candidate.key)?.difficulty || '',
     reason
   });
 
@@ -752,6 +773,7 @@ export const getModifierUnlockCatalog = (state = readLocalModifierUnlockState())
     description: getDefinition(MODIFIER_UNLOCK_TYPES.CARD, key)?.description || '',
     unlockHint: getUnlockHint(MODIFIER_UNLOCK_TYPES.CARD, key, state),
     group: getDefinition(MODIFIER_UNLOCK_TYPES.CARD, key)?.kind || 'trayModifier',
+    preview: getCardPreview(key),
     unlocked: isModifierUnlocked(MODIFIER_UNLOCK_TYPES.CARD, key, state)
   }))
 });

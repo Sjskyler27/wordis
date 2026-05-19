@@ -153,29 +153,44 @@
           <article
             v-for="modifier in activeModifierCatalog"
             :key="`${modifier.type}-${modifier.key}`"
-            class="modifier-collection-card reward-card"
-            :class="[modifier.type, modifier.group, { locked: !modifier.unlocked }]"
+            class="modifier-collection-card"
+            :class="[
+              modifier.type === 'card' ? 'action-card modifier-collection-action-card' : 'reward-card',
+              modifier.type,
+              modifier.group,
+              { locked: !modifier.unlocked }
+            ]"
+            :style="modifier.type === 'card' ? modifier.preview?.style : null"
           >
-            <div
-              v-if="modifier.type === 'tile'"
-              class="modifier-preview-tile"
-              :style="modifier.preview?.style"
-            >
-              <span
-                v-if="modifier.preview?.badge && !modifier.preview?.hideBadge"
-                class="modifier-preview-tile-badge"
-                :style="modifier.preview?.badgeStyle"
-              >
-                {{ modifier.preview.badge }}
-              </span>
-              <span class="modifier-preview-tile-score">{{ modifier.preview?.score }}</span>
-              <span class="modifier-preview-tile-letter">{{ modifier.preview?.letter }}</span>
-            </div>
-            <div class="modifier-collection-card-heading">
+            <template v-if="modifier.type === 'card'">
+              <span class="action-card-type">{{ formatCardKind(modifier.group) }}</span>
               <strong>{{ modifier.label }}</strong>
-              <span>{{ modifier.group }}</span>
-            </div>
-            <p>{{ modifier.unlocked ? modifier.description : `Unlock: ${modifier.unlockHint}` }}</p>
+              <span class="modifier-collection-card-description">
+                {{ modifier.unlocked ? modifier.description : `Unlock: ${modifier.unlockHint}` }}
+              </span>
+            </template>
+            <template v-else>
+              <div
+                v-if="modifier.type === 'tile'"
+                class="modifier-preview-tile"
+                :style="modifier.preview?.style"
+              >
+                <span
+                  v-if="modifier.preview?.badge && !modifier.preview?.hideBadge"
+                  class="modifier-preview-tile-badge"
+                  :style="modifier.preview?.badgeStyle"
+                >
+                  {{ modifier.preview.badge }}
+                </span>
+                <span class="modifier-preview-tile-score">{{ modifier.preview?.score }}</span>
+                <span class="modifier-preview-tile-letter">{{ modifier.preview?.letter }}</span>
+              </div>
+              <div class="modifier-collection-card-heading">
+                <strong>{{ modifier.label }}</strong>
+                <span>{{ modifier.group }}</span>
+              </div>
+              <p>{{ modifier.unlocked ? modifier.description : `Unlock: ${modifier.unlockHint}` }}</p>
+            </template>
           </article>
         </div>
       </div>
@@ -447,6 +462,13 @@ const formatResult = (result = '') => {
   if (result === 'failed') return 'Failed Run';
   if (result === 'lost') return 'Lost';
   return 'Game';
+};
+
+const formatCardKind = (kind = '') => {
+  if (kind === 'trayModifier') return 'Tray Modifier';
+  if (kind === 'tactic') return 'Tactic';
+  if (kind === 'attack') return 'Attack';
+  return kind || 'Card';
 };
 
 const cycleMode = (direction) => {
@@ -801,6 +823,80 @@ h2 {
 .modifier-collection-card.locked {
   filter: grayscale(1);
   opacity: 0.46;
+}
+
+.modifier-collection-card.action-card {
+  --card-glow: rgba(255, 255, 255, 0.16);
+  --card-edge: rgba(255, 255, 255, 0.22);
+  --card-pattern: rgba(255, 255, 255, 0.08);
+  --card-background: linear-gradient(180deg, rgba(119, 206, 113, 0.96), rgba(63, 129, 84, 0.96));
+  --card-badge-background: rgba(24, 8, 22, 0.26);
+  --card-ink: #fff7ee;
+  position: relative;
+  display: grid;
+  align-content: start;
+  gap: 18px;
+  min-height: 260px;
+  overflow: hidden;
+  border: 1px solid var(--card-edge);
+  border-radius: 22px;
+  color: var(--card-ink);
+  background: var(--card-background);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.16),
+    inset 0 -3px 0 rgba(39, 11, 25, 0.28),
+    0 14px 24px rgba(20, 6, 18, 0.22);
+}
+
+.modifier-collection-card.action-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 18% 20%, var(--card-glow) 0, transparent 36%),
+    linear-gradient(135deg, var(--card-pattern) 0%, transparent 35%, var(--card-pattern) 100%);
+  opacity: 0.9;
+  pointer-events: none;
+}
+
+.modifier-collection-card.action-card::after {
+  content: '';
+  position: absolute;
+  inset: 7px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.01));
+  pointer-events: none;
+}
+
+.modifier-collection-card.action-card > * {
+  position: relative;
+  z-index: 1;
+}
+
+.modifier-collection-card.action-card > strong {
+  color: #fff7ee;
+  font-size: 1.18rem;
+  line-height: 1.1;
+  text-shadow: 0 1px 0 rgba(48, 18, 8, 0.28);
+}
+
+.modifier-collection-card-description {
+  color: rgba(255, 248, 236, 0.84);
+  font-size: 0.92rem;
+  line-height: 1.42;
+}
+
+.action-card-type {
+  justify-self: start;
+  padding: 5px 9px 4px;
+  border-radius: 999px;
+  color: rgba(255, 248, 236, 0.92);
+  background: var(--card-badge-background);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  font-size: 0.68rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
 }
 
 .modifier-collection-card-heading {
