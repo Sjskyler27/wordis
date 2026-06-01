@@ -23,7 +23,6 @@
             <h1 class="base">WORDIS</h1>
           </div>
         </div>
-        <h2>Outpace The Machine</h2>
       </div>
 
       <div class="links">

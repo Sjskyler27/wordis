@@ -32,19 +32,18 @@
           <p>Return to your adventure!</p>
         </div>
       </div> -->
-       <button tabindex="-1" class="menu-option machine-learning-option" ref="machineLearningButton"
+       <!-- <button tabindex="-1" class="menu-option machine-learning-option" ref="machineLearningButton"
         @click="emit('singleplayer', { mode: 'bot_match' })"
         @keydown.space.prevent="emit('singleplayer', { mode: 'bot_match' })"
         @keydown.enter.prevent="emit('singleplayer', { mode: 'bot_match' })"
         >
-        <!-- <img src="/src/assets/images/playTypes/image.png" alt="Bot Duel" class="menu-img" /> -->
         <div class="menu-text">
           <h3>Machine Learning</h3>
           <br>
 
           <p>Play against a machine that gets better the more you play!</p>
         </div>
-      </button>
+      </button> -->
 
 
       <button tabindex="-1" class="menu-option" ref="multiRoundButton"
@@ -54,7 +53,7 @@
         >
         <!-- <img src="/src/assets/images/playTypes/image.png" alt="Expedition" class="menu-img" /> -->
         <div class="menu-text">
-          <h3>BALATRO STYLE</h3>
+          <h3>Single Player</h3>
           <br>
 
           <p>Meet each rounds required score within the time limit. Gain permanent upgrades to help you get through each round as they scale in difficulty.</p>
@@ -115,7 +114,7 @@
         @keydown.enter.prevent="emit('continue', SAVE_MODES.MULTI_ROUND)"
         >
         <div class="menu-text">
-          <h3>Continue Balatro Style</h3>
+          <h3>Continue Single Player</h3>
           <br>
           <p>Resume your saved multi-round run.</p>
         </div>

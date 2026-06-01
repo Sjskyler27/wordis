@@ -431,24 +431,20 @@ No hints during reward modal except reward hint
 For disabled tile it needs to not be by the chance it just needs to be can return  false 
 Limit cards gained from tutorial add cards to unlocks 
  9:34 AM 
-Add two bars to difficulties tooltip pause timer times and tooltip pause timer seconds 
-This is how long a tooltip pause the time and how many times a user can activate it in a game 
-Add screen bounding first time you open game to make sure it's in size
-Remove in meaningful upgrades and cards 
-Boons and attacks in multiplyer tile modifiers and perks? In multi round 
+
+Remove unmeaningful upgrades and cards such as a hair less bad modifiers 
+
 Lock cards that give time modifier behind the modifier behind unlocked
 Status banner needs to go it should be toast notifications 
 Show how many rerolls in reward
 Round history show rewards and when collected 
 Videos plus 2 not over
 Must shield and burn shield are not that great should not be epic 
-Increase given draft amount I didn't see any
-Lock step should not lock other tiles
-Make it like burn and mist add flat percent that it will be pulled if there is none 
+Increase golden draft amount I didn't see any
 Ghosting a new lettered k to t turned it back to a k
-If I need letter a consonent into a vowel is it plus 2 times two? 
+If I turn letter a consonent into a vowel is it plus 2 times two? 
 Tile tray instead of rack 
-High scores need to sync
+
 Unlocks need contingencies, such as first tile plus ten needs first tile unlocked before unlocking. Run through any potential issues.
 Starting tiles
 Gold, first, twin 
@@ -457,3 +453,9 @@ Wild Ghost shimmer
 Add reset progress button 
 Epic Vowels should give plus 2 instead of plus 1 
 Add rare personal upgrade increase multiplayer modifier cap by one 
+
+screen zoom does not understand the concept of my zooom
+
+tactic cards or perk cards 
+
+twin tile should not be the first good modifier it should be a first tile 
