@@ -1,10 +1,5 @@
 <template>
-  <div class="game-shell" :style="backgroundMoodStyle">
-    <div id="background-layer">
-      <div class="shape-layer layer-far"></div>
-      <div class="shape-layer layer-near"></div>
-    </div>
-
+  <div class="game-shell" :class="{ 'machine-game-shell': isBotMode }">
     <main class="board-frame" :class="{ paused: isPaused }" :style="boardFrameStyle">
       <button
         v-if="isSideDrawerMode"
@@ -23,99 +18,73 @@
         @click="closeSideDrawer"
       ></button>
       <aside class="side-stack" :class="{ 'side-stack-drawer': isSideDrawerMode, open: isSideDrawerOpen }">
-        <div class="bonus-card accent-blue">
-          <span class="bonus-kicker">Game mode</span>
-          <strong>{{ modeTitle }}</strong>
-          <p v-if="props.isMultiplayer">
-            <button type="button" class="room-code-button" @click="copyRoomCode">
-              Room {{ roomCode }}
-            </button>
-            · {{ isHost ? 'Host lane' : 'Opponent lane' }}
-          </p>
-          <p>{{ modeSubtitle }}</p>
-        </div>
-
-
-        <div class="bonus-card accent-red">
-          <span class="bonus-kicker">Status</span>
-          <strong>{{ localMessage || statusHeadline }}</strong>
-          <p v-if="props.isMultiplayer && !gameStarted">Waiting for opponent to connect</p>
-          <p v-else-if="isTimedSoloMode">Timer ends the run, so play fast and bank points.</p>
-          <p v-else>Only used letters are replaced</p>
-        </div>
-        <div class="bonus-card accent-purple">
-          <span class="bonus-kicker">Cards</span>
-          <strong>{{ cardSummary }}</strong>
-          <p v-if="activeBoonCard">
-            {{ activeBoonCard.label }} is ready. Click one of your tiles to use it.
-          </p>
-          <p v-else-if="hasCardsInHand">
-            Drawn cards sit here until you spend them.
-          </p>
-          <p v-else>No cards in hand right now.</p>
-          <div class="card-hand">
-            <button
-              v-for="(card, index) in myCards.boons"
-              :key="card.id"
-              type="button"
-              class="action-card"
-              :style="getCardStyle(card)"
-              :class="{
-                armed: activeBoonCardId === card.id,
-                'action-card-controller-focus': controllerRegion === 'cards' && controllerCardCursorIndex === index
-              }"
-              :data-controller-card="index"
-              @click="selectBoonCard(card)"
-            >
-              <span class="action-card-type">Boon</span>
-              <strong>{{ card.label }}</strong>
-              <span>{{ card.description }}</span>
-            </button>
-            <button
-              v-if="attacksEnabled"
-              v-for="(card, attackIndex) in myCards.attacks"
-              :key="card.id"
-              type="button"
-              class="action-card"
-              :style="getCardStyle(card)"
-              :class="{
-                'action-card-controller-focus': controllerRegion === 'cards' && controllerCardCursorIndex === myCards.boons.length + attackIndex
-              }"
-              :data-controller-card="myCards.boons.length + attackIndex"
-              @click="useAttackCard(card)"
-            >
-              <span class="action-card-type">Attack</span>
-              <strong>{{ card.label }}</strong>
-              <span>{{ card.description }}</span>
-            </button>
-          </div>
-        </div>
-      <button class="pause-button" @click="emit('showSettings')">{{ isPaused ? 'Resume' : 'Pause' }}</button>
-      <button class="back-button" @click="resetAndGoHome">Back to Home</button>
+        <GameStatusCards
+          :is-mobile="isMobile"
+          :is-multiplayer="props.isMultiplayer"
+          :room-code="roomCode"
+          :is-host="isHost"
+          :mode-title="modeTitle"
+          :mode-subtitle="modeSubtitle"
+          :is-bot-mode="isBotMode"
+          :is-multi-round-mode="isMultiRoundMode"
+          :active-round-modifiers="activeRoundModifiersWithCountdowns"
+          :local-message="localMessage"
+          :status-headline="statusHeadline"
+          :game-started="gameStarted"
+          :is-timed-solo-mode="isTimedSoloMode"
+          @copy-room-code="copyRoomCode"
+        />
+        <GameCardsPanel
+          :is-mobile="isMobile"
+          :card-summary="cardSummary"
+          :active-tray-modifier-card="activeTrayModifierCard"
+          :grouped-tray-modifier-cards="groupedTrayModifierCards"
+          :grouped-attack-cards="groupedAttackCards"
+          :attacks-enabled="attacksEnabled"
+          :action-card-label="actionCardLabel"
+          :card-controls-disabled="cardControlsDisabled"
+          :active-tray-modifier-card-id="activeTrayModifierCardId"
+          :controller-region="controllerRegion"
+          :controller-card-cursor-index="controllerCardCursorIndex"
+          :controller-mapping="props.controllerMapping"
+          :is-controller-connected="props.isControllerConnected"
+          @select-tray-modifier="selectTrayModifierCard"
+          @use-attack="useAttackCard"
+        />
+      <button class="pause-button" @click="emit('showSettings')">{{ isPaused ? 'Paused' : 'Pause' }}</button>
+      <!-- <button class="back-button" @click="resetAndGoHome">Back to Home</button> -->
 
       </aside>
 
       <section class="arena-shell">
-        <div class="score-ribbon">
-          <div class="score-box host" :class="scoreBoxClass('host')">
-            <span>Your Board</span>
-            <strong>{{ leftLane.score }}</strong>
-          </div>
-          <div class="score-divider">VS</div>
-          <div class="score-box opponent" :class="[{ timer: isTimedSoloMode }, scoreBoxClass('opponent')]">
-            <span>{{ isTimedSoloMode ? 'Time Left' : 'Their Board' }}</span>
-            <strong>{{ isTimedSoloMode ? timedSoloScoreRibbonLabel : rightLane.score }}</strong>
-          </div>
-        </div>
+        <MultiRoundProgress
+          v-if="isMultiRoundMode"
+          :rounds="multiRoundProgressRounds"
+          :controller-focused-round-index="controllerRegion === 'rounds' ? controllerRoundCursorIndex : -1"
+          :controller-mapping="props.controllerMapping"
+          :is-controller-connected="props.isControllerConnected"
+        />
 
-        <div v-if="props.isMultiplayer ? gameStarted : true" class="arena" :class="{ 'arena-solo': !showOpponentLane }">
+        <ScoreRibbon
+          :score-ribbon-score-label="scoreRibbonScoreLabel"
+          :clock-score-ribbon-label="clockScoreRibbonLabel"
+          :right-score="rightLane.score"
+          :show-clock="isTimedSoloMode || isMultiRoundMode"
+          :reward-modal="isMultiRoundRewardChoiceOpen"
+          :host-score-class="scoreBoxClass('host')"
+          :opponent-score-class="[{ timer: isTimedSoloMode || isMultiRoundMode }, scoreBoxClass('opponent')]"
+        />
+
+        <div v-if="props.isMultiplayer ? gameStarted : true" class="arena" :class="{ 'arena-solo': !showOpponentLane, 'hide-letters': props.settingsShowing }">
           <GameLane
             :isMobile="props.isMobile"
             :side="leftLane.side"
+            :multiplayer-or-bot="isBotMode || isMultiplayer"
             :label="leftLane.label"
             :submitted-word="leftLane.submittedWord"
             :score="leftLane.score"
             :current-player-scores="playerScores"
+            :score-options="multiRoundScoreOptions"
             :last-word-score="leftLane.lastWordScore"
             :last-word-breakdown="leftLane.lastWordBreakdown"
             :tiles="leftLane.tiles"
@@ -124,18 +93,26 @@
             :saved-tile-ids="leftLane.savedTileIds"
             :must-alert-ids="leftLane.mustAlertIds"
             :burst-pulse="laneBurstPulse[leftLane.side]"
+            :clear-pulse="rackClearPulse[leftLane.side]"
             :controller-focused-tile-id="leftLane.side === mySide ? controllerFocusedTileId : ''"
+            :controller-mapping="props.controllerMapping"
+            :is-controller-connected="props.isControllerConnected"
             @tile-click="handleTileClickWithCards($event, leftLane.side)"
+            @tile-drop-on-builder="handleRackTileDropOnBuilder($event, leftLane.side)"
+            @tooltip-opened="handleTooltipOpened"
+            @tooltip-closed="handleTooltipClosed"
           />
 
           <GameLane
             v-if="showOpponentLane"
+            :multiplayer-or-bot="isBotMode || isMultiplayer"
             :isMobile="props.isMobile"
             :side="rightLane.side"
             :label="rightLane.label"
             :submitted-word="rightLane.submittedWord"
             :score="rightLane.score"
             :current-player-scores="playerScores"
+            :score-options="multiRoundScoreOptions"
             :last-word-score="rightLane.lastWordScore"
             :last-word-breakdown="rightLane.lastWordBreakdown"
             :tiles="rightLane.tiles"
@@ -144,8 +121,14 @@
             :saved-tile-ids="rightLane.savedTileIds"
             :must-alert-ids="rightLane.mustAlertIds"
             :burst-pulse="laneBurstPulse[rightLane.side]"
+            :clear-pulse="rackClearPulse[rightLane.side]"
             :controller-focused-tile-id="rightLane.side === mySide ? controllerFocusedTileId : ''"
+            :controller-mapping="props.controllerMapping"
+            :is-controller-connected="props.isControllerConnected"
             @tile-click="handleTileClickWithCards($event, rightLane.side)"
+            @tile-drop-on-builder="handleRackTileDropOnBuilder($event, rightLane.side)"
+            @tooltip-opened="handleTooltipOpened"
+            @tooltip-closed="handleTooltipClosed"
           />
         </div>
 
@@ -161,6 +144,7 @@
           :invalid-pulse="invalidWordPulse"
           :score-pop-pulse="scorePopPulse"
           :score-pop-tiles="scorePopTiles"
+          :bagged-tile-ids="currentBaggedTileIds"
           :current-word-length="currentWordLength"
           :current-word-score="currentWordScore"
           :current-letter-total="currentLetterTotal"
@@ -169,12 +153,17 @@
           :current-word-multiplier="currentWordMultiplier"
           :current-word-side="mySide"
           :current-player-scores="playerScores"
+          :score-options="multiRoundScoreOptions"
+          :minimum-word-length="wordBuilderMinimumWordLength"
           :clear-count="rackClears[mySide]"
           :length-bonus-steps="lengthBonusSteps"
           :controller-focused-built-tile-id="controllerRegion === 'builder' ? controllerFocusedBuiltTileId : ''"
           :controller-focused-action-index="controllerRegion === 'actions' ? controllerActionCursorIndex : -1"
-          :is-overtime-active="isOvertimeActive"
-          :overtime-label="overtimeLabel"
+          :controller-mapping="props.controllerMapping"
+          :is-controller-connected="props.isControllerConnected"
+          :is-overtime-active="wordBuilderBannerActive"
+          :overtime-label="wordBuilderBannerLabel"
+          :hide-console-topline="isMultiRoundRewardChoiceOpen || showHistoryOverlay"
           @undo="handleUndo"
           @clear="handleClearWord"
           @save-letters="handleSaveLetters"
@@ -182,9 +171,47 @@
           @submit="handleSubmit"
           @remove-specific="removeSpecificTile"
           @tile-click="handleBuiltTileClick"
+          @reorder="handleBuiltTileReorder"
+          @tooltip-opened="handleTooltipOpened"
+          @tooltip-closed="handleTooltipClosed"
         />
 
       </section>
+
+      <PersonalModifiersDrawer
+        v-if="isMultiRoundMode"
+        ref="personalModifiersDrawerRef"
+        :modifiers="personalModifiersForDrawer"
+      />
+
+      <MultiRoundRewardChoice
+        v-if="isMultiRoundMode && isMultiRoundRewardChoiceOpen"
+        :rewards="multiRoundRewardChoices"
+        :upcoming-round="upcomingMultiRoundPreview"
+        :selection-total="multiRoundRun.rewardSelectionsTotal.value"
+        :selections-remaining="multiRoundRun.rewardSelectionsRemaining.value"
+        :selections-chosen="multiRoundRun.rewardSelectionsChosen.value"
+        :can-reroll-round-modifiers="canRerollRewardRoundModifiers"
+        :can-reroll-reward-choices="canRerollPersonalModifierRewards"
+        :round-modifier-reroll-count="rewardRoundModifierRerollCount"
+        :reward-choice-reroll-count="personalModifierRewardRerollCount"
+        :controller-focused-reward-index="controllerRegion === 'reward' ? controllerRewardCursorIndex : -1"
+        :controller-mapping="props.controllerMapping"
+        :is-controller-connected="props.isControllerConnected"
+        @choose="handleMultiRoundRewardChoice"
+        @reroll-round-modifiers="handleRewardRoundModifierReroll"
+        @reroll-reward-choices="handlePersonalModifierRewardReroll"
+      />
+
+      <ModifierUnlockModal
+        :unlock="activeModifierUnlock"
+        :current-index="modifierUnlockModalIndex"
+        :total="pendingModifierUnlocks.length"
+        @previous="previousModifierUnlock"
+        @next="nextModifierUnlock"
+        @close="closeModifierUnlockModal"
+        @unlock-all="handleUnlockAllModifiers"
+      />
 
       <HistoryOverlay
         v-if="showHistoryOverlay"
@@ -195,13 +222,16 @@
         :right-label="showOpponentLane ? 'Their History' : ''"
         :left-history="leftLaneHistory"
         :right-history="showOpponentLane ? rightLaneHistory : []"
+        :multi-round-summary="multiRoundHistorySummary"
         :play-again-text="playAgainButtonText"
         :play-again-disabled="props.isMultiplayer && myReplayVote"
         @play-again="handlePlayAgain"
+        @home="emit('home')"
       />
 
-      <TutorialOverlay
+      <TutorialHintModal
         v-if="showTutorialOverlay"
+        :hint="activeTutorialHint"
         @close="handleCloseTutorial"
       />
     </main>
@@ -210,10 +240,10 @@
 
 <script setup>
 import { computed, defineProps, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
-import gameMusicUrl from '/public/audio/gameMusic.mp3';
-import tilePickupSoundUrl from '/public/audio/tile_pick_up.mp3';
+import tilePickupSoundUrl from '/public/audio/blank.mp3';
 import tilePutBackSoundUrl from '/public/audio/tile_put_back.mp3';
-import scoreBuiltTileSoundUrl from '/public/audio/score_built_tile.mp3';
+import tileReplaceSoundUrl from '/public/audio/blank.mp3';
+import scoreBuiltTileSoundUrl from '/public/audio/blank.mp3';
 import victorySoundUrl from '/public/audio/victory.mp3';
 import defeatSoundUrl from '/public/audio/defeat.mp3';
 import {
@@ -231,25 +261,89 @@ import {
   gameStarted,
   submitWord as submitMultiplayerWord,
   clearRack as clearMultiplayerRack,
-  useBoon as useMultiplayerBoon,
+  useBoon as useMultiplayerTrayModifier,
   useAttack as useMultiplayerAttack,
   playAgain as playMultiplayerAgain,
   resetGame as resetMultiplayer,
   multiplayerOvertimeEnabled,
   multiplayerOvertimePendingSide,
   multiplayerOvertimeFinalWordSubmitted,
-  multiplayerSubmissionPauseOwner
+  multiplayerSubmissionPauseOwner,
+  multiplayerSettings
 } from './multiplayer.js';
-import { MIN_WORD_LENGTH, getWordScoreDetails, isMissingRequiredTile, selectedTilesMatchWord } from './tile-logic.js';
+import { MIN_WORD_LENGTH, MODIFIER_DEFINITIONS, applyRackManipulationEffects, drawCards, getBaggedTileIds, getWordScoreDetails, isMissingBagTileForBaggedSelection, isMissingRequiredTile, selectedTilesMatchWord, tickLightningTiles, tickShimmerTiles } from './tile-logic.js';
 import { getPreferredLanguage } from './language.js';
 import { useWordBuilder } from './useWordBuilder.js';
 import { useSinglePlayerGame } from './useSinglePlayerGame.js';
+import { useMultiRoundRun } from './multiround/useMultiRoundRun.js';
+import { useCardPanelState } from './composables/useCardPanelState.js';
+import { useScoreRibbonState } from './composables/useScoreRibbonState.js';
+import { useSideDrawerState } from './composables/useSideDrawerState.js';
 import { validateWord } from './word-validator.js';
 import { isTestingMode } from './testing.js';
+import GameCardsPanel from './components/GameCardsPanel.vue';
+import GameStatusCards from './components/GameStatusCards.vue';
 import GameLane from './components/GameLane.vue';
 import HistoryOverlay from './components/HistoryOverlay.vue';
-import TutorialOverlay from './components/TutorialOverlay.vue';
+import ModifierUnlockModal from './components/ModifierUnlockModal.vue';
+import MultiRoundProgress from './components/MultiRoundProgress.vue';
+import MultiRoundRewardChoice from './components/MultiRoundRewardChoice.vue';
+import ScoreRibbon from './components/ScoreRibbon.vue';
+import { MULTI_ROUND_TOOLTIP_TIME_PAUSES, getMultiRoundRounds, normalizeMultiRoundDifficulty } from './multiround/multi-round-difficulties.js';
+import PersonalModifiersDrawer from './components/PersonalModifiersDrawer.vue';
+import {
+  SAVE_MODES,
+  SAVE_ON_WORD_SUBMIT,
+  clearCloudGameSave,
+  clearLocalGameSave,
+  packCommonGameState,
+  packBotMatchSave,
+  packMultiRoundSave,
+  saveCloudGame,
+  saveLocalGame,
+  unpackSave
+} from './save-state.js';
+import TutorialHintModal from './components/TutorialHintModal.vue';
+import {
+  getTutorialHint,
+  markTutorialHintViewed,
+  TUTORIAL_COMPLETED_STORAGE_KEY
+} from './tutorial-hints.js';
 import WordBuilder from './components/WordBuilder.vue';
+import { getMultiRoundBackgroundPalette } from './multiround/multi-round-background-palettes.js';
+import { botDifficulty } from './play-config.js';
+import {
+  PAST_GAME_MODES,
+  buildBestWordSummary,
+  makePastGameId,
+  savePastGame
+} from '../../userstate/pastGames.js';
+import {
+  calculateMultiRoundScore,
+  readLocalMultiRoundHighScores,
+  saveMultiRoundHighScore
+} from '../../userstate/multiRoundHighScores.js';
+import { unlockNextDifficultyForWonRun } from '../../userstate/multiRoundDifficultyUnlocks.js';
+import {
+  MODIFIER_UNLOCK_TYPES,
+  evaluateModifierUnlocksForRound,
+  getUnlockedModifierKeys,
+  readLocalModifierUnlockState,
+  unlockAllModifiers
+} from '../../userstate/modifierUnlocks.js';
+
+const TUTORIAL_BAD_MODIFIERS = new Set(['zeroTile', 'mustuse', 'locked3', 'burningTile', 'rustingTile', 'lightningTile', 'barricadeTile', 'bagTile']);
+const TUTORIAL_NEUTRAL_MODIFIERS = new Set(['yinYang', 'ghostTile', 'bloodTile', 'wild', 'shimmer', 'voidTile', 'hourglassTile', 'waterTile', 'leecherTile']);
+const TUTORIAL_TILE_MODIFIER_KEYS = Object.entries(MODIFIER_DEFINITIONS)
+  .filter(([, definition]) => definition.includeInTutorial)
+  .map(([key]) => key);
+const TUTORIAL_NEUTRAL_MODIFIER_UNLOCK_ROUND_INDEX = 1;
+const TUTORIAL_BAD_MODIFIER_UNLOCK_ROUND_INDEX = 2;
+const TUTORIAL_MODIFIER_UNLOCK_TURN_COUNT = 1;
+const hasCompletedTutorialRun = () => (
+  typeof localStorage !== 'undefined'
+    && localStorage.getItem(TUTORIAL_COMPLETED_STORAGE_KEY) === 'true'
+);
 
 const props = defineProps({
   isMobile: Boolean,
@@ -258,7 +352,19 @@ const props = defineProps({
     type: String,
     default: 'timed_solo'
   },
+  continueSave: {
+    type: Object,
+    default: null
+  },
+  initialMultiRoundBackgroundPaletteKey: {
+    type: String,
+    default: ''
+  },
   botDifficulty: {
+    type: String,
+    default: 'normal'
+  },
+  multiRoundDifficulty: {
     type: String,
     default: 'normal'
   },
@@ -274,6 +380,10 @@ const props = defineProps({
   overtimeEnabled: {
     type: Boolean,
     default: true
+  },
+  controllerMapping: {
+    type: Object,
+    default: () => ({})
   }
 });
 
@@ -283,11 +393,18 @@ const emit = defineEmits([
   'playAgain',
   'volumeChange',
   'musicVolumeChange',
-  'effectsVolumeChange'
+  'effectsVolumeChange',
+  'update:botDifficulty',
+  'backgroundState',
+  'startBackgroundMusic',
+  'pauseBackgroundMusic',
+  'stopBackgroundMusic'
 ]);
 const localMessage = ref('');
+const gameStartedAt = Date.now();
+const savedPastGameIds = ref(new Set());
 const isPaused = ref(false);
-const activeBoonCardId = ref(null);
+const activeTrayModifierCardId = ref(null);
 const invalidWordPulse = ref(0);
 const scorePopPulse = ref(0);
 const scorePopTiles = ref([]);
@@ -296,8 +413,14 @@ const controllerTileCursorIndex = ref(0);
 const controllerCardCursorIndex = ref(0);
 const controllerBuilderCursorIndex = ref(0);
 const controllerActionCursorIndex = ref(0);
+const controllerRoundCursorIndex = ref(0);
+const controllerRewardCursorIndex = ref(0);
 const isControllerNavigationActive = ref(false);
 const laneBurstPulse = ref({
+  host: 0,
+  opponent: 0
+});
+const rackClearPulse = ref({
   host: 0,
   opponent: 0
 });
@@ -312,39 +435,159 @@ const createEmptyLastWordBreakdown = () => ({
 });
 const isMultiplayerRef = computed(() => props.isMultiplayer);
 const isTimedSoloMode = computed(() => !props.isMultiplayer && props.playMode === 'timed_solo');
+const isMultiRoundMode = computed(() => !props.isMultiplayer && props.playMode === 'multi_round');
 const isBotMode = computed(() => !props.isMultiplayer && props.playMode === 'bot_match');
+const botCogSpeed = ref(1);
+const playerCogSpeed = ref(1);
+const playerCogTargetSpeed = ref(1);
+const playerCogDuration = computed(() => `${Math.max(3.2, 11 / playerCogSpeed.value).toFixed(2)}s`);
+const botCogDuration = computed(() => `${Math.max(2.2, 18 / botCogSpeed.value).toFixed(2)}s`);
+const playerCogStyle = computed(() => ({ '--machine-cog-duration': playerCogDuration.value }));
+const botCogStyle = computed(() => ({ '--machine-cog-duration': botCogDuration.value }));
+const rampPlayerCogSpeed = () => {
+  window.cancelAnimationFrame(playerCogRampFrameId);
+  const step = () => {
+    const difference = playerCogTargetSpeed.value - playerCogSpeed.value;
+    if (Math.abs(difference) < 0.02) {
+      playerCogSpeed.value = playerCogTargetSpeed.value;
+      playerCogRampFrameId = null;
+      return;
+    }
+
+    playerCogSpeed.value += difference * 0.08;
+    playerCogRampFrameId = window.requestAnimationFrame(step);
+  };
+
+  playerCogRampFrameId = window.requestAnimationFrame(step);
+};
+const triggerBotCogBoost = () => {
+  if (!isBotMode.value) {
+    return;
+  }
+
+  botCogSpeed.value = 3.5;
+  window.clearTimeout(botCogBoostTimeoutId);
+  botCogBoostTimeoutId = window.setTimeout(() => {
+    botCogSpeed.value = 1;
+  }, 1600);
+};
 const matchOvertimeEnabled = computed(() => {
   return props.isMultiplayer ? multiplayerOvertimeEnabled.value : props.overtimeEnabled;
 });
 const attacksEnabled = computed(() => {
-  return !isOvertimeActive.value && (isTestingMode || isTimedSoloMode.value || isBotMode.value || props.isMultiplayer);
+  return !isOvertimeActive.value && (isTestingMode || isTimedSoloMode.value || isMultiRoundMode.value || isBotMode.value || props.isMultiplayer);
 });
+const actionCardKind = computed(() => (isBotMode.value || props.isMultiplayer) ? 'attack' : 'tactic');
+const actionCardLabel = computed(() => actionCardKind.value === 'tactic' ? 'Tactic' : 'Attack');
 const showOpponentLane = computed(() => props.isMultiplayer || isBotMode.value);
 const isSideDrawerMode = computed(() => windowWidth.value < 1250);
 const preferredLanguage = getPreferredLanguage();
 const SOLO_TIMER_SECONDS = isTestingMode ? 25 : 180;
 const timerRemainingSeconds = ref(SOLO_TIMER_SECONDS);
 const isSoloTimerPausedByAttack = ref(false);
+const isMultiRoundTimerPausedByAttack = ref(false);
+const isSoloTimerPausedByTooltip = ref(false);
+const isMultiRoundTimerPausedByTooltip = ref(false);
+const timedModeTimerStarted = ref(false);
 const timedSoloFinalWordSpent = ref(false);
-const gameMusic = new Audio(gameMusicUrl);
-gameMusic.loop = true;
+const multiRoundFinalWordSpent = ref(false);
+const pendingMultiRoundStartingScore = ref(0);
+const tooltipPauseConfig = computed(() => (
+  MULTI_ROUND_TOOLTIP_TIME_PAUSES[normalizeMultiRoundDifficulty(props.multiRoundDifficulty)]
+    || MULTI_ROUND_TOOLTIP_TIME_PAUSES.normal
+));
+const tooltipPauseUsesRemaining = ref(Math.max(0, tooltipPauseConfig.value.amount || 0));
+let tooltipPauseTimeoutId = null;
+const speedyWordStartedAt = ref(Date.now());
+const speedyWordClockNow = ref(Date.now());
 const tilePickupSound = new Audio(tilePickupSoundUrl);
 const tilePutBackSound = new Audio(tilePutBackSoundUrl);
+const tileReplaceSound = new Audio(tileReplaceSoundUrl);
 const scoreBuiltTileSound = new Audio(scoreBuiltTileSoundUrl);
 const victorySound = new Audio(victorySoundUrl);
 const defeatSound = new Audio(defeatSoundUrl);
 victorySound.loop = true;
 defeatSound.loop = true;
 let soloTimerId = null;
+let multiRoundTimerId = null;
 let scorePopTimeoutIds = [];
 let activeScorePopAudios = [];
 let historyOverlayTimeoutId = null;
+let multiRoundRewardTimeoutId = null;
+let botCogBoostTimeoutId = null;
+let playerCogDecayIntervalId = null;
+let playerCogRampFrameId = null;
+let roundModifierTickIntervalId = null;
+let speedyWordClockIntervalId = null;
+let lastPlayerCogScoreAt = Date.now();
+const GAME_TUTORIAL_STORAGE_KEY = 'hasSeenWordisGameTutorial';
+const hasSeenGameTutorial = () => typeof localStorage !== 'undefined' && localStorage.getItem(GAME_TUTORIAL_STORAGE_KEY);
 const showHistoryOverlay = ref(false);
+const activeTutorialHint = ref(getTutorialHint('welcome') || {
+  id: 'welcome',
+  title: 'How Wordis Works',
+  body: 'Build words from your tiles and submit them for points.',
+  closeLabel: 'Close'
+});
 const showTutorialOverlay = ref(false);
 const windowWidth = ref(typeof window !== 'undefined' ? window.innerWidth : 1440);
-const isSideDrawerOpen = ref(false);
-const sideDrawerAutoOpen = ref(false);
-const GAME_TUTORIAL_STORAGE_KEY = 'hasSeenWordisGameTutorial';
+const roundModifierCountdowns = ref({});
+const modifierUnlockState = ref(readLocalModifierUnlockState());
+const pendingModifierUnlocks = ref([]);
+const modifierUnlockModalIndex = ref(0);
+const {
+  isSideDrawerOpen,
+  closeSideDrawer,
+  toggleSideDrawer
+} = useSideDrawerState({
+  isSideDrawerMode,
+  isMobile: () => props.isMobile,
+  controllerRegion,
+  isControllerNavigationActive
+});
+const personalModifiersDrawerRef = ref(null);
+const shouldUseTutorialLimits = () => (
+  isMultiRoundMode.value
+    && props.multiRoundDifficulty === 'micro'
+    && !hasCompletedTutorialRun()
+);
+const getAllowedMultiRoundModifierKeys = (type) => {
+  if (!isMultiRoundMode.value) {
+    return null;
+  }
+
+  const unlockType = MODIFIER_UNLOCK_TYPES[type?.toUpperCase?.()] || type;
+  return getUnlockedModifierKeys(unlockType, modifierUnlockState.value);
+};
+const multiRoundRun = useMultiRoundRun({
+  rounds: getMultiRoundRounds(props.multiRoundDifficulty),
+  includeInTutorialOnly: shouldUseTutorialLimits,
+  getAllowedModifierKeys: getAllowedMultiRoundModifierKeys
+});
+const isTutorialMultiRound = computed(shouldUseTutorialLimits);
+const getTutorialModifierChanceOverrides = ({ multiRoundWordsPlayedThisRound = 0 } = {}) => {
+  if (!isTutorialMultiRound.value) {
+    return {};
+  }
+
+  const roundIndex = multiRoundRun.currentRoundIndex.value;
+  const canPullNeutral = roundIndex >= TUTORIAL_NEUTRAL_MODIFIER_UNLOCK_ROUND_INDEX;
+  const canPullBad = roundIndex >= TUTORIAL_BAD_MODIFIER_UNLOCK_ROUND_INDEX;
+  const allowedModifierKeys = TUTORIAL_TILE_MODIFIER_KEYS.filter((modifierKey) => {
+    if (!canPullNeutral && TUTORIAL_NEUTRAL_MODIFIERS.has(modifierKey)) {
+      return false;
+    }
+
+    if (!canPullBad && TUTORIAL_BAD_MODIFIERS.has(modifierKey)) {
+      return false;
+    }
+
+    return true;
+  });
+  return {
+    allowedModifierKeys
+  };
+};
 
 const mySide = computed(() => {
   if (props.isMultiplayer) {
@@ -354,10 +597,207 @@ const mySide = computed(() => {
   return 'host';
 });
 
-const myTiles = computed(() => playerTiles.value[mySide.value] || []);
+const personalModifierEffects = computed(() => isMultiRoundMode.value ? multiRoundRun.activePersonalModifierEffects.value : {});
+const rackManipulatedPlayerTiles = computed(() => ({
+  host: applyRackManipulationEffects(playerTiles.value.host || [], {
+    side: 'host',
+    scores: playerScores.value,
+    personalModifierEffects: personalModifierEffects.value
+  }),
+  opponent: applyRackManipulationEffects(playerTiles.value.opponent || [], {
+    side: 'opponent',
+    scores: playerScores.value,
+    personalModifierEffects: personalModifierEffects.value
+  })
+}));
+const myTiles = computed(() => rackManipulatedPlayerTiles.value[mySide.value] || []);
 const controllerFocusedTileId = computed(() => myTiles.value[controllerTileCursorIndex.value]?.id || '');
 const controllerFocusedBuiltTileId = computed(() => selectedTilesForCurrentSide.value[controllerBuilderCursorIndex.value]?.id || '');
 const opponentSide = computed(() => (mySide.value === 'host' ? 'opponent' : 'host'));
+const activeRoundModifiers = computed(() => isMultiRoundMode.value ? multiRoundRun.activeRoundModifiers.value : []);
+const activeRoundModifiersWithCountdowns = computed(() => {
+  return activeRoundModifiers.value.map((modifier) => ({
+    ...modifier,
+    countdownLabel: roundModifierCountdowns.value[modifier.key]?.label || ''
+  }));
+});
+
+const buildCommonSaveState = () => packCommonGameState({
+  scores: playerScores.value,
+  tiles: playerTiles.value,
+  cards: playerCards.value,
+  wordHistory: wordHistory.value,
+  submittedWords: submittedWords.value,
+  rackClears: rackClears.value
+});
+
+const buildMultiRoundSaveState = ({ includeInRound = true, includeHistory = true } = {}) => packMultiRoundSave({
+  difficulty: props.multiRoundDifficulty,
+  common: buildCommonSaveState(),
+  includeInRound,
+  includeHistory,
+  multiRound: {
+    currentRoundIndex: multiRoundRun.currentRoundIndex.value,
+    timerRemainingSeconds: multiRoundRun.timerRemainingSeconds.value,
+    resolvedRounds: multiRoundRun.resolvedRounds.value,
+    completedRounds: multiRoundRun.completedRounds.value,
+    personalModifiers: multiRoundRun.personalModifiers.value,
+    rewardChoices: multiRoundRun.rewardChoices.value,
+    rewardSelectionsRemaining: multiRoundRun.rewardSelectionsRemaining.value,
+    rewardSelectionsTotal: multiRoundRun.rewardSelectionsTotal.value,
+    pendingStartingScore: pendingMultiRoundStartingScore.value,
+    runEnded: multiRoundRun.runEnded.value,
+    failureSummary: multiRoundRun.failureSummary.value,
+    finalWordSpent: multiRoundFinalWordSpent.value,
+    timedModeTimerStarted: timedModeTimerStarted.value
+  }
+});
+
+const saveCurrentMultiRoundLocal = () => {
+  if (!isMultiRoundMode.value || props.isMultiplayer || multiRoundRun.runEnded.value) {
+    return false;
+  }
+
+  return saveLocalGame(SAVE_MODES.MULTI_ROUND, buildMultiRoundSaveState());
+};
+
+const saveCurrentMultiRoundCheckpoint = () => {
+  if (!isMultiRoundMode.value || props.isMultiplayer || multiRoundRun.runEnded.value) {
+    return false;
+  }
+
+  const localSave = buildMultiRoundSaveState();
+  const cloudSave = buildMultiRoundSaveState({
+    includeInRound: false,
+    includeHistory: false
+  });
+  saveLocalGame(SAVE_MODES.MULTI_ROUND, localSave);
+  void saveCloudGame(SAVE_MODES.MULTI_ROUND, cloudSave);
+  return true;
+};
+
+const clearMultiRoundSaves = () => {
+  clearLocalGameSave(SAVE_MODES.MULTI_ROUND);
+  void clearCloudGameSave(SAVE_MODES.MULTI_ROUND);
+};
+
+const buildBotMatchSaveState = () => packBotMatchSave({
+  difficulty: props.botDifficulty,
+  common: buildCommonSaveState(),
+  overtime: {
+    e: matchOvertimeEnabled.value,
+    p: singlePlayerOvertimePendingSide.value,
+    f: singlePlayerOvertimeFinalWordSubmitted.value
+  }
+});
+
+const saveCurrentBotMatchLocal = () => {
+  if (!isBotMode.value || props.isMultiplayer || effectiveGameEnded.value) {
+    return false;
+  }
+
+  return saveLocalGame(SAVE_MODES.BOT_MATCH, buildBotMatchSaveState());
+};
+
+const clearBotMatchSave = () => {
+  clearLocalGameSave(SAVE_MODES.BOT_MATCH);
+};
+const roundModifierEffects = computed(() => {
+  const effects = activeRoundModifiers.value.reduce((effects, modifier) => {
+    const rules = modifier.rules || {};
+    const scoreEffects = modifier.scoreEffects || {};
+    const tileEffects = modifier.tileEffects || {};
+    const chanceEffects = modifier.chanceEffects || {};
+    const cardRules = modifier.cardRules || {};
+    const roundEffects = modifier.roundEffects || {};
+
+    effects.minimumWordLength = Math.max(effects.minimumWordLength, rules.minimumWordLength || 0);
+    effects.bannedLetters = [
+      ...new Set([
+        ...effects.bannedLetters,
+        ...(rules.bannedLetters || [])
+      ])
+    ];
+    effects.zeroHighestConsonant = effects.zeroHighestConsonant || Boolean(scoreEffects.zeroHighestConsonant);
+    effects.idlePenaltyMultiplier = Math.max(effects.idlePenaltyMultiplier, scoreEffects.idlePenaltyMultiplier || 1);
+    effects.minimumVowels = Math.max(effects.minimumVowels, rules.minimumVowels || 0);
+    effects.idleScoreDelta += tileEffects.idleScoreDelta || 0;
+    effects.fleetingAllTiles = effects.fleetingAllTiles || Boolean(tileEffects.fleetingAllTiles);
+    effects.returnBuilderIntervalMs = effects.returnBuilderIntervalMs || tileEffects.returnBuilderIntervalMs || 0;
+    effects.shuffleRackIntervalMs = effects.shuffleRackIntervalMs || tileEffects.shuffleRackIntervalMs || 0;
+    effects.chaoticBoardIntervalMs = effects.chaoticBoardIntervalMs || tileEffects.chaoticBoardIntervalMs || 0;
+    effects.lockNextColumn = effects.lockNextColumn || Boolean(tileEffects.lockNextColumn);
+    effects.mustTileEachTurn = effects.mustTileEachTurn || Boolean(tileEffects.mustTileEachTurn);
+    effects.burnTileEachTurn = effects.burnTileEachTurn || tileEffects.burnTileEachTurn;
+    effects.rewardCountModifier += roundEffects.rewardCountModifier || 0;
+    effects.goodChanceBonus += chanceEffects.goodChanceBonus || 0;
+    effects.badChanceBonus += chanceEffects.badChanceBonus || 0;
+    effects.neutralChanceBonus += chanceEffects.neutralChanceBonus || 0;
+    effects.goodChanceCapDelta += chanceEffects.goodChanceCapDelta || 0;
+    effects.badChanceCapDelta += chanceEffects.badChanceCapDelta || 0;
+    effects.neutralChanceCapDelta += chanceEffects.neutralChanceCapDelta || 0;
+    Object.entries(chanceEffects.modifierOddsBonus || {}).forEach(([key, bonus]) => {
+      effects.modifierOddsBonus[key] = (effects.modifierOddsBonus[key] || 0) + (bonus || 0);
+    });
+    effects.cardsDisabled = effects.cardsDisabled || Boolean(cardRules.cardsDisabled);
+    Object.entries(roundEffects.lengthTimePenalty || {}).forEach(([length, seconds]) => {
+      effects.lengthTimePenalty[length] = (effects.lengthTimePenalty[length] || 0) + (seconds || 0);
+    });
+    return effects;
+  }, {
+    minimumWordLength: 0,
+    minimumVowels: 0,
+    bannedLetters: [],
+    zeroHighestConsonant: false,
+    idlePenaltyMultiplier: 1,
+    idleScoreDelta: 0,
+    fleetingAllTiles: false,
+    returnBuilderIntervalMs: 0,
+    shuffleRackIntervalMs: 0,
+    chaoticBoardIntervalMs: 0,
+    lockNextColumn: false,
+    mustTileEachTurn: false,
+    burnTileEachTurn: false,
+    goodChanceBonus: 0,
+    badChanceBonus: 0,
+    neutralChanceBonus: 0,
+    goodChanceCapDelta: 0,
+    badChanceCapDelta: 0,
+    neutralChanceCapDelta: 0,
+    rewardCountModifier: 0,
+    modifierOddsBonus: {},
+    cardsDisabled: false,
+    lengthTimePenalty: {}
+  });
+
+  const accumulatedChanceIncrease = multiRoundRun.accumulatedChanceIncrease.value;
+  effects.goodChanceBonus += accumulatedChanceIncrease.good || 0;
+  effects.badChanceBonus += accumulatedChanceIncrease.bad || 0;
+  effects.neutralChanceBonus += accumulatedChanceIncrease.neutral || 0;
+
+  return effects;
+});
+const multiRoundScoreOptions = computed(() => ({
+  personalModifierEffects: personalModifierEffects.value,
+  roundModifierEffects: roundModifierEffects.value,
+  roundModifierCountdowns: roundModifierCountdowns.value,
+  includeAttacks: actionCardKind.value === 'attack',
+  includeTactics: actionCardKind.value === 'tactic',
+  wordElapsedSeconds: Math.max(0, (speedyWordClockNow.value - speedyWordStartedAt.value) / 1000)
+}));
+const lengthBonusScoreOptions = computed(() => ({
+  personalModifierEffects: personalModifierEffects.value,
+  roundModifierEffects: {
+    lengthTimePenalty: roundModifierEffects.value.lengthTimePenalty || {}
+  },
+  includeAttacks: actionCardKind.value === 'attack',
+  includeTactics: actionCardKind.value === 'tactic'
+}));
+const effectiveMinimumWordLength = computed(() => Math.max(
+  personalModifierEffects.value.minimumWordLength || MIN_WORD_LENGTH,
+  roundModifierEffects.value.minimumWordLength || 0
+));
+const wordBuilderMinimumWordLength = computed(() => effectiveMinimumWordLength.value);
 const buildLane = (side, label) => ({
   side,
   label,
@@ -365,7 +805,7 @@ const buildLane = (side, label) => ({
   score: playerScores.value[side],
   lastWordScore: lastWordScores.value[side],
   lastWordBreakdown: lastWordBreakdowns.value[side] || createEmptyLastWordBreakdown(),
-  tiles: playerTiles.value[side],
+  tiles: rackManipulatedPlayerTiles.value[side] || [],
   isActive: mySide.value === side,
   selectedTileIds: selectedTileIds.value[side],
   savedTileIds: savedTileIds.value[side],
@@ -378,6 +818,7 @@ const {
   selectedTilesForCurrentSide,
   currentWordDisplay,
   currentWordLength,
+  currentWordElapsedSeconds,
   currentLengthBonus,
   currentFirstTileBonus,
   currentLetterTotal,
@@ -387,6 +828,9 @@ const {
   handleTileClick,
   removeLastLetter,
   removeSpecificTile,
+  removeTileAtIndex,
+  replaceTileAtIndex,
+  reorderSelectedTile,
   replaceSelectedTileId,
   clearWord,
   clearSelectionForSide,
@@ -394,20 +838,55 @@ const {
 } = useWordBuilder({
   mySide,
   myTiles,
-  playerScores
+  playerScores,
+  scoreOptions: multiRoundScoreOptions,
+  lengthBonusOptions: lengthBonusScoreOptions
 });
+const currentBaggedTileIds = computed(() => getBaggedTileIds(myTiles.value, selectedTilesForCurrentSide.value));
 
 const leftLane = computed(() => buildLane(mySide.value, 'Your Board'));
 const rightLane = computed(() => buildLane(opponentSide.value, isBotMode.value ? 'Bot Board' : 'Their Board'));
 const leftLaneHistory = computed(() => wordHistory.value[mySide.value] || []);
 const rightLaneHistory = computed(() => wordHistory.value[opponentSide.value] || []);
+const multiRoundProgressRounds = computed(() => multiRoundRun.visibleProgressRounds.value);
+const personalModifiersForDrawer = computed(() => multiRoundRun.personalModifiers.value);
+const multiRoundRewardChoices = computed(() => multiRoundRun.rewardChoices.value);
+const isMultiRoundRewardChoiceOpen = computed(() => multiRoundRun.rewardChoiceOpen.value);
+const upcomingMultiRoundPreview = computed(() => {
+  if (!isMultiRoundMode.value) {
+    return null;
+  }
+
+  return multiRoundRun.visibleProgressRounds.value[multiRoundRun.currentRoundIndex.value + 1] || null;
+});
+const BOT_WINNING_SCORES = {
+  easy: 100,
+  normal: 150,
+  hard: 200
+};
+
+const scoreRibbonScoreLabel = computed(() => {
+  if (isMultiRoundMode.value) {
+    return `${leftLane.value.score} / ${multiRoundRun.currentTargetScore.value}`;
+  }
+  if (isBotMode.value) {
+    return `${leftLane.value.score} / ${BOT_WINNING_SCORES[props.botDifficulty] ?? WINNING_SCORE}`;
+  }
+  if (props.isMultiplayer) {
+    return `${leftLane.value.score} / ${matchWinningScore.value}`;
+  }
+
+  return leftLane.value.score;
+});
 
 const {
   startBotLoop,
   stopBotLoop,
+  checkBotWin,
   clearSinglePlayerRack,
-  useSinglePlayerBoon,
-  useSinglePlayerAttack,
+  resetSinglePlayerRound,
+  useSinglePlayerTrayModifier,
+  useSinglePlayerActionCard,
   submitSinglePlayerWord,
   submissionPauseOwner: singlePlayerSubmissionPauseOwner,
   overtimePendingSide: singlePlayerOvertimePendingSide,
@@ -416,6 +895,7 @@ const {
   isMultiplayer: isMultiplayerRef,
   botEnabled: isBotMode,
   isTimedSoloMode,
+  isMultiRoundMode,
   overtimeEnabled: matchOvertimeEnabled,
   botDifficulty: computed(() => props.botDifficulty),
   localMessage,
@@ -431,24 +911,83 @@ const {
   wordHistory,
   onTimedSoloPauseTime: () => {
     isSoloTimerPausedByAttack.value = true;
+    isMultiRoundTimerPausedByAttack.value = true;
   },
-  onTimedSoloGainTime: (seconds) => {
-    const wasOutOfTime = timerRemainingSeconds.value <= 0;
+  onTimedSoloGainTime: (seconds, overrideStartTimer) => {
+    const wasOutOfTime = timerRemainingSeconds.value <= 0 || multiRoundRun.timerRemainingSeconds <= 0;
     timerRemainingSeconds.value += seconds;
-    if (wasOutOfTime && timerRemainingSeconds.value > 0) {
+    multiRoundRun.timerRemainingSeconds.value += seconds;
+    if ((wasOutOfTime && timerRemainingSeconds.value > 0)|| overrideStartTimer) {
       // Recovering from timeout should fully return solo sprint to live play.
       timedSoloFinalWordSpent.value = false;
       isSoloTimerPausedByAttack.value = false;
+      isMultiRoundTimerPausedByAttack.value = false;
       if (!isPaused.value) {
-        startBotLoop();
+        startBotLoopAfterTutorial();
+        startMultiRoundTimer()
         startSoloTimer();
       }
     }
-  }
+  },
+  onMultiRoundRerollNextRoundModifiers: () => multiRoundRun.rerollNextRoundModifiers(),
+  onMultiRoundRerollRewardChoices: () => multiRoundRun.rerollRewardChoices(),
+  onMultiRoundReduceTargetScore: (amount) => multiRoundRun.reduceCurrentTargetScore(amount),
+  onBotPreparing: triggerBotCogBoost,
+  getAllowedModifierKeys: getAllowedMultiRoundModifierKeys,
+  getTutorialTilePlan: ({ phase, multiRoundWordsPlayedThisRound }) => {
+    const tutorialModifierChanceOverrides = getTutorialModifierChanceOverrides({ multiRoundWordsPlayedThisRound });
+    if (!isTutorialMultiRound.value || multiRoundRun.currentRoundIndex.value !== 0) {
+      return tutorialModifierChanceOverrides;
+    }
+
+    if (phase === 'opening' || phase === 'round-start') {
+      return {
+        ...tutorialModifierChanceOverrides,
+        suppressStartingCards: true,
+        forcedStatus: 'normal',
+        goodChance: 0,
+        badChance: 0,
+        neutralChance: 0
+      };
+    }
+
+    if (phase === 'submit' && multiRoundWordsPlayedThisRound === 1) {
+      return {
+        ...tutorialModifierChanceOverrides,
+        forcedModifierGroups: ['good'],
+        goodChance: 0,
+        badChance: 0,
+        neutralChance: 0
+      };
+    }
+
+    return tutorialModifierChanceOverrides;
+  },
+  onTutorialTurnAdvanced: ({ multiRoundWordsPlayedThisRound }) => {
+    if (isTutorialMultiRound.value && multiRoundRun.currentRoundIndex.value === 0 && multiRoundWordsPlayedThisRound === 1) {
+      showTutorialHint('first_good_modifier');
+      return;
+    }
+
+    if (isTutorialMultiRound.value && multiRoundRun.currentRoundIndex.value === 0 && multiRoundWordsPlayedThisRound === 2) {
+      showTutorialHint('larger_words');
+    }
+  },
+  personalModifierEffects,
+  roundModifierEffects
 });
 
+const startBotLoopAfterTutorial = () => {
+  if (showTutorialOverlay.value) {
+    stopBotLoop();
+    return;
+  }
+
+  startBotLoop();
+};
+
 const overtimeTrailingSide = computed(() => {
-  if (isTimedSoloMode.value || !matchOvertimeEnabled.value) {
+  if (isTimedSoloMode.value || isMultiRoundMode.value || !matchOvertimeEnabled.value) {
     return null;
   }
 
@@ -457,7 +996,7 @@ const overtimeTrailingSide = computed(() => {
     : singlePlayerOvertimePendingSide.value;
 });
 const overtimeFinalWordSubmitted = computed(() => {
-  if (isTimedSoloMode.value || !matchOvertimeEnabled.value) {
+  if (isTimedSoloMode.value || isMultiRoundMode.value || !matchOvertimeEnabled.value) {
     return false;
   }
 
@@ -466,13 +1005,38 @@ const overtimeFinalWordSubmitted = computed(() => {
     : singlePlayerOvertimeFinalWordSubmitted.value;
 });
 const isOvertimeActive = computed(() => Boolean(overtimeTrailingSide.value) && !overtimeFinalWordSubmitted.value);
+const finalWordPointsRemaining = computed(() => {
+  if (isMultiRoundMode.value && finalWordWindowActive.value) {
+    return Math.max(0, multiRoundRun.currentTargetScore.value - (playerScores.value.host || 0));
+  }
+
+  if (isTimedSoloMode.value && finalWordWindowActive.value) {
+    return Math.max(0, matchWinningScore.value - (playerScores.value.host || 0));
+  }
+
+  if (isOvertimeActive.value && overtimeTrailingSide.value === mySide.value) {
+    return Math.max(0, (playerScores.value[opponentSide.value] || 0) + 1 - (playerScores.value[mySide.value] || 0));
+  }
+
+  return 0;
+});
+const formatFinalWordLabel = (label) => `${label} ${finalWordPointsRemaining.value} points to go!`;
 const overtimeLabel = computed(() => {
   if (!isOvertimeActive.value) {
     return '';
   }
 
-  return overtimeTrailingSide.value === mySide.value ? 'Final Word!' : 'Keep playing words!';
+  return overtimeTrailingSide.value === mySide.value ? formatFinalWordLabel('Final Word!') : 'Keep playing words!';
 });
+const finalWordWindowLabel = computed(() => {
+  if (!finalWordWindowActive.value) {
+    return '';
+  }
+
+  return formatFinalWordLabel('Final Word!');
+});
+const wordBuilderBannerActive = computed(() => isOvertimeActive.value || (finalWordWindowActive.value && !isMultiRoundRewardChoiceOpen.value === true));
+const wordBuilderBannerLabel = computed(() => finalWordWindowLabel.value || overtimeLabel.value);
 const submissionPauseOwner = computed(() => {
   return props.isMultiplayer
     ? multiplayerSubmissionPauseOwner.value
@@ -481,17 +1045,57 @@ const submissionPauseOwner = computed(() => {
 const isMySubmissionPaused = computed(() => Boolean(submissionPauseOwner.value) && submissionPauseOwner.value !== mySide.value);
 const isSubmissionPauseActive = computed(() => Boolean(submissionPauseOwner.value));
 
-const myCards = computed(() => playerCards.value[mySide.value] || { boons: [], attacks: [] });
-const controllerCards = computed(() => {
-  return [
-    ...myCards.value.boons,
-    ...(attacksEnabled.value ? myCards.value.attacks : [])
-  ];
+const myCards = computed(() => playerCards.value[mySide.value] || { trayModifiers: [], attacks: [], tactics: [] });
+const myPlayableCards = computed(() => [
+  ...(myCards.value.trayModifiers || []),
+  ...(myCards.value.attacks || []),
+  ...(myCards.value.tactics || [])
+]);
+const rewardRoundModifierRerollCard = computed(() => {
+  return myPlayableCards.value.find((card) => card.effectType === 'reroll_next_round_modifier') || null;
 });
-const activeBoonCard = computed(() => {
-  return myCards.value.boons.find((card) => card.id === activeBoonCardId.value) || null;
+const personalModifierRewardRerollCard = computed(() => {
+  return myPlayableCards.value.find((card) => card.effectType === 'reroll_personal_modifier_rewards') || null;
 });
-const visibleAttackCount = computed(() => attacksEnabled.value ? myCards.value.attacks.length : 0);
+const rewardRoundModifierRerollCount = computed(() => {
+  return myPlayableCards.value.filter((card) => card.effectType === 'reroll_next_round_modifier').length;
+});
+const personalModifierRewardRerollCount = computed(() => {
+  return myPlayableCards.value.filter((card) => card.effectType === 'reroll_personal_modifier_rewards').length;
+});
+const canRerollRewardRoundModifiers = computed(() => {
+  return Boolean(isMultiRoundRewardChoiceOpen.value && upcomingMultiRoundPreview.value && rewardRoundModifierRerollCard.value);
+});
+const canRerollPersonalModifierRewards = computed(() => {
+  return Boolean(isMultiRoundRewardChoiceOpen.value && multiRoundRewardChoices.value.length && personalModifierRewardRerollCard.value);
+});
+const hasBarricadeTileInRack = computed(() => myTiles.value.some((tile) => tile?.status === 'barricadeTile'));
+const cardDisabledReason = computed(() => {
+  if (hasBarricadeTileInRack.value) {
+    return 'Barricade is blocking your cards.';
+  }
+  if (isMultiRoundMode.value && roundModifierEffects.value.cardsDisabled) {
+    return 'Cards cannot be played this round.';
+  }
+
+  return '';
+});
+const cardControlsDisabled = computed(() => Boolean(cardDisabledReason.value));
+const {
+  groupedTrayModifierCards,
+  groupedAttackCards,
+  controllerCards,
+  activeTrayModifierCard,
+  visibleAttackCount,
+  cardSummary,
+  hasCardsInHand
+} = useCardPanelState({
+  myCards,
+  attacksEnabled,
+  actionCardKind,
+  activeTrayModifierCardId,
+  cardControlsDisabled
+});
 const myReplayVote = computed(() => playAgainVotes.value[mySide.value]);
 const replayVoteCount = computed(() => Object.values(playAgainVotes.value).filter(Boolean).length);
 const playAgainButtonText = computed(() => {
@@ -503,23 +1107,159 @@ const playAgainButtonText = computed(() => {
     ? `Waiting for Vote ${replayVoteCount.value}/2`
     : `Vote to Play Again ${replayVoteCount.value}/2`;
 });
-const cardSummary = computed(() => {
-  return attacksEnabled.value
-    ? `${myCards.value.boons.length} Boon · ${visibleAttackCount.value} Attack`
-    : `${myCards.value.boons.length} Boon`;
-});
-const hasCardsInHand = computed(() => myCards.value.boons.length > 0 || visibleAttackCount.value > 0);
-const getCardStyle = (card) => {
-  const ui = card?.ui || {};
+const multiRoundHistorySummary = computed(() => {
+  if (!isMultiRoundMode.value) {
+    return null;
+  }
+
+  const completedRounds = multiRoundRun.completedRounds.value || [];
+  const failedRound = multiRoundRun.failureSummary.value;
+  const bestWord = buildBestWordSummary(wordHistory.value.host || []);
+  const scoreSummary = calculateMultiRoundScore({
+    completedRounds,
+    failedRound,
+    bestWordScore: bestWord?.sc || 0
+  });
+  const difficultyHighScore = readLocalMultiRoundHighScores()[props.multiRoundDifficulty] || null;
+  const displayedHighScore = Math.max(scoreSummary.score, Number(difficultyHighScore?.score || 0));
+
   return {
-    '--card-glow': ui.cardGlow || 'rgba(255, 255, 255, 0.16)',
-    '--card-edge': ui.cardEdge || 'rgba(255, 255, 255, 0.24)',
-    '--card-pattern': ui.cardPattern || 'rgba(255, 255, 255, 0.08)',
-    '--card-background': ui.cardBackground || 'linear-gradient(180deg, rgba(119, 206, 113, 0.96), rgba(63, 129, 84, 0.96))',
-    '--card-badge-background': ui.cardBadgeBackground || 'rgba(24, 8, 22, 0.26)'
+    completedRounds,
+    failedRound,
+    personalModifiers: multiRoundRun.personalModifiers.value,
+    scoreSummary,
+    difficulty: props.multiRoundDifficulty,
+    totalRounds: multiRoundRun.totalRounds.value,
+    difficultyHighScore: {
+      ...(difficultyHighScore || {}),
+      score: displayedHighScore
+    },
+    isNewHighScore: scoreSummary.score > Number(difficultyHighScore?.score || 0)
   };
+});
+
+const getSecondsUsed = (timeSeconds = 0, secondsRemaining = 0) => {
+  return Math.max(0, Math.round(Number(timeSeconds || 0) - Number(secondsRemaining || 0)));
 };
+
+const packPastGameRound = (round = {}) => ({
+  rn: round.roundNumber || 0,
+  id: round.roundId || '',
+  lb: round.roundLabel || '',
+  trg: round.targetScore || 0,
+  sc: round.score || 0,
+  ts: round.timeSeconds || 0,
+  sr: Math.max(0, Math.round(Number(round.secondsRemaining || 0))),
+  su: getSecondsUsed(round.timeSeconds, round.secondsRemaining),
+  sb: round.startingScoreBonus || 0,
+  mods: round.activeRoundModifierKeys || [],
+  rw: round.selectedRewardKey || null,
+  rwl: round.selectedRewardLabel || '',
+  rws: round.selectedRewardKeys || [],
+  rwls: round.selectedRewardLabels || []
+});
+
+const packPastGameRewards = (rounds = []) => rounds
+  .flatMap((round) => {
+    const rewardKeys = round.selectedRewardKeys?.length
+      ? round.selectedRewardKeys
+      : (round.selectedRewardKey ? [round.selectedRewardKey] : []);
+    const rewardLabels = round.selectedRewardLabels?.length
+      ? round.selectedRewardLabels
+      : (round.selectedRewardLabel ? [round.selectedRewardLabel] : []);
+
+    return rewardKeys.map((rewardKey, index) => ({
+      rn: round.roundNumber || 0,
+      k: rewardKey,
+      lb: rewardLabels[index] || ''
+    }));
+  });
+
+const markPastGameSaved = (id) => {
+  savedPastGameIds.value = new Set([...savedPastGameIds.value, id]);
+};
+
+const saveMultiRoundPastGame = (result) => {
+  const saveKey = `${PAST_GAME_MODES.MULTI_ROUND}:${result}`;
+  const id = makePastGameId(PAST_GAME_MODES.MULTI_ROUND);
+  if (savedPastGameIds.value.has(saveKey)) {
+    return;
+  }
+
+  const completedRounds = multiRoundRun.completedRounds.value || [];
+  const failedRound = multiRoundRun.failureSummary.value;
+  const bestWord = buildBestWordSummary(wordHistory.value.host || []);
+  const createdAt = Date.now();
+
+  markPastGameSaved(saveKey);
+  void savePastGame({
+    v: 1,
+    id,
+    m: PAST_GAME_MODES.MULTI_ROUND,
+    d: props.multiRoundDifficulty,
+    rs: result,
+    ca: createdAt,
+    uat: createdAt,
+    dur: Math.max(0, Math.round((createdAt - gameStartedAt) / 1000)),
+    sc: result === 'failed' ? (failedRound?.score || 0) : (completedRounds.at(-1)?.score || 0),
+    bw: bestWord,
+    rds: completedRounds.map(packPastGameRound),
+    fr: failedRound ? packPastGameRound(failedRound) : null,
+    rwds: packPastGameRewards(completedRounds)
+  });
+};
+
+const saveMultiRoundScore = (result) => {
+  if (!isMultiRoundMode.value) {
+    return;
+  }
+
+  void saveMultiRoundHighScore({
+    difficulty: props.multiRoundDifficulty,
+    result,
+    completedRounds: multiRoundRun.completedRounds.value || [],
+    failedRound: multiRoundRun.failureSummary.value,
+    totalRounds: multiRoundRun.totalRounds.value,
+    bestWordScore: buildBestWordSummary(wordHistory.value.host || [])?.sc || 0
+  });
+};
+
+const saveBotMatchPastGame = () => {
+  const saveKey = PAST_GAME_MODES.BOT_MATCH;
+  const id = makePastGameId(PAST_GAME_MODES.BOT_MATCH);
+  if (savedPastGameIds.value.has(saveKey)) {
+    return;
+  }
+
+  const createdAt = Date.now();
+  const hostScore = playerScores.value.host || 0;
+  const opponentScore = playerScores.value.opponent || 0;
+
+  markPastGameSaved(saveKey);
+  void savePastGame({
+    v: 1,
+    id,
+    m: PAST_GAME_MODES.BOT_MATCH,
+    d: props.botDifficulty,
+    rs: hostScore > opponentScore ? 'won' : 'lost',
+    ca: createdAt,
+    uat: createdAt,
+    dur: Math.max(0, Math.round((createdAt - gameStartedAt) / 1000)),
+    sc: hostScore,
+    os: opponentScore,
+    bw: buildBestWordSummary(wordHistory.value.host || []),
+    obw: buildBestWordSummary(wordHistory.value.opponent || [])
+  });
+};
+
 const WINNING_SCORE = isTestingMode ? 40 : 250;
+const matchWinningScore = computed(() => {
+  if (props.isMultiplayer) {
+    return multiplayerSettings.value?.victoryScore || WINNING_SCORE;
+  }
+
+  return WINNING_SCORE;
+});
 const winningSide = computed(() => {
   if (isOvertimeActive.value) {
     return null;
@@ -537,17 +1277,21 @@ const winningSide = computed(() => {
     return null;
   }
 
-  if (playerScores.value.host >= WINNING_SCORE && playerScores.value.host >= playerScores.value.opponent) {
+  if (playerScores.value.host >= matchWinningScore.value && playerScores.value.host >= playerScores.value.opponent) {
     return 'host';
   }
 
-  if (playerScores.value.opponent >= WINNING_SCORE) {
+  if (playerScores.value.opponent >= matchWinningScore.value) {
     return 'opponent';
   }
 
   return null;
 });
 const gameEnded = computed(() => {
+  if (isMultiRoundMode.value) {
+    return multiRoundRun.runEnded.value;
+  }
+
   if (isTimedSoloMode.value) {
     return Boolean(winningSide.value);
   }
@@ -558,9 +1302,20 @@ const gameEnded = computed(() => {
 
   return Boolean(winningSide.value);
 });
-const timeExpired = computed(() => isTimedSoloMode.value && timerRemainingSeconds.value <= 0);
-const finalWordWindowActive = computed(() => isTimedSoloMode.value && timeExpired.value && !timedSoloFinalWordSpent.value);
-const effectiveGameEnded = computed(() => gameEnded.value || (timeExpired.value && timedSoloFinalWordSpent.value));
+const timedSoloTimeExpired = computed(() => isTimedSoloMode.value && timerRemainingSeconds.value <= 0);
+const multiRoundTimeExpired = computed(() => isMultiRoundMode.value && multiRoundRun.timerRemainingSeconds.value <= 0);
+const timeExpired = computed(() => timedSoloTimeExpired.value || multiRoundTimeExpired.value);
+const finalWordWindowActive = computed(() => (
+  (isTimedSoloMode.value && timedSoloTimeExpired.value && !timedSoloFinalWordSpent.value)
+  || (isMultiRoundMode.value && multiRoundTimeExpired.value && !multiRoundFinalWordSpent.value)
+));
+const effectiveGameEnded = computed(() => {
+  if (isMultiRoundMode.value) {
+    return gameEnded.value;
+  }
+
+  return gameEnded.value || (timedSoloTimeExpired.value && timedSoloFinalWordSpent.value);
+});
 const winningScore = computed(() => {
   if (timeExpired.value) {
     return playerScores.value.host;
@@ -584,6 +1339,19 @@ const winnerLabel = computed(() => {
   return 'No one';
 });
 const historySummaryText = computed(() => {
+  if (isMultiRoundMode.value) {
+    if (multiRoundRun.runWon.value) {
+      return `Run complete. Cleared ${multiRoundRun.completedRounds.value.length} rounds.`;
+    }
+
+    const failedRound = multiRoundRun.failureSummary.value;
+    if (failedRound) {
+      return `${failedRound.roundLabel} ended at ${failedRound.score}/${failedRound.targetScore} points.`;
+    }
+
+    return `Round ${multiRoundRun.currentRoundNumber.value} ended at ${playerScores.value.host}/${multiRoundRun.currentTargetScore.value} points.`;
+  }
+
   if (timeExpired.value) {
     return `Time is up. Final score: ${playerScores.value.host}.`;
   }
@@ -595,6 +1363,10 @@ const historySummaryText = computed(() => {
   return `${winnerLabel.value} wins at ${winningScore.value} points. Final score: ${playerScores.value.host}.`;
 });
 const historyResultState = computed(() => {
+  if (isMultiRoundMode.value) {
+    return multiRoundRun.runWon.value ? 'victory' : 'defeat';
+  }
+
   if (timeExpired.value) {
     return 'timeout';
   }
@@ -606,6 +1378,10 @@ const historyResultState = computed(() => {
   return 'victory';
 });
 const historyResultTitle = computed(() => {
+  if (isMultiRoundMode.value) {
+    return multiRoundRun.runWon.value ? 'Run Complete' : 'Run Failed';
+  }
+
   if (timeExpired.value) {
     return 'Time Up';
   }
@@ -618,9 +1394,19 @@ const formattedTimeRemaining = computed(() => {
   const seconds = safeSeconds % 60;
   return `${minutes}:${String(seconds).padStart(2, '0')}`;
 });
-const timedSoloScoreRibbonLabel = computed(() => {
+const formattedMultiRoundTimeRemaining = computed(() => {
+  const safeSeconds = Math.max(0, multiRoundRun.timerRemainingSeconds.value);
+  const minutes = Math.floor(safeSeconds / 60);
+  const seconds = safeSeconds % 60;
+  return `${minutes}:${String(seconds).padStart(2, '0')}`;
+});
+const clockScoreRibbonLabel = computed(() => {
   if (finalWordWindowActive.value) {
-    return 'Play your last word!';
+    return 'Last word!';
+  }
+
+  if (isMultiRoundMode.value) {
+    return formattedMultiRoundTimeRemaining.value;
   }
 
   return formattedTimeRemaining.value;
@@ -630,18 +1416,26 @@ const modeTitle = computed(() => {
     return 'Real Time Duel';
   }
 
-  return isTimedSoloMode.value ? 'Solo Sprint' : `Bot Pressure · ${props.botDifficulty}`;
+  if (isMultiRoundMode.value) {
+    return `Multi-Round · ${multiRoundRun.currentRound.value?.label || 'Round 1'}`;
+  }
+
+  return isTimedSoloMode.value ? 'Solo Sprint' : `Machine Learning · ${props.botDifficulty}`;
 });
 const modeSubtitle = computed(() => {
   if (props.isMultiplayer) {
     return 'Build on your board and race the other board in real time.';
   }
 
+  if (isMultiRoundMode.value) {
+    return `Reach ${multiRoundRun.currentTargetScore.value} points before the round clock runs out.`;
+  }
+
   if (isTimedSoloMode.value) {
     return 'Play alone against the clock and squeeze out the highest score before time expires.';
   }
 
-  return `Fight the bot on ${props.botDifficulty} difficulty in the same live rack format.`;
+  return `Beat the Machine by spelling words fast and using different tiles to get high scoring words. The first to reach the required score wins. Use attacks to slow the Machine down and tray modifiers to give yourself an advantage!`;
 });
 const statusHeadline = computed(() => {
   if (showTutorialOverlay.value) {
@@ -660,36 +1454,20 @@ const statusHeadline = computed(() => {
     return `${formattedTimeRemaining.value} remaining`;
   }
 
-  return 'Racks are live';
+  if (isMultiRoundMode.value) {
+    return `Round ${multiRoundRun.currentRoundNumber.value}/${multiRoundRun.totalRounds.value} · ${formattedMultiRoundTimeRemaining.value} · ${multiRoundRun.currentTargetScore.value} point target`;
+  }
+
+  return 'Start Playing Words';
 });
 const boardFrameStyle = computed(() => ({
   zoom: props.gameZoom || 1
 }));
-const scoreGap = computed(() => {
-  if (!showOpponentLane.value) {
-    return 0;
-  }
-
-  return Math.abs(leftLane.value.score - rightLane.value.score);
-});
-const scoreGapTier = computed(() => {
-  if (scoreGap.value >= 120) {
-    return 'epic';
-  }
-
-  if (scoreGap.value >= 60) {
-    return 'high';
-  }
-
-  if (scoreGap.value >= 25) {
-    return 'medium';
-  }
-
-  if (scoreGap.value >= 10) {
-    return 'low';
-  }
-
-  return 'none';
+const { scoreBoxClass } = useScoreRibbonState({
+  showOpponentLane,
+  isTimedSoloMode,
+  leftLane,
+  rightLane
 });
 
 const clamp01 = (value) => Math.max(0, Math.min(1, value));
@@ -719,42 +1497,71 @@ const backgroundProgress = computed(() => {
     return clamp01(1 - (timerRemainingSeconds.value / SOLO_TIMER_SECONDS));
   }
 
+  if (isMultiRoundMode.value) {
+    const roundTimeLimit = Math.max(1, multiRoundRun.currentRoundTimeLimit.value || 1);
+    return clamp01(1 - (multiRoundRun.timerRemainingSeconds.value / roundTimeLimit));
+  }
+
   const highestScore = Math.max(playerScores.value.host || 0, playerScores.value.opponent || 0);
-  return clamp01(highestScore / WINNING_SCORE);
+  return clamp01(highestScore / matchWinningScore.value);
 });
+const createBackgroundPaletteStyle = (palette, intensity, progress) => {
+  return {
+    '--bg-corner': mixHexColor(palette.corner[0], palette.corner[1], intensity),
+    '--bg-top': mixHexColor(palette.top[0], palette.top[1], intensity),
+    '--bg-mid': mixHexColor(palette.mid[0], palette.mid[1], intensity),
+    '--bg-bottom': mixHexColor(palette.bottom[0], palette.bottom[1], intensity),
+    '--bg-glow-alpha': `${palette.glowAlpha[0] + ((palette.glowAlpha[1] - palette.glowAlpha[0]) * intensity)}`,
+    '--bg-shape-far-opacity': `${palette.shapeFarOpacity[0] + ((palette.shapeFarOpacity[1] - palette.shapeFarOpacity[0]) * progress)}`,
+    '--bg-shape-near-opacity': `${palette.shapeNearOpacity[0] + ((palette.shapeNearOpacity[1] - palette.shapeNearOpacity[0]) * progress)}`,
+    '--bg-saturate': `${palette.saturate[0] + ((palette.saturate[1] - palette.saturate[0]) * progress)}`
+  };
+};
 const backgroundMoodStyle = computed(() => {
   const progress = backgroundProgress.value;
   const intensity = progress * progress;
 
-  return {
-    '--bg-corner': mixHexColor('#e9b248', '#ff7b5c', intensity),
-    '--bg-top': mixHexColor('#c79129', '#d25b3f', intensity),
-    '--bg-mid': mixHexColor('#ff8658', '#a53149', intensity),
-    '--bg-bottom': mixHexColor('#76347c', '#24061f', intensity),
-    '--bg-glow-alpha': `${0.26 - (intensity * 0.1)}`,
-    '--bg-shape-far-opacity': `${0.18 + (progress * 0.1)}`,
-    '--bg-shape-near-opacity': `${0.14 + (progress * 0.1)}`,
-    '--bg-saturate': `${1.03 + (progress * 0.16)}`
-  };
-});
-const scoreBoxClass = (side) => {
-  if (!showOpponentLane.value || isTimedSoloMode.value || scoreGapTier.value === 'none') {
-    return {};
+  if (isMultiRoundMode.value) {
+    const isFirstRound = multiRoundRun.currentRoundIndex.value === 0;
+    const paletteKey = (isFirstRound && props.initialMultiRoundBackgroundPaletteKey)
+      || multiRoundRun.currentRound.value?.resolvedBackgroundPaletteKey
+      || 'main';
+    return createBackgroundPaletteStyle(getMultiRoundBackgroundPalette(paletteKey), intensity, progress);
   }
 
-  const sideScore = side === 'host' ? leftLane.value.score : rightLane.value.score;
-  const otherScore = side === 'host' ? rightLane.value.score : leftLane.value.score;
+  if (isBotMode.value) {
+    return createBackgroundPaletteStyle(getMultiRoundBackgroundPalette('bot'), intensity, progress);
+  }
 
-  return {
-    'score-gap-low': scoreGapTier.value === 'low',
-    'score-gap-medium': scoreGapTier.value === 'medium',
-    'score-gap-high': scoreGapTier.value === 'high',
-    'score-gap-epic': scoreGapTier.value === 'epic',
-    'score-box-leading': sideScore > otherScore,
-    'score-box-trailing': sideScore < otherScore
-  };
-};
+  return createBackgroundPaletteStyle(getMultiRoundBackgroundPalette('main'), intensity, progress);
+});
+const backgroundTransitionKey = computed(() => {
+  if (isMultiRoundMode.value) {
+    const isFirstRound = multiRoundRun.currentRoundIndex.value === 0;
+    const paletteKey = (isFirstRound && props.initialMultiRoundBackgroundPaletteKey)
+      || multiRoundRun.currentRound.value?.resolvedBackgroundPaletteKey
+      || 'main';
+    const roundIdentity = multiRoundRun.currentRoundIndex.value + 1;
+    return `multi-round:${roundIdentity}:${paletteKey}`;
+  }
 
+  if (props.isMultiplayer) {
+    return 'multiplayer';
+  }
+
+  if (isBotMode.value) {
+    return 'bot-match';
+  }
+
+  return `solo:${props.playMode || 'timed_solo'}`;
+});
+const backgroundState = computed(() => ({
+  transitionKey: backgroundTransitionKey.value,
+  moodStyle: backgroundMoodStyle.value,
+  isBotMode: isBotMode.value,
+  botCogStyle: botCogStyle.value,
+  playerCogStyle: playerCogStyle.value
+}));
 const triggerInvalidWordShake = () => {
   invalidWordPulse.value += 1;
 };
@@ -774,11 +1581,10 @@ const playUiSound = (audio) => {
 };
 
 const syncAudioLevels = () => {
-  const musicLevel = (props.volume || 0) * (props.musicVolume || 0) / 100;
   const effectsLevel = (props.volume || 0) * (props.effectsVolume || 0) / 100;
-  gameMusic.volume = musicLevel;
   tilePickupSound.volume = effectsLevel;
   tilePutBackSound.volume = effectsLevel;
+  tileReplaceSound.volume = effectsLevel;
   scoreBuiltTileSound.volume = effectsLevel;
   victorySound.volume = effectsLevel;
   defeatSound.volume = effectsLevel;
@@ -792,25 +1598,16 @@ const stopResultAudio = () => {
 };
 
 const stopGameMusic = () => {
-  gameMusic.pause();
-  gameMusic.currentTime = 0;
+  emit('stopBackgroundMusic');
 };
 
 const startGameMusic = async ({ restart = false } = {}) => {
   syncAudioLevels();
-  if (restart) {
-    gameMusic.currentTime = 0;
-  }
-
-  if (gameMusic.volume <= 0 || effectiveGameEnded.value) {
+  if (effectiveGameEnded.value) {
     return;
   }
 
-  try {
-    await gameMusic.play();
-  } catch (error) {
-    // Ignore autoplay failures until the user interacts again.
-  }
+  emit('startBackgroundMusic', { restart });
 };
 
 const playScoreAnimation = async (tileCount) => {
@@ -866,6 +1663,13 @@ const triggerLaneBurst = (side, score) => {
   };
 };
 
+const triggerRackClearAnimation = (side) => {
+  rackClearPulse.value = {
+    ...rackClearPulse.value,
+    [side]: rackClearPulse.value[side] + 1
+  };
+};
+
 const triggerMustTileAlert = (side, tileIds) => {
   if (!tileIds?.length) {
     return;
@@ -915,8 +1719,444 @@ const autoSwapMatchingMustTiles = () => {
   return swappedAnyTile;
 };
 
+const getMultiRoundStartingScoreBonus = () => {
+  const multiplier = multiRoundRun.currentRound.value?.startingScoreBonusMultiplier ?? 0.5;
+  return Math.max(0, Math.floor(multiRoundRun.timerRemainingSeconds.value * multiplier));
+};
+
+const queueModifierUnlocksForRun = (round = {}, contextOverrides = {}, options = {}) => {
+  if (!isMultiRoundMode.value || props.isMultiplayer) {
+    return [];
+  }
+
+  const hostWords = wordHistory.value.host || [];
+  const bestWord = buildBestWordSummary(hostWords);
+  const completedRounds = multiRoundRun.completedRounds.value || [];
+  const bestSecondsRemaining = Math.max(
+    Number(round.secondsRemaining) || 0,
+    ...completedRounds.map((completedRound) => Number(completedRound.secondsRemaining) || 0)
+  );
+  const unlocks = evaluateModifierUnlocksForRound({
+    round,
+    wordCount: hostWords.length,
+    bestWordLength: bestWord?.w?.length || 0,
+    bestWordScore: bestWord?.sc || 0,
+    completedRoundCount: completedRounds.length,
+    bestSecondsRemaining,
+    runWon: multiRoundRun.runWon.value,
+    isTutorial: isTutorialMultiRound.value,
+    unlockedPersonalCount: getAllowedMultiRoundModifierKeys('personal')?.length || 0,
+    ...contextOverrides
+  }, options);
+
+  if (!unlocks.length) {
+    return [];
+  }
+
+  modifierUnlockState.value = readLocalModifierUnlockState();
+  pendingModifierUnlocks.value = [
+    ...pendingModifierUnlocks.value,
+    ...unlocks
+  ];
+  modifierUnlockModalIndex.value = 0;
+  return unlocks;
+};
+
+const activeModifierUnlock = computed(() => pendingModifierUnlocks.value[modifierUnlockModalIndex.value] || null);
+const closeModifierUnlockModal = () => {
+  pendingModifierUnlocks.value = [];
+  modifierUnlockModalIndex.value = 0;
+};
+const nextModifierUnlock = () => {
+  if (!pendingModifierUnlocks.value.length) {
+    return;
+  }
+  modifierUnlockModalIndex.value = (modifierUnlockModalIndex.value + 1) % pendingModifierUnlocks.value.length;
+};
+const previousModifierUnlock = () => {
+  if (!pendingModifierUnlocks.value.length) {
+    return;
+  }
+  modifierUnlockModalIndex.value = (modifierUnlockModalIndex.value - 1 + pendingModifierUnlocks.value.length) % pendingModifierUnlocks.value.length;
+};
+const handleUnlockAllModifiers = () => {
+  modifierUnlockState.value = unlockAllModifiers();
+  closeModifierUnlockModal();
+  localMessage.value = 'All modifiers unlocked.';
+};
+
+const resetSpeedyWordClock = () => {
+  const now = Date.now();
+  speedyWordStartedAt.value = now;
+  speedyWordClockNow.value = now;
+};
+
+const resetMultiRoundBoardForNextRound = (startingScore = 0) => {
+  window.clearTimeout(multiRoundRewardTimeoutId);
+  resetSpeedyWordClock();
+  playerScores.value = {
+    host: startingScore,
+    opponent: 0
+  };
+  submittedWords.value = {
+    host: '',
+    opponent: ''
+  };
+  lastWordScores.value = {
+    host: 0,
+    opponent: 0
+  };
+  lastWordBreakdowns.value = {
+    host: createEmptyLastWordBreakdown(),
+    opponent: createEmptyLastWordBreakdown()
+  };
+  clearSelectionForSide('host');
+  resetActionMode();
+  resetSinglePlayerRound('host');
+  timedModeTimerStarted.value = false;
+  multiRoundFinalWordSpent.value = false;
+};
+
+const completeMultiRoundRound = () => {
+  stopMultiRoundTimer();
+  const score = playerScores.value.host || 0;
+  const secondsRemaining = Math.max(0, multiRoundRun.timerRemainingSeconds.value);
+  const startingScore = getMultiRoundStartingScoreBonus();
+
+  multiRoundRun.recordCompletedRound({
+    score,
+    secondsRemaining,
+    selectedRewardKey: null
+  });
+  const isFinalRound = multiRoundRun.currentRoundIndex.value >= multiRoundRun.resolvedRounds.value.length - 1;
+  const completedRound = multiRoundRun.completedRounds.value.at(-1) || {};
+  const newUnlocks = isFinalRound
+    ? queueModifierUnlocksForRun(completedRound, {
+      runWon: true,
+      tutorialCompleted: isTutorialMultiRound.value
+    })
+    : [];
+  if (newUnlocks.length) {
+    localMessage.value = `${newUnlocks.length} modifier${newUnlocks.length === 1 ? '' : 's'} unlocked.`;
+  }
+
+  if (isFinalRound) {
+    multiRoundRun.goToNextRound({ startingScore });
+    unlockNextDifficultyForWonRun(props.multiRoundDifficulty);
+    saveMultiRoundPastGame('won');
+    saveMultiRoundScore('won');
+    clearMultiRoundSaves();
+    playUiSound(tileReplaceSound);
+    localMessage.value = 'Run complete!';
+    if (isTutorialMultiRound.value) {
+      localStorage.setItem(TUTORIAL_COMPLETED_STORAGE_KEY, 'true');
+      window.dispatchEvent(new CustomEvent('wordis:tutorial-completed'));
+      showTutorialHint('game_won');
+    }
+    return;
+  }
+
+  pendingMultiRoundStartingScore.value = startingScore;
+  const rewardChoices = multiRoundRun.generateRewardChoices(
+    (roundModifierEffects.value.rewardCountModifier || 0) + (personalModifierEffects.value.rewardCountModifier || 0),
+    personalModifierEffects.value.rewardSelectionCountBonus || 0
+  );
+  if (isTutorialMultiRound.value) {
+    showTutorialHint('rewards');
+  }
+  saveCurrentMultiRoundCheckpoint();
+  playUiSound(tileReplaceSound);
+  localMessage.value = 'Round complete.';
+  window.clearTimeout(multiRoundRewardTimeoutId);
+  multiRoundRewardTimeoutId = window.setTimeout(() => {
+    if (!rewardChoices.length) {
+      const advanced = multiRoundRun.goToNextRound({ startingScore });
+      pendingMultiRoundStartingScore.value = 0;
+      if (!advanced) {
+        unlockNextDifficultyForWonRun(props.multiRoundDifficulty);
+        saveMultiRoundPastGame('won');
+        saveMultiRoundScore('won');
+        clearMultiRoundSaves();
+        localMessage.value = 'Run complete!';
+        return;
+      }
+
+      resetMultiRoundBoardForNextRound(startingScore);
+      saveCurrentMultiRoundLocal();
+      localMessage.value = `Next round starts with ${startingScore} points from saved time.`;
+      return;
+    }
+
+    localMessage.value = 'Choose a modifier.';
+  }, 1000);
+};
+
+const failMultiRoundRun = () => {
+  multiRoundFinalWordSpent.value = true;
+  multiRoundRun.endRun({
+    score: playerScores.value.host || 0,
+    secondsRemaining: Math.max(0, multiRoundRun.timerRemainingSeconds.value)
+  });
+  const lossUnlocks = queueModifierUnlocksForRun(multiRoundRun.failureSummary.value || {}, {
+    runLost: true
+  }, {
+    allowFallback: false
+  });
+  saveMultiRoundPastGame('failed');
+  saveMultiRoundScore('failed');
+  clearMultiRoundSaves();
+  localMessage.value = lossUnlocks.length
+    ? `${lossUnlocks.length} modifier${lossUnlocks.length === 1 ? '' : 's'} unlocked.`
+    : 'Run failed.';
+  if (isTutorialMultiRound.value) {
+    showTutorialHint('game_lost');
+  }
+};
+
+const applyImmediatePersonalModifierEffects = (modifier) => {
+  const immediateTrayModifiers = modifier?.effects?.immediateTrayModifiers || 0;
+  const immediateTactics = modifier?.effects?.immediateTactics || 0;
+  if (!immediateTrayModifiers && !immediateTactics) {
+    return;
+  }
+
+  playerCards.value = {
+    ...playerCards.value,
+    host: {
+      ...playerCards.value.host,
+      trayModifiers: [
+        ...(playerCards.value.host?.trayModifiers || []),
+        ...drawCards('trayModifier', immediateTrayModifiers, {
+          side: 'host',
+          allowedCardKeys: getAllowedMultiRoundModifierKeys('card'),
+          heldCards: playerCards.value.host?.trayModifiers || []
+        })
+      ],
+      tactics: [
+        ...(playerCards.value.host?.tactics || []),
+        ...drawCards('tactic', immediateTactics, {
+          deck: isMultiRoundMode.value ? 'multi_round' : 'timed_solo',
+          side: 'host',
+          scores: playerScores.value,
+          allowedCardKeys: getAllowedMultiRoundModifierKeys('card'),
+          heldCards: playerCards.value.host?.tactics || []
+        })
+      ]
+    }
+  };
+  if (isTutorialMultiRound.value) {
+    showTutorialHint('card_received');
+  }
+};
+
+const applyMultiRoundWordTimeBonus = (tileCount = 0) => {
+  if (!isMultiRoundMode.value) {
+    return 0;
+  }
+
+  const timeBonusByLength = personalModifierEffects.value.lengthTimeBonus || {};
+  const seconds = timeBonusByLength[tileCount] || timeBonusByLength[String(tileCount)] || 0;
+  if (!seconds) {
+    return 0;
+  }
+
+  const wasOutOfTime = multiRoundRun.timerRemainingSeconds.value <= 0;
+  multiRoundRun.setTimerRemainingSeconds(multiRoundRun.timerRemainingSeconds.value + seconds);
+  if (wasOutOfTime && multiRoundRun.timerRemainingSeconds.value > 0) {
+    multiRoundFinalWordSpent.value = false;
+    startMultiRoundTimer();
+  }
+
+  return seconds;
+};
+
+const applyMultiRoundWordTimePenalty = (tileCount = 0) => {
+  if (!isMultiRoundMode.value) {
+    return 0;
+  }
+
+  const timePenaltyByLength = roundModifierEffects.value.lengthTimePenalty || {};
+  const seconds = timePenaltyByLength[tileCount] || timePenaltyByLength[String(tileCount)] || 0;
+  if (!seconds) {
+    return 0;
+  }
+
+  multiRoundRun.setTimerRemainingSeconds(multiRoundRun.timerRemainingSeconds.value - seconds);
+  return seconds;
+};
+
+const getHourglassTimeDelta = (rackTiles = [], selectedTiles = []) => {
+  const selectedIds = new Set(selectedTiles.map((tile) => tile.id));
+  console.log(selectedIds)
+  console.log(rackTiles)
+
+  // rack tiles are already rplaced by now 
+  return rackTiles.reduce((delta, tile) => {
+    if (tile.status !== 'hourglassTile') {
+      return delta;
+    }
+
+    return delta + (selectedIds.has(tile.id) ? 5 : -5);
+  }, 0);
+};
+
+const applyHourglassTimeDelta = (selectedTiles = []) => {
+  if (!isTimedSoloMode.value && !isMultiRoundMode.value) {
+    return 0;
+  }
+
+  const delta = getHourglassTimeDelta(myTiles.value, selectedTiles);
+  console.log('delta ' + delta)
+  if (!delta) {
+    return 0;
+  }
+
+  if (isTimedSoloMode.value) {
+    const wasOutOfTime = timerRemainingSeconds.value <= 0;
+    timerRemainingSeconds.value = Math.max(0, timerRemainingSeconds.value + delta);
+    if (wasOutOfTime && timerRemainingSeconds.value > 0) {
+      timedSoloFinalWordSpent.value = false;
+      startSoloTimer();
+    }
+  }
+
+  if (isMultiRoundMode.value) {
+    const wasOutOfTime = multiRoundRun.timerRemainingSeconds.value <= 0;
+    multiRoundRun.setTimerRemainingSeconds(multiRoundRun.timerRemainingSeconds.value + delta);
+    if (wasOutOfTime && multiRoundRun.timerRemainingSeconds.value > 0) {
+      multiRoundFinalWordSpent.value = false;
+      startMultiRoundTimer();
+    }
+  }
+
+  return delta;
+};
+
+const handleMultiRoundRewardChoice = (rewardKey) => {
+  const selectedModifier = multiRoundRun.selectRewardChoice(rewardKey);
+  if (!selectedModifier) {
+    return;
+  }
+
+  applyImmediatePersonalModifierEffects(selectedModifier);
+  if (multiRoundRun.rewardChoiceOpen.value) {
+    saveCurrentMultiRoundCheckpoint();
+    localMessage.value = `Choose ${multiRoundRun.rewardSelectionsRemaining.value} more modifier${multiRoundRun.rewardSelectionsRemaining.value === 1 ? '' : 's'}.`;
+    return;
+  }
+
+  const startingScore = pendingMultiRoundStartingScore.value;
+  const advanced = multiRoundRun.goToNextRound({ startingScore });
+  pendingMultiRoundStartingScore.value = 0;
+
+  if (!advanced) {
+    unlockNextDifficultyForWonRun(props.multiRoundDifficulty);
+    saveMultiRoundPastGame('won');
+    saveMultiRoundScore('won');
+    clearMultiRoundSaves();
+    playUiSound(tileReplaceSound);
+    localMessage.value = 'Run complete!';
+    return;
+  }
+
+  resetMultiRoundBoardForNextRound(startingScore);
+  saveCurrentMultiRoundLocal();
+  focusControllerTile(0);
+  localMessage.value = `Next round starts with ${startingScore} points from saved time.`;
+};
+
+const discardHeldCard = (card) => {
+  if (!card || isTestingMode) {
+    return;
+  }
+
+  const handKey = card.kind === 'trayModifier'
+    ? 'trayModifiers'
+    : card.kind === 'tactic' ? 'tactics' : 'attacks';
+  playerCards.value = {
+    ...playerCards.value,
+    [mySide.value]: {
+      ...playerCards.value[mySide.value],
+      [handKey]: (playerCards.value[mySide.value]?.[handKey] || []).filter((entry) => entry.id !== card.id)
+    }
+  };
+};
+
+const handleRewardRoundModifierReroll = () => {
+  const card = rewardRoundModifierRerollCard.value;
+  if (!card || !canRerollRewardRoundModifiers.value) {
+    return;
+  }
+
+  const nextRound = multiRoundRun.rerollNextRoundModifiers();
+  if (!nextRound) {
+    localMessage.value = 'There is no next round to reroll.';
+    return;
+  }
+
+  discardHeldCard(card);
+  saveCurrentMultiRoundCheckpoint();
+  localMessage.value = 'Rerolled next round modifiers.';
+};
+
+const handlePersonalModifierRewardReroll = () => {
+  const card = personalModifierRewardRerollCard.value;
+  if (!card || !canRerollPersonalModifierRewards.value) {
+    return;
+  }
+
+  const choices = multiRoundRun.rerollRewardChoices();
+  if (!choices.length) {
+    localMessage.value = 'There are no rewards to reroll.';
+    return;
+  }
+
+  discardHeldCard(card);
+  saveCurrentMultiRoundCheckpoint();
+  localMessage.value = 'Rerolled personal modifier rewards.';
+};
+
+const validateActiveRoundModifiers = (selectedTiles = []) => {
+  if (!isMultiRoundMode.value) {
+    return { valid: true };
+  }
+
+  const minimumWordLength = roundModifierEffects.value.minimumWordLength || 0;
+  if (minimumWordLength && selectedTiles.length < minimumWordLength) {
+    return {
+      valid: false,
+      message: `This round requires at least ${minimumWordLength} tiles.`
+    };
+  }
+
+  const bannedLetters = new Set(roundModifierEffects.value.bannedLetters || []);
+  const bannedTile = selectedTiles.find((tile) => bannedLetters.has((tile.baseLetter || tile.letter || '').toUpperCase()));
+  if (bannedTile) {
+    return {
+      valid: false,
+      message: `This round blocks ${bannedTile.baseLetter || bannedTile.letter}.`
+    };
+  }
+
+  const minimumVowels = roundModifierEffects.value.minimumVowels || 0;
+  if (minimumVowels) {
+    const vowelCount = selectedTiles.filter((tile) => {
+      return /^[AEIOU]$/.test((tile.baseLetter || tile.letter || '').toUpperCase());
+    }).length;
+
+    if (vowelCount < minimumVowels) {
+      return {
+        valid: false,
+        message: `This round requires at least ${minimumVowels} vowels.`
+      };
+    }
+  }
+
+  return { valid: true };
+};
+
 watch(myCards, () => {
-  if (activeBoonCardId.value && !activeBoonCard.value) {
+  if (activeTrayModifierCardId.value && !activeTrayModifierCard.value) {
     resetActionMode();
   }
 }, { deep: true });
@@ -929,11 +2169,36 @@ watch(lastWordScores, (nextScores, previousScores = { host: 0, opponent: 0 }) =>
   }
 }, { deep: true });
 
+watch(() => playerScores.value.host, (nextScore, previousScore = nextScore) => {
+  if (!isBotMode.value || nextScore <= previousScore) {
+    return;
+  }
+
+  const now = Date.now();
+  const elapsedSeconds = Math.max(0.5, (now - lastPlayerCogScoreAt) / 1000);
+  const pointsPerSecond = (nextScore - previousScore) / elapsedSeconds;
+  playerCogTargetSpeed.value = Math.min(3.4, Math.max(1.05, 1 + (pointsPerSecond * 0.18)));
+  rampPlayerCogSpeed();
+  lastPlayerCogScoreAt = now;
+});
+
+watch(isBotMode, (enabled) => {
+  if (enabled) {
+    lastPlayerCogScoreAt = Date.now();
+    return;
+  }
+
+  botCogSpeed.value = 1;
+  playerCogTargetSpeed.value = 1;
+  playerCogSpeed.value = 1;
+});
+
 watch(() => [props.volume, props.musicVolume, props.effectsVolume], () => {
   syncAudioLevels();
 
-  if (gameMusic.volume <= 0) {
-    gameMusic.pause();
+  const musicLevel = (props.volume || 0) * (props.musicVolume || 0) / 100;
+  if (musicLevel <= 0) {
+    emit('pauseBackgroundMusic');
     return;
   }
 
@@ -961,8 +2226,15 @@ const handleSubmit = async () => {
     return;
   }
 
-  if (selectedTiles.length < MIN_WORD_LENGTH) {
-    localMessage.value = `Words must use at least ${MIN_WORD_LENGTH} tiles.`;
+  if (selectedTiles.length < effectiveMinimumWordLength.value) {
+    localMessage.value = `Words must use at least ${effectiveMinimumWordLength.value} tiles.`;
+    triggerInvalidWordShake();
+    return;
+  }
+
+  const roundModifierValidation = validateActiveRoundModifiers(selectedTiles);
+  if (!roundModifierValidation.valid) {
+    localMessage.value = roundModifierValidation.message;
     triggerInvalidWordShake();
     return;
   }
@@ -981,6 +2253,12 @@ const handleSubmit = async () => {
     return;
   }
 
+  if (isMissingBagTileForBaggedSelection(myTiles.value, selectedTiles)) {
+    localMessage.value = 'Bagged tiles need their BAG tile in the word.';
+    triggerInvalidWordShake();
+    return;
+  }
+
   if (swappedInMustTile) {
     localMessage.value = 'Swapped in your MUST tile automatically.';
   }
@@ -995,6 +2273,22 @@ const handleSubmit = async () => {
   const resolvedWord = (validationResult.resolvedWord || normalizedWord).toUpperCase();
   scorePopTiles.value = selectedTiles.map((tile) => ({ ...tile }));
   playScoreAnimation(selectedTiles.length);
+
+  const hourglassDelta = applyHourglassTimeDelta(selectedTiles);
+  if (hourglassDelta > 0) {
+    localMessage.value = `${localMessage.value} Hourglass added ${hourglassDelta} seconds.`;
+  } else if (hourglassDelta < 0) {
+    localMessage.value = `${localMessage.value} Hourglass lost ${Math.abs(hourglassDelta)} seconds.`;
+  }
+  const secondsRestored = applyMultiRoundWordTimeBonus(selectedTiles.length);
+  if (secondsRestored) {
+    localMessage.value = `${localMessage.value} Restored ${secondsRestored} seconds.`;
+  }
+  const secondsSapped = applyMultiRoundWordTimePenalty(selectedTiles.length);
+  if (secondsSapped) {
+    localMessage.value = `${localMessage.value} Lost ${secondsSapped} seconds.`;
+  }
+
 
   if (props.isMultiplayer) {
     const scoreDetails = getWordScoreDetails(selectedTiles, {
@@ -1014,8 +2308,49 @@ const handleSubmit = async () => {
   if (isTimedSoloMode.value) {
     isSoloTimerPausedByAttack.value = false;
   }
+  isMultiRoundTimerPausedByAttack.value = false;
+  const wasFinalWordWindowActive = finalWordWindowActive.value;
 
-  submitSinglePlayerWord(resolvedWord);
+  const submitted = submitSinglePlayerWord(resolvedWord, {
+    wordElapsedSeconds: currentWordElapsedSeconds.value
+  });
+  if (!submitted) {
+    return;
+  }
+  resetSpeedyWordClock();
+
+  if (isMultiRoundMode.value) {
+    if (wordHistory.value.host?.[0]) {
+      wordHistory.value = {
+        ...wordHistory.value,
+        host: [
+          {
+            ...wordHistory.value.host[0],
+            rn: multiRoundRun.currentRoundNumber.value
+          },
+          ...wordHistory.value.host.slice(1)
+        ]
+      };
+    }
+
+    if (SAVE_ON_WORD_SUBMIT) {
+      saveCurrentMultiRoundLocal();
+    }
+
+    if (playerScores.value.host >= multiRoundRun.currentTargetScore.value) {
+      completeMultiRoundRound();
+      return;
+    }
+
+    if (wasFinalWordWindowActive) {
+      failMultiRoundRun();
+    }
+    return;
+  }
+
+  if (isBotMode.value && SAVE_ON_WORD_SUBMIT) {
+    saveCurrentBotMatchLocal();
+  }
 
   if (finalWordWindowActive.value) {
     timedSoloFinalWordSpent.value = true;
@@ -1023,40 +2358,50 @@ const handleSubmit = async () => {
 };
 
 const resetActionMode = () => {
-  activeBoonCardId.value = null;
+  activeTrayModifierCardId.value = null;
 };
 
-const selectBoonCard = (card) => {
+const selectTrayModifierCard = (card) => {
+  if (cardControlsDisabled.value) {
+    localMessage.value = cardDisabledReason.value;
+    return;
+  }
+
   if (card.effectType === 'clear_negative_modifiers') {
     if (props.isMultiplayer) {
-      useMultiplayerBoon({ cardId: card.id, tileId: null });
+      useMultiplayerTrayModifier({ cardId: card.id, tileId: null });
       localMessage.value = `Played ${card.label}.`;
       resetActionMode();
       return;
     }
 
-    const result = useSinglePlayerBoon(mySide.value, card.id, null);
+    const result = useSinglePlayerTrayModifier(mySide.value, card.id, null);
     if (result?.success) {
-      localMessage.value = `Played ${card.label}.`;
+      localMessage.value = result.message || `Played ${card.label}.`;
       resetActionMode();
     }
     return;
   }
 
-  if (activeBoonCardId.value === card.id) {
+  if (activeTrayModifierCardId.value === card.id) {
     resetActionMode();
-    localMessage.value = 'Boon selection cleared.';
+    localMessage.value = 'Tray Modifier selection cleared.';
     return;
   }
 
-  activeBoonCardId.value = card.id;
-  localMessage.value = `Ready ${card.label}. Click one of your tiles to use it.`;
+  activeTrayModifierCardId.value = card.id;
+  localMessage.value = `Ready ${card.label}. Select a tile!`;
   focusControllerTile(controllerTileCursorIndex.value);
 };
 
 const useAttackCard = (card) => {
+  if (cardControlsDisabled.value) {
+    localMessage.value = cardDisabledReason.value;
+    return;
+  }
+
   if (!attacksEnabled.value) {
-    localMessage.value = isOvertimeActive.value ? 'Overtime only allows boons.' : 'Solo sprint does not use attacks.';
+    localMessage.value = isOvertimeActive.value ? 'Overtime only allows tray modifiers.' : 'Solo sprint does not use tactics.';
     return;
   }
 
@@ -1074,11 +2419,92 @@ const useAttackCard = (card) => {
     return;
   }
 
-  const result = useSinglePlayerAttack(mySide.value, card.id);
+  const result = useSinglePlayerActionCard(mySide.value, card.id, card.kind);
   if (result?.success) {
     localMessage.value = result.message || `Played ${card.label}.`;
     resetActionMode();
+    if (isMultiRoundMode.value && card.effectType === 'reduce_round_target' && playerScores.value.host >= multiRoundRun.currentTargetScore.value) {
+      completeMultiRoundRound();
+    }
   }
+};
+
+const crackGlassTiles = (side = mySide.value, tileIds = []) => {
+  const crackIds = new Set(tileIds);
+  if (!crackIds.size) {
+    return false;
+  }
+
+  const sideTiles = playerTiles.value[side] || [];
+  let changed = false;
+  const nextSideTiles = sideTiles.map((tile) => {
+    if (tile.status !== 'glassTile' || tile.glassCracked || !crackIds.has(tile.id)) {
+      return tile;
+    }
+
+    changed = true;
+    return {
+      ...tile,
+      glassCracked: true
+    };
+  });
+
+  if (!changed) {
+    return false;
+  }
+
+  playerTiles.value = {
+    ...playerTiles.value,
+    [side]: nextSideTiles
+  };
+  return true;
+};
+
+const getGlassTilesCrackedByRemoval = (removedTileId) => {
+  const selectedTiles = selectedTilesForCurrentSide.value;
+  const removedIndex = selectedTiles.findIndex((tile) => tile.id === removedTileId);
+  if (removedIndex === -1) {
+    return [];
+  }
+
+  return selectedTiles
+    .slice(removedIndex)
+    .filter((tile) => tile.status === 'glassTile' && !tile.glassCracked)
+    .map((tile) => tile.id);
+};
+
+const getGlassTilesCrackedByRemovalIndex = (removedIndex) => {
+  const selectedTiles = selectedTilesForCurrentSide.value;
+  const boundedIndex = Math.max(0, Math.min(Number(removedIndex), selectedTiles.length - 1));
+  if (!selectedTiles.length || !Number.isFinite(boundedIndex)) {
+    return [];
+  }
+
+  return selectedTiles
+    .slice(boundedIndex)
+    .filter((tile) => tile.status === 'glassTile' && !tile.glassCracked)
+    .map((tile) => tile.id);
+};
+
+const getGlassTilesCrackedByReorder = (fromIndex, toIndex) => {
+  const selectedTiles = selectedTilesForCurrentSide.value;
+  const boundedFromIndex = Math.max(0, Math.min(Number(fromIndex), selectedTiles.length - 1));
+  const boundedToIndex = Math.max(0, Math.min(Number(toIndex), selectedTiles.length - 1));
+  if (!selectedTiles.length || boundedFromIndex === boundedToIndex) {
+    return [];
+  }
+
+  const startIndex = Math.min(boundedFromIndex, boundedToIndex);
+  const endIndex = Math.max(boundedFromIndex, boundedToIndex);
+  return selectedTiles
+    .slice(startIndex, endIndex + 1)
+    .filter((tile) => tile.status === 'glassTile' && !tile.glassCracked)
+    .map((tile) => tile.id);
+};
+
+const getGlassTilesCrackedByReplacement = (targetIndex) => {
+  const targetTile = selectedTilesForCurrentSide.value[targetIndex];
+  return targetTile?.status === 'glassTile' && !targetTile.glassCracked ? [targetTile.id] : [];
 };
 
 const handleClearRack = () => {
@@ -1094,13 +2520,20 @@ const handleClearRack = () => {
     }
 
     clearMultiplayerRack();
+    triggerRackClearAnimation(mySide.value);
     clearSelectionForSide(mySide.value);
     resetActionMode();
     localMessage.value = `Clearing rack... ${rackClears.value[mySide.value] - 1} clears left after this one.`;
     return;
   }
 
+  if ((rackClears.value[mySide.value] || 0) <= 0) {
+    localMessage.value = 'No rack clears remaining.';
+    return;
+  }
+
   resetActionMode();
+  triggerRackClearAnimation(mySide.value);
   clearSinglePlayerRack(mySide.value);
 };
 
@@ -1115,24 +2548,225 @@ const handleSaveLetters = () => {
     return;
   }
 
+  const glassTileIds = selectedTilesForCurrentSide.value
+    .filter((tile) => tile.status === 'glassTile' && !tile.glassCracked)
+    .map((tile) => tile.id);
+
   if (saveSelectionForSide(mySide.value)) {
+    crackGlassTiles(mySide.value, glassTileIds);
     localMessage.value = 'Saved those letters on your rack.';
   }
 };
 
 const handleUndo = () => {
+  const lastTile = selectedTilesForCurrentSide.value.at(-1);
   if (removeLastLetter()) {
+    if (lastTile?.status === 'glassTile' && !lastTile.glassCracked) {
+      crackGlassTiles(mySide.value, [lastTile.id]);
+    }
     playUiSound(tilePutBackSound);
   }
 };
 
 const handleClearWord = () => {
+  const glassTileIds = selectedTilesForCurrentSide.value
+    .filter((tile) => tile.status === 'glassTile' && !tile.glassCracked)
+    .map((tile) => tile.id);
+
   if (clearWord()) {
+    crackGlassTiles(mySide.value, glassTileIds);
     playUiSound(tilePutBackSound);
   }
 };
 
+const roundModifierTimerState = {};
+const getTimedRoundModifierActions = () => {
+  const effects = roundModifierEffects.value;
+  return [
+    {
+      key: 'loose_letters',
+      intervalMs: effects.returnBuilderIntervalMs && !effects.chaoticBoardIntervalMs ? effects.returnBuilderIntervalMs : 0,
+      label: 'Return',
+      run: () => returnBuiltLettersToRack('Loose Letters returned your built letters.')
+    },
+    {
+      key: 'disorganised',
+      intervalMs: effects.shuffleRackIntervalMs && !effects.chaoticBoardIntervalMs ? effects.shuffleRackIntervalMs : 0,
+      label: 'Shuffle',
+      run: () => shuffleRackTiles({ includeSelected: false, message: 'Disorganised shuffled your rack.' })
+    },
+    {
+      key: 'chaotic_board',
+      intervalMs: effects.chaoticBoardIntervalMs || 0,
+      label: 'Chaos',
+      run: () => {
+        returnBuiltLettersToRack('');
+        shuffleRackTiles({ includeSelected: true, message: 'Chaotic Board reset your word and shuffled your rack.' });
+      }
+    }
+  ].filter((entry) => entry.intervalMs > 0);
+};
+
+const canRunTimedRoundModifiers = () => {
+  return isMultiRoundMode.value
+    && !isPaused.value
+    && !effectiveGameEnded.value
+    && !showTutorialOverlay.value
+    && !isMultiRoundRewardChoiceOpen.value;
+};
+
+const canRunTimedTileModifiers = () => {
+  return !isPaused.value
+    && !effectiveGameEnded.value
+    && !showTutorialOverlay.value
+    && !isMultiRoundRewardChoiceOpen.value;
+};
+
+const canShiftShimmerTiles = () => {
+  if (!isTimedSoloMode.value && !isMultiRoundMode.value) {
+    return true;
+  }
+
+  if (!timedModeTimerStarted.value) {
+    return false;
+  }
+
+  return isMultiRoundMode.value
+    ? multiRoundRun.timerRemainingSeconds.value > 0
+    : timerRemainingSeconds.value > 0;
+};
+
+const returnBuiltLettersToRack = (message) => {
+  if (!selectedTilesForCurrentSide.value.length) {
+    return false;
+  }
+
+  clearSelectionForSide('host');
+  if (message) {
+    localMessage.value = message;
+  }
+  return true;
+};
+
+const shuffleRackTiles = ({ includeSelected = false, message = '' } = {}) => {
+  const rackTiles = playerTiles.value.host || [];
+  if (rackTiles.length < 2) {
+    return false;
+  }
+
+  const selectedIds = selectedTileIds.value.host || new Set();
+  const shuffleIndexes = rackTiles
+    .map((tile, index) => ({ tile, index }))
+    .filter(({ tile }) => includeSelected || !selectedIds.has(tile.id))
+    .map(({ index }) => index);
+
+  if (shuffleIndexes.length < 2) {
+    return false;
+  }
+
+  const shuffledTiles = [...rackTiles];
+  const shuffledEntries = shuffleIndexes.map((index) => shuffledTiles[index]);
+  for (let index = shuffledEntries.length - 1; index > 0; index -= 1) {
+    const swapIndex = Math.floor(Math.random() * (index + 1));
+    [shuffledEntries[index], shuffledEntries[swapIndex]] = [shuffledEntries[swapIndex], shuffledEntries[index]];
+  }
+
+  shuffleIndexes.forEach((tileIndex, entryIndex) => {
+    shuffledTiles[tileIndex] = shuffledEntries[entryIndex];
+  });
+  playerTiles.value = {
+    ...playerTiles.value,
+    host: shuffledTiles
+  };
+  if (message) {
+    localMessage.value = message;
+  }
+  return true;
+};
+
+const resetTimedRoundModifierIndicators = () => {
+  Object.keys(roundModifierTimerState).forEach((key) => {
+    delete roundModifierTimerState[key];
+  });
+  roundModifierCountdowns.value = {};
+};
+
+const tickTimedRoundModifiers = () => {
+  if (
+    !canRunTimedRoundModifiers()
+  ) {
+    return;
+  }
+
+  const now = Date.now();
+  const nextCountdowns = {};
+  getTimedRoundModifierActions().forEach((action) => {
+    if (!roundModifierTimerState[action.key]) {
+      roundModifierTimerState[action.key] = now + action.intervalMs;
+    }
+
+    if (now >= roundModifierTimerState[action.key]) {
+      action.run();
+      roundModifierTimerState[action.key] = now + action.intervalMs;
+    }
+
+    const seconds = Math.max(0, Math.ceil((roundModifierTimerState[action.key] - now) / 1000));
+    nextCountdowns[action.key] = {
+      seconds,
+      label: `${action.label} in ${seconds}s`
+    };
+  });
+  roundModifierCountdowns.value = nextCountdowns;
+};
+
+const tickTimedTileModifiers = () => {
+  if (!canRunTimedTileModifiers()) {
+    return;
+  }
+
+  const now = Date.now();
+  const nextTilesBySide = { ...playerTiles.value };
+  let changed = false;
+
+  Object.keys(nextTilesBySide).forEach((side) => {
+    const tiles = nextTilesBySide[side] || [];
+    const shimmerTiles = canShiftShimmerTiles()
+      ? tickShimmerTiles(tiles, {
+          now,
+          frozenTileIds: selectedTileIds.value[side] || new Set()
+        })
+      : tiles;
+    const lightningResult = tickLightningTiles(shimmerTiles, { now });
+    const nextTiles = lightningResult.tiles;
+
+    if (nextTiles !== tiles) {
+      nextTilesBySide[side] = nextTiles;
+      changed = true;
+    }
+
+    if (lightningResult.scorePenalty > 0) {
+      playerScores.value = {
+        ...playerScores.value,
+        [side]: Math.max(0, (playerScores.value[side] || 0) - lightningResult.scorePenalty)
+      };
+    }
+  });
+
+  if (changed) {
+    playerTiles.value = nextTilesBySide;
+  }
+};
+
+const tickTimedGameEffects = () => {
+  tickTimedRoundModifiers();
+  tickTimedTileModifiers();
+};
+
 const refocusControllerSelection = () => {
+  if (showTutorialOverlay.value) {
+    return;
+  }
+
   if (!isControllerNavigationActive.value) {
     return;
   }
@@ -1152,30 +2786,25 @@ const refocusControllerSelection = () => {
     return;
   }
 
+  if (controllerRegion.value === 'rounds') {
+    focusControllerRound(controllerRoundCursorIndex.value);
+    return;
+  }
+
+  if (controllerRegion.value === 'reward') {
+    focusControllerReward(controllerRewardCursorIndex.value);
+    return;
+  }
+
   focusControllerTile(controllerTileCursorIndex.value);
 };
 
-const openSideDrawer = ({ auto = false } = {}) => {
-  if (!isSideDrawerMode.value) {
+const togglePersonalModifiersDrawer = () => {
+  if (!isMultiRoundMode.value) {
     return;
   }
 
-  isSideDrawerOpen.value = true;
-  sideDrawerAutoOpen.value = auto;
-};
-
-const closeSideDrawer = () => {
-  isSideDrawerOpen.value = false;
-  sideDrawerAutoOpen.value = false;
-};
-
-const toggleSideDrawer = () => {
-  if (isSideDrawerOpen.value) {
-    closeSideDrawer();
-    return;
-  }
-
-  openSideDrawer({ auto: false });
+  personalModifiersDrawerRef.value?.toggleDrawer?.();
 };
 
 const focusControllerTile = (index = controllerTileCursorIndex.value) => {
@@ -1247,6 +2876,43 @@ const focusControllerAction = (index = controllerActionCursorIndex.value) => {
   });
 };
 
+const focusControllerRound = (index = controllerRoundCursorIndex.value) => {
+  if (!isMultiRoundMode.value || !multiRoundProgressRounds.value.length) {
+    return;
+  }
+
+  isControllerNavigationActive.value = true;
+  controllerRegion.value = 'rounds';
+  const boundedIndex = Math.max(0, Math.min(index, multiRoundProgressRounds.value.length - 1));
+  controllerRoundCursorIndex.value = boundedIndex;
+
+  nextTick(() => {
+    const roundButton = document.querySelector(`[data-controller-round="${boundedIndex}"]`);
+    if (roundButton && typeof roundButton.focus === 'function') {
+      roundButton.focus();
+    }
+  });
+};
+
+const focusControllerReward = (index = controllerRewardCursorIndex.value) => {
+  if (!isMultiRoundRewardChoiceOpen.value || !multiRoundRewardChoices.value.length) {
+    return;
+  }
+
+  isControllerNavigationActive.value = true;
+  controllerRegion.value = 'reward';
+  const rewardCount = multiRoundRewardChoices.value.length;
+  const boundedIndex = ((index % rewardCount) + rewardCount) % rewardCount;
+  controllerRewardCursorIndex.value = boundedIndex;
+
+  nextTick(() => {
+    const rewardButton = document.querySelector(`[data-controller-reward="${boundedIndex}"]`);
+    if (rewardButton && typeof rewardButton.focus === 'function') {
+      rewardButton.focus();
+    }
+  });
+};
+
 const moveControllerTileFocus = (direction) => {
   if (!myTiles.value.length) {
     return;
@@ -1265,9 +2931,12 @@ const moveControllerTileFocus = (direction) => {
   } else if (direction === 'right') {
     nextIndex = Math.min(myTiles.value.length - 1, currentIndex + 1);
   } else if (direction === 'up') {
+    if (isMultiRoundMode.value && currentIndex < columns) {
+      focusControllerRound(0);
+      return;
+    }
     nextIndex = Math.max(0, currentIndex - columns);
   } else if (direction === 'down') {
-    console.log('test')
     if (currentIndex + columns >= myTiles.value.length && selectedTilesForCurrentSide.value.length) {
       focusControllerBuilder(Math.min(currentIndex % columns, selectedTilesForCurrentSide.value.length - 1));
       return;
@@ -1281,65 +2950,137 @@ const moveControllerTileFocus = (direction) => {
   focusControllerTile(nextIndex);
 };
 
-const handleTileClickWithCards = (tile, side) => {
+const handleTileClickWithCards = (payload, side) => {
+  const tile = payload?.tile || payload;
+  const animationSync = payload?.animationSync || null;
+  // start timer as soon as user starts playing
+  startTimedModeTimerAfterFirstTileClicked()
   if (effectiveGameEnded.value) {
     return;
   }
 
-  if (activeBoonCard.value) {
-    if (side !== mySide.value) {
-      localMessage.value = 'Boons can only target your own tiles.';
-      return;
-    }
-
-    if (props.isMultiplayer) {
-      useMultiplayerBoon({ cardId: activeBoonCard.value.id, tileId: tile.id });
-      localMessage.value = `Played ${activeBoonCard.value.label} on your tile.`;
+  if (activeTrayModifierCard.value) {
+    if (cardControlsDisabled.value) {
+      localMessage.value = cardDisabledReason.value;
       resetActionMode();
       return;
     }
 
-    if (useSinglePlayerBoon(mySide.value, activeBoonCard.value.id, tile.id)) {
-      localMessage.value = `Played ${activeBoonCard.value.label} on your tile.`;
+    if (side !== mySide.value) {
+      localMessage.value = 'Tray modifiers can only target your own tiles.';
+      return;
+    }
+
+    if (props.isMultiplayer) {
+      useMultiplayerTrayModifier({ cardId: activeTrayModifierCard.value.id, tileId: tile.id });
+      localMessage.value = `Played ${activeTrayModifierCard.value.label} on your tile.`;
+      resetActionMode();
+      return;
+    }
+
+    if (useSinglePlayerTrayModifier(mySide.value, activeTrayModifierCard.value.id, tile.id)) {
+      localMessage.value = `Played ${activeTrayModifierCard.value.label} on your tile.`;
       resetActionMode();
     }
     return;
   }
 
-  const result = handleTileClick(tile);
+  const glassTileIds = selectedTileIds.value[mySide.value]?.has(tile.id)
+    ? getGlassTilesCrackedByRemoval(tile.id)
+    : [];
+  const result = handleTileClick(tile, { animationSync });
   if (result === 'added') {
     playUiSound(tilePickupSound);
   } else if (result === 'removed') {
+    crackGlassTiles(mySide.value, glassTileIds);
     playUiSound(tilePutBackSound);
   }
 };
 
-const handleBuiltTileClick = (tile) => {
+const handleBuiltTileClick = (payload) => {
+  const tile = payload?.tile || payload;
+  const tileIndex = payload?.index;
   if (effectiveGameEnded.value) {
     return;
   }
 
-  if (activeBoonCard.value) {
-    if (props.isMultiplayer) {
-      useMultiplayerBoon({ cardId: activeBoonCard.value.id, tileId: tile.id });
-      localMessage.value = `Played ${activeBoonCard.value.label} on your tile.`;
+  if (activeTrayModifierCard.value) {
+    if (cardControlsDisabled.value) {
+      localMessage.value = cardDisabledReason.value;
       resetActionMode();
       return;
     }
 
-    const result = useSinglePlayerBoon(mySide.value, activeBoonCard.value.id, tile.id);
+    if (props.isMultiplayer) {
+      useMultiplayerTrayModifier({ cardId: activeTrayModifierCard.value.id, tileId: tile.id });
+      localMessage.value = `Played ${activeTrayModifierCard.value.label} on your tile.`;
+      resetActionMode();
+      return;
+    }
+
+    const result = useSinglePlayerTrayModifier(mySide.value, activeTrayModifierCard.value.id, tile.id);
     if (result?.success) {
       if (result.replacementTileId) {
         replaceSelectedTileId(mySide.value, tile.id, result.replacementTileId);
       }
-      localMessage.value = `Played ${activeBoonCard.value.label} on your tile.`;
+      localMessage.value = `Played ${activeTrayModifierCard.value.label} on your tile.`;
       resetActionMode();
     }
     return;
   }
 
-  if (removeSpecificTile(tile.id)) {
+  const useIndexRemoval = Number.isFinite(Number(tileIndex));
+  const glassTileIds = useIndexRemoval
+    ? getGlassTilesCrackedByRemovalIndex(tileIndex)
+    : getGlassTilesCrackedByRemoval(tile.id);
+  const removed = useIndexRemoval ? removeTileAtIndex(tileIndex) : removeSpecificTile(tile.id);
+  if (removed) {
+    crackGlassTiles(mySide.value, glassTileIds);
     playUiSound(tilePutBackSound);
+  }
+};
+
+const handleBuiltTileReorder = ({ fromIndex, toIndex } = {}) => {
+  if (effectiveGameEnded.value || activeTrayModifierCard.value) {
+    return;
+  }
+
+  const glassTileIds = getGlassTilesCrackedByReorder(fromIndex, toIndex);
+  if (reorderSelectedTile(mySide.value, fromIndex, toIndex)) {
+    crackGlassTiles(mySide.value, glassTileIds);
+  }
+};
+
+const handleRackTileDropOnBuilder = ({ tile, targetIndex, animationSync } = {}, side) => {
+  if (effectiveGameEnded.value || activeTrayModifierCard.value) {
+    return;
+  }
+
+  if (side !== mySide.value) {
+    localMessage.value = 'You can only use your own rack.';
+    return;
+  }
+
+  if (!tile || tile.locked) {
+    return;
+  }
+
+  const selectedTiles = selectedTilesForCurrentSide.value;
+  const boundedIndex = Math.max(0, Math.min(Number(targetIndex), selectedTiles.length - 1));
+  const targetTile = selectedTiles[boundedIndex];
+  if (!targetTile || !Number.isFinite(boundedIndex)) {
+    return;
+  }
+
+  if (selectedTileIds.value[mySide.value]?.has(tile.id) && !tile.reusableInBuilder) {
+    localMessage.value = 'That tile is already in your word.';
+    return;
+  }
+
+  const glassTileIds = getGlassTilesCrackedByReplacement(boundedIndex);
+  if (replaceTileAtIndex(mySide.value, boundedIndex, tile.id, { animationSync })) {
+    crackGlassTiles(mySide.value, glassTileIds);
+    playUiSound(tilePickupSound);
   }
 };
 
@@ -1366,15 +3107,17 @@ const setPauseState = (nextPaused) => {
   if (nextPaused) {
     stopBotLoop();
     stopSoloTimer();
-    gameMusic.pause();
+    stopMultiRoundTimer();
+    emit('pauseBackgroundMusic');
     localMessage.value = 'Game paused.';
     return;
   }
 
-  startBotLoop();
+  startBotLoopAfterTutorial();
   startSoloTimer();
+  startMultiRoundTimer();
   startGameMusic();
-  localMessage.value = 'Racks are live';
+  localMessage.value = 'Start Playing Words';
 };
 
 const syncTutorialPauseState = (visible) => {
@@ -1385,23 +3128,57 @@ const syncTutorialPauseState = (visible) => {
   if (visible) {
     stopBotLoop();
     stopSoloTimer();
-    gameMusic.pause();
+    stopMultiRoundTimer();
     return;
   }
 
   if (!props.settingsShowing && !effectiveGameEnded.value) {
-    startBotLoop();
+    startBotLoopAfterTutorial();
     startSoloTimer();
+    startMultiRoundTimer();
     startGameMusic();
   }
 };
 
-const handleCloseTutorial = ({ dontShowAgain } = {}) => {
-  if (dontShowAgain) {
+let pendingTutorialHintIds = [];
+const showTutorialHint = (hintId, { force = false } = {}) => {
+  const hint = getTutorialHint(hintId);
+  if (!hint || (!force && hint.hasSeen)) {
+    return false;
+  }
+
+  if (isMultiRoundRewardChoiceOpen.value && hintId !== 'rewards') {
+    return false;
+  }
+
+  if (showTutorialOverlay.value) {
+    if (!pendingTutorialHintIds.includes(hintId)) {
+      pendingTutorialHintIds.push(hintId);
+    }
+    return false;
+  }
+
+  activeTutorialHint.value = hint;
+  markTutorialHintViewed(hint.id);
+  showTutorialOverlay.value = true;
+  syncTutorialPauseState(true);
+  return true;
+};
+
+const handleCloseTutorial = () => {
+  if (activeTutorialHint.value?.id === 'welcome') {
     localStorage.setItem(GAME_TUTORIAL_STORAGE_KEY, 'true');
   }
 
   showTutorialOverlay.value = false;
+  nextTick(() => {
+    const nextHintId = pendingTutorialHintIds.shift();
+    if (nextHintId && showTutorialHint(nextHintId)) {
+      return;
+    }
+
+    focusControllerTile(0);
+  });
 };
 
 const togglePause = () => {
@@ -1409,10 +3186,17 @@ const togglePause = () => {
 };
 
 const handlePlayAgain = () => {
+  resetSpeedyWordClock();
   resetActionMode();
   clearSelectionForSide(mySide.value);
   isSoloTimerPausedByAttack.value = false;
+  isMultiRoundTimerPausedByAttack.value = false;
+  clearTooltipTimerPause();
+  tooltipPauseUsesRemaining.value = Math.max(0, tooltipPauseConfig.value.amount || 0);
+  timedModeTimerStarted.value = false;
   timedSoloFinalWordSpent.value = false;
+  pendingMultiRoundStartingScore.value = 0;
+  window.clearTimeout(multiRoundRewardTimeoutId);
 
   if (props.isMultiplayer) {
     playMultiplayerAgain();
@@ -1422,8 +3206,13 @@ const handlePlayAgain = () => {
     return;
   }
 
+  if (isMultiRoundMode.value) {
+    multiRoundRun.resetRun();
+  }
+
   stopBotLoop();
   stopSoloTimer();
+  stopMultiRoundTimer();
   stopResultAudio();
   emit('playAgain');
 };
@@ -1432,7 +3221,7 @@ watch(effectiveGameEnded, (ended) => {
   if (ended) {
     stopBotLoop();
     stopSoloTimer();
-    gameMusic.pause();
+    emit('pauseBackgroundMusic');
     showHistoryOverlay.value = false;
     window.clearTimeout(historyOverlayTimeoutId);
     // Let the final word resolve on screen before the results overlay appears.
@@ -1456,11 +3245,13 @@ watch(effectiveGameEnded, async (ended, wasEnded) => {
   }
 
   const audio = historyResultState.value === 'defeat' ? defeatSound : victorySound;
-  gameMusic.pause();
+  emit('pauseBackgroundMusic');
   syncAudioLevels();
   stopResultAudio();
 
   try {
+    // dont play victory sound if multiround 
+    if(multiRoundRun && historyResultState.value === 'victory' ) return
     await audio.play();
   } catch (error) {
     // Ignore autoplay failures; the overlay state still updates correctly.
@@ -1472,15 +3263,52 @@ const stopSoloTimer = () => {
   soloTimerId = null;
 };
 
+const stopMultiRoundTimer = () => {
+  window.clearInterval(multiRoundTimerId);
+  multiRoundTimerId = null;
+};
+
+const canRunTimedModeTimer = () => {
+  return timedModeTimerStarted.value && !isPaused.value && !props.settingsShowing && !showTutorialOverlay.value;
+};
+
+const clearTooltipTimerPause = () => {
+  window.clearTimeout(tooltipPauseTimeoutId);
+  tooltipPauseTimeoutId = null;
+  isSoloTimerPausedByTooltip.value = false;
+  isMultiRoundTimerPausedByTooltip.value = false;
+};
+
+const handleTooltipOpened = () => {
+  if ((!isTimedSoloMode.value && !isMultiRoundMode.value) || tooltipPauseUsesRemaining.value <= 0) {
+    return;
+  }
+
+  tooltipPauseUsesRemaining.value = Math.max(0, tooltipPauseUsesRemaining.value - 1);
+  isSoloTimerPausedByTooltip.value = isTimedSoloMode.value;
+  isMultiRoundTimerPausedByTooltip.value = isMultiRoundMode.value;
+  window.clearTimeout(tooltipPauseTimeoutId);
+  tooltipPauseTimeoutId = window.setTimeout(clearTooltipTimerPause, Math.max(0, tooltipPauseConfig.value.durationSeconds || 0) * 1000);
+};
+
+const handleTooltipClosed = () => {
+  clearTooltipTimerPause();
+};
+
 const startSoloTimer = () => {
-  if (!isTimedSoloMode.value || effectiveGameEnded.value) {
+  if (!isTimedSoloMode.value || effectiveGameEnded.value || !canRunTimedModeTimer()) {
     stopSoloTimer();
     return;
   }
 
   window.clearInterval(soloTimerId);
   soloTimerId = window.setInterval(() => {
-    if (isSoloTimerPausedByAttack.value) {
+    if (isSoloTimerPausedByAttack.value || isSoloTimerPausedByTooltip.value) {
+      return;
+    }
+
+    if (!canRunTimedModeTimer()) {
+      stopSoloTimer();
       return;
     }
 
@@ -1492,10 +3320,147 @@ const startSoloTimer = () => {
   }, 1000);
 };
 
+const startMultiRoundTimer = () => {
+  if (!isMultiRoundMode.value || effectiveGameEnded.value || multiRoundRun.rewardChoiceOpen.value || !canRunTimedModeTimer()) {
+    stopMultiRoundTimer();
+    return;
+  }
+
+  window.clearInterval(multiRoundTimerId);
+  multiRoundTimerId = window.setInterval(() => {
+    if (isMultiRoundTimerPausedByAttack.value || isMultiRoundTimerPausedByTooltip.value) {
+      console.log('timerpaused')
+      return;
+    }
+
+    if (!canRunTimedModeTimer()) {
+      stopMultiRoundTimer();
+      return;
+    }
+    
+    multiRoundRun.setTimerRemainingSeconds(multiRoundRun.timerRemainingSeconds.value - 1);
+    if (multiRoundRun.timerRemainingSeconds.value <= 0) {
+      stopMultiRoundTimer();
+      localMessage.value = 'Final word ready';
+    }
+  }, 1000);
+};
+
+const startTimedModeTimerAfterFirstTileClicked = () => {
+  if (!isTimedSoloMode.value && !isMultiRoundMode.value) {
+    return;
+  }
+
+  if (timedModeTimerStarted.value) {
+    return;
+  }
+
+  timedModeTimerStarted.value = true;
+  startSoloTimer();
+  startMultiRoundTimer();
+};
+
+const restoreCommonSaveState = (common = {}) => {
+  resetSpeedyWordClock();
+  playerScores.value = common.scores || { host: 0, opponent: 0 };
+  playerTiles.value = common.tiles || { host: [], opponent: [] };
+  playerCards.value = common.cards || {
+    host: { trayModifiers: [], attacks: [], tactics: [] },
+    opponent: { trayModifiers: [], attacks: [], tactics: [] }
+  };
+  wordHistory.value = common.wordHistory || { host: [], opponent: [] };
+  submittedWords.value = common.submittedWords || { host: '', opponent: '' };
+  rackClears.value = common.rackClears || { host: 0, opponent: 0 };
+
+  const hostScore = wordHistory.value.host?.[0]?.score || 0;
+  const opponentScore = wordHistory.value.opponent?.[0]?.score || 0;
+  lastWordScores.value = {
+    host: hostScore,
+    opponent: opponentScore
+  };
+  lastWordBreakdowns.value = {
+    host: {
+      wordScore: hostScore,
+      burnPenalty: 0,
+      netScore: hostScore
+    },
+    opponent: {
+      wordScore: opponentScore,
+      burnPenalty: 0,
+      netScore: opponentScore
+    }
+  };
+  clearSelectionForSide('host');
+  clearSelectionForSide('opponent');
+  resetActionMode();
+};
+
+const restoreContinueSave = (rawSave) => {
+  const save = unpackSave(rawSave);
+  if (!save) {
+    return;
+  }
+
+  restoreCommonSaveState(save.common);
+
+  if (save.m === SAVE_MODES.MULTI_ROUND) {
+    const multiRoundSave = save.mr || {};
+    multiRoundRun.restoreRunState({
+      resolvedRounds: multiRoundSave.rr,
+      currentRoundIndex: multiRoundSave.i,
+      timerRemainingSeconds: multiRoundSave.t,
+      completedRounds: multiRoundSave.cr,
+      personalModifiers: multiRoundSave.pm,
+      rewardChoices: multiRoundSave.rc,
+      rewardSelectionsRemaining: multiRoundSave.rsr,
+      rewardSelectionsTotal: multiRoundSave.rst,
+      startingScoreBonus: multiRoundSave.pe,
+      runEnded: multiRoundSave.end,
+      failureSummary: multiRoundSave.fs
+    });
+    pendingMultiRoundStartingScore.value = multiRoundSave.pe || 0;
+    multiRoundFinalWordSpent.value = Boolean(multiRoundSave.fw);
+    timedModeTimerStarted.value = Boolean(multiRoundSave.ts);
+    isMultiRoundTimerPausedByAttack.value = false;
+    localMessage.value = 'Multi-round save restored.';
+    if (multiRoundRun.rewardChoiceOpen.value) {
+      stopMultiRoundTimer();
+    } else {
+      startMultiRoundTimer();
+    }
+    return;
+  }
+
+  if (save.m === SAVE_MODES.BOT_MATCH) {
+    const overtime = save.bt?.o || {};
+    singlePlayerOvertimePendingSide.value = overtime.p || null;
+    singlePlayerOvertimeFinalWordSubmitted.value = Boolean(overtime.f);
+    timedModeTimerStarted.value = false;
+    localMessage.value = 'Bot match save restored.';
+    stopBotLoop();
+    startBotLoopAfterTutorial();
+  }
+};
+
 watch(() => props.playMode, (nextMode) => {
+  resetSpeedyWordClock();
+  if (nextMode === 'multi_round') {
+    multiRoundRun.resetRun();
+    multiRoundFinalWordSpent.value = false;
+    timedModeTimerStarted.value = false;
+    pendingMultiRoundStartingScore.value = 0;
+    isMultiRoundTimerPausedByAttack.value = false;
+    window.clearTimeout(multiRoundRewardTimeoutId);
+    startMultiRoundTimer();
+  } else {
+    stopMultiRoundTimer();
+    window.clearTimeout(multiRoundRewardTimeoutId);
+  }
+
   timerRemainingSeconds.value = nextMode === 'timed_solo' ? SOLO_TIMER_SECONDS : 0;
   isSoloTimerPausedByAttack.value = false;
   timedSoloFinalWordSpent.value = false;
+  timedModeTimerStarted.value = false;
 
   if (nextMode === 'timed_solo') {
     startSoloTimer();
@@ -1505,15 +3470,31 @@ watch(() => props.playMode, (nextMode) => {
   stopSoloTimer();
 }, { immediate: true });
 
+watch(() => props.continueSave, (save) => {
+  restoreContinueSave(save);
+}, { immediate: true });
+
 watch(effectiveGameEnded, (ended) => {
   if (ended) {
+    if (isBotMode.value) {
+      saveBotMatchPastGame();
+      clearBotMatchSave();
+    }
+
     stopBotLoop();
+    const nextDifficulty = checkBotWin(leftLane.value.score, rightLane.value.score, isBotMode, props.botDifficulty);
+    emit('update:botDifficulty', nextDifficulty);
     stopSoloTimer();
+    stopMultiRoundTimer();
     return;
   }
 
   if (isTimedSoloMode.value) {
     startSoloTimer();
+  }
+
+  if (isMultiRoundMode.value) {
+    startMultiRoundTimer();
   }
 }, { immediate: true });
 
@@ -1522,13 +3503,145 @@ watch(() => props.settingsShowing, (showingSettings) => {
   setPauseState(showingSettings);
 }, { immediate: true });
 
+watch(tooltipPauseConfig, (config) => {
+  tooltipPauseUsesRemaining.value = Math.max(0, config.amount || 0);
+  clearTooltipTimerPause();
+});
+
 watch(showTutorialOverlay, (visible) => {
   syncTutorialPauseState(visible);
+});
+
+watch(() => myTiles.value.map((tile) => tile.status).join('|'), () => {
+  if (!isTutorialMultiRound.value) {
+    return;
+  }
+
+  const statuses = myTiles.value.map((tile) => tile.status);
+  if (statuses.some((status) => TUTORIAL_NEUTRAL_MODIFIERS.has(status))) {
+    showTutorialHint('neutral_modifier');
+  }
+  if (statuses.some((status) => TUTORIAL_BAD_MODIFIERS.has(status))) {
+    showTutorialHint('bad_modifier');
+  }
+  if (multiRoundRun.currentRoundIndex.value >= 3 && statuses.filter((status) => TUTORIAL_BAD_MODIFIERS.has(status)).length > 1) {
+    showTutorialHint('clear_rack');
+  }
+});
+
+watch(() => {
+  const cards = myCards.value;
+  return `${cards.trayModifiers?.length || 0}|${cards.attacks?.length || 0}|${cards.tactics?.length || 0}`;
+}, (cardCounts) => {
+  if (!isTutorialMultiRound.value || cardCounts === '0|0') {
+    return;
+  }
+
+  showTutorialHint('card_received');
+});
+
+watch(() => multiRoundRun.currentRoundIndex.value, (roundIndex) => {
+  if (!isTutorialMultiRound.value) {
+    return;
+  }
+
+  if (roundIndex === 2) {
+    showTutorialHint('save_letters');
+  }
+});
+
+watch(() => multiRoundRun.activeRoundModifierKeys.value.join('|'), () => {
+  resetTimedRoundModifierIndicators();
 });
 
 const handleKeydown = (event) => {
   if (props.settingsShowing) {
     return;
+  }
+
+  if (showTutorialOverlay.value) {
+    return;
+  }
+
+  if (isMultiRoundRewardChoiceOpen.value) {
+    if (!multiRoundRewardChoices.value.length) {
+      return;
+    }
+
+    if (event.key === 'ArrowLeft') {
+      event.preventDefault();
+      if (controllerRegion.value === 'rounds') {
+        focusControllerRound(Math.max(0, controllerRoundCursorIndex.value - 1));
+        return;
+      }
+
+      focusControllerReward(controllerRewardCursorIndex.value - 1);
+      return;
+    }
+
+    if (event.key === 'ArrowRight') {
+      event.preventDefault();
+      if (controllerRegion.value === 'rounds') {
+        focusControllerRound(Math.min(controllerRoundCursorIndex.value + 1, multiRoundProgressRounds.value.length - 1));
+        return;
+      }
+
+      focusControllerReward(controllerRewardCursorIndex.value + 1);
+      return;
+    }
+
+    if (event.key === 'ArrowUp') {
+      event.preventDefault();
+      if (controllerRegion.value === 'reward') {
+        focusControllerRound(Math.min(controllerRewardCursorIndex.value, multiRoundProgressRounds.value.length - 1));
+        return;
+      }
+
+      focusControllerRound(controllerRoundCursorIndex.value);
+      return;
+    }
+
+    if (event.key === 'ArrowDown') {
+      event.preventDefault();
+      if (controllerRegion.value === 'rounds') {
+        focusControllerReward(Math.min(controllerRoundCursorIndex.value, multiRoundRewardChoices.value.length - 1));
+        return;
+      }
+
+      focusControllerReward(controllerRewardCursorIndex.value);
+      return;
+    }
+
+    if (event.key === 'x') {
+      event.preventDefault();
+      handleRewardRoundModifierReroll();
+      return;
+    }
+
+    if (event.key === 'y') {
+      event.preventDefault();
+      handlePersonalModifierRewardReroll();
+      return;
+    }
+
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      if (controllerRegion.value === 'rounds') {
+        focusControllerRound(controllerRoundCursorIndex.value);
+        return;
+      }
+
+      const reward = multiRoundRewardChoices.value[controllerRewardCursorIndex.value];
+      if (reward) {
+        handleMultiRoundRewardChoice(reward.key);
+      }
+      return;
+    }
+
+    if (event.key !== 'Escape') {
+      event.preventDefault();
+      return;
+    }
   }
 
   if (event.key !== 'Escape') {
@@ -1544,6 +3657,8 @@ const handleKeydown = (event) => {
         focusControllerBuilder(Math.max(0, controllerBuilderCursorIndex.value - 1));
       } else if (controllerRegion.value === 'actions') {
         focusControllerAction(Math.max(0, controllerActionCursorIndex.value - 1));
+      } else if (controllerRegion.value === 'rounds') {
+        focusControllerRound(Math.max(0, controllerRoundCursorIndex.value - 1));
       } else {
         moveControllerTileFocus('left');
       }
@@ -1558,6 +3673,8 @@ const handleKeydown = (event) => {
         focusControllerBuilder(Math.min(controllerBuilderCursorIndex.value + 1, selectedTilesForCurrentSide.value.length - 1));
       } else if (controllerRegion.value === 'actions') {
         focusControllerAction(Math.min(controllerActionCursorIndex.value + 1, 4));
+      } else if (controllerRegion.value === 'rounds') {
+        focusControllerRound(Math.min(controllerRoundCursorIndex.value + 1, multiRoundProgressRounds.value.length - 1));
       } else {
         moveControllerTileFocus('right');
       }
@@ -1580,6 +3697,8 @@ const handleKeydown = (event) => {
         focusControllerTile(Math.min(bottomRowStart + controllerBuilderCursorIndex.value, myTiles.value.length - 1));
       } else if (controllerRegion.value === 'actions' && selectedTilesForCurrentSide.value.length) {
         focusControllerBuilder(Math.min(controllerActionCursorIndex.value, selectedTilesForCurrentSide.value.length - 1));
+      } else if (controllerRegion.value === 'rounds') {
+        focusControllerRound(controllerRoundCursorIndex.value);
       } else {
         moveControllerTileFocus('up');
       }
@@ -1598,6 +3717,8 @@ const handleKeydown = (event) => {
         focusControllerAction(Math.min(controllerBuilderCursorIndex.value, 4));
       } else if (controllerRegion.value === 'actions') {
         focusControllerAction(controllerActionCursorIndex.value);
+      } else if (controllerRegion.value === 'rounds') {
+        focusControllerTile(Math.min(controllerRoundCursorIndex.value, 4));
       } else {
         moveControllerTileFocus('down');
       }
@@ -1631,6 +3752,16 @@ const handleKeydown = (event) => {
       handleClearRack();
       return;
     }
+    if (event.key === 'lt') {
+      event.preventDefault();
+      toggleSideDrawer();
+      return;
+    }
+    if (event.key === 'rt') {
+      event.preventDefault();
+      togglePersonalModifiersDrawer();
+      return;
+    }
 
     return;
   }
@@ -1642,49 +3773,83 @@ watch([myTiles, mySide], () => {
   refocusControllerSelection();
 }, { deep: true });
 
-watch(isSideDrawerMode, (isDrawerMode) => {
-  if (!isDrawerMode) {
-    closeSideDrawer();
-  }
-});
-
-watch(controllerRegion, (nextRegion, previousRegion) => {
-  if (!isSideDrawerMode.value || !isControllerNavigationActive.value) {
+watch(isMultiRoundRewardChoiceOpen, (isOpen) => {
+  if (!isOpen) {
+    if (controllerRegion.value === 'reward') {
+      focusControllerTile(0);
+    }
     return;
   }
 
-  if (nextRegion === 'cards') {
-    openSideDrawer({ auto: true });
-    return;
-  }
-
-  if (previousRegion === 'cards' && sideDrawerAutoOpen.value) {
-    closeSideDrawer();
-  }
+  controllerRewardCursorIndex.value = 0;
+  nextTick(() => {
+    focusControllerReward(0);
+  });
 });
+
+watch(backgroundState, (state) => {
+  emit('backgroundState', state);
+}, { immediate: true, deep: true });
 
 const syncWindowWidth = () => {
   windowWidth.value = window.innerWidth;
 };
 
+const showTutorialFromSettings = () => {
+  showHistoryOverlay.value = false;
+  showTutorialHint('welcome', { force: true });
+};
+const syncModifierUnlockState = (event) => {
+  modifierUnlockState.value = event?.detail || readLocalModifierUnlockState();
+};
+
 onMounted(() => {
-  if (!localStorage.getItem(GAME_TUTORIAL_STORAGE_KEY)) {
-    showTutorialOverlay.value = true;
+  if (isTutorialMultiRound.value) {
+    showTutorialHint('plain_tiles');
+  } else if (!localStorage.getItem(GAME_TUTORIAL_STORAGE_KEY)) {
+    showTutorialHint('welcome');
   }
   syncWindowWidth();
+  speedyWordClockIntervalId = window.setInterval(() => {
+    speedyWordClockNow.value = Date.now();
+  }, 250);
+  playerCogDecayIntervalId = window.setInterval(() => {
+    if (!isBotMode.value || Date.now() - lastPlayerCogScoreAt < 1800) {
+      return;
+    }
+
+    playerCogTargetSpeed.value = Math.max(1, playerCogTargetSpeed.value - 0.12);
+    rampPlayerCogSpeed();
+  }, 500);
+  roundModifierTickIntervalId = window.setInterval(tickTimedGameEffects, 100);
   window.addEventListener('resize', syncWindowWidth);
   window.addEventListener('keydown', handleKeydown);
+  window.addEventListener('wordis:show-tutorial', showTutorialFromSettings);
+  window.addEventListener('wordis:modifier-unlocks-changed', syncModifierUnlockState);
   startGameMusic({ restart: true });
 });
 
 onBeforeUnmount(() => {
+  saveCurrentMultiRoundLocal();
+  saveCurrentBotMatchLocal();
   window.removeEventListener('resize', syncWindowWidth);
   window.removeEventListener('keydown', handleKeydown);
+  window.removeEventListener('wordis:show-tutorial', showTutorialFromSettings);
+  window.removeEventListener('wordis:modifier-unlocks-changed', syncModifierUnlockState);
   stopSoloTimer();
+  stopMultiRoundTimer();
+  clearTooltipTimerPause();
   stopGameMusic();
   window.clearTimeout(historyOverlayTimeoutId);
+  window.clearTimeout(multiRoundRewardTimeoutId);
+  window.clearTimeout(botCogBoostTimeoutId);
+  window.cancelAnimationFrame(playerCogRampFrameId);
+  window.clearInterval(playerCogDecayIntervalId);
+  window.clearInterval(roundModifierTickIntervalId);
+  window.clearInterval(speedyWordClockIntervalId);
   tilePickupSound.pause();
   tilePutBackSound.pause();
+  tileReplaceSound.pause();
   scoreBuiltTileSound.pause();
   scorePopTimeoutIds.forEach((timeoutId) => window.clearTimeout(timeoutId));
   activeScorePopAudios.forEach((audio) => {
@@ -1697,14 +3862,23 @@ onBeforeUnmount(() => {
 });
 
 const resetAndGoHome = () => {
+  resetSpeedyWordClock();
+  saveCurrentMultiRoundLocal();
+  saveCurrentBotMatchLocal();
   isPaused.value = false;
   stopBotLoop();
   stopSoloTimer();
+  stopMultiRoundTimer();
   closeSideDrawer();
   showHistoryOverlay.value = false;
   window.clearTimeout(historyOverlayTimeoutId);
   isSoloTimerPausedByAttack.value = false;
+  isMultiRoundTimerPausedByAttack.value = false;
+  clearTooltipTimerPause();
   timedSoloFinalWordSpent.value = false;
+  pendingMultiRoundStartingScore.value = 0;
+  window.clearTimeout(multiRoundRewardTimeoutId);
+  multiRoundRun.resetRun();
   stopGameMusic();
   stopResultAudio();
   resetMultiplayer();
@@ -1714,694 +3888,4 @@ const resetAndGoHome = () => {
 };
 </script>
 
-<style scoped>
-body {
-  background: #2a0719;
-}
-
-.game-shell {
-  --bg-top: #ca6937;
-  --bg-mid: #b63e3b;
-  --bg-bottom: #341137;
-  --bg-corner: #f39a54;
-  --bg-glow-alpha: 0.2;
-  --bg-shape-far-opacity: 0.24;
-  --bg-shape-near-opacity: 0.18;
-  --bg-saturate: 1.08;
-  --panel-deep: rgba(73, 18, 34, 0.6);
-  --cream: #f7efe1;
-  --gold: #ffca67;
-  --teal: #4bc7b0;
-  min-height: 100vh;
-  position: relative;
-  overflow: hidden;
-  color: var(--cream);
-  padding: 24px;
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-
-#background-layer {
-  position: absolute;
-  inset: 0;
-  z-index: -2;
-  background:
-    radial-gradient(circle at 14% 18%, rgba(255, 228, 168, var(--bg-glow-alpha)) 0, rgba(255, 228, 168, var(--bg-glow-alpha)) 12%, transparent 30%),
-    radial-gradient(circle at 82% 14%, rgba(255, 255, 255, 0.09) 0, rgba(255, 255, 255, 0.09) 8%, transparent 24%),
-    linear-gradient(135deg, var(--bg-corner) 0%, var(--bg-top) 24%, var(--bg-mid) 58%, var(--bg-bottom) 100%);
-  filter: saturate(var(--bg-saturate));
-  overflow: hidden;
-}
-
-.shape-layer {
-  content: '';
-  position: absolute;
-  inset: -10%;
-  pointer-events: none;
-  mix-blend-mode: screen;
-}
-
-.shape-layer {
-  background-repeat: repeat;
-  background-size: 280px 280px;
-}
-
-.layer-far {
-  opacity: var(--bg-shape-far-opacity);
-  background-position: 0 0;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='280' height='280' viewBox='0 0 280 280'%3E%3Cg fill='none' stroke='%23fff4dc' stroke-width='2.6' stroke-opacity='.34'%3E%3Cpolygon points='40,24 68,74 12,74'/%3E%3Crect x='106' y='18' width='46' height='46' rx='4'/%3E%3Cpolygon points='217,22 245,38 245,70 217,86 189,70 189,38'/%3E%3Cpolygon points='44,118 72,134 72,166 44,182 16,166 16,134'/%3E%3Crect x='108' y='110' width='54' height='54' rx='6'/%3E%3Cpolygon points='214,110 246,164 182,164'/%3E%3Crect x='28' y='204' width='50' height='50' rx='5'/%3E%3Cpolygon points='136,198 164,214 164,246 136,262 108,246 108,214'/%3E%3Cpolygon points='220,198 248,248 192,248'/%3E%3C/g%3E%3C/svg%3E");
-  animation: driftLayerFar 25s linear infinite;
-}
-
-.layer-near {
-  inset: -6%;
-  opacity: var(--bg-shape-near-opacity);
-  background-size: 190px 190px;
-  background-position: 28px 40px;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='190' height='190' viewBox='0 0 190 190'%3E%3Cg fill='rgba(255,244,220,.14)' stroke='rgba(255,255,255,.16)' stroke-width='1.8'%3E%3Cpolygon points='26,20 52,64 0,64'/%3E%3Crect x='74' y='20' width='34' height='34' rx='3'/%3E%3Cpolygon points='150,18 170,30 170,54 150,66 130,54 130,30'/%3E%3Crect x='18' y='92' width='38' height='38' rx='4'/%3E%3Cpolygon points='96,88 118,126 74,126'/%3E%3Cpolygon points='152,86 174,98 174,124 152,136 130,124 130,98'/%3E%3Ccircle cx='42' cy='156' r='12'/%3E%3Crect x='82' y='144' width='28' height='28' rx='4'/%3E%3Cpolygon points='152,142 174,180 130,180'/%3E%3C/g%3E%3C/svg%3E");
-  animation: driftLayerNear 30s linear infinite;
-}
-
-@keyframes driftLayerFar {
-  0% {
-    background-position: 0 0;
-  }
-  100% {
-    background-position: 280px -280px;
-  }
-}
-
-@keyframes driftLayerNear {
-  0% {
-    background-position: 28px 40px;
-  }
-  100% {
-    background-position: -67px 420px;
-  }
-}
-
-
-.board-frame {
-
-  justify-content: center;
-  display: flex;
-  grid-template-columns: 250px minmax(0, 1fr);
-  gap: 22px;
-  flex: 1;
-  min-height: 0;
-}
-
-.board-frame.paused {
-  filter: blur(4px) saturate(0.82);
-  pointer-events: none;
-  user-select: none;
-}
-
-.side-drawer-handle {
-  display: none;
-}
-
-.side-drawer-scrim {
-  display: none;
-}
-
-.side-stack {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  max-width: 350px;
-}
-
-.bonus-card {
-  border-radius: 28px;
-  padding: 22px 18px;
-  min-height: 156px;
-  background: rgba(68, 20, 46, 0.9);
-  border: 2px solid rgba(255, 255, 255, 0.12);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
-  position: relative;
-  overflow: hidden;
-}
-
-.bonus-card::after {
-  content: '';
-  position: absolute;
-  inset: auto -30px -30px auto;
-  width: 120px;
-  height: 120px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.08);
-}
-
-.bonus-kicker {
-  display: inline-block;
-  margin-bottom: 10px;
-  font-size: 0.74rem;
-  text-transform: uppercase;
-  letter-spacing: 0.16em;
-  opacity: 0.7;
-}
-
-.bonus-card strong,
-.bonus-card p {
-  display: block;
-  position: relative;
-  z-index: 1;
-}
-
-.bonus-card strong {
-  font-size: 1.35rem;
-  line-height: 1.1;
-}
-
-.bonus-card p {
-  margin: 10px 0 0;
-  opacity: 0.85;
-}
-
-.room-code-button {
-  appearance: none;
-  border: none;
-  background: rgba(255, 255, 255, 0.12);
-  color: inherit;
-  cursor: pointer;
-  border-radius: 999px;
-  padding: 5px 10px;
-  font: inherit;
-  font-weight: 700;
-  margin-right: 6px;
-}
-
-.accent-blue {
-  background: linear-gradient(180deg, rgba(58, 111, 208, 0.9), rgba(49, 78, 170, 0.82));
-}
-
-.accent-gold {
-  background: linear-gradient(180deg, rgba(231, 124, 47, 0.92), rgba(179, 82, 28, 0.88));
-}
-
-.accent-red {
-  background: linear-gradient(180deg, rgba(164, 38, 68, 0.95), rgba(105, 22, 54, 0.88));
-}
-
-.accent-purple {
-  background: linear-gradient(180deg, rgba(112, 70, 182, 0.95), rgba(66, 33, 118, 0.9));
-}
-
-.card-hand {
-  display: grid;
-  gap: 10px;
-  margin-top: 12px;
-  position: relative;
-  z-index: 1;
-  max-height: 300px;
-  overflow-y: auto;
-}
-
-.action-card {
-  --card-glow: rgba(255, 255, 255, 0.16);
-  --card-edge: rgba(255, 255, 255, 0.22);
-  --card-pattern: rgba(255, 255, 255, 0.08);
-  --card-background: linear-gradient(180deg, rgba(119, 206, 113, 0.96), rgba(63, 129, 84, 0.96));
-  --card-badge-background: rgba(24, 8, 22, 0.26);
-  --card-ink: #fff7ee;
-  appearance: none;
-  border: 1px solid var(--card-edge);
-  cursor: pointer;
-  width: 100%;
-  max-width: 280px;
-  text-align: left;
-  display: grid;
-  gap: 8px;
-  padding: 14px 14px 15px;
-  border-radius: 22px;
-  color: var(--card-ink);
-  font: inherit;
-  position: relative;
-  overflow: hidden;
-  background: var(--card-background);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.16),
-    inset 0 -3px 0 rgba(39, 11, 25, 0.28),
-    0 10px 18px rgba(30, 8, 34, 0.18);
-  transition: transform 140ms ease, box-shadow 140ms ease, filter 140ms ease, border-color 140ms ease;
-}
-
-.action-card::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background:
-    radial-gradient(circle at 18% 20%, var(--card-glow) 0, transparent 36%),
-    linear-gradient(135deg, var(--card-pattern) 0%, transparent 35%, var(--card-pattern) 100%);
-  opacity: 0.9;
-  pointer-events: none;
-}
-
-.action-card::after {
-  content: '';
-  position: absolute;
-  inset: 7px;
-  border-radius: 16px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.01));
-  pointer-events: none;
-}
-
-.action-card:hover {
-  transform: translateY(-2px);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.18),
-    inset 0 -3px 0 rgba(39, 11, 25, 0.32),
-    0 14px 22px rgba(30, 8, 34, 0.24);
-  border-color: rgba(255, 236, 187, 0.38);
-}
-
-.action-card:focus,
-.action-card:focus-visible {
-  outline: 3px solid rgba(255, 227, 141, 0.88);
-  outline-offset: 2px;
-}
-
-.action-card-controller-focus {
-  outline: 3px solid rgba(255, 227, 141, 0.88);
-  outline-offset: 2px;
-  transform: translateY(-2px);
-}
-
-.action-card strong {
-  position: relative;
-  z-index: 1;
-  font-size: 1.2rem;
-  line-height: 1.05;
-  text-shadow: 0 1px 0 rgba(48, 18, 8, 0.28);
-}
-
-.action-card span:last-child {
-  position: relative;
-  z-index: 1;
-  font-size: 0.99rem;
-  line-height: 1.35;
-  color: rgba(255, 248, 236, 0.84);
-}
-
-.action-card-type {
-  position: relative;
-  z-index: 1;
-  justify-self: start;
-  padding: 4px 8px 3px;
-  border-radius: 999px;
-  font-size: 0.68rem;
-  text-transform: uppercase;
-  letter-spacing: 0.16em;
-  color: rgba(255, 248, 236, 0.92);
-  background: var(--card-badge-background);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
-}
-
-.action-card.armed {
-  transform: translateY(-2px);
-  box-shadow:
-    inset 0 0 0 2px rgba(255, 232, 160, 0.8),
-    inset 0 1px 0 rgba(255, 255, 255, 0.2),
-    inset 0 -3px 0 rgba(39, 11, 25, 0.32),
-    0 16px 24px rgba(30, 8, 34, 0.28);
-  border-color: rgba(255, 236, 187, 0.78);
-}
-
-.arena-shell {
-  position: relative;
-  min-width: 0;
-  max-width: 1250px;
-  max-height: 1000px;
-  border-radius: 34px;
-  background: rgba(90, 23, 35, 0.22);
-  border: 2px solid rgba(255, 255, 255, 0.12);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.12),
-    0 20px 50px rgba(38, 7, 22, 0.28);
-  padding: 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 18px;
-}
-
-.score-ribbon {
-  display: grid;
-  grid-template-columns: 1fr auto 1fr;
-  gap: 16px;
-  align-items: center;
-}
-
-.score-box {
-  border-radius: 22px;
-  padding: 16px 20px;
-  background: var(--panel-deep);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  transition: transform 180ms ease, box-shadow 180ms ease, filter 180ms ease;
-}
-
-.score-box span {
-  text-transform: uppercase;
-  letter-spacing: 0.14em;
-  font-size: 0.76rem;
-  opacity: 0.75;
-}
-
-.score-box strong {
-  font-size: 2rem;
-  line-height: 1;
-}
-
-.score-box.host strong {
-  color: var(--gold);
-}
-
-.score-box.opponent strong {
-  color: var(--teal);
-}
-
-.score-box.timer strong {
-  color: var(--gold);
-}
-
-.score-box-leading {
-  box-shadow:
-    inset 0 0 0 1px rgba(255, 228, 176, 0.18),
-    0 0 0 1px rgba(255, 228, 176, 0.08);
-}
-
-.score-box-trailing {
-  filter: saturate(0.9);
-}
-
-.score-gap-low.score-box-leading {
-  animation: score-gap-pulse-low 2.6s ease-in-out infinite;
-}
-
-.score-gap-medium.score-box-leading {
-  animation: score-gap-pulse-medium 2s ease-in-out infinite;
-}
-
-.score-gap-high.score-box-leading {
-  animation: score-gap-pulse-high 1.5s ease-in-out infinite;
-}
-
-.score-gap-epic.score-box-leading {
-  animation: score-gap-pulse-epic 1s ease-in-out infinite;
-}
-
-@keyframes score-gap-pulse-low {
-  0%,
-  100% {
-    transform: translateY(0);
-    box-shadow: 0 0 0 0 rgba(255, 204, 111, 0.12);
-  }
-  50% {
-    transform: translateY(-1px);
-    box-shadow: 0 0 18px rgba(255, 204, 111, 0.16);
-  }
-}
-
-@keyframes score-gap-pulse-medium {
-  0%,
-  100% {
-    transform: translateY(0) scale(1);
-    box-shadow: 0 0 0 0 rgba(255, 204, 111, 0.16);
-  }
-  50% {
-    transform: translateY(-2px) scale(1.01);
-    box-shadow: 0 0 26px rgba(255, 204, 111, 0.24);
-  }
-}
-
-@keyframes score-gap-pulse-high {
-  0%,
-  100% {
-    transform: translateY(0) scale(1);
-    box-shadow: 0 0 0 0 rgba(255, 204, 111, 0.18);
-  }
-  50% {
-    transform: translateY(-3px) scale(1.018);
-    box-shadow: 0 0 34px rgba(255, 204, 111, 0.3);
-  }
-}
-
-@keyframes score-gap-pulse-epic {
-  0%,
-  100% {
-    transform: translateY(0) scale(1);
-    box-shadow: 0 0 0 0 rgba(255, 204, 111, 0.2);
-  }
-  50% {
-    transform: translateY(-4px) scale(1.03);
-    box-shadow: 0 0 44px rgba(255, 204, 111, 0.36);
-  }
-}
-
-.score-divider {
-  font-size: 1rem;
-  letter-spacing: 0.3em;
-  text-transform: uppercase;
-  opacity: 0.8;
-}
-
-.arena {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 18px;
-}
-
-.arena.arena-solo {
-  grid-template-columns: minmax(0, 1fr);
-}
-
-.waiting-card {
-  border-radius: 26px;
-  background: rgba(255, 255, 255, 0.06);
-  padding: 34px 24px;
-  text-align: center;
-}
-
-.waiting-card strong {
-  display: block;
-  font-size: 1.4rem;
-}
-
-.waiting-card p {
-  margin: 10px 0 0;
-  opacity: 0.78;
-}
-
-.bottom-bar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 16px;
-  padding: 0 8px;
-}
-
-.back-button {
-  border: none;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 999px;
-  padding: 12px 18px;
-  font-size: 0.95rem;
-  font-weight: 800;
-  letter-spacing: 0.04em;
-  font-family: "Press Start 2P", cursive;
-  background: linear-gradient(180deg, #ff965b 0%, #e05e2a 100%);
-  color: white;
-}
-
-.pause-button {
-  border: none;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 999px;
-  padding: 12px 18px;
-  font-size: 0.95rem;
-  font-weight: 800;
-  letter-spacing: 0.04em;
-  font-family: "Press Start 2P", cursive;
-  background: linear-gradient(180deg, #6356d9 0%, #41359c 100%);
-  color: white;
-}
-
-@media (max-width: 1180px) {
-  .board-frame {
-    grid-template-columns: 1fr;
-  }
-}
-
-@media (max-width: 1400px) {
-  .score-ribbon {
-    position: fixed;
-    top: 18px;
-    left: 18px;
-    right: 18px;
-    display: block;
-    pointer-events: none;
-    z-index: 9;
-  }
-
-  .score-divider {
-    display: none;
-  }
-
-  .score-box {
-    position: absolute;
-    top: 0;
-    min-width: 220px;
-    max-width: min(32vw, 280px);
-    pointer-events: auto;
-  }
-
-  .score-box.host {
-    left: 0;
-  }
-
-  .score-box.opponent {
-    right: 0;
-  }
-}
-
-@media (max-width: 680px) {
-  .arena {
-    grid-template-columns: 1fr;
-  }
-
-  .score-ribbon {
-    position: fixed;
-    top: 18px;
-    left: 18px;
-    right: 18px;
-    display: block;
-    pointer-events: none;
-    z-index: 9;
-  }
-
-  .score-divider {
-    display: none;
-  }
-
-  .score-box {
-    position: absolute;
-    top: 0;
-    min-width: 220px;
-    max-width: min(32vw, 280px);
-    pointer-events: auto;
-  }
-
-  .score-box.host {
-    left: 0;
-  }
-
-  .score-box.opponent {
-    right: 0;
-  }
-
-  .bottom-bar {
-    flex-direction: column;
-    align-items: stretch;
-  }
-}
-
-@media (max-width: 1000px) {
-  .accent-blue {
-    height: 0px;
-    display: none;
-  }
-  .game-shell {
-
-  }
-}
-
-@media (max-width: 1249px) {
-  .board-frame {
-    position: relative;
-  }
-
-  .side-drawer-handle {
-    position: fixed;
-    top: 50%;
-    left: 0;
-    z-index: 7;
-    transform: translateY(-50%);
-    border: 1px solid rgba(255, 238, 214, 0.16);
-    cursor: pointer;
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    padding: 10px 10px 10px 8px;
-    border-radius: 0 14px 14px 0;
-    background: rgba(55, 13, 31, 0.94);
-    color: rgba(255, 244, 228, 0.86);
-    font-family: inherit;
-    font-size: 0.7rem;
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    box-shadow: 0 12px 28px rgba(30, 8, 22, 0.22);
-    transition: transform 180ms ease, background 180ms ease, color 180ms ease;
-  }
-
-  .side-drawer-handle.open {
-    left: min(340px, calc(100vw - 80px));
-  }
-
-  .side-drawer-handle-grip {
-    width: 3px;
-    height: 28px;
-    border-radius: 999px;
-    background: rgba(255, 214, 157, 0.82);
-    flex: 0 0 auto;
-  }
-
-  .side-drawer-handle-grip::before {
-    content: none;
-  }
-
-  .side-drawer-scrim {
-    position: fixed;
-    inset: 0;
-    display: block;
-    z-index: 5;
-    border: none;
-    background: rgba(18, 6, 17, 0.28);
-  }
-
-  .side-stack.side-stack-drawer {
-    position: fixed;
-    top: 18px;
-    left: 0;
-    bottom: 18px;
-    z-index: 6;
-    width: min(360px, calc(100vw - 52px));
-    max-width: none;
-    padding: 18px 16px 22px;
-    background: linear-gradient(180deg, rgba(80, 16, 42, 0.94), rgba(50, 10, 28, 0.96));
-    border-right: 2px solid rgba(255, 255, 255, 0.12);
-    box-shadow: 24px 0 42px rgba(18, 6, 17, 0.24);
-    overflow-y: auto;
-    transform: translateX(calc(-100% - 16px));
-    transition: transform 220ms ease;
-  }
-
-  .side-stack.side-stack-drawer.open {
-    transform: translateX(0);
-  }
-
-  .side-stack.side-stack-drawer .action-card {
-    max-width: none;
-  }
-}
-</style>
+<style scoped lang="scss" src="./Game.scss"></style>

@@ -3,13 +3,13 @@ import vue from '@vitejs/plugin-vue'
 import { VitePWA } from 'vite-plugin-pwa'
 
 export default defineConfig(() => {
-  const isWavedashBuild = process.env.VITE_WAVEDASH === 'true';
+  const enablePwa = process.env.VITE_PWA === 'true';
 
   return {
     base: './',
     plugins: [
       vue(),
-      !isWavedashBuild && VitePWA({
+      enablePwa && VitePWA({
         registerType: 'autoUpdate',
         includeAssets: ['favicon.svg', 'robots.txt', 'pwa-192x192.png', 'pwa-512x512.png'],
         manifest: {
@@ -34,6 +34,7 @@ export default defineConfig(() => {
         },
         workbox: {
           globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
+          maximumFileSizeToCacheInBytes: 4 * 1024 * 1024,
           runtimeCaching: [
             {
               urlPattern: ({ request }) => request.destination === 'document',

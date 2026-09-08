@@ -4,42 +4,22 @@ add other languages to dictionary
 
 bot dont use scary words lets limit it to more knowable words
 
-up how much big words give, give attack or boon at high words 
-
-up how often you get ither modifiers
 
 
 preview what opponent is building 
 
-add sounds 
-
-add animations
-
-individual sound based on word length
 
 request to add word and other feedback
 
-better notifications 
+better toast notifications 
 
-add tile sense show what it dies 
 
 add color blind friendliness
 
 
 daily mode that pulls from list of letters and give the same boons in order 
 
-save a letter and clear the rest 
-
-add color shifitng to background
-
-pause should pause timer
-
 pause should throw up a pause on both players screen 
-
-add cleanse remove all negetive 
-
-shake and sound tiles when not real word
-
 
 there may be a bug with creating tile ids i had multiple with the same id  (Proxy(Object) {id: 'local-tile-2', letter: 'R', baseLetter: 'R', score: 1, baseScore: 1, …}
 Game.vue:524 Proxy(Object) {id: 'local-tile-1', letter: 'T', baseLetter: 'T', score: 1, baseScore: 1, …}
@@ -49,79 +29,433 @@ ok how are we making tile ids?? there is no reason a tile should end up with the
 
 booons that give permennent upgrades like this letter is worth more 
 
-add a way to attack the time with single player attacks 
 
-maybe add time by spelling words add add somewhere to get to a goal get to a certain num of points or something  
 no boon on neg atack a normal tile 
 
 
-game broke at some point while playing 
-
-maybe cycle what the length bonus is, add a next turn get this 
 
 bunch of audio bus like overlapping music sounds and such need to also pass all the audio info accross screens and update sounds real time restart sounds after game
 
 delete is doing two if you do a locked then not 
 
-flame lane  if bbig word
 
 
-after 250 play continues until losing player submits words no attacks can be played only boons 
-
-
-pause time does not pause 
-
-still no epic score thing flame in lane 
-
-New new modifier type neutral it's a yin and yang. Enter. Add away from the menu to be able to disable certain tiles if you don't want to see them and attack.
-
-
-seperate max modifier bonus to max modifier bonus for good and bad 
-
-each turn increase chance of pulling either good or bad tiles so the game gets more diverse as you go 
-
-neutral tiles are always a zero percent chance right now we need to fix that we will have a set percent chance at 2 percent they should also have rarity weights i have moved ghost tile to neutral.
-
-you should be able to pull neutral tiles in single player, we will add a flag to tiles that says no single player this includes the yinyang and the attack tile
 
 first tile is hovering a bit for some reason 
 
-new rack slowly degrades to only nenutral tiles 
 
-yin yang badge should change same with color of letter 
 
-the bot is not winning 
 
 multiplayer is not respevting test 
 
 when clicking boon move to tiles 
 
 
-multi tasks:
-
-
-
-
-when you receive a boon or an atk throw the card up in the middle of the screen then animate it going left into the cards slot so the user knows what they got
-
-for screens smaller than 1250px lets make the side stack a drawer with a handle that can be taped to slide it out, or if the cards become focussed open the drawer close it if cards become defocessed 
-
-if you are on mobile it is very hard to see everything, for mobile multiplayer we should replace the opponnents rack grid with the word console you still see what word they are playing and score but have more room 
-
-if single player we will move it next to the your own rack grid so you can see it 
-
-
 
 can change neg with a boon
-lock disapering it should be an animation
 
-attack destroyed background
 
-ghost boon not working 
 
-burns not showing up? 
-
-swap boon attack and add more 
 
 logs are only showing chance for that given tile so you are not getting the full stats of a pull 
 
+multiplayer chess clock mode 
+
+
+
+when you win the auto update of mode shows you go streight to 150 
+
+
+NOTES FRO M MY PLAYS: 
+
+
+lock rack needs to unlock back to the original it also needs to start first turn with a lock clearing rack should still lock the current column
+is strong start even working, add a minimum amoount of good tiles to start with in strong start 
+shuffle should give a countdown
+givr one second grace for submitting two words if they accidently submit a word right when time ends
+
+
+
+5 up should give players more time it is too hard 
+
+final word z index 
+
+add local storage key for dev logging instead of env 
+cards should be time x so u can see how many of each hyou have 
+
+
+fleeting rack is not working it is only clearing mdifiers
+if no letters in built word and saved letterds exist make it unsave letters 
+
+
+
+no cards is also too hard should maybe be a hard one or give more time 
+
+
+
+
+bright vowels is really good the decision making was decent between things
+
+the game is longer with all the pauses but it still felt like a good length i felt op by the end but still nervouse and did not want to use all my cards 
+
+i held onto cards for rainy days but it seemed fine i could get huge points from stacking them. it kinda made the final round useless/ not hard since i beat it with one word. 
+
+maybe blur the letters so the user can look at other info first or start the timer as soon as the player hits the cards or anything. only allow a max of 10 seconds to look at everything... there is too much advantatage to the prep 
+
+the only way i am winning is the royal pairs on hadrder modes they should probably be less good 
+
+penelty for mispelled words? could be a challange or a n easy challange 
+
+headers do not allow click on upgarade cards
+
+yin yang is showing on balatro
+
+saved letter should probably have a style change it looks selected 
+
+you can get around no s with wilds 
+
+should not have quick and tight target in the same to short 
+
+double letters are not considered consonents thats fine
+
+in balatro the background color is on the points not the time 
+
+shuffle and lock step could be crazy if it was like unlocking stuff
+
+i finished with 2 min 7 seconds why do i have 67 points 
+rust visualization also its rough
+
+boon for an extra new rack
+
+first tile is unnefected by the muted constant 
+
+lol better odds might be better than golden ticket 
+
+ran out of epic modifiers with stck fixed
+
+i might have new rack eeery time 
+
+stile for hard balatro is out of bounds make rounds scrollable 
+
+if you have bright letters you want to use ghost on vowels not gold it makes them way more  
+add a  timer 
+
+Should not be able to use multiple mutiplyers on the same word, it will only use one any unused multiplyer is greyed out and becomes a times one royal pair overrides all golds 
+
+
+lower epic multiplyer for four letter words  
+
+strong start does not work due to max good modifer chance we need to temporarily boost it and log the chances when pulling intro tiles 
+
+
+focus something already focused spasms 
+
+
+each time a word is played in balatro mode the odds go up this amount persists accross rounds, it should reset per round but bad modifier should go up per round
+
+score in word builder should account for the burns 
+
+mlutiplayer is still using api client and breaks if wrong word
+
+an attack that allows you to re roll the next rounds modifier 
+
+only show sense if controller connected
+
+slight bug where a wild could be an s and it is disabled 
+
+the game needs to pause all functions when the app is out of focus its running 
+
+bagged tiles need to be removed if bag tile removed 
+
+need to be able to drag letters around 
+
+bot mode game is not ending on normal 
+
+
+update the wordbuilder to support dragging tiles around when  a used holds left click on a tile they should be able to pick it up and move it withing the word builder if they bring the fifth letter to the second slot it should shift everything down one space for example: cnesa drag a to second postion becomes canes
+
+add a score system based on how fast you clear each round and how many points over you get on each round. speed should probably be worth more 
+
+add reconnect logic if they choose to not reconnect then destroy the lobby 
+
+after match notes 
+Shouldn't be able to get rid of negative with modifiers
+Loose rack sucks it just gets rid of modified tiles... Could be get rid of unsaved tiles can only save 5 
+Gain time then pause time from no time did not restart the clock
+1.3 mult needs to round
+Five letter form is for 4 letter words
+Add a new letter boon it just changes the letter
+Can't click on rounds should hide scores mobile in between
+7 second wind should not end the game or the round 
+Increase pause screen to hide letters
+Increase chance for royal pair it's not happening much
+
+
+focus returns to the last selected letter with mouse 
+
+
+
+
+Splitting tile tiles next to this are removed at the end of turn 
+https://www.epidemicsound.com/artists/brendon-moeller/
+Music by Brendon Moeller | Epidemic Sound
+Music by Brendon Moeller | Epidemic Sound
+Find music from Brendon Moeller here. Download and use the royalty-free tracks with an Epidemic Sound subscription. Listen and sign up here
+www.epidemicsound.com
+Transition from one track to the next move music top level 
+Add a round selection infinate sound 
+Bahamas bm following on bm Mars adventure 
+
+Read agent MD and complete each of these tasks with separate commits:
+Lock step locks on first turn but does not transition on the second the first column stays locked for two turns 
+
+Add UI sound on button click 
+Xbox buttons visuals
+https://www.epidemicsound.com/music/tracks/1c7b4766-2bb5-3e63-8c62-7f635e180be2/
+Brendon Moeller - Sunshine Rain | Epidemic Sound
+Brendon Moeller - Sunshine Rain | Epidemic Sound
+Listen and use the track Sunshine Rain by Brendon Moeller with an Epidemic Sound subscription. Start your free trial here
+www.epidemicsound.com
+
+
+consolidatet lower buttons to its own component, float left in singleplay bottom in multi player  
+
+move pause outside of drawer
+
+
+fix reward choice panel when 4 options 
+
+
+choice overlay blocks the modifiers 
+
+update modifier reward sside 
+
+add reroll attack boon for upgrade rewards. 
+
+boon that gives plus one new rack clear 
+
+new letter should reapply styles currently if you new letter an s it still is crossed
+
+void s same after image issue
+save letter has circle same issue as after bag
+
+
+if a tile is dragged to its same spot it should be removed some missclicks are happening when a user tries to remove tiles 
+do the same tile drag logic for the rack so the user still gets the tile in the word if it is dragged to the same spot/ if its dragged and let go
+return from builder does not break glas sit should 
+
+add a upgrade that increase the amount a word bonus gives you, i kind of already have it based off the short word sharpener just make it official 
+I need to make bad modifiers chance increase by more each round its not scaling enough
+
+
+ MAJOR BUG when a user plays a round then exits mid way through the round while being logged in when the user refreshes they cannot load the game for some reason. disable syncc and loggin for now 
+ test to see if it happens offline with local game 
+this has been occuring ever since adding the profile sync we are also syncing stuff from dungeon draft or something 
+
+ B4njWvIR.js:1 Unrecognized feature: 'pointer-lock'.
+Js @ B4njWvIR.js:1
+Ae @ BB31P8Vd.js:116
+(anonymous) @ B4njWvIR.js:1
+An @ B4njWvIR.js:1
+Fe @ B4njWvIR.js:1
+D @ B4njWvIR.js:1
+Lt @ B4njWvIR.js:1
+ensure @ B4njWvIR.js:1
+i @ B3z6wlpl.js:1
+(anonymous) @ B3z6wlpl.js:1
+(anonymous) @ BB31P8Vd.js:116
+(anonymous) @ B3z6wlpl.js:1
+An @ B4njWvIR.js:1
+Fe @ B4njWvIR.js:1
+Dt @ B4njWvIR.js:1
+process @ B4njWvIR.js:1
+vt @ B4njWvIR.js:1
+flush @ B4njWvIR.js:1
+(anonymous) @ B4njWvIR.js:1
+Pn @ B4njWvIR.js:1
+Kt @ B4njWvIR.js:1
+ir @ B4njWvIR.js:1
+dt @ B4njWvIR.js:1
+Da @ app.BiZtwPX8.js:2
+(anonymous) @ app.BiZtwPX8.js:2
+Ft @ jaOHpbld.js:1
+Zn @ jaOHpbld.js:1
+await in Zn
+lr @ jaOHpbld.js:1
+await in lr
+(anonymous) @ wordis:57
+Promise.then
+(anonymous) @ wordis:56Understand this warning
+B4njWvIR.js:1 Unrecognized feature: 'orientation-lock'.
+Js @ B4njWvIR.js:1
+Ae @ BB31P8Vd.js:116
+(anonymous) @ B4njWvIR.js:1
+An @ B4njWvIR.js:1
+Fe @ B4njWvIR.js:1
+D @ B4njWvIR.js:1
+Lt @ B4njWvIR.js:1
+ensure @ B4njWvIR.js:1
+i @ B3z6wlpl.js:1
+(anonymous) @ B3z6wlpl.js:1
+(anonymous) @ BB31P8Vd.js:116
+(anonymous) @ B3z6wlpl.js:1
+An @ B4njWvIR.js:1
+Fe @ B4njWvIR.js:1
+Dt @ B4njWvIR.js:1
+process @ B4njWvIR.js:1
+vt @ B4njWvIR.js:1
+flush @ B4njWvIR.js:1
+(anonymous) @ B4njWvIR.js:1
+Pn @ B4njWvIR.js:1
+Kt @ B4njWvIR.js:1
+ir @ B4njWvIR.js:1
+dt @ B4njWvIR.js:1
+Da @ app.BiZtwPX8.js:2
+(anonymous) @ app.BiZtwPX8.js:2
+Ft @ jaOHpbld.js:1
+Zn @ jaOHpbld.js:1
+await in Zn
+lr @ jaOHpbld.js:1
+await in lr
+(anonymous) @ wordis:57
+Promise.then
+(anonymous) @ wordis:56Understand this warning
+index-C9aYzukU.js:17 electron app: false
+index-C9aYzukU.js:17 using socket: https://vuegamesetup-production.up.railway.app/
+index-C9aYzukU.js:89707 false
+index-C9aYzukU.js:89707 isfirebase enabledtrue
+index-C9aYzukU.js:89707 checking for controller
+index-C9aYzukU.js:89707 gamepadsfalse
+index-BidPmaK4.css:1  GET https://mx70d3a37s71e18b9p2vka4rn185754d-830d5ac9.builds.wavedashcdn.com/Press_Start_2P/PressStart2P-Regular.ttf net::ERR_ABORTED 404 (Not Found)Understand this error
+index-C9aYzukU.js:89707 play index-1
+
+
+we get as far as establishing theese local storage items
+lastInitSync	Wed May 06 2026 10:36:26 GMT-0400 (Eastern Daylight Time)
+deviceId	d28aca5c-e0bb-4564-b291-fcd8cb0a1a27
+theme	night
+nativeControllerSupport	true
+joystickSensitivity	30
+zoom	0.5
+gameZoom	1
+completedGames	[]
+completedLevel	Tutorial
+names	{"player1":"Player 1","player2":"Player 2","player3":"Player 3","player4":"Player 4"}
+roster	old
+unlockSystem	hard
+unlockedMonsters	[1,2,3]
+defaultHints	[{"hint":"The Alert will notify you when you are in danger!","hasSeen":false},{"hint":"Press x or tap a character image to view its actions","hasSeen":false},{"hint":"Right Click the Deck to see your Chances of Breaking!","hasSeen":false},{"hint":"Using all of your supplies gives bonus fame!","hasSeen":false},{"hint":"You can buy armor and supplies more than once!","hasSeen":false},{"hint":"Balance your supplies and armor","hasSeen":false},{"hint":"A massive Character could overflow your game","hasSeen":false},{"hint":"Be sure to select a character if it has an active action","hasSeen":false},{"hint":"Use the Deck to Draw a Character!","hasSeen":false},{"hint":"Use the Deck to view your cards and their fear.","hasSeen":false},{"hint":"Right Click on a character to view its action and other information.","hasSeen":false}]
+
+A major bug has been occuring on wavedash since we added the log in to profile option. I am not sure what portion is breaking there are no errors other than the usual press p to start font. we need to add logs to determine how far it is getting, cause things are syncing but we get the 0 percent loading screen. here are the logs and the synced local storage. along with those logs ad some saftey checks with logs stating whats happening. 
+
+disable start with on wavedash and not dev
+
+add tile after image back in
+
+
+notes after normal game 
+player does not scale as well as they should 
+7 second wind is actually goated, since it can keep you in play indefinately i went from 150 away to playing 5 7 letter words with 4 letter words in between beating the insain 350 requirment 
+normal also took me an intermitant 1.5 hours. its a long game. the longest part is not the time for the rounds its the first and last word paralysis.
+shimmer should not turn on fist and last word 
+New letter doesn't change the score may be fine 
+Epic reward choice should not show up on second to last round 
+I didnt see any bad modifiers by the end of last round on normal 
+logging in still breaks the wavedash platform, maybe add a 
+sync is not the issue through
+[StartScreen] mounted {firebaseEnabled: true, hasAuth: true, hasSeenIntro: false}
+index-ddw2d89W.js:89707 [Wordis Boot] App mounted start {firebaseEnabled: true, wavedash: false, currentState: 'StartScreen', hasSharedGameId: false}
+index-ddw2d89W.js:89707 [UserState Sync] auth listener starting
+index-ddw2d89W.js:89707 [Wordis Boot] user sync listener initialized
+index-ddw2d89W.js:89707 [Wordis Boot] first-run auth prompt check {firebaseEnabled: true, hasStreamerCode: false, hasDismissedPrompt: true}
+index-ddw2d89W.js:89707 [Wordis Boot] first-run auth prompt skipped
+index-ddw2d89W.js:89707 [Wordis Boot] gamepad check requested
+index-ddw2d89W.js:89707 [Wordis Boot] zoom initialized {zoom: 0.51, gameZoom: 1}
+index-ddw2d89W.js:89707 [Wordis Boot] local defaults established
+index-ddw2d89W.js:89707 [Wordis Boot] drawnMonsters cleared
+index-ddw2d89W.js:89707 checking for controller
+index-ddw2d89W.js:89707 gamepadsfalse
+index-ddw2d89W.js:89707 [Wordis Boot] gamepad connection watcher initialized
+index-ddw2d89W.js:89707 [Wordis Boot] App mounted complete
+index-DolSwyWv.css:1  GET https://mx70d3a37s71e18b9p2vka4rn185754d-830d5ac9.builds.wavedashcdn.com/Press_Start_2P/PressStart2P-Regular.ttf net::ERR_ABORTED 404 (Not Found)Understand this error
+index-ddw2d89W.js:89707 [StartScreen] auth state received {hasUser: true, uid: 'M3cCi8...'}
+index-ddw2d89W.js:89707 [UserState Sync] auth state changed {hasUser: true, user: 'M3cCi8...'}
+index-ddw2d89W.js:89707 [UserState Sync] sync requested {force: false, firebaseEnabled: true, hasDb: true, hasUser: true, user: 'M3cCi8...', …}
+index-ddw2d89W.js:89707 [UserState Sync] sync skipped: ten minute guard
+index-ddw2d89W.js:89707 play index-1
+
+it mapped the actions to the buttons rather then the buttons to the actions, ie the keyboard can do only the same things as ususal so its hard to test
+
+Only do single bag
+ two bags bugged
+
+ Play again. Always on top along with main menu at a quick restart to the pause menu. Make sure that 1.3 and 1.5* or not adding decimals
+Time saying tile is not giving 5 seconds back. Even if it's the last word it should
+
+modiifer idea Large tile takes up 2 slots 
+Does getting glass wrong break it
+E was the highest consonent for some reason 
+
+Add unlock system for tiles 
+
+No longer seeing seven second wind what happened 
+ 9:29 AM 
+New letter doesn't change the score may be fine 
+Epic reward choice should not show up on second to last round 
+ 6:14 PM 
+
+water tiles are not being removed from the board when scored
+
+2 letter tiles need to count for twin modifier example e counts it if ed tile is in word 
+
+wilds letter needs to be set to * if its an s its an issue if it matches a twin its an issue 
+
+no royal boon being pulled 
+
+shimmer tile shouldnt animate first or final word 
+
+scroll upgrades not working 
+
+need more then three upgrade options to begin with 
+add run time for total time unpaused
+
+show score in history 
+
+add highest word score to high score.
+
+Easier tutorial mode needed 
+Buggy tutorials with when they show up 
+ 2:08 PM 
+What is the method for showing hint we need to show hint if not seen first time.
+No hints during reward modal except reward hint 
+For disabled tile it needs to not be by the chance it just needs to be can return  false 
+Limit cards gained from tutorial add cards to unlocks 
+ 9:34 AM 
+
+Remove unmeaningful upgrades and cards such as a hair less bad modifiers 
+
+Lock cards that give time modifier behind the modifier behind unlocked
+Status banner needs to go it should be toast notifications 
+Show how many rerolls in reward
+Round history show rewards and when collected 
+Videos plus 2 not over
+Must shield and burn shield are not that great should not be epic 
+Increase golden draft amount I didn't see any
+Ghosting a new lettered k to t turned it back to a k
+If I turn letter a consonent into a vowel is it plus 2 times two? 
+Tile tray instead of rack 
+
+Unlocks need contingencies, such as first tile plus ten needs first tile unlocked before unlocking. Run through any potential issues.
+Starting tiles
+Gold, first, twin 
+Must burn locked
+Wild Ghost shimmer
+Add reset progress button 
+Epic Vowels should give plus 2 instead of plus 1 
+Add rare personal upgrade increase multiplayer modifier cap by one 
+
+screen zoom does not understand the concept of my zooom
+
+tactic cards or perk cards 
+
+twin tile should not be the first good modifier it should be a first tile 

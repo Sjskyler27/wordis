@@ -4,7 +4,7 @@ import dictionary6Text from './english_dictionaries/6.txt?raw';
 import dictionary7Text from './english_dictionaries/7.txt?raw';
 import dictionary8Text from './english_dictionaries/8.txt?raw';
 import dictionary9Text from './english_dictionaries/9.txt?raw';
-import botDictionaryText from './english_dictionaries/bot_dictionary.txt?raw';
+import botDictionaryText from './english_dictionaries/bot_dictionary_hard.txt?raw';
 
 const API_TIMEOUT_MS = 2500;
 const normalizeLanguageCode = (languageCode = 'en') => {

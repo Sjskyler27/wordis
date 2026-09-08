@@ -6,7 +6,7 @@
     :style="tooltipStyle"
   >
     <button
-      v-if="dismissible"
+      v-if="false"
       type="button"
       class="tile-hover-close"
       aria-label="Close tile description"
@@ -14,9 +14,9 @@
     >
       x
     </button>
-    <span class="tile-hover-badge">{{ badgeLabel }}</span>
+    <span class="tile-hover-badge">{{ overrideBadge || badgeLabel }}</span>
     <strong>{{ title }}</strong>
-    <p>{{ description }}</p>
+    <p>{{ overrideMessage || description }}</p>
   </div>
 </template>
 
@@ -44,6 +44,14 @@ const props = defineProps({
     default: 0
   },
   dismissible: {
+    type: Boolean,
+    default: false
+  },
+  overrideMessage: {
+    type: Boolean,
+    default: false
+  },
+  overrideBadge: {
     type: Boolean,
     default: false
   }
@@ -81,17 +89,19 @@ const tooltipStyle = computed(() => ({
 
 <style scoped>
 .tile-hover-tooltip {
-  position: fixed;
+  position: absolute;
+  align-self: left;
   z-index: 1200;
   width: min(280px, calc(100vw - 24px));
+  left: 50%;
+  margin: auto;
   padding: 12px 14px;
   border-radius: 14px;
   background: rgba(25, 10, 21, 0.96);
   border: 1px solid rgba(255, 214, 132, 0.25);
-  box-shadow: 0 16px 28px rgba(0, 0, 0, 0.28);
   color: #f7efe1;
   pointer-events: none;
-  transform: translate(14px, 14px);
+  transform: translate(104px, 14px);
 }
 
 .tile-hover-tooltip-interactive {

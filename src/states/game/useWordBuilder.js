@@ -1,22 +1,47 @@
 import { computed, ref } from 'vue';
-import { getLengthBonus, getWordScoreDetails, getDifference, getMilestoneReward } from './tile-logic.js';
+import { getLengthBonus, getWordScoreDetails, getDifference, getIdleScorePenalty, getMilestoneReward } from './tile-logic.js';
 
-const formatMilestoneReward = (length) => {
-  const reward = getMilestoneReward(length);
+const formatMilestoneReward = (length, options = {}, rewardWordLength = length) => {
+  if (length !== rewardWordLength) {
+    return '';
+  }
+
+  const reward = getMilestoneReward(length, options);
+  const personalEffects = options.personalModifierEffects || {};
+  const roundEffects = options.roundModifierEffects || {};
   const labels = [];
 
   if (reward.attacks) {
     labels.push(`+${reward.attacks} ATK`);
   }
 
-  if (reward.boons) {
-    labels.push(`+${reward.boons} BOON`);
+  if (reward.tactics) {
+    labels.push(`+${reward.tactics} TAC`);
+  }
+
+  if (reward.trayModifiers) {
+    labels.push(`+${reward.trayModifiers} TRAY`);
+  }
+
+  const lengthScoreMultiplier = personalEffects.lengthScoreMultiplier?.[length] || personalEffects.lengthScoreMultiplier?.[String(length)] || 0;
+  if (lengthScoreMultiplier && lengthScoreMultiplier !== 1) {
+    labels.push(`x${Number(lengthScoreMultiplier).toFixed(1)}`);
+  }
+
+  const lengthTimeBonus = personalEffects.lengthTimeBonus?.[length] || personalEffects.lengthTimeBonus?.[String(length)] || 0;
+  if (lengthTimeBonus) {
+    labels.push(`+${lengthTimeBonus}s`);
+  }
+
+  const lengthTimePenalty = roundEffects.lengthTimePenalty?.[length] || roundEffects.lengthTimePenalty?.[String(length)] || 0;
+  if (lengthTimePenalty) {
+    labels.push(`-${lengthTimePenalty}s`);
   }
 
   return labels.join(' · ');
 };
 
-export const useWordBuilder = ({ mySide, myTiles, playerScores }) => {
+export const useWordBuilder = ({ mySide, myTiles, playerScores, scoreOptions, lengthBonusOptions }) => {
   const selectedTileSlots = ref({
     host: [],
     opponent: []
@@ -25,7 +50,10 @@ export const useWordBuilder = ({ mySide, myTiles, playerScores }) => {
     host: [],
     opponent: []
   });
-
+  const selectedTileAnimationSync = ref({
+    host: {},
+    opponent: {}
+  });
   const selectedTileIds = computed(() => ({
     host: new Set(selectedTileSlots.value.host),
     opponent: new Set(selectedTileSlots.value.opponent)
@@ -39,7 +67,11 @@ export const useWordBuilder = ({ mySide, myTiles, playerScores }) => {
     const tilesById = new Map(myTiles.value.map((tile) => [tile.id, tile]));
 
     return selectedTileSlots.value[mySide.value]
-      .map((tileId) => tilesById.get(tileId))
+      .map((tileId) => {
+        const tile = tilesById.get(tileId);
+        const animationSync = selectedTileAnimationSync.value[mySide.value]?.[tileId];
+        return tile && animationSync ? { ...tile, ...animationSync } : tile;
+      })
       .filter(Boolean);
   });
 
@@ -48,30 +80,50 @@ export const useWordBuilder = ({ mySide, myTiles, playerScores }) => {
   });
 
   const currentWordLength = computed(() => selectedTilesForCurrentSide.value.length);
+  const currentWordElapsedSeconds = computed(() => {
+    return Math.max(0, Number(scoreOptions?.value?.wordElapsedSeconds) || 0);
+  });
   const currentScoreDetails = computed(() => getWordScoreDetails(selectedTilesForCurrentSide.value, {
     side: mySide.value,
-    scores: playerScores.value
+    scores: playerScores.value,
+    wordElapsedSeconds: currentWordElapsedSeconds.value,
+    ...(scoreOptions?.value || {})
   }));
+  const currentIdlePenalty = computed(() => {
+    if (!selectedTilesForCurrentSide.value.length) {
+      return 0;
+    }
+
+    return getIdleScorePenalty(myTiles.value, selectedTilesForCurrentSide.value.map((tile) => tile.id), {
+      roundModifierEffects: scoreOptions?.value?.roundModifierEffects || {}
+    });
+  });
   const currentLengthBonus = computed(() => currentScoreDetails.value.lengthBonus);
   const currentFirstTileBonus = computed(() => currentScoreDetails.value.firstTileBonus);
   const currentLetterTotal = computed(() => currentScoreDetails.value.letterTotal);
   const currentWordMultiplier = computed(() => currentScoreDetails.value.wordMultiplier);
-  const currentWordScore = computed(() => currentScoreDetails.value.total);
-  const lengthBonusSteps = computed(() => ([
-    { length: 5, bonus: getLengthBonus(5), difference: getDifference(5), rewardLabel: formatMilestoneReward(5) },
-    { length: 6, bonus: getLengthBonus(6), difference: getDifference(6), rewardLabel: formatMilestoneReward(6) },
-    { length: 7, bonus: getLengthBonus(7), difference: getDifference(7), rewardLabel: formatMilestoneReward(7) },
-    { length: 8, bonus: getLengthBonus(8), difference: getDifference(8), rewardLabel: formatMilestoneReward(8) },
-    { length: 9, bonus: getLengthBonus(9), difference: getDifference(9), rewardLabel: formatMilestoneReward(9) }
-  ]));
+  const currentWordScore = computed(() => currentScoreDetails.value.total - currentIdlePenalty.value);
+  const lengthBonusSteps = computed(() => {
+    const activeScoreOptions = lengthBonusOptions?.value || scoreOptions?.value || {};
+    return [4, 5, 6, 7, 8, 9]
+      .map((length) => ({
+        length,
+        bonus: getLengthBonus(length, activeScoreOptions),
+        difference: getDifference(length, activeScoreOptions, currentWordLength.value),
+        rewardLabel: formatMilestoneReward(length, activeScoreOptions, currentWordLength.value),
+        availableDifference: getDifference(length, activeScoreOptions, length),
+        availableRewardLabel: formatMilestoneReward(length, activeScoreOptions, length)
+      }))
+      .filter((step) => step.bonus || step.rewardLabel || step.availableRewardLabel);
+  });
 
-  const handleTileClick = (tile) => {
+  const handleTileClick = (tile, options = {}) => {
     const side = mySide.value;
     if (tile.locked) {
       return null;
     }
 
-    if (selectedTileSlots.value[side].includes(tile.id)) {
+    if (selectedTileSlots.value[side].includes(tile.id) && !tile.reusableInBuilder) {
       removeSpecificTile(tile.id);
       return 'removed';
     }
@@ -87,6 +139,15 @@ export const useWordBuilder = ({ mySide, myTiles, playerScores }) => {
       ...selectedTileSlots.value,
       [side]: [...selectedTileSlots.value[side], tile.id]
     };
+    if (options.animationSync) {
+      selectedTileAnimationSync.value = {
+        ...selectedTileAnimationSync.value,
+        [side]: {
+          ...selectedTileAnimationSync.value[side],
+          [tile.id]: options.animationSync
+        }
+      };
+    }
     return 'added';
   };
 
@@ -117,6 +178,99 @@ export const useWordBuilder = ({ mySide, myTiles, playerScores }) => {
       ...selectedTileSlots.value,
       [side]: nextSlots
     };
+    if (selectedTileAnimationSync.value[side]?.[tileId]) {
+      const nextAnimationSync = { ...selectedTileAnimationSync.value[side] };
+      delete nextAnimationSync[tileId];
+      selectedTileAnimationSync.value = {
+        ...selectedTileAnimationSync.value,
+        [side]: nextAnimationSync
+      };
+    }
+    return true;
+  };
+
+  const removeTileAtIndex = (index) => {
+    const side = mySide.value;
+    const nextSlots = [...selectedTileSlots.value[side]];
+    const boundedIndex = Math.max(0, Math.min(Number(index), nextSlots.length - 1));
+
+    if (!nextSlots.length || !Number.isFinite(boundedIndex)) {
+      return false;
+    }
+
+    const [removedTileId] = nextSlots.splice(boundedIndex, 1);
+    selectedTileSlots.value = {
+      ...selectedTileSlots.value,
+      [side]: nextSlots
+    };
+    if (removedTileId && !nextSlots.includes(removedTileId) && selectedTileAnimationSync.value[side]?.[removedTileId]) {
+      const nextAnimationSync = { ...selectedTileAnimationSync.value[side] };
+      delete nextAnimationSync[removedTileId];
+      selectedTileAnimationSync.value = {
+        ...selectedTileAnimationSync.value,
+        [side]: nextAnimationSync
+      };
+    }
+    return true;
+  };
+
+  const replaceTileAtIndex = (side = mySide.value, index, toTileId, options = {}) => {
+    const currentSlots = selectedTileSlots.value[side] || [];
+    const boundedIndex = Math.max(0, Math.min(Number(index), currentSlots.length - 1));
+    if (!currentSlots.length || !Number.isFinite(boundedIndex) || !toTileId) {
+      return false;
+    }
+
+    const fromTileId = currentSlots[boundedIndex];
+    if (fromTileId === toTileId) {
+      return false;
+    }
+
+    const nextSlots = [...currentSlots];
+    nextSlots[boundedIndex] = toTileId;
+    selectedTileSlots.value = {
+      ...selectedTileSlots.value,
+      [side]: nextSlots
+    };
+
+    const sideAnimationSync = selectedTileAnimationSync.value[side] || {};
+    const nextAnimationSync = { ...sideAnimationSync };
+    if (fromTileId && !nextSlots.includes(fromTileId)) {
+      delete nextAnimationSync[fromTileId];
+    }
+    if (options.animationSync) {
+      nextAnimationSync[toTileId] = options.animationSync;
+    }
+    selectedTileAnimationSync.value = {
+      ...selectedTileAnimationSync.value,
+      [side]: nextAnimationSync
+    };
+
+    if (savedTileSlots.value[side].includes(toTileId)) {
+      savedTileSlots.value = {
+        ...savedTileSlots.value,
+        [side]: savedTileSlots.value[side].filter((savedTileId) => savedTileId !== toTileId)
+      };
+    }
+
+    return true;
+  };
+
+  const reorderSelectedTile = (side = mySide.value, fromIndex, toIndex) => {
+    const currentSlots = selectedTileSlots.value[side] || [];
+    const boundedFromIndex = Math.max(0, Math.min(Number(fromIndex), currentSlots.length - 1));
+    const boundedToIndex = Math.max(0, Math.min(Number(toIndex), currentSlots.length - 1));
+    if (!currentSlots.length || boundedFromIndex === boundedToIndex) {
+      return false;
+    }
+
+    const nextSlots = [...currentSlots];
+    const [movedTileId] = nextSlots.splice(boundedFromIndex, 1);
+    nextSlots.splice(boundedToIndex, 0, movedTileId);
+    selectedTileSlots.value = {
+      ...selectedTileSlots.value,
+      [side]: nextSlots
+    };
     return true;
   };
 
@@ -128,6 +282,10 @@ export const useWordBuilder = ({ mySide, myTiles, playerScores }) => {
     selectedTileSlots.value = {
       ...selectedTileSlots.value,
       [side]: []
+    };
+    selectedTileAnimationSync.value = {
+      ...selectedTileAnimationSync.value,
+      [side]: {}
     };
     return true;
   };
@@ -164,6 +322,17 @@ export const useWordBuilder = ({ mySide, myTiles, playerScores }) => {
       [side]: selectedTileSlots.value[side].map((tileId) => (tileId === fromTileId ? toTileId : tileId))
     };
 
+    const sideAnimationSync = selectedTileAnimationSync.value[side] || {};
+    if (sideAnimationSync[fromTileId]) {
+      const nextAnimationSync = { ...sideAnimationSync };
+      nextAnimationSync[toTileId] = nextAnimationSync[fromTileId];
+      delete nextAnimationSync[fromTileId];
+      selectedTileAnimationSync.value = {
+        ...selectedTileAnimationSync.value,
+        [side]: nextAnimationSync
+      };
+    }
+
     savedTileSlots.value = {
       ...savedTileSlots.value,
       [side]: savedTileSlots.value[side].map((tileId) => (tileId === fromTileId ? toTileId : tileId))
@@ -176,6 +345,7 @@ export const useWordBuilder = ({ mySide, myTiles, playerScores }) => {
     selectedTilesForCurrentSide,
     currentWordDisplay,
     currentWordLength,
+    currentWordElapsedSeconds,
     currentLengthBonus,
     currentFirstTileBonus,
     currentLetterTotal,
@@ -185,6 +355,9 @@ export const useWordBuilder = ({ mySide, myTiles, playerScores }) => {
     handleTileClick,
     removeLastLetter,
     removeSpecificTile,
+    removeTileAtIndex,
+    replaceTileAtIndex,
+    reorderSelectedTile,
     replaceSelectedTileId,
     clearWord,
     clearSelectionForSide,

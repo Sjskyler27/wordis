@@ -1,5 +1,12 @@
 <template>
-  <div v-if="show" class="intro-screen" @click="skip">
+  <div
+    v-if="show"
+    class="intro-screen"
+    tabindex="0"
+    @click="skip"
+    @keydown.space.prevent="skip"
+    @keydown.enter.prevent="skip"
+  >
     <div class="overlay" :class="{ 'fade-overlay': phase === 'done' }"></div>
     <img
       src="/src/assets/images/logos/SkyKing.gif"
@@ -15,7 +22,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, defineEmits } from 'vue'
+import { onBeforeUnmount, onMounted, ref, defineEmits } from 'vue'
 
 const emit = defineEmits(['finished'])
 
@@ -23,32 +30,65 @@ const show = ref(true)
 
 const phase = ref('')
 const skipPhase = ref(false)
+const finished = ref(false)
+const timeoutIds = []
+
+const schedule = (callback, delay) => {
+  const timeoutId = window.setTimeout(callback, delay)
+  timeoutIds.push(timeoutId)
+}
+
+const finishIntro = () => {
+  if (finished.value) {
+    return
+  }
+  console.log('finished intro')
+
+  finished.value = true
+  show.value = false
+  emit('finished')
+}
 
 const skip = () => {
+  if (finished.value) {
+    return
+  }
+
   phase.value = 'done'
   skipPhase.value = true
-  setTimeout(() => {  
-    emit('finished')
-  }, 500);
-  // show.value = false
-  // emit('finished')
+  schedule(finishIntro, 500)
 }
+
+const handleKeyDown = (event) => {
+  if (event.key !== ' ' && event.key !== 'Enter') {
+    return
+  }
+
+  event.preventDefault()
+  skip()
+}
+
 onMounted(() => {
-  setTimeout(() => {
+  console.log('mounted intro')
+  window.addEventListener('keydown', handleKeyDown)
+  schedule(() => {
     if(!skipPhase.value) phase.value = 'fadeIn'
-    setTimeout(() => {
+    schedule(() => {
       if(!skipPhase.value) phase.value = 'hold'
-      setTimeout(() => {
+      schedule(() => {
         if(!skipPhase.value) phase.value = 'fadeOut'
-        setTimeout(() => {
+        schedule(() => {
           if(!skipPhase.value) phase.value = 'done'
-          setTimeout(() => {
-            emit('finished')
-          }, 500);
+          schedule(finishIntro, 500)
         }, 600)
       }, 800)
     }, 1400)
   }, 800)
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('keydown', handleKeyDown)
+  timeoutIds.forEach((timeoutId) => window.clearTimeout(timeoutId))
 })
 </script>
 

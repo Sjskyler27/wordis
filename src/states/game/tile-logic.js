@@ -5,17 +5,33 @@ import './card-definitions.cjs';
 import './modifier-definitions.cjs';
 import './shared-tile-logic.cjs';
 
-const { createSharedTileLogic } = globalThis.__sharedTileLogic || {};
+const {
+  createSharedTileLogic,
+  BAD_TILES: SHARED_BAD_TILES,
+  NEUTRAL_TILES: SHARED_NEUTRAL_TILES,
+  GOOD_TILES: SHARED_GOOD_TILES
+} = globalThis.__sharedTileLogic || {};
 if (typeof createSharedTileLogic !== 'function') {
   throw new Error('Shared tile logic failed to initialize');
 }
+
+const readLocalStorageFlag = (keys = []) => {
+  if (typeof localStorage === 'undefined') {
+    return false;
+  }
+
+  return keys.some((key) => {
+    const value = localStorage.getItem(key);
+    return value === '1' || value === 'true' || value === 'yes';
+  });
+};
 
 const sharedTileLogic = createSharedTileLogic({
   letterConfig,
   wordBonuses,
   milestoneRewards,
-  devLogging: import.meta.env.VITE_MODE === 'dev',
-  testing: import.meta.env.VITE_TESTING === 't'
+  devLogging: () => import.meta.env.VITE_MODE === 'dev' || readLocalStorageFlag(['devMode', 'devLogging', 'wordisDevLogging']),
+  testing: import.meta.env.VITE_TESTING === 't' || readLocalStorageFlag(['testModifiers'])
 });
 
 const {
@@ -26,12 +42,17 @@ const {
   getDifference,
   getMilestoneReward,
   getTilesScore,
+  applyRackManipulationEffects,
+  getBaggedTileIds,
   getWordScoreDetails,
   getIdleScorePenalty,
+  tickShimmerTiles,
+  tickLightningTiles,
   getResourceGrants,
   getTilesForWord,
   getRequiredTiles,
   isMissingRequiredTile,
+  isMissingBagTileForBaggedSelection,
   selectedTilesMatchWord,
   applyModifierToTile,
   replaceTileWithModifier,
@@ -82,6 +103,9 @@ const {
 const { createCard, createCards, drawCard, drawCards } = createCardLogic({
   createCardId: () => nextClientId('__wordisLocalCardIdState', 'local-card')
 });
+const BAD_TILES = SHARED_BAD_TILES || [];
+const NEUTRAL_TILES = SHARED_NEUTRAL_TILES || [];
+const GOOD_TILES = SHARED_GOOD_TILES || [];
 
 export {
   LETTER_KEYS,
@@ -98,12 +122,17 @@ export {
   getDifference,
   getMilestoneReward,
   getTilesScore,
+  applyRackManipulationEffects,
+  getBaggedTileIds,
   getWordScoreDetails,
   getIdleScorePenalty,
+  tickShimmerTiles,
+  tickLightningTiles,
   getResourceGrants,
   getTilesForWord,
   getRequiredTiles,
   isMissingRequiredTile,
+  isMissingBagTileForBaggedSelection,
   selectedTilesMatchWord,
   applyModifierToTile,
   replaceTileWithModifier,
@@ -112,6 +141,9 @@ export {
   getModifierDefinition,
   getModifierDescription,
   MODIFIER_DEFINITIONS,
+  BAD_TILES,
+  NEUTRAL_TILES,
+  GOOD_TILES,
   CARD_DEFINITIONS,
   getCardDefinition,
   createCard,

@@ -5,10 +5,6 @@
   @done="handleTransitionDone"
 />
 
-  <div id="background-layer">
-    <div class="shape-layer layer-far"></div>
-    <div class="shape-layer layer-near"></div>
-  </div>
   <IntroScreen v-if="showIntro" @finished="showHome" />
     <div v-else class="home-container" @click="playMusic">
       <div v-if="!isMobile && enableTitleImg" class="header">
@@ -19,7 +15,7 @@
         <img src="/src/assets/images/logos/title.png" alt="title img">
         <h2>Brave the Depths of the Mysterious Dungeon</h2>
       </div>
-      <div v-else class="header">
+      <div v-else class="headers animated-fade-in">
         <div class="title">
           <div>
             <h1 class="shadow">WORDIS</h1>
@@ -27,19 +23,18 @@
             <h1 class="base">WORDIS</h1>
           </div>
         </div>
-        <h2>SUBTITLE</h2>
       </div>
 
       <div class="links">
-        <span class="link"><a href="https://steampowered.com" target="_blank"><img width="40px" src="/src/assets/images/links/steam.png" alt="steam"></a></span>
-        <span class="link"><a href="https://discord.gg/fBjAxWE3Ev" target="_blank"><img width="40px" src="/src/assets/images/links/discord.png" alt="discord"></a></span>
-        <span class="link" v-if="!isElectron"><a href="https://buymeacoffee.com/dungeondraft" target="_blank"><img width="40px" src="/src/assets/images/links/coffee.png" alt="buy me a coffee"></a></span>
+        <span class="link"><a ref="steamLink" href="https://steampowered.com" target="_blank" rel="noreferrer noopener" @click.prevent="handleSteamClick"><img width="40px" src="/src/assets/images/links/steam.png" alt="steam"></a></span>
+        <span class="link"><a ref="discordLink" href="https://discord.gg/h9RmN6ta" target="_blank" rel="noreferrer noopener"><img width="40px" src="/src/assets/images/links/discord.png" alt="discord"></a></span>
+        <span class="link" v-if="!isElectron"><a ref="coffeeLink" href="https://buymeacoffee.com/dungeondraft" target="_blank" rel="noreferrer noopener"><img width="40px" src="/src/assets/images/links/coffee.png" alt="buy me a coffee"></a></span>
       </div>
   
       
     <!-- Start Game -->
     <div class="home-buttons animated-fade-in">
-      <button class="profile" ref="button2" @click="showProfile = true">Profile</button>
+      <button class="profile-button"  ref="button2" @click="handleProfileClick">Profile</button>
       <button class="play" ref="button1" @click="showType">Play</button>
       <button class="settings" ref="button3" @click="showSettings">Settings</button>
     </div>
@@ -55,7 +50,16 @@
     </div>
   </div>
   <Feedback v-if="showFeedback" @close="showFeedback = false" />
- <PWA @close="showPWA = false" v-if="showPWA && isMobile"></PWA>
+  <ProfileModal
+    v-if="showProfile"
+    :user="user"
+    :savedGameSyncEnabled="savedGameSyncEnabled"
+    @close="showProfile = false"
+    @loggedIn="handleProfileLoggedIn"
+    @logout="handleProfileLogout"
+    @savedGameSyncChange="handleSavedGameSyncChange"
+  />
+ <PWA @close="showPWA = false" v-if="showPWA && isMobile && !wavedash"></PWA>
   <Credit v-if="showCredits" @close="showCredits = false"></Credit>
   <div class="streamer-text" v-if="isStreamer">Streamer Access</div>
   <div class="version-text">Version: {{versionNumber}} · {{ languageLabel }} {{lockContent? 'Demo': ''}}</div>
@@ -64,7 +68,7 @@
 </template>
   
   <script setup>
-  import { ref, defineEmits, defineProps, computed, onMounted, onBeforeUnmount, watch } from "vue";
+  import { ref, defineEmits, defineProps, computed, onMounted, onBeforeUnmount, watch, nextTick } from "vue";
   import homeSoundUrl from '/public/audio/homeSound.mp3';
   import Feedback from "./Feedback.vue"
   import { onAuthStateChanged } from "firebase/auth";
@@ -75,7 +79,12 @@
   import { getPreferredLanguage } from "../game/language.js";
   import IntroScreen from "./IntroScreen.vue";
   import Credit from './Credits.vue'
-  import { auth as firebaseAuth, firebaseEnabled } from "../../firebaseClient.js";
+  import ProfileModal from './ProfileModal.vue';
+  import { auth, firebaseEnabled } from "../../firebaseClient.js";
+  import { isWavedashEnabled } from "../../wavedash.js";
+  import { db } from "../../main.js";
+  import { push, get, query, orderByChild, equalTo, ref as dbRef } from "firebase/database";
+  import { isSavedGameSyncEnabled, setSavedGameSyncEnabled } from "../../userstate/syncUserState.js";
   
   const props = defineProps({
     monsterRoster: Array, // Expecting an array of monster objects [{ id, actionUsed, ready }]
@@ -87,8 +96,10 @@
     effectsVolume: Number,
     hasSeenIntro: Boolean,
     uiZoom: Number,
+    deviceId: String,
   });
 
+  const MACHINE_STYLE = false;
   const showIntro = ref(!props.hasSeenIntro);
   const demoDate = new Date('2025-10-01T00:00:00Z')
   const isDemo = false
@@ -96,12 +107,16 @@
   const versionNumber = ref(pkg.version)
   const languageLabel = ref(getPreferredLanguage().label)
   const isVisible = ref(true)
+  const wavedash = isWavedashEnabled;
 
   const startMusic = new Audio(homeSoundUrl);
   startMusic.currentTime = 0
   startMusic.volume = props.volume * props.musicVolume / 100
   startMusic.loop = true;
-  const emit = defineEmits(["type","start", "reset", "feedback", "support", "showSettings", "logIn", "logOut", "nameChange"]); // Emit event to switch to Shop.vue
+  const emit = defineEmits(["type","start", "reset", "feedback", "support", "showSettings", "logIn", "loggedIn", "logOut", "nameChange", "backgroundState"]); // Emit event to switch to Shop.vue
+  const startLog = (...args) => {
+    console.log('[StartScreen]', ...args);
+  };
 
   const gameInProgress = ref(localStorage.getItem("gameInProgress")); // Check if game is in progress
   const showProfile = ref(false);
@@ -109,9 +124,30 @@
   const showCredits = ref(false);
   const hasSeenPWA = ref(JSON.parse(localStorage.getItem('hasSeenPWA')) || false);
   const showPWA = ref(!hasSeenPWA.value);
-  const user = ref(true);
+  const user = ref(null);
+  const savedGameSyncEnabled = ref(isSavedGameSyncEnabled());
   const transitionAction = ref('')
   const transitionURL = new URL('../../assets/images/homeScreen.png', import.meta.url).href;
+  const homeBackgroundState = computed(() => ({
+    transitionKey: 'start-screen',
+    isBotMode: false,
+    botCogStyle: {
+      width: 'min(42vw, 380px)',
+      height: 'min(42vw, 380px)',
+      right: '6vw',
+      bottom: '6vh',
+      opacity: '0.8',
+      '--machine-cog-duration': '18s'
+    },
+    playerCogStyle: {
+      width: 'min(22vw, 190px)',
+      height: 'min(22vw, 190px)',
+      left: '8vw',
+      top: '12vh',
+      opacity: '0.94',
+      '--machine-cog-duration': '12s'
+    }
+  }));
 
   watch(() => props.volume, async (newVal) => {
     startMusic.volume = newVal * props.musicVolume / 100
@@ -124,12 +160,17 @@
     click.volume = props.volume * newVal / 100
   })
 
+  watch(homeBackgroundState, (state) => {
+    emit('backgroundState', state);
+  }, { immediate: true, deep: true });
+
   const handleTransitionDone = () =>{
     transitionAction.value = ''
   }
   const showHome = () => {
     showIntro.value = false;
     playMusic();
+    focusPlayButton();
   };
   const showType = () => {
     emit('type')
@@ -174,6 +215,69 @@
     emit("showSettings");
   };
 
+  const handleProfileClick = () => {
+    startLog('profile opened', { hasUser: Boolean(user.value?.uid) });
+    showProfile.value = true;
+  };
+
+  const handleProfileLoggedIn = () => {
+    startLog('profile logged in; closing modal');
+    showProfile.value = false;
+    emit('loggedIn');
+  };
+
+  const handleProfileLogout = () => {
+    startLog('profile logout requested');
+    showProfile.value = false;
+    emit('logOut');
+  };
+
+  const handleSavedGameSyncChange = (enabled) => {
+    setSavedGameSyncEnabled(enabled);
+    savedGameSyncEnabled.value = enabled;
+  };
+
+  const handleSteamClick = async () => {
+    window.open('https://steampowered.com', '_blank', 'noopener,noreferrer');
+    await trackSteamClick();
+  };
+
+  const trackSteamClick = async () => {
+    try {
+      if (!firebaseEnabled || !db) {
+        throw new Error("Steam interest tracking is unavailable right now.");
+      }
+
+      const steamDeviceId = props.deviceId || localStorage.getItem("deviceId");
+      if (!steamDeviceId) {
+        throw new Error("Missing device ID for steam interest tracking.");
+      }
+
+      const steamClicksRef = dbRef(db, "steamClicks");
+      // const deviceQuery = query(steamClicksRef, orderByChild("deviceId"), equalTo(steamDeviceId));
+      // const snapshot = await get(deviceQuery);
+      // if (snapshot.exists()) {
+      //   return;
+      // }
+
+      const currentUser = user.value || auth?.currentUser || null;
+      const now = Date.now();
+      await push(steamClicksRef, {
+        deviceId: steamDeviceId,
+        userId: currentUser?.uid || null,
+        email: currentUser?.email || null,
+        firstClickedAt: now,
+        lastClickedAt: now,
+        timesViewed: 1,
+        language: navigator.language || '',
+        platform: navigator.platform || '',
+        userAgent: navigator.userAgent || ''
+      });
+    } catch (error) {
+      console.warn('Steam interest tracking failed.', error);
+    }
+  };
+
   const isElectron = navigator.userAgent.toLowerCase().includes('electron');
   const quitGame = () => {
 
@@ -196,43 +300,153 @@ const button4 = ref(null);
 const button5 = ref(null);
 const button6 = ref(null);
 const button7 = ref(null);
+const steamLink = ref(null);
+const discordLink = ref(null);
+const coffeeLink = ref(null);
 
-const buttons = [button0, button1, button2, button3, button4, button5, button6, button7];
+const controllerRegion = ref('home');
+const homeCursorIndex = ref(1);
+const linkCursorIndex = ref(0);
+
+const isControllerTargetVisible = (element) => {
+  if (!element || element.disabled) {
+    return false;
+  }
+
+  const style = window.getComputedStyle(element);
+  return element.offsetParent !== null && style.visibility !== 'hidden' && style.display !== 'none';
+};
+
+const getHomeTargets = () => [button2, button1, button3, button4]
+  .map((button) => button.value)
+  .filter(isControllerTargetVisible);
+
+const getLinkTargets = () => [steamLink, discordLink, coffeeLink]
+  .map((link) => link.value)
+  .filter(isControllerTargetVisible);
+
+const focusHomeTarget = (nextIndex = homeCursorIndex.value) => {
+  const targets = getHomeTargets();
+  if (!targets.length) {
+    return;
+  }
+
+  homeCursorIndex.value = Math.max(0, Math.min(nextIndex, targets.length - 1));
+  targets[homeCursorIndex.value]?.focus();
+};
+
+const focusPlayButton = () => {
+  controllerRegion.value = 'home';
+  nextTick(() => {
+    const targets = getHomeTargets();
+    const playIndex = targets.findIndex((target) => target === button1.value);
+    console.log('play index'+ playIndex)
+    setTimeout(() => {
+      focusHomeTarget(1);
+    }, 250); // this is needed to wait for the animation to bring it visible there is probbably a better way
+  });
+};
+
+const focusLinkTarget = (nextIndex = linkCursorIndex.value) => {
+  const targets = getLinkTargets();
+  if (!targets.length) {
+    return;
+  }
+
+  linkCursorIndex.value = Math.max(0, Math.min(nextIndex, targets.length - 1));
+  targets[linkCursorIndex.value]?.focus();
+};
+
+const cycleIndex = (currentIndex, direction, total) => {
+  if (!total) {
+    return 0;
+  }
+
+  return (currentIndex + direction + total) % total;
+};
 
 const handleKeyDown = (e) => {
-  const activeIndex = buttons.findIndex((btn) => btn.value === document.activeElement);
-    if (e.key === 'ArrowDown') {
-      e.preventDefault();
-      const nextIndex = (activeIndex + 1) % buttons.length;
-      buttons[nextIndex]?.value?.focus();
-    } else if (e.key === 'ArrowUp') {
-      e.preventDefault();
-      const prevIndex = (activeIndex - 1 + buttons.length) % buttons.length;
-      buttons[prevIndex]?.value?.focus();
-    } else if (e.key === 'Enter') {
-      document.activeElement?.click();
+  if (showIntro.value || props.settingsShowing || showProfile.value || showFeedback.value || showCredits.value || showPWA.value) {
+    return;
+  }
+
+  const homeTargets = getHomeTargets();
+  const linkTargets = getLinkTargets();
+  if (!homeTargets.length && !linkTargets.length) {
+    return;
+  }
+
+  const activeHomeIndex = homeTargets.findIndex((target) => target === document.activeElement);
+  const activeLinkIndex = linkTargets.findIndex((target) => target === document.activeElement);
+  if (activeHomeIndex >= 0) {
+    controllerRegion.value = 'home';
+    homeCursorIndex.value = activeHomeIndex;
+  } else if (activeLinkIndex >= 0) {
+    controllerRegion.value = 'links';
+    linkCursorIndex.value = activeLinkIndex;
+  }
+
+  if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+    e.preventDefault();
+    const direction = e.key === 'ArrowRight' ? 1 : -1;
+    if (controllerRegion.value === 'links') {
+      linkCursorIndex.value = cycleIndex(linkCursorIndex.value, direction, linkTargets.length);
+      focusLinkTarget();
+    } else {
+      homeCursorIndex.value = cycleIndex(homeCursorIndex.value, direction, homeTargets.length);
+      focusHomeTarget();
     }
-  
+    return;
+  }
+
+  if (e.key === 'ArrowUp') {
+    e.preventDefault();
+    controllerRegion.value = 'links';
+    linkCursorIndex.value = Math.min(homeCursorIndex.value, Math.max(0, linkTargets.length - 1));
+    focusLinkTarget();
+    return;
+  }
+
+  if (e.key === 'ArrowDown') {
+    e.preventDefault();
+    controllerRegion.value = 'home';
+    homeCursorIndex.value = Math.min(linkCursorIndex.value, Math.max(0, homeTargets.length - 1));
+    focusHomeTarget();
+    return;
+  }
+
+  if (e.key === 'Enter' || e.key === ' ') {
+    e.preventDefault();
+    document.activeElement?.click();
+  }
 };
 
 onMounted(() => {
+  startLog('mounted', {
+    firebaseEnabled,
+    hasAuth: Boolean(auth),
+    hasSeenIntro: props.hasSeenIntro
+  });
   document.addEventListener('visibilitychange', handleVisibilityChange);
+  if (!showIntro.value) {
+    focusPlayButton();
+  }
   setTimeout(() => {
     window.addEventListener('keydown', handleKeyDown);
-    if(buttons[0].value){
-      buttons[0].value.focus();
-    } else {
-      buttons[1].value.focus();
-    }
   }, 450);
   if(props.hasSeenIntro) startMusic.play()
   
   //check logged in 
-  if (firebaseEnabled && firebaseAuth) {
-    onAuthStateChanged(firebaseAuth, (u) => {
+  if (firebaseEnabled && auth) {
+    onAuthStateChanged(auth, (u) => {
+      startLog('auth state received', {
+        hasUser: Boolean(u?.uid),
+        uid: u?.uid ? `${u.uid.slice(0, 6)}...` : null
+      });
       user.value = u;
     });
   } else {
+    startLog('auth unavailable on start screen');
     user.value = null;
   }
 });
@@ -257,76 +471,29 @@ function handleVisibilityChange() {
   </script>
   
   <style lang="scss" scoped>
-  #background-layer {
-    position: absolute;
-    inset: 0;
-    z-index: -1;
-    background:
-      radial-gradient(circle at 14% 18%, rgba(255, 228, 168, 0.2) 0, rgba(255, 228, 168, 0.2) 12%, transparent 30%),
-      radial-gradient(circle at 82% 14%, rgba(255, 255, 255, 0.09) 0, rgba(255, 255, 255, 0.09) 8%, transparent 24%),
-      linear-gradient(135deg, #f39a54 0%, #ca6937 24%, #b63e3b 58%, #341137 100%);
-    filter: saturate(1.08);
-    overflow: hidden;
-    pointer-events: none;
-  }
-
-  .shape-layer {
-    position: absolute;
-    inset: -10%;
-    pointer-events: none;
-    mix-blend-mode: screen;
-    background-repeat: repeat;
-    background-size: 280px 280px;
-  }
-
-  .layer-far {
-    opacity: 0.24;
-    background-position: 0 0;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='280' height='280' viewBox='0 0 280 280'%3E%3Cg fill='none' stroke='%23fff4dc' stroke-width='2.6' stroke-opacity='.34'%3E%3Cpolygon points='40,24 68,74 12,74'/%3E%3Crect x='106' y='18' width='46' height='46' rx='4'/%3E%3Cpolygon points='217,22 245,38 245,70 217,86 189,70 189,38'/%3E%3Cpolygon points='44,118 72,134 72,166 44,182 16,166 16,134'/%3E%3Crect x='108' y='110' width='54' height='54' rx='6'/%3E%3Cpolygon points='214,110 246,164 182,164'/%3E%3Crect x='28' y='204' width='50' height='50' rx='5'/%3E%3Cpolygon points='136,198 164,214 164,246 136,262 108,246 108,214'/%3E%3Cpolygon points='220,198 248,248 192,248'/%3E%3C/g%3E%3C/svg%3E");
-    animation: driftLayerFar 25s linear infinite;
-  }
-
-  .layer-near {
-    inset: -6%;
-    opacity: 0.18;
-    background-size: 190px 190px;
-    background-position: 28px 40px;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='190' height='190' viewBox='0 0 190 190'%3E%3Cg fill='rgba(255,244,220,.14)' stroke='rgba(255,255,255,.16)' stroke-width='1.8'%3E%3Cpolygon points='26,20 52,64 0,64'/%3E%3Crect x='74' y='20' width='34' height='34' rx='3'/%3E%3Cpolygon points='150,18 170,30 170,54 150,66 130,54 130,30'/%3E%3Crect x='18' y='92' width='38' height='38' rx='4'/%3E%3Cpolygon points='96,88 118,126 74,126'/%3E%3Cpolygon points='152,86 174,98 174,124 152,136 130,124 130,98'/%3E%3Ccircle cx='42' cy='156' r='12'/%3E%3Crect x='82' y='144' width='28' height='28' rx='4'/%3E%3Cpolygon points='152,142 174,180 130,180'/%3E%3C/g%3E%3C/svg%3E");
-    animation: driftLayerNear 30s linear infinite;
-  }
-
-  @keyframes driftLayerFar {
-    0% {
-      background-position: 0 0;
-    }
-    100% {
-      background-position: 280px -280px;
-    }
-  }
-
-  @keyframes driftLayerNear {
-    0% {
-      background-position: 28px 40px;
-    }
-    100% {
-      background-position: -67px 420px;
-    }
-  }
   .home-container {
     text-align: center;
     font-family: 'Press Start 2P', cursive;
-    padding: 50px;
-    height: 100vh;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
+    position: relative;
+    width: 100%;
     height: 100%;
     min-height: 100vh;
+    min-height: 100dvh;
   }
-  .header{
-      position: absolute;
-      top: 150px;
+  .headers{
+    visibility: hidden;
+      
+position: fixed;
+
+
+  top: 20%;
+      transform: translateX(-50%);
+      width: max-content;
+      max-width: calc(100vw - 48px);
     img{
       justify-self: center;
         width: 90%;
@@ -444,6 +611,19 @@ font-family: 'Times New Roman', serif;
       width: 30px;
     }
   }
+
+  .link a {
+    display: inline-flex;
+    border-radius: 12px;
+  }
+
+  .link a:focus-visible {
+    outline: 4px solid rgba(130, 253, 238, 0.86);
+    outline-offset: 4px;
+    box-shadow:
+      0 0 0 5px rgba(92, 25, 41, 0.38),
+      0 16px 26px rgba(33, 10, 30, 0.28);
+  }
   
   label {
 
@@ -503,6 +683,13 @@ font-family: 'Times New Roman', serif;
   button.selected {
     background:rgb(59, 99, 159); /* Highlight selected players */
   }
+  button:focus-visible {
+    outline: 4px solid rgba(130, 253, 238, 0.86);
+    outline-offset: 4px;
+    box-shadow:
+      0 0 0 5px rgba(92, 25, 41, 0.38),
+      0 16px 26px rgba(33, 10, 30, 0.28);
+  }
   button.selected:hover {
     background:rgb(51, 83, 132);
   }
@@ -516,48 +703,103 @@ font-family: 'Times New Roman', serif;
   }
   .home-buttons{
     align-items: center;
-    background-color: rgba(36, 36, 36, 0.9);
+    background:
+      linear-gradient(180deg, rgba(255, 245, 224, 0.1), rgba(255, 245, 224, 0.04)),
+      rgba(38, 14, 34, 0.72);
     visibility: hidden;
-    padding: 20px 50px;
-    border-radius: 10px;
-    position: absolute;
-    bottom: 200px;
+    padding: 14px 18px;
+    border: 1px solid rgba(255, 231, 190, 0.24);
+    border-radius: 22px;
+    position: fixed;
+    z-index: 100;
     display:flex;
     flex-direction: row;
-    gap: 35px;
+
+
+position: fixed;
+
+
+  bottom: 20%;
+
+    gap: 12px;
+    box-shadow:
+      inset 0 1px 0 rgba(255, 238, 205, 0.14),
+      0 22px 46px rgba(23, 8, 25, 0.36);
     .play{
-      background-color: rgb(59, 99, 159);
+      background: linear-gradient(180deg, rgba(83, 216, 194, 0.96), rgba(21, 151, 128, 0.94));
+    color: #fff4df;
+
       height: 90px;
       width: 275px;
+      border-color: rgba(176, 255, 238, 0.44);
+    }
+    .profile-button{
+      background: #6c345ac7;
     }
     .profile{
-      background-color: rgb(255, 170, 85);
-
+      background: linear-gradient(180deg, rgba(255, 189, 101, 0.92), rgba(171, 72, 52, 0.9));
     }
+    .disabled{
+      background: rgba(255, 245, 224, 0.08);
+      color: rgba(255, 244, 223, 0.42);
+      border-color: rgba(255, 230, 190, 0.1);
+      cursor: not-allowed;
+      position: relative;
+    }
+    .disabled:hover::after{
+      content: "Coming Soon";
+      position: absolute;
+      left: 50%;
+      bottom: calc(100% + 10px);
+      transform: translateX(-50%);
+      background: rgba(35, 10, 31, 0.96);
+      border: 1px solid rgba(255, 236, 187, 0.24);
+      border-radius: 10px;
+      color: rgba(255, 248, 236, 0.92);
+      font-size: 0.62rem;
+      padding: 8px 10px;
+      white-space: nowrap;
+      box-shadow: 0 14px 28px rgba(20, 6, 14, 0.28);
+    }
+
     .settings{
-      background-color: darkred;
+      background: linear-gradient(180deg, rgba(185, 55, 80, 0.92), rgba(116, 24, 48, 0.94));
 
     }
   }
 
   button {
-    background: var(--btn-color, rgb(59, 99, 159));
-    border-radius: 15px;
+    background:
+      linear-gradient(180deg, rgba(255, 245, 224, 0.13), rgba(255, 245, 224, 0.04)),
+      rgba(54, 20, 43, 0.78);
+    border: 1px solid rgba(255, 230, 190, 0.18);
+    border-radius: 14px;
     width: 250px;
     height: 75px;
-    box-shadow: -4px 4px 4px 0px #3e3232; /* shadow = depth */
+    color: #fff4df;
+    font-family: 'Press Start 2P', cursive;
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.14),
+      inset 0 -4px 0 rgba(24, 8, 18, 0.28),
+      0 12px 20px rgba(24, 8, 24, 0.22);
   }
 
 
   
   button:hover {
-    transform: translateY(2px) translateX(-3px);
-    box-shadow: -1px 2px 4px #4b2e1e;
+    transform: translateY(-2px);
+    filter: brightness(1.05);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.18),
+      inset 0 -4px 0 rgba(24, 8, 18, 0.26),
+      0 16px 26px rgba(24, 8, 24, 0.28);
   }
   
   button:active {
-    transform: translateY(4px);
-    box-shadow: none;
+    transform: translateY(1px);
+    box-shadow:
+      inset 0 2px 8px rgba(24, 8, 18, 0.32),
+      0 8px 14px rgba(24, 8, 24, 0.18);
   }
 
   /*animnation*/
@@ -594,6 +836,21 @@ font-family: 'Times New Roman', serif;
     to {
       opacity: 1;
       transform: translateY(0);
+    }
+  }
+
+  @keyframes homeButtonsIn {
+    from {
+      opacity: 0;
+      visibility: hidden;
+      left: 50%;
+      transform: translateX(-57%) translateY(-10px);
+    }
+    to {
+      opacity: 1;
+      visibility: visible;
+      left: 50%;
+      transform: translateX(-50%) translateY(0);
     }
   }
   @keyframes glowPulse {
@@ -658,8 +915,16 @@ font-family: 'Times New Roman', serif;
         .title{
           column-gap: 25px !important;
         }
+         .headers{
+         
+        top: 10%;
+        }
         .header{
           position: inherit;
+          left: auto;
+          transform: none;
+          width: auto;
+          max-width: none;
           margin: 10px;
           .base {
             font-size: 4rem;
@@ -709,10 +974,15 @@ font-family: 'Times New Roman', serif;
 
       }
       @media (max-width: 1230px) and (orientation: landscape) {
+         .headers{
+         
+        top: 10%;
+        }
 
       }
       @media (max-width: 1230px) and (orientation: portrait) {
         .home-buttons {
+          bottom: 20%;
           flex-direction: column;
           button {
             width: 170px;
@@ -730,17 +1000,9 @@ font-family: 'Times New Roman', serif;
           left: 8px;
           top: 8px;
         }
-        .header{
-          position: absolute;
-          top: 100px;
-        }
-        #background-layer {
-          position: fixed;
-          inset: 0;
-         background-size: cover;
-          background-repeat: no-repeat;
-          background-position: var(--bg-position, right);
-      
+        .headers{
+         
+        top: 30%;
         }
         .home-container{
           gap: 20px;

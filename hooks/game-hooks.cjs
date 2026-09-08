@@ -6,15 +6,18 @@ const MILESTONE_REWARDS = require('../src/states/game/word-milestone-rewards.jso
 const { validateWord } = require('./word-validator.cjs');
 const { isTestingMode, isDevMode } = require('./env.cjs');
 const WINNING_SCORE = isTestingMode ? 40 : 250;
+const sharedTileLogic = require('../src/states/game/shared-tile-logic.cjs');
 const {
-  createSharedTileLogic
-} = require('../src/states/game/shared-tile-logic.cjs');
+  createSharedTileLogic,
+  BAD_TILES
+} = sharedTileLogic;
 
 const {
   CARD_DEFINITIONS,
   MIN_WORD_LENGTH,
   getCardDefinition,
   getWordScoreDetails,
+  applyRackManipulationEffects,
   getIdleScorePenalty,
   getResourceGrants,
   getSelectedTiles,
@@ -61,8 +64,8 @@ const { createCards, drawCard, drawCards } = createCardLogic({
 });
 
 const createTestingHands = () => {
-  const boonKeys = Object.entries(CARD_DEFINITIONS)
-    .filter(([, definition]) => definition.kind === 'boon')
+  const trayModifierKeys = Object.entries(CARD_DEFINITIONS)
+    .filter(([, definition]) => definition.kind === 'trayModifier')
     .map(([key]) => key);
   const attackKeys = Object.entries(CARD_DEFINITIONS)
     .filter(([, definition]) => definition.kind === 'attack')
@@ -70,12 +73,14 @@ const createTestingHands = () => {
 
   return {
     host: {
-      boons: createCards(boonKeys),
-      attacks: createCards(attackKeys)
+      trayModifiers: createCards(trayModifierKeys),
+      attacks: createCards(attackKeys),
+      tactics: []
     },
     opponent: {
-      boons: createCards(boonKeys),
-      attacks: createCards(attackKeys)
+      trayModifiers: createCards(trayModifierKeys),
+      attacks: createCards(attackKeys),
+      tactics: []
     }
   };
 };
@@ -83,6 +88,34 @@ const createTestingHands = () => {
 const keepTestingHand = (hand = [], cardId) => {
   return isTestingMode ? hand : hand.filter((entry) => entry.id !== cardId);
 };
+
+const devLog = (...args) => {
+  console.log('devlog')
+  if (isDevMode) {
+    console.log(...args);
+  }
+};
+
+const normalizeMultiplayerSettings = (settings = {}) => {
+  const victoryScore = Math.max(25, Math.min(1000, Math.round(Number(settings.victoryScore) || WINNING_SCORE)));
+  return {
+    victoryScore,
+    disabledTileModifiers: Array.isArray(settings.disabledTileModifiers)
+      ? [...new Set(settings.disabledTileModifiers.filter(Boolean))]
+      : [],
+    disabledCards: Array.isArray(settings.disabledCards)
+      ? [...new Set(settings.disabledCards.filter(Boolean))]
+      : []
+  };
+};
+
+const getWinningScore = (state) => state?.settings?.victoryScore || WINNING_SCORE;
+const getDisabledTileModifierEffects = (state) => ({
+  blockedModifiers: state?.settings?.disabledTileModifiers || []
+});
+const getDisabledCardOptions = (state) => ({
+  disabledCards: state?.settings?.disabledCards || []
+});
 
 const createHistoryTiles = (tiles = []) => {
   // Preserve the exact submitted tiles so post-game history matches what players actually used.
@@ -114,13 +147,24 @@ const generateRoomCode = () => {
   return roomCode;
 };
 
-const createInitialState = ({ hostId, players = [hostId], isPrivate = true, overtimeEnabled = true }) => {
+const createInitialState = ({ hostId, players = [hostId], isPrivate = true, overtimeEnabled = true, settings = {} }) => {
+  const multiplayerSettings = normalizeMultiplayerSettings(settings);
+  const tileModifierOptions = {
+    personalModifierEffects: {
+      blockedModifiers: multiplayerSettings.disabledTileModifiers
+    }
+  };
+  const cardOptions = {
+    disabledCards: multiplayerSettings.disabledCards
+  };
+
   if (isTestingMode) {
     return {
       host: hostId,
       players: [...players],
       isPrivate,
       overtimeEnabled,
+      settings: multiplayerSettings,
       overtimePendingSide: null,
       overtimeFinalWordSubmitted: false,
       submissionPauseOwner: null,
@@ -162,7 +206,8 @@ const createInitialState = ({ hostId, players = [hostId], isPrivate = true, over
       },
       cards: createTestingHands(),
       tiles: createTestingOpeningRackPair({ host: 0, opponent: 0 }, {
-        includeAllModifiers: true
+        includeAllModifiers: true,
+        ...tileModifierOptions
       })
     };
   }
@@ -172,6 +217,7 @@ const createInitialState = ({ hostId, players = [hostId], isPrivate = true, over
     players: [...players],
     isPrivate,
     overtimeEnabled,
+    settings: multiplayerSettings,
     overtimePendingSide: null,
     overtimeFinalWordSubmitted: false,
     submissionPauseOwner: null,
@@ -213,21 +259,25 @@ const createInitialState = ({ hostId, players = [hostId], isPrivate = true, over
     },
     cards: {
       host: {
-        boons: drawCards('boon', 1),
+        trayModifiers: drawCards('trayModifier', 1, cardOptions),
         attacks: drawCards('attack', 1, {
           side: 'host',
-          scores: { host: 0, opponent: 0 }
-        })
+          scores: { host: 0, opponent: 0 },
+          ...cardOptions
+        }),
+        tactics: []
       },
       opponent: {
-        boons: drawCards('boon', 1),
+        trayModifiers: drawCards('trayModifier', 1, cardOptions),
         attacks: drawCards('attack', 1, {
           side: 'opponent',
-          scores: { host: 0, opponent: 0 }
-        })
+          scores: { host: 0, opponent: 0 },
+          ...cardOptions
+        }),
+        tactics: []
       }
     },
-    tiles: createOpeningRackPair({ host: 0, opponent: 0 })
+    tiles: createOpeningRackPair({ host: 0, opponent: 0 }, tileModifierOptions)
   };
 };
 
@@ -236,8 +286,9 @@ const hasOvertimeStarted = (state) => {
     return false;
   }
 
-  const hostAtGoal = state.scores.host >= WINNING_SCORE;
-  const opponentAtGoal = state.scores.opponent >= WINNING_SCORE;
+  const winningScore = getWinningScore(state);
+  const hostAtGoal = state.scores.host >= winningScore;
+  const opponentAtGoal = state.scores.opponent >= winningScore;
   return hostAtGoal !== opponentAtGoal;
 };
 
@@ -250,7 +301,7 @@ const getOvertimeTrailingSide = (state) => {
     return null;
   }
 
-  return state.scores.host >= WINNING_SCORE ? 'opponent' : 'host';
+  return state.scores.host >= getWinningScore(state) ? 'opponent' : 'host';
 };
 
 const updateOvertimeStateAfterSubmit = (state, side) => {
@@ -265,8 +316,9 @@ const updateOvertimeStateAfterSubmit = (state, side) => {
     return;
   }
 
-  const hostAtGoal = state.scores.host >= WINNING_SCORE;
-  const opponentAtGoal = state.scores.opponent >= WINNING_SCORE;
+  const winningScore = getWinningScore(state);
+  const hostAtGoal = state.scores.host >= winningScore;
+  const opponentAtGoal = state.scores.opponent >= winningScore;
   if (hostAtGoal === opponentAtGoal) {
     return;
   }
@@ -283,7 +335,14 @@ const createGame = (roomCode, hostId, options = {}) => {
     hostId,
     players: [hostId],
     isPrivate: options.isPrivate ?? true,
-    overtimeEnabled: options.overtimeEnabled ?? true
+    overtimeEnabled: options.overtimeEnabled ?? true,
+    settings: options.settings || {}
+  });
+  devLog('[multiplayer-room-rules]', {
+    roomCode,
+    isPrivate: state.isPrivate,
+    overtimeEnabled: state.overtimeEnabled,
+    settings: state.settings
   });
 
   games.set(roomCode, state);
@@ -309,6 +368,7 @@ const clearRack = (roomCode, clientId) => {
   state.tiles[side] = createRack(side, state.scores, {
     mode: 'clear',
     currentTiles: state.tiles[side],
+    personalModifierEffects: getDisabledTileModifierEffects(state),
     turnCount: getTurnCount(state)
   });
 
@@ -322,15 +382,18 @@ const useBoon = (roomCode, clientId, cardId, tileId) => {
   }
 
   const side = clientId === state.host ? 'host' : 'opponent';
-  const card = state.cards[side].boons.find((entry) => entry.id === cardId);
+  const card = state.cards[side].trayModifiers.find((entry) => entry.id === cardId);
   if (!card) {
-    return { success: false, error: 'No boons remaining' };
+    return { success: false, error: 'No tray modifiers remaining' };
+  }
+  if ((state.settings?.disabledCards || []).includes(card.key)) {
+    return { success: false, error: 'That tray modifier is disabled in this room' };
   }
 
   if (card.effectType === 'clear_negative_modifiers') {
-    state.cards[side].boons = keepTestingHand(state.cards[side].boons, cardId);
+    state.cards[side].trayModifiers = keepTestingHand(state.cards[side].trayModifiers, cardId);
     state.tiles[side] = state.tiles[side].map((entry) => {
-      if (!['zeroTile', 'mustuse', 'locked3', 'ghostTile', 'burningTile'].includes(entry.status)) {
+      if (!BAD_TILES.includes(entry.status)) {
         return entry;
       }
 
@@ -342,27 +405,53 @@ const useBoon = (roomCode, clientId, cardId, tileId) => {
 
   const tile = state.tiles[side].find((entry) => entry.id === tileId);
   if (!tile) {
-    return { success: false, error: 'That tile cannot take a boon' };
+    return { success: false, error: 'That tile cannot take a tray modifier' };
   }
 
   if (card.effectType === 'delete_tile') {
-    state.cards[side].boons = keepTestingHand(state.cards[side].boons, cardId);
+    state.cards[side].trayModifiers = keepTestingHand(state.cards[side].trayModifiers, cardId);
     state.tiles[side] = replaceSingleTile(state.tiles[side], tileId, side, state.scores, {
+      personalModifierEffects: getDisabledTileModifierEffects(state),
       turnCount: getTurnCount(state)
     });
     return { success: true, state };
   }
 
   if (tile.locked) {
-    return { success: false, error: 'That tile cannot take a boon' };
+    return { success: false, error: 'That tile cannot take a tray modifier' };
+  }
+  if (tile.mustuse) {
+    return { success: false, error: 'That tile cannot take a tray modifier' };
   }
 
-  state.cards[side].boons = keepTestingHand(state.cards[side].boons, cardId);
+  state.cards[side].trayModifiers = keepTestingHand(state.cards[side].trayModifiers, cardId);
 
   if (card.effectType === 'isolate_tile') {
     state.tiles[side] = rerollRackExceptTile(state.tiles[side], tileId, side, state.scores, {
+      personalModifierEffects: getDisabledTileModifierEffects(state),
       turnCount: getTurnCount(state)
     });
+    return { success: true, state };
+  }
+
+  if (card.effectType === 'change_letter') {
+    const replacementTile = replaceSingleTile(state.tiles[side], tileId, side, state.scores, {
+      personalModifierEffects: getDisabledTileModifierEffects(state),
+      turnCount: getTurnCount(state)
+    }).find((entry) => (
+      entry.id !== tileId &&
+      !state.tiles[side].some((existingTile) => existingTile.id === entry.id)
+    ));
+
+    state.tiles[side] = state.tiles[side].map((tile) => {
+      if (tile.id !== tileId) return tile;
+
+      return {
+        ...tile,
+        letter: replacementTile?.letter || tile.letter
+      };
+    });
+
     return { success: true, state };
   }
 
@@ -377,7 +466,7 @@ const useAttack = (roomCode, clientId, cardId) => {
   }
 
   if (hasOvertimeStarted(state)) {
-    return { success: false, error: 'Overtime only allows boons' };
+    return { success: false, error: 'Overtime only allows tray modifiers' };
   }
 
   const side = clientId === state.host ? 'host' : 'opponent';
@@ -385,6 +474,9 @@ const useAttack = (roomCode, clientId, cardId) => {
   const card = state.cards[side].attacks.find((entry) => entry.id === cardId);
   if (!card) {
     return { success: false, error: 'No attacks remaining' };
+  }
+  if ((state.settings?.disabledCards || []).includes(card.key)) {
+    return { success: false, error: 'That attack is disabled in this room' };
   }
 
   if (card.effectType === 'pause_submissions') {
@@ -460,7 +552,8 @@ const playAgain = (roomCode, clientId) => {
     hostId: state.host,
     players: state.players,
     isPrivate: state.isPrivate,
-    overtimeEnabled: state.overtimeEnabled
+    overtimeEnabled: state.overtimeEnabled,
+    settings: state.settings || {}
   });
 
   games.set(roomCode, nextState);
@@ -473,7 +566,8 @@ const submitWord = async (roomCode, clientId, word, tileIds, languageCode = 'en'
     return { success: false, error: 'Room not found' };
   }
 
-  if (state.overtimeFinalWordSubmitted || (!state.overtimeEnabled && (state.scores.host >= WINNING_SCORE || state.scores.opponent >= WINNING_SCORE))) {
+  const winningScore = getWinningScore(state);
+  if (state.overtimeFinalWordSubmitted || (!state.overtimeEnabled && (state.scores.host >= winningScore || state.scores.opponent >= winningScore))) {
     return { success: false, error: 'Game is already over' };
   }
 
@@ -499,7 +593,11 @@ const submitWord = async (roomCode, clientId, word, tileIds, languageCode = 'en'
     return { success: false, error: `Words must use at least ${MIN_WORD_LENGTH} tiles` };
   }
 
-  const selectedTiles = getSelectedTiles(state.tiles[side], tileIds);
+  const rackTilesForScoring = applyRackManipulationEffects(state.tiles[side], {
+    side,
+    scores: state.scores
+  });
+  const selectedTiles = getSelectedTiles(rackTilesForScoring, tileIds);
   if (!selectedTiles || !selectedTiles.length) {
     return { success: false, error: 'Word must be built from your selected tiles' };
   }
@@ -528,7 +626,10 @@ const submitWord = async (roomCode, clientId, word, tileIds, languageCode = 'en'
   }).total;
   const idlePenalty = getIdleScorePenalty(state.tiles[side], tileIds);
   const scoreDelta = wordScore - idlePenalty;
-  const grantedResources = getResourceGrants(selectedTiles);
+  const grantedResources = getResourceGrants(selectedTiles, {
+    includeAttacks: true,
+    includeTactics: false
+  });
 
   state.words[side] = resolvedWord;
   state.history[side].unshift({
@@ -543,13 +644,15 @@ const submitWord = async (roomCode, clientId, word, tileIds, languageCode = 'en'
     netScore: scoreDelta
   };
   state.scores[side] += scoreDelta;
-  state.cards[side].boons.push(...drawCards('boon', grantedResources.boons));
+  state.cards[side].trayModifiers.push(...drawCards('trayModifier', grantedResources.trayModifiers, getDisabledCardOptions(state)));
   state.cards[side].attacks.push(...drawCards('attack', grantedResources.attacks, {
     side,
-    scores: state.scores
+    scores: state.scores,
+    ...getDisabledCardOptions(state)
   }));
   state.tiles[side] = refillRack(state.tiles[side], tileIds, side, state.scores, {
     phase: 'submit',
+    personalModifierEffects: getDisabledTileModifierEffects(state),
     turnCount: getTurnCount(state)
   });
   if (state.submissionPauseOwner === side) {

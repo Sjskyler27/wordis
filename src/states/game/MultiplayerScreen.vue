@@ -1,11 +1,7 @@
 <template>
-  <div class="multiplayer-shell">
-    <div id="background-layer">
-      <div class="shape-layer layer-far"></div>
-      <div class="shape-layer layer-near"></div>
-    </div>
+  <div ref="screenRoot" class="multiplayer-shell">
 
-    <main class="multiplayer-frame">
+    <main class="multiplayer-frame" :class="{ exiting: isExiting }">
       <section class="hero-card">
         <span class="kicker">Wordis Online</span>
         <h1>Real-Time Duel Lobby</h1>
@@ -19,8 +15,7 @@
       <section class="action-panel">
         <div class="panel-card">
           <span class="kicker">Bot Match</span>
-          <h2>Train Against AI</h2>
-          <p>Pick a bot difficulty and jump into the same rack duel flow without opening a live lobby.</p>
+          <h2>Train Against a Bot</h2>
           <div class="difficulty-row">
             <button
               v-for="difficulty in difficulties"
@@ -41,17 +36,6 @@
           <h2>Start a Room</h2>
           <p v-if="roomCode" class="room-preview">Room {{ roomCode }}</p>
           <p v-else>{{ hostVisibilityText }}</p>
-          <div class="host-options">
-            <span class="kicker">Options</span>
-            <label class="toggle-row">
-              <span>Overtime</span>
-              <input
-                v-model="hostOvertimeEnabled"
-                type="checkbox"
-                :disabled="isConnecting || !isSocketConnected"
-              />
-            </label>
-          </div>
           <label class="toggle-row">
             <span>Private Room</span>
             <input
@@ -60,20 +44,19 @@
               :disabled="isConnecting || !isSocketConnected"
             />
           </label>
-          <button class="arcade-button" @click="handleHostGame" :disabled="isConnecting || !isSocketConnected">
+          <button class="arcade-button" @click="handleHostGame" :disabled="isExiting || isConnecting || !isSocketConnected">
             Host Multiplayer Game
           </button>
         </div>
 
         <div class="panel-card">
           <span class="kicker">Join</span>
-          <h2>Enter Room Code</h2>
-          <p>Drop into a friend match instantly and keep the pressure on from the first word.</p>
+          <h2>Join Lobby Via Code</h2>
           <div class="join-section">
             <input
               v-model="joinCode"
               class="room-input"
-              placeholder="Enter Room Code"
+              placeholder="Room Code"
               autocapitalize="characters"
               spellcheck="false"
               :disabled="isConnecting || !isSocketConnected"
@@ -85,12 +68,8 @@
             >
               Join Multiplayer Game
             </button>
-          </div>
-        </div>
-      </section>
 
-      <section class="message-card">
-        <span class="kicker">Open Lobbies</span>
+            <span class="kicker">Open Lobbies</span>
         <strong>{{ availableLobbies.length ? 'Join a live public room' : 'No public lobbies right now.' }}</strong>
         <div v-if="availableLobbies.length" class="lobby-list">
           <button
@@ -107,14 +86,131 @@
           </button>
         </div>
         <p v-else>Host a public room to make it appear here for other players.</p>
+          </div>
+        </div>
       </section>
 
-      <section class="message-card">
+      <section class="settings-section">
+        <div class="settings-header">
+          <div>
+            <span class="kicker">Settings</span>
+            <h2>Room Options</h2>
+          </div>
+          <div class="settings-header-actions">
+            <p>Host settings apply when the room is created.</p>
+            <button
+              type="button"
+              class="reset-settings-button"
+              :disabled="isConnecting"
+              @click="resetMultiplayerSettings"
+            >
+              Reset to Default
+            </button>
+          </div>
+        </div>
+
+        <div class="settings-tabs">
+          <button
+            v-for="tab in settingsTabs"
+            :key="tab.value"
+            type="button"
+            class="settings-tab"
+            :class="{ active: selectedSettingsTab === tab.value }"
+            @click="selectedSettingsTab = tab.value"
+          >
+            {{ tab.label }}
+          </button>
+        </div>
+
+        <div v-if="selectedSettingsTab === 'rules'" class="settings-panel">
+          <label class="option-row">
+            <span>
+              <strong>Victory Score</strong>
+              <small>First player to reach this score can win.</small>
+            </span>
+            <select v-model.number="victoryScore" :disabled="isConnecting || !isSocketConnected">
+              <option v-for="score in victoryScoreOptions" :key="score" :value="score">{{ score }}</option>
+            </select>
+          </label>
+          <label class="option-row">
+            <span>
+              <strong>Overtime</strong>
+              <small>Let the trailing player answer with one final word.</small>
+            </span>
+            <input
+              v-model="hostOvertimeEnabled"
+              type="checkbox"
+              :disabled="isConnecting || !isSocketConnected"
+            />
+          </label>
+        </div>
+
+        <div v-else-if="selectedSettingsTab === 'tile-modifiers'" class="settings-panel">
+          <div class="option-grid">
+            <button
+              v-for="modifier in tileModifierOptions"
+              :key="modifier.key"
+              type="button"
+              class="option-card"
+              :class="{ disabled: isTileModifierDisabled(modifier.key) }"
+              :disabled="isConnecting || !isSocketConnected"
+              @click="toggleTileModifier(modifier.key)"
+            >
+              <strong>{{ modifier.label }}</strong>
+              <span>{{ modifier.description }}</span>
+            </button>
+          </div>
+        </div>
+
+        <div v-else-if="selectedSettingsTab === 'cards'" class="settings-panel">
+          <div class="settings-subhead">
+            <strong>Tray Modifiers</strong>
+            <span>{{ enabledBoonCount }}/{{ boonCardOptions.length }} enabled</span>
+          </div>
+          <div class="option-grid">
+            <button
+              v-for="card in boonCardOptions"
+              :key="card.key"
+              type="button"
+              class="option-card tray-modifier-card-option"
+              :class="{ disabled: isCardDisabled(card.key) }"
+              :disabled="isConnecting || !isSocketConnected"
+              @click="toggleCard(card.key)"
+            >
+              <strong>{{ card.label }}</strong>
+              <span>{{ card.description }}</span>
+            </button>
+          </div>
+
+          <div class="settings-subhead">
+            <strong>Attacks</strong>
+            <span>{{ enabledAttackCount }}/{{ attackCardOptions.length }} enabled</span>
+          </div>
+          <div class="option-grid">
+            <button
+              v-for="card in attackCardOptions"
+              :key="card.key"
+              type="button"
+              class="option-card attack-card-option"
+              :class="{ disabled: isCardDisabled(card.key) }"
+              :disabled="isConnecting || !isSocketConnected"
+              @click="toggleCard(card.key)"
+            >
+              <strong>{{ card.label }}</strong>
+              <span>{{ card.description }}</span>
+            </button>
+          </div>
+        </div>
+      </section>
+
+
+
+      <!-- <section class="message-card">
         <span class="kicker">Status</span>
         <strong>{{ message || 'Multiplayer is standing by.' }}</strong>
         <p v-if="roomCode">Active room: {{ roomCode }}</p>
         <p v-else>When a room is ready, this screen will move straight into the duel.</p>
-      </section>
+      </section> -->
 
       <button class="back-button" @click="$emit('home')">Back to Home</button>
     </main>
@@ -122,7 +218,7 @@
 </template>
 
 <script setup>
-import { ref, computed, watch } from 'vue';
+import { ref, computed, nextTick, onBeforeUnmount, onMounted, watch } from 'vue';
 import {
   roomCode,
   message,
@@ -135,17 +231,112 @@ import {
   isSocketConnected
 } from './multiplayer.js';
 import { overtimeEnabled } from './play-config.js';
+import { MODIFIER_DEFINITIONS, getModifierBadge } from './tile-logic.js';
+import './card-definitions.cjs';
 
+const {
+  CARD_DEFINITIONS = {},
+  TRAY_MODIFIER_CARD_KEYS = [],
+  ATTACK_CARD_KEYS = []
+} = globalThis.__wordisCardDefinitions || {};
+
+const MULTIPLAYER_SETTINGS_STORAGE_KEY = 'wordis:multiplayerRoomSettings';
+const DEFAULT_MULTIPLAYER_ROOM_SETTINGS = {
+  hostIsPrivate: true,
+  overtimeEnabled: true,
+  victoryScore: 250,
+  selectedSettingsTab: 'rules',
+  disabledTileModifiers: [],
+  disabledCards: []
+};
+const loadMultiplayerRoomSettings = () => {
+  try {
+    const parsedSettings = JSON.parse(localStorage.getItem(MULTIPLAYER_SETTINGS_STORAGE_KEY) || '{}');
+    return {
+      ...DEFAULT_MULTIPLAYER_ROOM_SETTINGS,
+      ...parsedSettings,
+      selectedSettingsTab: ['rules', 'tile-modifiers', 'cards'].includes(parsedSettings.selectedSettingsTab)
+        ? parsedSettings.selectedSettingsTab
+        : DEFAULT_MULTIPLAYER_ROOM_SETTINGS.selectedSettingsTab,
+      disabledTileModifiers: Array.isArray(parsedSettings.disabledTileModifiers) ? parsedSettings.disabledTileModifiers : [],
+      disabledCards: Array.isArray(parsedSettings.disabledCards) ? parsedSettings.disabledCards : []
+    };
+  } catch (error) {
+    return { ...DEFAULT_MULTIPLAYER_ROOM_SETTINGS };
+  }
+};
+const savedMultiplayerRoomSettings = loadMultiplayerRoomSettings();
 const joinCode = ref('');
-const hostIsPrivate = ref(true);
-const hostOvertimeEnabled = ref(overtimeEnabled.value);
+const hostIsPrivate = ref(savedMultiplayerRoomSettings.hostIsPrivate);
+const hostOvertimeEnabled = ref(savedMultiplayerRoomSettings.overtimeEnabled ?? overtimeEnabled.value);
+const victoryScore = ref(savedMultiplayerRoomSettings.victoryScore);
 const selectedDifficulty = ref('normal');
+const selectedSettingsTab = ref(savedMultiplayerRoomSettings.selectedSettingsTab);
+const disabledTileModifiers = ref([...savedMultiplayerRoomSettings.disabledTileModifiers]);
+const disabledCards = ref([...savedMultiplayerRoomSettings.disabledCards]);
+const screenRoot = ref(null);
+const controllerFocusIndex = ref(0);
+const isExiting = ref(false);
 const emit = defineEmits(['game', 'home', 'singleplayer']);
 const difficulties = [
   { value: 'easy', label: 'Easy' },
   { value: 'normal', label: 'Normal' },
   { value: 'hard', label: 'Hard' }
 ];
+const settingsTabs = [
+  { value: 'rules', label: 'Rules' },
+  { value: 'tile-modifiers', label: 'Tile Modifiers' },
+  { value: 'cards', label: 'Cards' }
+];
+const victoryScoreOptions = [100, 150, 250, 400, 500];
+const cardOptionsFromKeys = (keys = []) => keys
+  .map((key) => ({ key, ...(CARD_DEFINITIONS[key] || {}) }))
+  .filter((card) => card.label)
+  .sort((first, second) => first.label.localeCompare(second.label));
+const boonCardOptions = computed(() => cardOptionsFromKeys(TRAY_MODIFIER_CARD_KEYS));
+const attackCardOptions = computed(() => cardOptionsFromKeys(ATTACK_CARD_KEYS));
+const tileModifierOptions = computed(() => Object.entries(MODIFIER_DEFINITIONS)
+  .filter(([key, definition]) => key !== 'normal' && (definition.rarityWeight || 0) > 0)
+  .map(([key, definition]) => ({
+    key,
+    label: `${getModifierBadge(key) || key} ${key}`,
+    description: definition.description || 'Tile modifier.'
+  }))
+  .sort((first, second) => first.label.localeCompare(second.label)));
+const enabledBoonCount = computed(() => boonCardOptions.value.filter((card) => !isCardDisabled(card.key)).length);
+const enabledAttackCount = computed(() => attackCardOptions.value.filter((card) => !isCardDisabled(card.key)).length);
+const isTileModifierDisabled = (key) => disabledTileModifiers.value.includes(key);
+const isCardDisabled = (key) => disabledCards.value.includes(key);
+const toggleArrayValue = (source, value) => {
+  source.value = source.value.includes(value)
+    ? source.value.filter((entry) => entry !== value)
+    : [...source.value, value];
+};
+const toggleTileModifier = (key) => toggleArrayValue(disabledTileModifiers, key);
+const toggleCard = (key) => toggleArrayValue(disabledCards, key);
+const buildMultiplayerSettings = () => ({
+  victoryScore: victoryScore.value,
+  disabledTileModifiers: disabledTileModifiers.value,
+  disabledCards: disabledCards.value
+});
+const saveMultiplayerRoomSettings = () => {
+  localStorage.setItem(MULTIPLAYER_SETTINGS_STORAGE_KEY, JSON.stringify({
+    hostIsPrivate: hostIsPrivate.value,
+    overtimeEnabled: hostOvertimeEnabled.value,
+    victoryScore: victoryScore.value,
+    selectedSettingsTab: selectedSettingsTab.value,
+    disabledTileModifiers: disabledTileModifiers.value,
+    disabledCards: disabledCards.value
+  }));
+};
+const resetMultiplayerSettings = () => {
+  hostIsPrivate.value = DEFAULT_MULTIPLAYER_ROOM_SETTINGS.hostIsPrivate;
+  hostOvertimeEnabled.value = DEFAULT_MULTIPLAYER_ROOM_SETTINGS.overtimeEnabled;
+  victoryScore.value = DEFAULT_MULTIPLAYER_ROOM_SETTINGS.victoryScore;
+  selectedSettingsTab.value = DEFAULT_MULTIPLAYER_ROOM_SETTINGS.selectedSettingsTab;
+  disabledTileModifiers.value = [];
+  disabledCards.value = [];
+};
 
 const startBotMatch = () => {
   emit('singleplayer', {
@@ -155,12 +346,20 @@ const startBotMatch = () => {
 };
 
 const handleHostGame = () => {
+  if (isExiting.value) {
+    return;
+  }
+
+  isExiting.value = true;
   overtimeEnabled.value = hostOvertimeEnabled.value;
   localStorage.setItem('overtimeEnabled', JSON.stringify(hostOvertimeEnabled.value));
-  hostGame({
-    isPrivate: hostIsPrivate.value,
-    overtimeEnabled: hostOvertimeEnabled.value
-  });
+  window.setTimeout(() => {
+    hostGame({
+      isPrivate: hostIsPrivate.value,
+      overtimeEnabled: hostOvertimeEnabled.value,
+      settings: buildMultiplayerSettings()
+    });
+  }, 240);
 };
 
 const handleJoinGame = () => {
@@ -169,6 +368,68 @@ const handleJoinGame = () => {
 
 const joinLobby = (code) => {
   joinGame(code);
+};
+
+const getControllerTargets = () => {
+  if (!screenRoot.value) {
+    return [];
+  }
+
+  return Array.from(screenRoot.value.querySelectorAll('button:not(:disabled), input:not(:disabled), select:not(:disabled)'))
+    .filter((element) => element.offsetParent !== null);
+};
+
+const setControllerFocus = (nextIndex) => {
+  const targets = getControllerTargets();
+  if (!targets.length) {
+    return;
+  }
+
+  controllerFocusIndex.value = Math.max(0, Math.min(nextIndex, targets.length - 1));
+  targets[controllerFocusIndex.value]?.focus();
+};
+
+const syncControllerFocusIndex = () => {
+  const targets = getControllerTargets();
+  const activeIndex = targets.findIndex((element) => element === document.activeElement);
+  if (activeIndex >= 0) {
+    controllerFocusIndex.value = activeIndex;
+  }
+};
+
+const handleControllerKeyDown = (event) => {
+  const activeElement = document.activeElement;
+  const activeTag = activeElement?.tagName?.toLowerCase();
+  const isTextInput = (activeTag === 'input' && activeElement?.type !== 'checkbox') || activeTag === 'select';
+
+  if (event.key === 'Escape') {
+    event.preventDefault();
+    emit('home');
+    return;
+  }
+
+  if (isTextInput && (event.key === 'ArrowLeft' || event.key === 'ArrowRight')) {
+    return;
+  }
+
+  if (event.key === 'ArrowDown' || event.key === 'ArrowRight') {
+    event.preventDefault();
+    syncControllerFocusIndex();
+    setControllerFocus(controllerFocusIndex.value + 1);
+    return;
+  }
+
+  if (event.key === 'ArrowUp' || event.key === 'ArrowLeft') {
+    event.preventDefault();
+    syncControllerFocusIndex();
+    setControllerFocus(controllerFocusIndex.value - 1);
+    return;
+  }
+
+  if ((event.key === 'Enter' || event.key === ' ') && activeTag !== 'input') {
+    event.preventDefault();
+    activeElement?.click();
+  }
 };
 
 const connectionStatusLabel = computed(() => {
@@ -189,8 +450,8 @@ const connectionStatusLabel = computed(() => {
 const statusClass = computed(() => `status-${connectionStatus.value}`);
 const hostVisibilityText = computed(() => {
   return hostIsPrivate.value
-    ? 'Spin up a private room and share the code with your opponent.'
-    : 'Spin up a public room so anyone browsing open lobbies can jump in.';
+    ? 'Create a private room and share the code with your opponent.'
+    : 'Create a public room so anyone browsing open lobbies can jump in.';
 });
 const readyToStartMultiplayer = computed(
   () => !!roomCode.value && connectionStatus.value === 'connected'
@@ -200,7 +461,10 @@ const hasNavigated = ref(false);
 watch(readyToStartMultiplayer, (ready) => {
   if (ready && !hasNavigated.value) {
     hasNavigated.value = true;
-    emit('game');
+    if (!isExiting.value) {
+      isExiting.value = true;
+    }
+    window.setTimeout(() => emit('game'), 320);
   }
 });
 
@@ -211,11 +475,29 @@ watch(joinCode, (value) => {
   }
 });
 
+watch([
+  hostIsPrivate,
+  hostOvertimeEnabled,
+  victoryScore,
+  selectedSettingsTab,
+  disabledTileModifiers,
+  disabledCards
+], saveMultiplayerRoomSettings, { deep: true });
+
 watch(connectionStatus, (status) => {
   if (status === 'connected') {
     requestLobbyList();
   }
 }, { immediate: true });
+
+onMounted(() => {
+  window.addEventListener('keydown', handleControllerKeyDown);
+  nextTick(() => setControllerFocus(0));
+});
+
+onBeforeUnmount(() => {
+  window.removeEventListener('keydown', handleControllerKeyDown);
+});
 </script>
 
 <style scoped>
@@ -225,58 +507,14 @@ watch(connectionStatus, (status) => {
   --bg-bottom: #341137;
   --bg-corner: #f39a54;
   --cream: #f7efe1;
-  min-height: 100vh;
-  position: relative;
-  overflow: hidden;
+  position: fixed;
+  inset: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
   padding: 28px;
   color: var(--cream);
 }
 
-#background-layer {
-  position: absolute;
-  inset: 0;
-  z-index: -2;
-  background:
-    radial-gradient(circle at 14% 18%, rgba(255, 228, 168, 0.2) 0, rgba(255, 228, 168, 0.2) 12%, transparent 30%),
-    radial-gradient(circle at 82% 14%, rgba(255, 255, 255, 0.09) 0, rgba(255, 255, 255, 0.09) 8%, transparent 24%),
-    linear-gradient(135deg, var(--bg-corner) 0%, var(--bg-top) 24%, var(--bg-mid) 58%, var(--bg-bottom) 100%);
-  overflow: hidden;
-}
-
-.shape-layer {
-  position: absolute;
-  inset: -10%;
-  pointer-events: none;
-  mix-blend-mode: screen;
-  background-repeat: repeat;
-  background-size: 280px 280px;
-}
-
-.layer-far {
-  opacity: 0.24;
-  background-position: 0 0;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='280' height='280' viewBox='0 0 280 280'%3E%3Cg fill='none' stroke='%23fff4dc' stroke-width='2.6' stroke-opacity='.34'%3E%3Cpolygon points='40,24 68,74 12,74'/%3E%3Crect x='106' y='18' width='46' height='46' rx='4'/%3E%3Cpolygon points='217,22 245,38 245,70 217,86 189,70 189,38'/%3E%3Cpolygon points='44,118 72,134 72,166 44,182 16,166 16,134'/%3E%3Crect x='108' y='110' width='54' height='54' rx='6'/%3E%3Cpolygon points='214,110 246,164 182,164'/%3E%3Crect x='28' y='204' width='50' height='50' rx='5'/%3E%3Cpolygon points='136,198 164,214 164,246 136,262 108,246 108,214'/%3E%3Cpolygon points='220,198 248,248 192,248'/%3E%3C/g%3E%3C/svg%3E");
-  animation: driftLayerFar 25s linear infinite;
-}
-
-.layer-near {
-  inset: -6%;
-  opacity: 0.18;
-  background-size: 190px 190px;
-  background-position: 28px 40px;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='190' height='190' viewBox='0 0 190 190'%3E%3Cg fill='rgba(255,244,220,.14)' stroke='rgba(255,255,255,.16)' stroke-width='1.8'%3E%3Cpolygon points='26,20 52,64 0,64'/%3E%3Crect x='74' y='20' width='34' height='34' rx='3'/%3E%3Cpolygon points='150,18 170,30 170,54 150,66 130,54 130,30'/%3E%3Crect x='18' y='92' width='38' height='38' rx='4'/%3E%3Cpolygon points='96,88 118,126 74,126'/%3E%3Cpolygon points='152,86 174,98 174,124 152,136 130,124 130,98'/%3E%3Ccircle cx='42' cy='156' r='12'/%3E%3Crect x='82' y='144' width='28' height='28' rx='4'/%3E%3Cpolygon points='152,142 174,180 130,180'/%3E%3C/g%3E%3C/svg%3E");
-  animation: driftLayerNear 30s linear infinite;
-}
-
-@keyframes driftLayerFar {
-  0% { background-position: 0 0; }
-  100% { background-position: 280px -140px; }
-}
-
-@keyframes driftLayerNear {
-  0% { background-position: 28px 40px; }
-  100% { background-position: -67px 420px; }
-}
 
 .multiplayer-frame {
   width: min(100%, 1180px);
@@ -284,6 +522,18 @@ watch(connectionStatus, (status) => {
   display: flex;
   flex-direction: column;
   gap: 20px;
+  transform-origin: center top;
+  transition:
+    transform 520ms cubic-bezier(0.7, 0, 0.84, 0),
+    opacity 420ms ease,
+    filter 520ms ease;
+}
+
+.multiplayer-frame.exiting {
+  transform: translateY(120vh) scale(0.96);
+  opacity: 0;
+  filter: blur(3px);
+  pointer-events: none;
 }
 
 .hero-card,
@@ -325,6 +575,176 @@ watch(connectionStatus, (status) => {
 
 .message-card {
   background: linear-gradient(180deg, rgba(148, 31, 70, 0.95), rgba(93, 18, 52, 0.88));
+}
+
+.settings-section {
+  border-radius: 30px;
+  padding: 24px 22px;
+  background: rgba(36, 11, 31, 0.82);
+  border: 2px solid rgba(255, 255, 255, 0.12);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    0 20px 50px rgba(38, 7, 22, 0.22);
+}
+
+.settings-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.settings-header-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.settings-header-actions p {
+  margin: 0;
+}
+
+.reset-settings-button {
+  cursor: pointer;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 999px;
+  padding: 10px 14px;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--cream);
+  font-family: inherit;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.reset-settings-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.54;
+}
+
+.settings-tabs {
+  margin-top: 18px;
+  display: inline-flex;
+  flex-wrap: wrap;
+  padding: 5px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.settings-tab {
+  cursor: pointer;
+  border: 0;
+  border-radius: 999px;
+  padding: 10px 14px;
+  background: transparent;
+  color: rgba(247, 239, 225, 0.68);
+  font-family: inherit;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+
+.settings-tab.active {
+  background: linear-gradient(180deg, rgba(93, 230, 203, 0.24), rgba(46, 179, 151, 0.38));
+  color: var(--cream);
+}
+
+.settings-panel {
+  display: grid;
+  gap: 14px;
+  margin-top: 18px;
+}
+
+.option-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 18px;
+  padding: 14px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.option-row span {
+  display: grid;
+  gap: 6px;
+}
+
+.option-row strong,
+.settings-subhead strong,
+.option-card strong {
+  line-height: 1.2;
+}
+
+.option-row small {
+  color: rgba(247, 239, 225, 0.68);
+  font-size: 0.72rem;
+  line-height: 1.4;
+}
+
+.option-row select {
+  min-width: 120px;
+  border: 2px solid rgba(255, 255, 255, 0.14);
+  border-radius: 14px;
+  padding: 10px 12px;
+  background: rgba(21, 8, 22, 0.84);
+  color: var(--cream);
+  font: inherit;
+}
+
+.option-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.option-card {
+  cursor: pointer;
+  min-height: 128px;
+  display: grid;
+  align-content: start;
+  gap: 10px;
+  padding: 14px;
+  border-radius: 18px;
+  border: 1px solid rgba(151, 229, 190, 0.28);
+  background: linear-gradient(180deg, rgba(86, 142, 118, 0.3), rgba(42, 86, 72, 0.22));
+  color: var(--cream);
+  font-family: inherit;
+  text-align: left;
+}
+
+.option-card span {
+  color: rgba(247, 239, 225, 0.74);
+  font-size: 0.78rem;
+  line-height: 1.45;
+}
+
+.option-card.disabled {
+  border-color: rgba(255, 143, 163, 0.36);
+  background: linear-gradient(180deg, rgba(92, 38, 54, 0.42), rgba(49, 18, 34, 0.36));
+  color: rgba(247, 239, 225, 0.54);
+  text-decoration: line-through;
+}
+
+.attack-card-option {
+  border-color: rgba(255, 143, 163, 0.3);
+  background: linear-gradient(180deg, rgba(179, 62, 83, 0.26), rgba(116, 32, 55, 0.22));
+}
+
+.settings-subhead {
+  margin-top: 6px;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  color: rgba(247, 239, 225, 0.76);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-size: 0.78rem;
 }
 
 .kicker {
@@ -402,7 +822,7 @@ p {
 }
 
 .room-input {
-  width: 100%;
+  width: 50%;
   border: 2px solid rgba(255, 255, 255, 0.14);
   border-radius: 18px;
   padding: 14px 16px;
@@ -472,6 +892,9 @@ p {
   margin-top: 16px;
   display: grid;
   gap: 12px;
+  max-height: 300px;
+  overflow: hidden;
+  overflow-y: auto;
 }
 
 .lobby-row {
@@ -536,6 +959,23 @@ p {
   opacity: 0.55;
 }
 
+.difficulty-chip:focus-visible,
+.lobby-row:focus-visible,
+.settings-tab:focus-visible,
+.option-card:focus-visible,
+.reset-settings-button:focus-visible,
+.arcade-button:focus-visible,
+.back-button:focus-visible,
+.room-input:focus-visible,
+.option-row select:focus-visible,
+.toggle-row input:focus-visible {
+  outline: 4px solid rgba(130, 253, 238, 0.86);
+  outline-offset: 3px;
+  box-shadow:
+    0 0 0 5px rgba(92, 25, 41, 0.38),
+    0 16px 26px rgba(33, 10, 30, 0.28);
+}
+
 .back-button {
   align-self: flex-start;
   background: rgba(52, 16, 36, 0.7);
@@ -543,7 +983,8 @@ p {
 }
 
 @media (max-width: 960px) {
-  .action-panel {
+  .action-panel,
+  .option-grid {
     grid-template-columns: 1fr;
   }
 }
@@ -561,6 +1002,14 @@ p {
 
   .back-button {
     align-self: stretch;
+  }
+
+  .option-row {
+    grid-template-columns: 1fr;
+  }
+
+  .settings-tabs {
+    border-radius: 18px;
   }
 }
 </style>

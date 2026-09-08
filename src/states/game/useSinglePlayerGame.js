@@ -5,9 +5,12 @@ import {
   MIN_WORD_LENGTH,
   createCards,
   createOpeningRackPair,
+  createTestingRack,
   createTestingOpeningRackPair,
   createRack,
   drawCards,
+  BAD_TILES,
+  applyRackManipulationEffects,
   getTilesForWord,
   getResourceGrants,
   replaceTileWithModifier,
@@ -18,11 +21,14 @@ import {
   rerollRackExceptTile
 } from './tile-logic.js';
 import { isTestingMode } from './testing.js';
+import { BOT_DIFFICULTIES } from './play-config.js';
+import { getRoundModifierDefinition } from './multiround/round-modifier-definitions.js';
 
 export const useSinglePlayerGame = ({
   isMultiplayer,
   botEnabled,
   isTimedSoloMode,
+  isMultiRoundMode,
   overtimeEnabled,
   botDifficulty,
   localMessage,
@@ -37,9 +43,19 @@ export const useSinglePlayerGame = ({
   submittedWords,
   wordHistory,
   onTimedSoloPauseTime,
-  onTimedSoloGainTime
+  onTimedSoloGainTime,
+  onMultiRoundRerollNextRoundModifiers,
+  onMultiRoundRerollRewardChoices,
+  onMultiRoundReduceTargetScore,
+  onBotPreparing,
+  getTutorialTilePlan,
+  getAllowedModifierKeys,
+  onTutorialTurnAdvanced,
+  personalModifierEffects,
+  roundModifierEffects
 }) => {
   let botLoopId = null;
+  let botSubmitDelayId = null;
   const submissionPauseOwner = ref(null);
   const createHistoryTiles = (tiles = []) => {
     // Keep a frozen copy of played tiles so results can render the exact word later.
@@ -58,52 +74,141 @@ export const useSinglePlayerGame = ({
       lockTurns: tile.lockTurns
     }));
   };
-  const WINNING_SCORE = isTestingMode ? 40 : 250;
-  const BOT_DELAYS = {
-    easy: 12000,
-    normal: 9000,
-    hard: 6500
+  const BOT_WINNING_SCORES = {
+    easy: 100,
+    normal: 150,
+    hard: 200
   };
-  const modifierProfile = () => isTimedSoloMode.value ? 'solo' : 'bot';
-  const attackDeck = () => isTimedSoloMode.value ? 'timed_solo' : 'duel';
-  const shouldDrawAttacks = () => isTimedSoloMode.value || botEnabled.value;
+  const getWinningScore = () => isTestingMode ? 40 : BOT_WINNING_SCORES[botDifficulty.value] || 250;
+  // determine how much time between thinking
+  const BOT_DELAYS = {
+    easy: 14000,
+    normal: 16500,
+    hard: 13250
+  };
+  const modifierProfile = () => (isTimedSoloMode.value || isMultiRoundMode?.value) ? 'solo' : 'bot';
+  const tacticDeck = () => {
+    if (isMultiRoundMode?.value) {
+      return 'multi_round';
+    }
+
+    return isTimedSoloMode.value ? 'timed_solo' : 'duel';
+  };
+  const shouldDrawAttacks = () => botEnabled.value;
+  const shouldDrawTactics = () => !botEnabled.value;
+  const getHeldCards = (side, kind) => {
+    const handKey = kind === 'trayModifier'
+      ? 'trayModifiers'
+      : kind === 'tactic' ? 'tactics' : 'attacks';
+    return playerCards.value[side]?.[handKey] || [];
+  };
+  const drawCardsForSide = (kind, count, side, options = {}) => {
+    return drawCards(kind, count, {
+      ...options,
+      side,
+      allowedCardKeys: options.allowedCardKeys || getAllowedCardKeys(),
+      heldCards: getHeldCards(side, kind)
+    });
+  };
   const keepTestingHand = (hand = [], cardId) => {
     return isTestingMode ? hand : hand.filter((entry) => entry.id !== cardId);
   };
+  const multiRoundWordsPlayedThisRound = ref(0);
   const getTurnCount = () => {
+    if (isMultiRoundMode?.value) {
+      return multiRoundWordsPlayedThisRound.value;
+    }
+
     return (wordHistory.value.host?.length || 0) + (wordHistory.value.opponent?.length || 0);
   };
+  const cardModifierEffects = ref({
+    badChanceBonus: 0
+  });
+  const getPersonalModifierEffects = () => {
+    const baseEffects = personalModifierEffects?.value || {};
+
+    // console.log(cardModifierEffects.value.badChanceBonus)
+    return {
+      ...baseEffects,
+      badChanceBonus: (baseEffects.badChanceBonus || 0) + (cardModifierEffects.value.badChanceBonus || 0)
+    };
+  };
+  const getRoundModifierEffects = () => roundModifierEffects?.value || {};
+  const getAllowedCardKeys = () => {
+    if (!isMultiRoundMode?.value || typeof getAllowedModifierKeys !== 'function') {
+      return null;
+    }
+
+    return getAllowedModifierKeys('card');
+  };
+  const withModifierUnlocks = (options = {}) => {
+    if (!isMultiRoundMode?.value || typeof getAllowedModifierKeys !== 'function') {
+      return options;
+    }
+
+    const unlockedKeys = getAllowedModifierKeys('tile');
+    if (!Array.isArray(unlockedKeys) || !unlockedKeys.length) {
+      return options;
+    }
+
+    const allowedModifierKeys = Array.isArray(options.allowedModifierKeys)
+      ? options.allowedModifierKeys.filter((key) => unlockedKeys.includes(key))
+      : unlockedKeys;
+
+    return {
+      ...options,
+      allowedModifierKeys
+    };
+  };
+  const getTutorialPlan = (phase) => {
+    if (typeof getTutorialTilePlan !== 'function') {
+      return {};
+    }
+
+    return getTutorialTilePlan({
+      phase,
+      turnCount: getTurnCount(),
+      multiRoundWordsPlayedThisRound: multiRoundWordsPlayedThisRound.value
+    }) || {};
+  };
   const createTestingHands = () => {
-    const boonKeys = Object.entries(CARD_DEFINITIONS)
-      .filter(([, definition]) => definition.kind === 'boon')
+    const trayModifierKeys = Object.entries(CARD_DEFINITIONS)
+      .filter(([, definition]) => definition.kind === 'trayModifier')
       .map(([key]) => key);
     const attackKeys = Object.entries(CARD_DEFINITIONS)
       .filter(([, definition]) => definition.kind === 'attack')
       .map(([key]) => key);
+    const tacticKeys = Object.entries(CARD_DEFINITIONS)
+      .filter(([, definition]) => definition.kind === 'tactic')
+      .map(([key]) => key);
 
     return {
       host: {
-        boons: createCards(boonKeys),
-        attacks: createCards(attackKeys)
+        trayModifiers: createCards(trayModifierKeys),
+        attacks: createCards(attackKeys),
+        tactics: createCards(tacticKeys)
       },
       opponent: {
-        boons: createCards(boonKeys),
-        attacks: createCards(attackKeys)
+        trayModifiers: createCards(trayModifierKeys),
+        attacks: createCards(attackKeys),
+        tactics: createCards(tacticKeys)
       }
     };
   };
 
   const bothSidesReachedWinningScore = () => {
-    return playerScores.value.host >= WINNING_SCORE && playerScores.value.opponent >= WINNING_SCORE;
+    const winningScore = getWinningScore();
+    return playerScores.value.host >= winningScore && playerScores.value.opponent >= winningScore;
   };
   const overtimePendingSide = ref(null);
   const overtimeFinalWordSubmitted = ref(false);
 
   const overtimeTrailingSide = () => {
-    const hostAtGoal = playerScores.value.host >= WINNING_SCORE;
-    const opponentAtGoal = playerScores.value.opponent >= WINNING_SCORE;
+    const winningScore = getWinningScore();
+    const hostAtGoal = playerScores.value.host >= winningScore;
+    const opponentAtGoal = playerScores.value.opponent >= winningScore;
 
-    if (!overtimeEnabled.value || isTimedSoloMode.value || overtimeFinalWordSubmitted.value) {
+    if (!overtimeEnabled.value || isTimedSoloMode.value || isMultiRoundMode?.value || overtimeFinalWordSubmitted.value) {
       return null;
     }
 
@@ -119,7 +224,7 @@ export const useSinglePlayerGame = ({
   };
 
   const updateOvertimeStateAfterSubmit = (side) => {
-    if (!overtimeEnabled.value || isTimedSoloMode.value || overtimeFinalWordSubmitted.value) {
+    if (!overtimeEnabled.value || isTimedSoloMode.value || isMultiRoundMode?.value || overtimeFinalWordSubmitted.value) {
       return;
     }
 
@@ -130,8 +235,9 @@ export const useSinglePlayerGame = ({
       return;
     }
 
-    const hostAtGoal = playerScores.value.host >= WINNING_SCORE;
-    const opponentAtGoal = playerScores.value.opponent >= WINNING_SCORE;
+    const winningScore = getWinningScore();
+    const hostAtGoal = playerScores.value.host >= winningScore;
+    const opponentAtGoal = playerScores.value.opponent >= winningScore;
     if (hostAtGoal === opponentAtGoal) {
       return;
     }
@@ -140,15 +246,16 @@ export const useSinglePlayerGame = ({
   };
 
   const gameEnded = () => {
-    if (isTimedSoloMode.value) {
-      return playerScores.value.host >= WINNING_SCORE || playerScores.value.opponent >= WINNING_SCORE;
+    const winningScore = getWinningScore();
+    if (isTimedSoloMode.value || isMultiRoundMode?.value) {
+      return playerScores.value.host >= winningScore || playerScores.value.opponent >= winningScore;
     }
 
     if (overtimeEnabled.value) {
       return overtimeFinalWordSubmitted.value;
     }
 
-    return playerScores.value.host >= WINNING_SCORE || playerScores.value.opponent >= WINNING_SCORE || bothSidesReachedWinningScore();
+    return playerScores.value.host >= winningScore || playerScores.value.opponent >= winningScore || bothSidesReachedWinningScore();
   };
 
   const ensureSinglePlayerState = () => {
@@ -156,6 +263,31 @@ export const useSinglePlayerGame = ({
       submissionPauseOwner.value = null;
 
       if (isTestingMode) {
+        if (isMultiRoundMode?.value) {
+          playerTiles.value = {
+            host: createTestingRack('host', playerScores.value, {
+              modifierProfile: modifierProfile(),
+              includeAllModifiers: true,
+              personalModifierEffects: getPersonalModifierEffects(),
+              roundModifierEffects: getRoundModifierEffects()
+            }),
+            opponent: []
+          };
+          rackClears.value = {
+            host: 100,
+            opponent: 0
+          };
+          playerCards.value = {
+            host: createTestingHands().host,
+            opponent: {
+              trayModifiers: [],
+              attacks: [],
+              tactics: []
+            }
+          };
+          return;
+        }
+
         playerTiles.value = createTestingOpeningRackPair(playerScores.value, {
           modifierProfile: modifierProfile(),
           includeAllModifiers: true
@@ -165,6 +297,38 @@ export const useSinglePlayerGame = ({
           opponent: 100
         };
         playerCards.value = createTestingHands();
+        return;
+      }
+
+      if (isMultiRoundMode?.value) {
+        const tutorialPlan = getTutorialPlan('opening');
+        playerTiles.value = {
+            host: createRack('host', playerScores.value, withModifierUnlocks({
+            modifierProfile: modifierProfile(),
+            personalModifierEffects: getPersonalModifierEffects(),
+            roundModifierEffects: getRoundModifierEffects(),
+            phase: 'opening',
+            turnCount: getTurnCount(),
+            ...tutorialPlan
+          })),
+          opponent: []
+        };
+        rackClears.value = {
+          host: 2,
+          opponent: 0
+        };
+        playerCards.value = {
+          host: {
+            trayModifiers: tutorialPlan.suppressStartingCards ? [] : drawCardsForSide('trayModifier', 1, 'host'),
+            attacks: [],
+            tactics: []
+          },
+          opponent: {
+            trayModifiers: [],
+            attacks: [],
+            tactics: []
+          }
+        };
         return;
       }
 
@@ -178,20 +342,21 @@ export const useSinglePlayerGame = ({
       };
       playerCards.value = {
         host: {
-          boons: drawCards('boon', 1),
-          attacks: shouldDrawAttacks() ? drawCards('attack', 1, {
-            deck: attackDeck(),
-            side: 'host',
+          trayModifiers: drawCardsForSide('trayModifier', 1, 'host'),
+          attacks: shouldDrawAttacks() ? drawCardsForSide('attack', 1, 'host', {
+            scores: playerScores.value
+          }) : [],
+          tactics: shouldDrawTactics() ? drawCardsForSide('tactic', 1, 'host', {
+            deck: tacticDeck(),
             scores: playerScores.value
           }) : []
         },
         opponent: {
-          boons: drawCards('boon', 1),
-          attacks: botEnabled.value ? drawCards('attack', 1, {
-            deck: attackDeck(),
-            side: 'opponent',
+          trayModifiers: drawCardsForSide('trayModifier', 1, 'opponent'),
+          attacks: botEnabled.value ? drawCardsForSide('attack', 1, 'opponent', {
             scores: playerScores.value
-          }) : []
+          }) : [],
+          tactics: []
         }
       };
     }
@@ -209,12 +374,14 @@ export const useSinglePlayerGame = ({
 
     playerTiles.value = {
       ...playerTiles.value,
-      opponent: createRack('opponent', playerScores.value, {
+      opponent: createRack('opponent', playerScores.value, withModifierUnlocks({
         mode: 'clear',
         currentTiles: botTiles,
         modifierProfile: modifierProfile(),
+        personalModifierEffects: getPersonalModifierEffects(),
+        roundModifierEffects: getRoundModifierEffects(),
         turnCount: getTurnCount()
-      })
+      }))
     };
 
     return true;
@@ -233,7 +400,12 @@ export const useSinglePlayerGame = ({
     }
 
     const botTiles = playerTiles.value.opponent || [];
-    const botWord = getBotWord(botTiles, [
+    const botTilesForScoring = applyRackManipulationEffects(botTiles, {
+      side: 'opponent',
+      scores: playerScores.value,
+      personalModifierEffects: getPersonalModifierEffects()
+    });
+    const botWord = getBotWord(botTilesForScoring, [
       ...wordHistory.value.host,
       ...wordHistory.value.opponent
     ], botDifficulty.value);
@@ -244,7 +416,7 @@ export const useSinglePlayerGame = ({
     }
 
     const normalizedBotWord = botWord.toUpperCase();
-    const selectedBotTiles = getTilesForWord(botTiles, normalizedBotWord);
+    const selectedBotTiles = getTilesForWord(botTilesForScoring, normalizedBotWord);
     if (!selectedBotTiles.length || selectedBotTiles.length < MIN_WORD_LENGTH) {
       clearBotRack(botTiles);
       return;
@@ -257,7 +429,8 @@ export const useSinglePlayerGame = ({
     const botIdlePenalty = getIdleScorePenalty(botTiles, selectedBotTiles.map((tile) => tile.id));
     const botScoreDelta = botScoreDetails.total - botIdlePenalty;
     const grantedResources = getResourceGrants(selectedBotTiles, {
-      includeAttacks: shouldDrawAttacks()
+      includeAttacks: true,
+      includeTactics: false
     });
 
     submittedWords.value = {
@@ -293,28 +466,27 @@ export const useSinglePlayerGame = ({
     playerCards.value = {
       host: playerCards.value.host,
       opponent: {
-        boons: [
-          ...playerCards.value.opponent.boons,
-          ...drawCards('boon', grantedResources.boons)
+        trayModifiers: [
+          ...playerCards.value.opponent.trayModifiers,
+          ...drawCardsForSide('trayModifier', grantedResources.trayModifiers, 'opponent')
         ],
         attacks: [
           ...playerCards.value.opponent.attacks,
-          ...drawCards('attack', grantedResources.attacks, {
-            deck: attackDeck(),
-            side: 'opponent',
+          ...drawCardsForSide('attack', grantedResources.attacks, 'opponent', {
             scores: playerScores.value
           })
-        ]
+        ],
+        tactics: playerCards.value.opponent.tactics || []
       }
     };
 
     playerTiles.value = {
       host: playerTiles.value.host,
-      opponent: refillTiles(botTiles, selectedBotTiles.map((tile) => tile.id), 'opponent', playerScores.value, {
+      opponent: refillTiles(botTiles, selectedBotTiles.map((tile) => tile.id), 'opponent', playerScores.value, withModifierUnlocks({
         modifierProfile: modifierProfile(),
         phase: 'submit',
         turnCount: getTurnCount()
-      })
+      }))
     };
     if (submissionPauseOwner.value === 'opponent') {
       submissionPauseOwner.value = null;
@@ -328,15 +500,21 @@ export const useSinglePlayerGame = ({
     }
 
     window.clearTimeout(botLoopId);
+    window.clearTimeout(botSubmitDelayId);
     botLoopId = window.setTimeout(() => {
-      submitBotWord();
-      scheduleBotLoop();
+      onBotPreparing?.();
+      botSubmitDelayId = window.setTimeout(() => {
+        submitBotWord();
+        scheduleBotLoop();
+      }, 650);
     }, BOT_DELAYS[botDifficulty.value] || BOT_DELAYS.normal);
   };
 
   const stopBotLoop = () => {
     window.clearTimeout(botLoopId);
+    window.clearTimeout(botSubmitDelayId);
     botLoopId = null;
+    botSubmitDelayId = null;
   };
 
   const startBotLoop = () => {
@@ -349,7 +527,7 @@ export const useSinglePlayerGame = ({
     scheduleBotLoop();
   };
 
-  const submitSinglePlayerWord = (word) => {
+  const submitSinglePlayerWord = (word, options = {}) => {
     //
     ensureSinglePlayerState();
     if (submissionPauseOwner.value === 'opponent') {
@@ -360,12 +538,18 @@ export const useSinglePlayerGame = ({
     const selectedTiles = selectedTilesForCurrentSide.value;
     const scoreDetails = getWordScoreDetails(selectedTiles, {
       side: 'host',
-      scores: playerScores.value
+      scores: playerScores.value,
+      personalModifierEffects: getPersonalModifierEffects(),
+      roundModifierEffects: getRoundModifierEffects(),
+      wordElapsedSeconds: options.wordElapsedSeconds
     });
-    const idlePenalty = getIdleScorePenalty(playerTiles.value.host, selectedTiles.map((tile) => tile.id));
+    const idlePenalty = getIdleScorePenalty(playerTiles.value.host, selectedTiles.map((tile) => tile.id), {
+      roundModifierEffects: getRoundModifierEffects()
+    });
     const scoreDelta = scoreDetails.total - idlePenalty;
     const grantedResources = getResourceGrants(selectedTiles, {
-      includeAttacks: shouldDrawAttacks()
+      includeAttacks: shouldDrawAttacks(),
+      includeTactics: shouldDrawTactics()
     });
 
     submittedWords.value = {
@@ -381,6 +565,9 @@ export const useSinglePlayerGame = ({
       }, ...wordHistory.value.host],
       opponent: wordHistory.value.opponent
     };
+    if (isMultiRoundMode?.value) {
+      multiRoundWordsPlayedThisRound.value += 1;
+    }
 
     playerScores.value = {
       host: playerScores.value.host + scoreDelta,
@@ -400,15 +587,20 @@ export const useSinglePlayerGame = ({
     };
     playerCards.value = {
       host: {
-        boons: [
-          ...playerCards.value.host.boons,
-          ...drawCards('boon', grantedResources.boons)
+        trayModifiers: [
+          ...playerCards.value.host.trayModifiers,
+          ...drawCardsForSide('trayModifier', grantedResources.trayModifiers, 'host')
         ],
         attacks: [
           ...playerCards.value.host.attacks,
-          ...drawCards('attack', grantedResources.attacks, {
-            deck: attackDeck(),
-            side: 'host',
+          ...drawCardsForSide('attack', grantedResources.attacks, 'host', {
+            scores: playerScores.value
+          })
+        ],
+        tactics: [
+          ...(playerCards.value.host.tactics || []),
+          ...drawCardsForSide('tactic', grantedResources.tactics, 'host', {
+            deck: tacticDeck(),
             scores: playerScores.value
           })
         ]
@@ -416,13 +608,17 @@ export const useSinglePlayerGame = ({
       opponent: playerCards.value.opponent
     };
 
+    const tutorialPlan = getTutorialPlan('submit');
     playerTiles.value = {
       
-      host: refillTiles(playerTiles.value.host, selectedTiles.map((tile) => tile.id), 'host', playerScores.value, {
+      host: refillTiles(playerTiles.value.host, selectedTiles.map((tile) => tile.id), 'host', playerScores.value, withModifierUnlocks({
         modifierProfile: modifierProfile(),
+        personalModifierEffects: getPersonalModifierEffects(),
+        roundModifierEffects: getRoundModifierEffects(),
         phase: 'submit',
-        turnCount: getTurnCount()
-      }),
+        turnCount: getTurnCount(),
+        ...tutorialPlan
+      })),
       opponent: playerTiles.value.opponent
     };
 
@@ -434,6 +630,11 @@ export const useSinglePlayerGame = ({
     localMessage.value = idlePenalty > 0
       ? `Submitted ${word} for ${scoreDelta} pts after a ${idlePenalty} pt burn penalty.`
       : `Submitted ${word} for ${scoreDelta} pts.`;
+    onTutorialTurnAdvanced?.({
+      phase: 'submit',
+      turnCount: getTurnCount(),
+      multiRoundWordsPlayedThisRound: multiRoundWordsPlayedThisRound.value
+    });
     return true;
   };
 
@@ -452,12 +653,13 @@ export const useSinglePlayerGame = ({
 
     playerTiles.value = {
       ...playerTiles.value,
-      [side]: createRack(side, playerScores.value, {
+      [side]: createRack(side, playerScores.value, withModifierUnlocks({
         mode: 'clear',
         currentTiles: playerTiles.value[side],
         modifierProfile: modifierProfile(),
+        personalModifierEffects: getPersonalModifierEffects(),
         turnCount: getTurnCount()
-      })
+      }))
     };
 
     clearSelectionForSide(side);
@@ -465,11 +667,83 @@ export const useSinglePlayerGame = ({
     return true;
   };
 
-  const useSinglePlayerBoon = (side, cardId, tileId) => {
-    const hand = playerCards.value[side]?.boons || [];
+  const checkBotWin = (playerScore, botScore, botMode, botDifficulty) => {
+    console.log('CHECK!!'+ botMode)
+    if(!botMode) return botDifficulty;
+    console.log('isBot')
+    if (botDifficulty === BOT_DIFFICULTIES.HARD) return botDifficulty;
+    console.log('notHard')
+    const storedBotDifficulty = localStorage.getItem('botDefaultDifficulty') ?? BOT_DIFFICULTIES.EASY;
+    console.log('old'+storedBotDifficulty)
+    if(playerScore > botScore){
+      if(storedBotDifficulty === BOT_DIFFICULTIES.EASY){
+        const newBotDifficulty = BOT_DIFFICULTIES.NORMAL;
+        localStorage.setItem('botDefaultDifficulty', newBotDifficulty);
+        console.log('new'+ newBotDifficulty)
+        return newBotDifficulty;
+      }
+      if(storedBotDifficulty === BOT_DIFFICULTIES.NORMAL){
+        const newBotDifficulty = BOT_DIFFICULTIES.HARD
+        console.log('new'+ newBotDifficulty)
+        localStorage.setItem('botDefaultDifficulty', newBotDifficulty);
+        return newBotDifficulty;
+      }
+    }
+    return botDifficulty
+  }
+
+
+  const resetSinglePlayerRound = (side = 'host') => {
+    submissionPauseOwner.value = null;
+    if (isMultiRoundMode?.value) {
+      multiRoundWordsPlayedThisRound.value = 0;
+    }
+
+    const tutorialPlan = getTutorialPlan('round-start');
+    const nextRack = createRack(side, playerScores.value, withModifierUnlocks({
+      modifierProfile: modifierProfile(),
+      personalModifierEffects: getPersonalModifierEffects(),
+      roundModifierEffects: getRoundModifierEffects(),
+      turnCount: getTurnCount(),
+      ...tutorialPlan
+    }));
+
+    playerTiles.value = {
+      ...playerTiles.value,
+      [side]: nextRack,
+      ...(isMultiRoundMode?.value ? { opponent: [] } : {})
+    };
+    const nextRackClears = isMultiRoundMode?.value
+      ? (rackClears.value[side] ?? 2)
+      : 2;
+    rackClears.value = {
+      ...rackClears.value,
+      [side]: nextRackClears,
+      ...(isMultiRoundMode?.value ? { opponent: 0 } : {})
+    };
+    if (!isMultiRoundMode?.value) {
+      playerCards.value = {
+        ...playerCards.value,
+        [side]: {
+          trayModifiers: drawCardsForSide('trayModifier', 1, side),
+          attacks: shouldDrawAttacks() ? drawCardsForSide('attack', 1, side, {
+            scores: playerScores.value
+          }) : [],
+          tactics: shouldDrawTactics() ? drawCardsForSide('tactic', 1, side, {
+            deck: tacticDeck(),
+            scores: playerScores.value
+          }) : []
+        }
+      };
+    }
+    return true;
+  };
+
+  const useSinglePlayerTrayModifier = (side, cardId, tileId) => {
+    const hand = playerCards.value[side]?.trayModifiers || [];
     const card = hand.find((entry) => entry.id === cardId);
     if (!card) {
-      localMessage.value = 'That boon is no longer available.';
+      localMessage.value = 'That tray modifier is no longer available.';
       return false;
     }
 
@@ -478,14 +752,17 @@ export const useSinglePlayerGame = ({
         ...playerCards.value,
         [side]: {
           ...playerCards.value[side],
-          boons: keepTestingHand(hand, cardId)
+          trayModifiers: keepTestingHand(hand, cardId)
         }
       };
+
+      // console.log('player' + JSON.stringify(playerTiles.value))
 
       playerTiles.value = {
         ...playerTiles.value,
         [side]: playerTiles.value[side].map((entry) => {
-          if (!CARD_DEFINITIONS[entry.status] || !['zeroTile', 'mustuse', 'locked3', 'ghostTile', 'burningTile'].includes(entry.status)) {
+          const tiles = BAD_TILES; 
+          if (!tiles.includes(entry.status)) {
             return entry;
           }
 
@@ -498,7 +775,7 @@ export const useSinglePlayerGame = ({
 
     const tile = playerTiles.value[side]?.find((entry) => entry.id === tileId);
     if (!tile) {
-      localMessage.value = 'That tile cannot take a boon.';
+      localMessage.value = 'That tile cannot take a tray modifier.';
       return false;
     }
 
@@ -507,13 +784,14 @@ export const useSinglePlayerGame = ({
         ...playerCards.value,
         [side]: {
           ...playerCards.value[side],
-          boons: keepTestingHand(hand, cardId)
+          trayModifiers: keepTestingHand(hand, cardId)
         }
       };
-      const nextTiles = replaceSingleTile(playerTiles.value[side], tileId, side, playerScores.value, {
+      const nextTiles = replaceSingleTile(playerTiles.value[side], tileId, side, playerScores.value, withModifierUnlocks({
         modifierProfile: modifierProfile(),
+        personalModifierEffects: getPersonalModifierEffects(),
         turnCount: getTurnCount()
-      });
+      }));
       const replacementTile = nextTiles.find((entry) => entry.id !== tileId && !playerTiles.value[side].some((tile) => tile.id === entry.id));
       playerTiles.value = {
         ...playerTiles.value,
@@ -524,9 +802,53 @@ export const useSinglePlayerGame = ({
         replacementTileId: replacementTile?.id || null
       };
     }
+   if (card.effectType === 'change_letter') {
+    playerCards.value = {
+      ...playerCards.value,
+      [side]: {
+        ...playerCards.value[side],
+        trayModifiers: keepTestingHand(hand, cardId)
+      }
+    };
+
+    const nextTiles = playerTiles.value[side].map((tile) => {
+      if (tile.id !== tileId) return tile;
+
+      const replacementTile = replaceSingleTile(
+        playerTiles.value[side],
+        tileId,
+        side,
+        playerScores.value,
+        withModifierUnlocks({
+          modifierProfile: modifierProfile(),
+          personalModifierEffects: getPersonalModifierEffects(),
+          turnCount: getTurnCount()
+        })
+      ).find((entry) => entry.id !== tileId && !playerTiles.value[side].some((existingTile) => existingTile.id === entry.id));
+
+      return {
+        ...tile,
+        letter: replacementTile?.letter || tile.letter
+      };
+      });
+
+      playerTiles.value = {
+        ...playerTiles.value,
+        [side]: nextTiles
+      };
+
+      return {
+        success: true,
+        replacementTileId: tileId
+      };
+    }
 
     if (tile.locked) {
-      localMessage.value = 'That tile cannot take a boon.';
+      localMessage.value = 'That tile cannot take a tray modifier.';
+      return false;
+    }
+    if (tile.status === "mustuse") {
+      localMessage.value = 'That tile cannot take a tray modifier.';
       return false;
     }
 
@@ -534,17 +856,18 @@ export const useSinglePlayerGame = ({
       ...playerCards.value,
       [side]: {
         ...playerCards.value[side],
-        boons: keepTestingHand(hand, cardId)
+        trayModifiers: keepTestingHand(hand, cardId)
       }
     };
 
     if (card.effectType === 'isolate_tile') {
       playerTiles.value = {
         ...playerTiles.value,
-        [side]: rerollRackExceptTile(playerTiles.value[side], tileId, side, playerScores.value, {
+        [side]: rerollRackExceptTile(playerTiles.value[side], tileId, side, playerScores.value, withModifierUnlocks({
           modifierProfile: modifierProfile(),
+          personalModifierEffects: getPersonalModifierEffects(),
           turnCount: getTurnCount()
-        })
+        }))
       };
 
       return { success: true };
@@ -558,17 +881,28 @@ export const useSinglePlayerGame = ({
     return { success: true };
   };
 
-  const useSinglePlayerAttack = (side, cardId) => {
+  const useSinglePlayerActionCard = (side, cardId, kind = 'attack') => {
     if (overtimeTrailingSide()) {
-      localMessage.value = 'Overtime only allows boons.';
+      localMessage.value = 'Overtime only allows tray modifiers.';
       return false;
     }
 
     const opponentSide = side === 'host' ? 'opponent' : 'host';
-    const hand = playerCards.value[side]?.attacks || [];
+    const handKey = kind === 'tactic' ? 'tactics' : 'attacks';
+    const cardTypeLabel = kind === 'tactic' ? 'tactic' : 'attack';
+    const hand = playerCards.value[side]?.[handKey] || [];
     const card = hand.find((entry) => entry.id === cardId);
+    const restoreAttackCard = () => {
+      playerCards.value = {
+        ...playerCards.value,
+        [side]: {
+          ...playerCards.value[side],
+          [handKey]: hand
+        }
+      };
+    };
     if (!card) {
-      localMessage.value = 'That attack is no longer available.';
+      localMessage.value = `That ${cardTypeLabel} is no longer available.`;
       return false;
     }
 
@@ -581,9 +915,75 @@ export const useSinglePlayerGame = ({
       ...playerCards.value,
       [side]: {
         ...playerCards.value[side],
-        attacks: keepTestingHand(hand, cardId)
+        [handKey]: keepTestingHand(hand, cardId)
       }
     };
+
+    if (card.multiRoundOnly && !isMultiRoundMode?.value) {
+      localMessage.value = `That ${cardTypeLabel} only works in multi-round.`;
+      restoreAttackCard();
+      return false;
+    }
+
+    if (card.effectType === 'gain_rack_clear') {
+      rackClears.value = {
+        ...rackClears.value,
+        [side]: (rackClears.value[side] || 0) + (card.amount || 1)
+      };
+
+      return {
+        success: true,
+        message: `Gained ${card.amount || 1} rack clear.`
+      };
+    }
+
+    if (card.effectType === 'reroll_next_round_modifier') {
+      const nextRound = onMultiRoundRerollNextRoundModifiers?.();
+      if (!nextRound) {
+        localMessage.value = 'There is no next round to reroll.';
+        restoreAttackCard();
+        return false;
+      }
+
+      const rolledModifierLabels = (nextRound.resolvedModifierKeys || [])
+        .map((modifierKey) => getRoundModifierDefinition(modifierKey)?.label || modifierKey)
+        .filter(Boolean);
+
+      return {
+        success: true,
+        message: rolledModifierLabels.length
+          ? `Rerolled next round: ${rolledModifierLabels.join(', ')}.`
+          : 'Rerolled next round: no modifiers.'
+      };
+    }
+
+    if (card.effectType === 'reroll_personal_modifier_rewards') {
+      const choices = onMultiRoundRerollRewardChoices?.();
+      if (!choices?.length) {
+        localMessage.value = 'There are no rewards to reroll.';
+        restoreAttackCard();
+        return false;
+      }
+
+      return {
+        success: true,
+        message: 'Rerolled personal modifier rewards.'
+      };
+    }
+
+    if (card.effectType === 'reduce_round_target') {
+      const result = onMultiRoundReduceTargetScore?.(card.amount || 10);
+      if (!result) {
+        localMessage.value = 'There is no round target to lower.';
+        restoreAttackCard();
+        return false;
+      }
+
+      return {
+        success: true,
+        message: `Round target lowered to ${result.newTarget}.`
+      };
+    }
 
     if (card.effectType === 'pause_time') {
       onTimedSoloPauseTime?.();
@@ -594,10 +994,23 @@ export const useSinglePlayerGame = ({
     }
 
     if (card.effectType === 'gain_time') {
-      onTimedSoloGainTime?.(card.amount || 10);
+      onTimedSoloGainTime?.(card.amount || 10, true);
       return {
         success: true,
         message: `Added ${card.amount || 10} seconds to the clock.`
+      };
+    }
+
+    if (card.effectType === 'reduce_bad_modifier_chance') {
+      const amount = Math.max(0, Number(card.amount) || 0.015);
+      cardModifierEffects.value = {
+        ...cardModifierEffects.value,
+        badChanceBonus: (cardModifierEffects.value.badChanceBonus || 0) - amount
+      };
+      return {
+        success: true,
+        // message: `Bad modifiers are ${Math.round(amount * 1000) / 10}% less likely.`
+        message: `Bad modifiers are a hair less likely to be pulled.`
       };
     }
 
@@ -611,13 +1024,7 @@ export const useSinglePlayerGame = ({
 
     if (card.modifier === 'mustuse' && playerTiles.value[opponentSide].some((tile) => tile.status === 'mustuse')) {
       localMessage.value = 'That board already has a MUST tile.';
-      playerCards.value = {
-        ...playerCards.value,
-        [side]: {
-          ...playerCards.value[side],
-          attacks: hand
-        }
-      };
+      restoreAttackCard();
       return false;
     }
 
@@ -625,13 +1032,7 @@ export const useSinglePlayerGame = ({
     const targetTiles = playerTiles.value[opponentSide].filter((tile) => !tile.locked && tile.status === 'normal');
     if (!targetTiles.length) {
       localMessage.value = 'No target tiles available.';
-      playerCards.value = {
-        ...playerCards.value,
-        [side]: {
-          ...playerCards.value[side],
-          attacks: hand
-        }
-      };
+      restoreAttackCard();
       return false;
     }
 
@@ -668,9 +1069,11 @@ export const useSinglePlayerGame = ({
     ensureSinglePlayerState,
     startBotLoop,
     stopBotLoop,
+    checkBotWin,
     clearSinglePlayerRack,
-    useSinglePlayerBoon,
-    useSinglePlayerAttack,
+    resetSinglePlayerRound,
+    useSinglePlayerTrayModifier,
+    useSinglePlayerActionCard,
     submitSinglePlayerWord,
     submissionPauseOwner,
     overtimePendingSide,

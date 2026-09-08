@@ -1,69 +1,92 @@
 let wavedashPromise = null;
 let wavedashInitStarted = false;
+const WAVEDASH_SDK_TIMEOUT_MS = 2500;
+const WAVEDASH_HOST_PATTERN = /(^|\.)wavedash(?:cdn)?\.com$/i;
+
+const isWavedashHost = () => {
+  return typeof window !== 'undefined' && WAVEDASH_HOST_PATTERN.test(window.location.hostname);
+};
+
+export const isWavedashEnabled = import.meta.env.VITE_WAVEDASH === 'true'
+  || isWavedashHost()
+  || (typeof window !== 'undefined' && Boolean(window.WavedashJS));
+
+const logWavedash = (...args) => {
+  if (isWavedashEnabled) {
+    console.log(...args);
+  }
+};
+
+const errorWavedash = (...args) => {
+  if (isWavedashEnabled) {
+    console.error(...args);
+  }
+};
 
 const clampProgress = (value) => {
   return Math.max(0, Math.min(1, Number.isFinite(value) ? value : 0));
 };
 
+const withTimeout = (promise, label, timeoutMs = WAVEDASH_SDK_TIMEOUT_MS) => {
+  let timeoutId;
+
+  const timeoutPromise = new Promise((resolve) => {
+    timeoutId = window.setTimeout(() => {
+      logWavedash(`[Wavedash] ${label} timed out after ${timeoutMs}ms`);
+      resolve(null);
+    }, timeoutMs);
+  });
+
+  return Promise.race([promise, timeoutPromise])
+    .finally(() => {
+      window.clearTimeout(timeoutId);
+    });
+};
+
 export const cleanupWavedashServiceWorkers = async () => {
-  if (typeof window === 'undefined' || !/(^|\.)wavedash\.com$/i.test(window.location.hostname)) {
+  if (typeof window === 'undefined' || !isWavedashHost()) {
     return;
   }
 
-  if (!('serviceWorker' in navigator)) {
-    return;
-  }
-
-  try {
-    const registrations = await navigator.serviceWorker.getRegistrations();
-    if (!registrations.length) {
-      console.log('[Wavedash] No service workers to unregister');
-      return;
-    }
-
-    await Promise.all(registrations.map((registration) => registration.unregister()));
-    console.log('[Wavedash] Unregistered service workers for Wavedash host', registrations.length);
-  } catch (error) {
-    console.error('[Wavedash] Failed to unregister service workers', error);
-  }
+  logWavedash('[Wavedash] Leaving Wavedash service workers intact');
 };
 
 const getWavedashPromise = () => {
   if (wavedashPromise !== null) {
-    console.log('[Wavedash] Reusing cached SDK promise');
+    logWavedash('[Wavedash] Reusing cached SDK promise');
     return wavedashPromise;
   }
 
   if (typeof window === 'undefined') {
-    console.log('[Wavedash] SDK unavailable outside the browser');
-    console.log('[Wavedash] SDK not detected in this environment');
+    logWavedash('[Wavedash] SDK unavailable outside the browser');
+    logWavedash('[Wavedash] SDK not detected in this environment');
     wavedashPromise = Promise.resolve(null);
     return wavedashPromise;
   }
 
   const injectedSdk = window.WavedashJS;
   if (!injectedSdk) {
-    console.log('[Wavedash] SDK not detected on window');
+    logWavedash('[Wavedash] SDK not detected on window');
     wavedashPromise = Promise.resolve(null);
     return wavedashPromise;
   }
 
   // `wavedash dev` injects a Promise, while uploaded builds may expose the SDK object directly.
   if (typeof injectedSdk.then === 'function') {
-    console.log('[Wavedash] SDK promise detected on window');
-    wavedashPromise = injectedSdk
+    logWavedash('[Wavedash] SDK promise detected on window');
+    wavedashPromise = withTimeout(injectedSdk, 'SDK promise')
       .then((sdk) => {
-        console.log('[Wavedash] SDK promise resolved');
+        logWavedash('[Wavedash] SDK promise resolved');
         return sdk || null;
       })
       .catch((error) => {
-        console.error('[Wavedash] SDK promise rejected', error);
+        errorWavedash('[Wavedash] SDK promise rejected', error);
         return null;
       });
     return wavedashPromise;
   }
 
-  console.log('[Wavedash] SDK object detected on window', {
+  logWavedash('[Wavedash] SDK object detected on window', {
     keys: Object.keys(injectedSdk)
   });
   wavedashPromise = Promise.resolve(injectedSdk);
@@ -71,35 +94,46 @@ const getWavedashPromise = () => {
 };
 
 export const updateWavedashLoadProgress = async (progress) => {
-  const sdk = await getWavedashPromise();
-  if (!sdk?.updateLoadProgressZeroToOne) {
-    console.log('[Wavedash] Skipping load progress update; API unavailable', progress);
+  const nextProgress = clampProgress(progress);
+
+  try {
+    const sdk = await getWavedashPromise();
+    if (!sdk?.updateLoadProgressZeroToOne) {
+      logWavedash('[Wavedash] Skipping load progress update; API unavailable', nextProgress);
+      return null;
+    }
+
+    logWavedash('[Wavedash] Updating load progress', nextProgress);
+    sdk.updateLoadProgressZeroToOne(nextProgress);
+    return sdk;
+  } catch (error) {
+    errorWavedash('[Wavedash] Failed to update load progress', nextProgress, error);
     return null;
   }
-
-  const nextProgress = clampProgress(progress);
-  console.log('[Wavedash] Updating load progress', nextProgress);
-  sdk.updateLoadProgressZeroToOne(nextProgress);
-  return sdk;
 };
 
 export const initWavedash = async ({ debug = false } = {}) => {
-  const sdk = await getWavedashPromise();
-  if (!sdk?.init) {
-    console.log('[Wavedash] Skipping init; API unavailable');
-    return sdk;
-  }
+  try {
+    const sdk = await getWavedashPromise();
+    if (!sdk?.init) {
+      logWavedash('[Wavedash] Skipping init; API unavailable');
+      return sdk;
+    }
 
-  if (wavedashInitStarted) {
-    console.log('[Wavedash] Skipping init; already started');
-    return sdk;
-  }
+    if (wavedashInitStarted) {
+      logWavedash('[Wavedash] Skipping init; already started');
+      return sdk;
+    }
 
-  wavedashInitStarted = true;
-  console.log('[Wavedash] Calling init()', { debug });
-  sdk.init({ debug });
-  console.log('[Wavedash] init() call finished');
-  return sdk;
+    wavedashInitStarted = true;
+    logWavedash('[Wavedash] Calling init()', { debug });
+    sdk.init({ debug });
+    logWavedash('[Wavedash] init() call finished');
+    return sdk;
+  } catch (error) {
+    errorWavedash('[Wavedash] init failed', error);
+    return null;
+  }
 };
 
 export const getWavedashSdk = async () => {

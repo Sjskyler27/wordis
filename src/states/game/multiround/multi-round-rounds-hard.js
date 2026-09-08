@@ -1,0 +1,241 @@
+import { isTestingMode } from '../testing.js';
+import { MULTI_ROUND_EXTRA_BACKGROUND_PALETTE_COUNT } from './multi-round-background-palettes.js';
+
+export const MULTI_ROUND_REWARD_TIERS = {
+  COMMON: 'common',
+  RARE: 'rare',
+  EPIC: 'epic'
+};
+
+export const MULTI_ROUND_MODIFIER_DIFFICULTIES = {
+  MICRO: 'micro',
+  EASY: 'easy',
+  MEDIUM: 'medium',
+  HARD: 'hard'
+};
+
+export const createRound = ({
+  id,
+  label,
+  targetScore,
+  timeSeconds,
+  isChallenge = false,
+  isFinalRound = false,
+  backgroundPalette = 'main',
+  modifierBudget = {},
+  rewardTiers = [MULTI_ROUND_REWARD_TIERS.COMMON],
+  startingScoreBonusMultiplier = 0.5,
+  chanceIncrease = {},
+  goodChanceIncrease = chanceIncrease.good || 0,
+  badChanceIncrease = chanceIncrease.bad || 0,
+  neutralChanceIncrease = chanceIncrease.neutral || 0
+}) => ({
+  id,
+  label,
+  targetScore: isTestingMode ? 45 : targetScore,
+  timeSeconds: isTestingMode ? 5 : timeSeconds,
+  isChallenge,
+  isFinalRound,
+  backgroundPalette,
+  modifierBudget,
+  rewardTiers,
+  startingScoreBonusMultiplier,
+  chanceIncrease: {
+    good: goodChanceIncrease || 0,
+    bad: badChanceIncrease || 0,
+    neutral: neutralChanceIncrease || 0
+  }
+});
+
+const defaultHardChanceIncreases = {
+  goodChanceIncrease: 0.003,
+  badChanceIncrease: 0.006,
+  neutralChanceIncrease: 0.001
+};
+
+export const HARD_MULTI_ROUND_ROUNDS = [
+  createRound({
+    ...defaultHardChanceIncreases,
+    id: 'round-1',
+    label: 'Round 1',
+    targetScore: 100,
+    timeSeconds: 90,
+    backgroundPalette: 'main',
+    modifierBudget: {},
+    rewardTiers: [MULTI_ROUND_REWARD_TIERS.COMMON]
+  }),
+  createRound({
+    ...defaultHardChanceIncreases,
+    id: 'round-2',
+    label: 'Round 2',
+    targetScore: 120,
+    timeSeconds: 95,
+    backgroundPalette: 'random-extra',
+    modifierBudget: {
+      [MULTI_ROUND_MODIFIER_DIFFICULTIES.EASY]: 1
+    },
+    rewardTiers: [MULTI_ROUND_REWARD_TIERS.COMMON]
+  }),
+  createRound({
+    ...defaultHardChanceIncreases,
+    id: 'round-3',
+    label: 'Challenge 1',
+    targetScore: 140,
+    timeSeconds: 105,
+    isChallenge: true,
+    modifierBudget: {
+      [MULTI_ROUND_MODIFIER_DIFFICULTIES.EASY]: 1,
+      [MULTI_ROUND_MODIFIER_DIFFICULTIES.MEDIUM]: 1
+    },
+    rewardTiers: [MULTI_ROUND_REWARD_TIERS.RARE]
+  }),
+  createRound({
+    ...defaultHardChanceIncreases,
+    id: 'round-4',
+    label: 'Round 4',
+    targetScore: 160,
+    timeSeconds: 110,
+    backgroundPalette: 0,
+    modifierBudget: {
+      [MULTI_ROUND_MODIFIER_DIFFICULTIES.MEDIUM]: 1
+    },
+    rewardTiers: [
+      MULTI_ROUND_REWARD_TIERS.COMMON,
+      MULTI_ROUND_REWARD_TIERS.RARE
+    ]
+  }),
+  createRound({
+    ...defaultHardChanceIncreases,
+    id: 'round-5',
+    label: 'Round 5',
+    targetScore: 180,
+    timeSeconds: 120,
+    backgroundPalette: 1,
+    modifierBudget: {
+      [MULTI_ROUND_MODIFIER_DIFFICULTIES.EASY]: 1,
+      [MULTI_ROUND_MODIFIER_DIFFICULTIES.MEDIUM]: 1
+    },
+    rewardTiers: [
+      MULTI_ROUND_REWARD_TIERS.COMMON,
+      MULTI_ROUND_REWARD_TIERS.RARE
+    ]
+  }),
+  createRound({
+    ...defaultHardChanceIncreases,
+    id: 'round-6',
+    label: 'Challenge 2',
+    targetScore: 190,
+    timeSeconds: 120,
+    isChallenge: true,
+    modifierBudget: {
+      [MULTI_ROUND_MODIFIER_DIFFICULTIES.MEDIUM]: 2
+    },
+
+  }),
+  createRound({
+    ...defaultHardChanceIncreases,
+    id: 'round-7',
+    label: 'Round 7',
+    targetScore: 150,
+    timeSeconds: 120,
+    backgroundPalette: 2,
+    modifierBudget: {
+      [MULTI_ROUND_MODIFIER_DIFFICULTIES.MEDIUM]: 1,
+      [MULTI_ROUND_MODIFIER_DIFFICULTIES.HARD]: 1
+    },
+    rewardTiers: [
+      MULTI_ROUND_REWARD_TIERS.RARE,
+      MULTI_ROUND_REWARD_TIERS.COMMON
+    ]
+  }),
+  createRound({
+    ...defaultHardChanceIncreases,
+    id: 'round-8',
+    label: 'Round 8',
+    targetScore: 180,
+    timeSeconds: 130,
+    backgroundPalette: 'random-extra',
+    modifierBudget: {
+      [MULTI_ROUND_MODIFIER_DIFFICULTIES.EASY]: 1,
+      [MULTI_ROUND_MODIFIER_DIFFICULTIES.HARD]: 1
+    },
+    rewardTiers: [
+      MULTI_ROUND_REWARD_TIERS.RARE,
+      MULTI_ROUND_REWARD_TIERS.EPIC
+    ]
+  }),
+  createRound({
+    ...defaultHardChanceIncreases,
+    id: 'round-9',
+    label: 'Challenge 3',
+    targetScore: 160,
+    timeSeconds: 140,
+    isChallenge: true,
+    modifierBudget: {
+      [MULTI_ROUND_MODIFIER_DIFFICULTIES.MEDIUM]: 1,
+      [MULTI_ROUND_MODIFIER_DIFFICULTIES.HARD]: 2
+    },
+    rewardTiers: [MULTI_ROUND_REWARD_TIERS.EPIC]
+  }),
+  createRound({
+    ...defaultHardChanceIncreases,
+    id: 'round-10',
+    label: 'Round 10',
+    targetScore: 210,
+    timeSeconds: 150,
+    backgroundPalette: 3,
+    modifierBudget: {
+      [MULTI_ROUND_MODIFIER_DIFFICULTIES.HARD]: 2
+    },
+    rewardTiers: [
+      MULTI_ROUND_REWARD_TIERS.RARE,
+      MULTI_ROUND_REWARD_TIERS.COMMON
+    ]
+  }),
+  createRound({
+    ...defaultHardChanceIncreases,
+    id: 'round-11',
+    label: 'Round 11',
+    targetScore: 250,
+    timeSeconds: 150,
+    backgroundPalette: 4,
+    modifierBudget: {
+      [MULTI_ROUND_MODIFIER_DIFFICULTIES.MEDIUM]: 2,
+      [MULTI_ROUND_MODIFIER_DIFFICULTIES.HARD]: 1
+    },
+    rewardTiers: [
+      MULTI_ROUND_REWARD_TIERS.RARE,
+      MULTI_ROUND_REWARD_TIERS.EPIC
+    ]
+  }),
+  createRound({
+    ...defaultHardChanceIncreases,
+    id: 'round-12',
+    label: 'Challenge 4',
+    targetScore: 250,
+    timeSeconds: 120,
+    isChallenge: true,
+    modifierBudget: {
+      [MULTI_ROUND_MODIFIER_DIFFICULTIES.HARD]: 3
+    },
+    rewardTiers: [MULTI_ROUND_REWARD_TIERS.EPIC]
+  }),
+  createRound({
+    ...defaultHardChanceIncreases,
+    id: 'round-13',
+    label: 'Final Challenge',
+    targetScore: 300,
+    timeSeconds: 180,
+    isChallenge: true,
+    isFinalRound: true,
+    modifierBudget: {
+      [MULTI_ROUND_MODIFIER_DIFFICULTIES.MEDIUM]: 1,
+      [MULTI_ROUND_MODIFIER_DIFFICULTIES.HARD]: 3
+    },
+    rewardTiers: []
+  })
+];
+
+export const MULTI_ROUND_ROUNDS = HARD_MULTI_ROUND_ROUNDS;
+export const MULTI_ROUND_RANDOM_EXTRA_PALETTE = 'random-extra';
+export const MULTI_ROUND_MAX_EXTRA_PALETTE_INDEX = MULTI_ROUND_EXTRA_BACKGROUND_PALETTE_COUNT - 1;

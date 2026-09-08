@@ -12,7 +12,7 @@ update app_background in build
 netlify attach github no variables needed yet
 railway attach github, set port 8080 and copy the websocket url for netlify 
 
-in netlify add VITE_WS_HOST new url and VITE_WS_PORT 8080
+in netlify add VITE_WS_HOST new url and VITE_WS_PORT 8080 VITE_PWA=true
 
 
 
@@ -64,6 +64,7 @@ to create mac exe
   npm run build:app
 it will build two apps, one for intel macs and one for apple silicon macs. intel is game-0.5.0.dmg apple is game-0.5.0-arm64.dmg
 run it to install 
+command option i to open debug in electron app
 
 # steam upload
 when first seting up steam you need a branch for both the windos and mac version
@@ -86,6 +87,8 @@ wavedash auth login
 create wavedash.toml with game id 
 swap env to prod
 wavedash build push 
+notes on wavedash, you need to make sure no other packages or services are installinga service worker the sdk is going to handle everything 
+
 # clean patches 
 keeping clean patches for the final build use 
 git rebase -i --root allows squashing commits

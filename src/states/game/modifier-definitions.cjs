@@ -16,8 +16,11 @@ const createModifierDefinitions = ({ bloodTilePositionValues }) => ({
     gold: {
       badge: 'x2',
       description: 'Doubles this tile as a word multiplier when used.',
+      includeInTutorial: true,
       effects: { wordMultiplier: 2 },
-      rarityWeight: 0.9,
+      rarityWeight: 0.19,
+      excludeFromTest: true,
+      rarityWeightModifiers: {whenOneIsInHand: -0.09},
       canApply: ({ baseScore }) => baseScore >= 3,
       animations: {
         onPull: 'gold-shine'
@@ -30,11 +33,12 @@ const createModifierDefinitions = ({ bloodTilePositionValues }) => ({
         badgeColor: '#8e4b00'
       }
     },
-    gainboon: {
-      badge: 'BOON',
-      description: 'Grants 1 boon card when this tile is used.',
-      effects: { grantBoon: 1 },
-      rarityWeight: 0.28,
+    gainTrayModifier: {
+      badge: 'TRAY',
+      description: 'Grants 1 tray modifier card when this tile is used.',
+      effects: { grantTrayModifier: 1 },
+      rarityWeight: 0.20,
+      canApply: ({ baseScore }) => baseScore <= 0, // disabled
       ui: {
         tileBackground: 'linear-gradient(180deg, #f6ffe1 0%, #b9e16b 72%, #6f9d24 100%)',
         tileShadow: 'inset 0 -4px 0 rgba(60, 92, 14, 0.24), 0 12px 20px rgba(45, 10, 24, 0.16), 0 0 0 1px rgba(209, 244, 131, 0.42)',
@@ -43,11 +47,12 @@ const createModifierDefinitions = ({ bloodTilePositionValues }) => ({
         badgeColor: '#537f18'
       }
     },
-    gainattack: {
+    gainAttack: {
       badge: 'ATK',
       description: 'Grants 1 attack card when this tile is used.',
       effects: { grantAttack: 1 },
-      rarityWeight: 0.28,
+      rarityWeight: 0.20,
+      canApply: ({ baseScore }) => baseScore <= 0, // disabled
       ui: {
         tileBackground: 'linear-gradient(180deg, #ffe8d9 0%, #ff9b6e 72%, #b64a1f 100%)',
         tileShadow: 'inset 0 -4px 0 rgba(116, 43, 12, 0.24), 0 12px 20px rgba(45, 10, 24, 0.18), 0 0 0 1px rgba(255, 190, 150, 0.42)',
@@ -56,14 +61,29 @@ const createModifierDefinitions = ({ bloodTilePositionValues }) => ({
         badgeColor: '#9c3f18'
       }
     },
+    gainTactic: {
+      badge: 'TAC',
+      description: 'Grants 1 tactic card when this tile is used.',
+      effects: { grantTactic: 1 },
+      rarityWeight: 0.20,
+      canApply: ({ baseScore }) => baseScore <= 0, // disabled
+      ui: {
+        tileBackground: 'linear-gradient(180deg, #e8f3ff 0%, #8fb5ff 72%, #3156b7 100%)',
+        tileShadow: 'inset 0 -4px 0 rgba(26, 55, 128, 0.24), 0 12px 20px rgba(45, 10, 24, 0.18), 0 0 0 1px rgba(165, 197, 255, 0.42)',
+        textColor: '#101f3f',
+        badgeBackground: 'rgba(233, 242, 255, 0.95)',
+        badgeColor: '#264f9f'
+      }
+    },
     wild: {
       description: 'Acts as any letter, but its tile score becomes -1.',
+      includeInTutorial: true,
       effects: {
          wild: true,
          setScore: -1,
          botPerformanceDelta: 0.28
         },
-      rarityWeight: 0.45,
+      rarityWeight: 0.35,
       ui: {
         tileBackground: 'linear-gradient(180deg, #fff6ff 0%, #d8c0ff 52%, #7f5cd4 100%)',
         tileShadow: 'inset 0 -4px 0 rgba(63, 36, 120, 0.24), 0 12px 20px rgba(38, 17, 62, 0.22), 0 0 0 1px rgba(226, 204, 255, 0.4)',
@@ -73,9 +93,30 @@ const createModifierDefinitions = ({ bloodTilePositionValues }) => ({
         hideBadge: true
       }
     },
+    royalPear: {
+      badge: 'PAIR',
+      description: 'Royal Pair tile. Use two Royal Pear tiles in one word to multiply the word by 3.',
+      effects: {
+        pairWordMultiplier: {
+          status: 'royalPear',
+          count: 2,
+          multiplier: 3
+        }
+      },
+      rarityWeight: .20,
+      rarityWeightModifiers: {whenOneIsInHand: +.30, capForAddingBonus: 2},
+      ui: {
+        tileBackground: 'linear-gradient(145deg, #d89cff 0%, #8f45df 28%, #4b147f 58%, #280648 100%)',
+        tileShadow: 'inset 0 -4px 0 rgba(46, 11, 86, 0.34), 0 14px 24px rgba(61, 18, 98, 0.28), 0 0 0 1px rgba(226, 179, 255, 0.44)',
+        textColor: '#fff8ff',
+        badgeBackground: 'rgba(255, 241, 255, 0.94)',
+        badgeColor: '#6d24b2'
+      }
+    },
     firsttile: {
       badge: '1st',
       description: 'Adds +10 if this tile is played in the first position.',
+      includeInTutorial: true,
       effects: { firstTileBonus: 10 },
       rarityWeight: 0.22,
       ui: {
@@ -86,13 +127,64 @@ const createModifierDefinitions = ({ bloodTilePositionValues }) => ({
         badgeColor: '#274577'
       }
     },
+    twinTile: {
+      badge: 'TWIN',
+      description: 'Scores +15 when this word contains another tile with the same letter.',
+      includeInTutorial: true,
+      effects: {
+        twinLetterBonus: 15
+      },
+      canApply: ({ letter, baseScore }) => (letter || '').length === 1 && baseScore <= 6,
+      rarityWeight: 0.24,
+      ui: {
+        tileBackground: 'linear-gradient(180deg, #ecfff7 0%, #83dfc2 52%, #2f8f86 100%)',
+        tileShadow: 'inset 0 -4px 0 rgba(19, 92, 82, 0.26), 0 12px 20px rgba(25, 65, 76, 0.2), 0 0 0 1px rgba(169, 255, 228, 0.42)',
+        textColor: '#102d30',
+        badgeBackground: 'rgba(235, 255, 248, 0.95)',
+        badgeColor: '#20776d'
+      }
+    },
+    glassTile: {
+      badge: 'GLS',
+      description: 'Scores +6, but cracks to 0 if it leaves the builder or changes positions before being played.',
+      effects: {
+        bonusScore: 6,
+        cracksInBuilder: true
+      },
+      canApply: ({ letter }) => (letter || '').length === 1,
+      rarityWeight: 0.20,
+      ui: {
+        tileBackground: 'linear-gradient(145deg, rgba(245, 255, 255, 0.14) 0%, rgba(166, 238, 255, 0.32) 42%, rgba(79, 166, 205, 0.26) 72%, rgba(33, 84, 126, 0.22) 100%)',
+        tileShadow: 'inset 0 -4px 0 rgba(36, 108, 147, 0.24), 0 12px 22px rgba(34, 84, 124, 0.22), 0 0 0 1px rgba(221, 255, 255, 0.58)',
+        textColor: '#102b42',
+        badgeBackground: 'rgba(239, 254, 255, 0.96)',
+        badgeColor: '#22688c'
+      }
+    },
+    cornucopiaTile: {
+      badge: 'CRN',
+      description: 'Scores +2 for each position after the first.',
+      effects: {
+        scorePerPositionPastFirst: 2
+      },
+      canApply: ({ letter }) => (letter || '').length === 1,
+      rarityWeight: 0.14,
+      ui: {
+        tileBackground: 'linear-gradient(180deg, #fff8dd 0%, #e9b65f 54%, #8c5428 100%)',
+        tileShadow: 'inset 0 -4px 0 rgba(94, 52, 23, 0.28), 0 12px 22px rgba(79, 43, 20, 0.2), 0 0 0 1px rgba(255, 224, 139, 0.46)',
+        textColor: '#2b1709',
+        badgeBackground: 'rgba(255, 246, 217, 0.96)',
+        badgeColor: '#8a4f16'
+      }
+    },
     bloodTile: {
       badge: 'BLD',
       description: 'Scores by position instead of face value. Later positions score higher.',
       effects: {
-        setScore: 0,
+        startWithHalfScoreRoundedDown: true,
         positionBonusByIndex: bloodTilePositionValues
       },
+      canApply: ({ baseScore }) => baseScore <= 0, // disabled
       rarityWeight: 0.36,
       ui: {
         tileBackground: 'radial-gradient(circle at 26% 24%, rgba(255, 125, 125, 0.96) 0%, rgba(255, 125, 125, 0.96) 11%, rgba(120, 15, 21, 0.94) 12%, rgba(120, 15, 21, 0.94) 26%, rgba(28, 7, 12, 0.98) 27%, rgba(28, 7, 12, 0.98) 44%, rgba(182, 20, 34, 0.96) 45%, rgba(182, 20, 34, 0.96) 62%, rgba(24, 6, 10, 0.98) 63%, rgba(24, 6, 10, 0.98) 100%)',
@@ -102,10 +194,84 @@ const createModifierDefinitions = ({ bloodTilePositionValues }) => ({
         badgeColor: '#ff9fa8'
       }
     },
+    shimmer: {
+      badge: 'SHMR',
+      description: 'Shimmer  tile. Its letter shifts every 8 seconds while in your rack and scores that letter +1.',
+      effects: {
+        bonusScore: 1,
+        shimmerIntervalMs: 8000
+      },
+      canApply: ({ letter }) => (letter || '').length === 1,
+      rarityWeight: 0.26,
+      ui: {
+        tileBackground: 'linear-gradient(160deg, #09121e 0%, #101529 28%, #2e1842 50%, #062d35 72%, #050912 100%)',
+        tileShadow: 'inset 0 -4px 0 rgba(1, 7, 16, 0.42), 0 12px 22px rgba(6, 12, 28, 0.3), 0 0 0 1px rgba(107, 246, 232, 0.28)',
+        textColor: '#f4fffb',
+        badgeBackground: 'rgba(215, 255, 248, 0.92)',
+        badgeColor: '#123444'
+      }
+    },
+    voidTile: {
+      badge: 'VOID',
+      description: 'Sets every other tile in the word to 0 and gives itself +12.',
+      effects: {
+        voidSelfBonus: 12
+      },
+      canApply: ({ letter }) => (letter || '').length === 1,
+      rarityWeight: 0.18,
+      ui: {
+        tileBackground: 'radial-gradient(circle at 50% 50%, #01030a 0%, #050816 42%, #10172a 68%, #02040c 100%)',
+        tileShadow: 'inset 0 -4px 0 rgba(0, 0, 0, 0.48), 0 12px 24px rgba(2, 4, 14, 0.34), 0 0 0 1px rgba(125, 156, 255, 0.22)',
+        textColor: '#f8fbff',
+        badgeBackground: 'rgba(8, 10, 22, 0.94)',
+        badgeColor: '#b7c9ff'
+      }
+    },
+    hourglassTile: {
+      badge: 'TIME',
+      description: 'Adds 5 seconds when played. Removes 5 seconds if left in your rack when you submit.',
+      effects: {
+        playedTimeDeltaSeconds: 5,
+        idleTimePenaltySeconds: 5
+      },
+      excludeFromTest: true,
+
+      canApply: ({ letter }) => (letter || '').length === 1,
+      rarityWeight: 0.20,
+      ui: {
+        tileBackground: 'linear-gradient(180deg, #fff7d6 0%, #d9ad54 48%, #6f4d2a 100%)',
+        tileShadow: 'inset 0 -4px 0 rgba(88, 55, 24, 0.32), 0 12px 22px rgba(80, 52, 28, 0.22), 0 0 0 1px rgba(255, 223, 154, 0.46)',
+        textColor: '#261909',
+        badgeBackground: 'rgba(255, 247, 220, 0.94)',
+        badgeColor: '#8a5a18'
+      }
+    },
+    waterTile: {
+      badge: 'H2O',
+      description: 'Reusable tile. Repeated uses split the same water between each cup.',
+      effects: {
+        reusableInBuilder: true,
+        waterStartsAt: 0.75
+      },
+      canApply: ({ letter }) => (letter || '').length === 1,
+      rarityWeight: 0.18,
+      ui: {
+        tileBackground: 'linear-gradient(180deg, rgba(246, 255, 255, 0.72) 0%, rgba(196, 239, 255, 0.58) 58%, rgba(102, 168, 214, 0.54) 100%)',
+        tileShadow: 'inset 0 -4px 0 rgba(38, 108, 150, 0.24), 0 12px 22px rgba(34, 96, 136, 0.18), 0 0 0 1px rgba(218, 252, 255, 0.62)',
+        textColor: '#11324d',
+        badgeBackground: 'rgba(234, 253, 255, 0.96)',
+        badgeColor: '#24779e'
+      }
+    },
     bankTile: {
-      badge: 'BANK',
-      description: 'Scores 0 when used, but gains +1 bonus score each turn it stays unused.',
-      effects: { setScore: 0, idleBonusScoreDelta: 1 },
+      badge: 'BNK',
+      description: 'Gains +1 bonus score each turn it stays unused.',
+      effects: { 
+        startWithHalfScoreRoundedUp: true,
+        idleBonusScoreDelta: 1
+      },
+            excludeFromTest: true,
+
       rarityWeight: 0.18,
       animations: {
         onNewTurn: 'emerald'
@@ -118,6 +284,25 @@ const createModifierDefinitions = ({ bloodTilePositionValues }) => ({
         badgeColor: '#0a8b63'
       }
     },
+    leecherTile: {
+      badge: 'LeCH',
+      description: 'Sets adjacent rack tiles to 0 and absorbs their values into this tile until it is played.',
+      effects: {
+        leechesAdjacentRackScores: true,
+        leechesAdjacentWhileSelected: true
+      },
+      canApply: ({ letter, baseScore }) => (letter || '').length === 1 && baseScore <= 6,
+      rarityWeight: 0.16,
+            excludeFromTest: true,
+
+      ui: {
+        tileBackground: 'linear-gradient(180deg, #e2ffcf 0%, #83d65a 48%, #276c35 100%)',
+        tileShadow: 'inset 0 -4px 0 rgba(19, 84, 35, 0.34), 0 12px 22px rgba(23, 84, 46, 0.24), 0 0 0 1px rgba(184, 255, 150, 0.42)',
+        textColor: '#092817',
+        badgeBackground: 'rgba(231, 255, 218, 0.94)',
+        badgeColor: '#216c32'
+      }
+    },
     yinYang: {
       badge: 'YIN',
       description: 'Changes value by the score gap: stronger when behind, weaker when ahead.',
@@ -128,6 +313,8 @@ const createModifierDefinitions = ({ bloodTilePositionValues }) => ({
           tied: 0
         }
       },
+            excludeFromTest: true,
+
       rarityWeight: 0.32,
       noSinglePlayer: true,
       ui: {
@@ -139,7 +326,10 @@ const createModifierDefinitions = ({ bloodTilePositionValues }) => ({
       }
     },
     zeroTile: {
+      badge: 'ZERO',
+      excludeFromTest: true,
       description: 'This tile always scores 0.',
+      includeInTutorial: true,
       effects: { setScore: 0 },
       rarityWeight: 0.95,
       canApply: ({ baseScore }) => baseScore <= 4,
@@ -156,6 +346,7 @@ const createModifierDefinitions = ({ bloodTilePositionValues }) => ({
       description: 'You must include this tile in your submitted word.',
       effects: { required: true, botPerformanceDelta: -0.9 },
       rarityWeight: 0.6,
+      excludeFromTest: true,
       canApply: ({ baseScore }) => baseScore <= 3,
       ui: {
         tileBackground: 'linear-gradient(180deg, #ffdfe2 0%, #ff8b97 72%, #b72848 100%)',
@@ -173,6 +364,8 @@ const createModifierDefinitions = ({ bloodTilePositionValues }) => ({
       animations: {
         onNewTurn: 'unlock-dissolve'
       },
+            excludeFromTest: true,
+
       ui: {
         tileBackground: 'linear-gradient(180deg, #3b3343 0%, #211926 72%, #100b14 100%)',
         tileShadow: 'inset 0 -4px 0 rgba(0, 0, 0, 0.4), 0 12px 20px rgba(10, 5, 12, 0.34)',
@@ -185,9 +378,10 @@ const createModifierDefinitions = ({ bloodTilePositionValues }) => ({
     ghostTile: {
       badge: 'GHST',
       description: 'Worth +3, but disappears if you leave it unused.',
+      includeInTutorial: true,
       effects: { fadesIfUnused: true, bonusScore: 3 },
       rarityWeight: 0.52,
-      canApply: ({ baseScore }) => baseScore <= 4,
+      excludeFromTest: true,
       ui: {
         tileBackground: 'linear-gradient(180deg, rgba(242, 250, 255, 0.88) 0%, rgba(198, 218, 236, 0.78) 58%, rgba(131, 156, 181, 0.74) 100%)',
         tileShadow: 'inset 0 -4px 0 rgba(82, 105, 131, 0.18), 0 10px 18px rgba(44, 61, 86, 0.16), 0 0 0 1px rgba(236, 247, 255, 0.48)',
@@ -197,12 +391,12 @@ const createModifierDefinitions = ({ bloodTilePositionValues }) => ({
       }
     },
     burningTile: {
-      noSinglePlayer: true,
       badge: 'BURN',
       description: 'Scores as 1 if used. If left unused, it burns you for -3.',
+      includeInTutorial: true,
       effects: { setScore: 1, idleScorePenalty: 3 },
       rarityWeight: 0.5,
-      canApply: ({ baseScore }) => baseScore <= 4,
+      excludeFromTest: true,
       animations: {
         onNewTurn: 'blaze'
       },
@@ -212,6 +406,76 @@ const createModifierDefinitions = ({ bloodTilePositionValues }) => ({
         textColor: '#fff1dd',
         badgeBackground: 'rgba(74, 18, 6, 0.92)',
         badgeColor: '#ffd08b'
+      }
+    },
+    lightningTile: {
+      badge: 'BOLT',
+      description: 'Strikes every 3 seconds, lowering your score by 1 while it remains on your board.',
+      effects: {
+        lightningScorePenalty: 1,
+        lightningIntervalMs: 3000
+      },
+      excludeFromTest: true,
+
+      rarityWeight: 0.24,
+      ui: {
+        tileBackground: 'linear-gradient(180deg, #f8fbff 0%, #9fc9ff 48%, #2859b8 100%)',
+        tileShadow: 'inset 0 -4px 0 rgba(19, 49, 132, 0.28), 0 12px 20px rgba(10, 32, 92, 0.24), 0 0 0 1px rgba(187, 226, 255, 0.44)',
+        textColor: '#101e3e',
+        badgeBackground: 'rgba(242, 250, 255, 0.95)',
+        badgeColor: '#244bb0'
+      }
+    },
+    barricadeTile: {
+      badge: 'STOP',
+      description: 'Barricade tile. While it is in your rack, you cannot play cards.',
+      effects: {
+        disablesCardsWhileInRack: true
+      },
+      excludeFromTest: true,
+      rarityWeight: 0.34,
+      canApply: ({ baseScore }) => baseScore <= 5,
+      ui: {
+        tileBackground: 'linear-gradient(180deg, #ff0476 0%, #f00822 54%, #9b5e05 100%)',
+        tileShadow: 'inset 0 -4px 0 rgba(86, 45, 4, 0.34), 0 12px 20px rgba(92, 55, 5, 0.22), 0 0 0 1px rgba(255, 226, 106, 0.42)',
+        textColor: '#fff1dd',
+        badgeBackground: 'rgba(43, 28, 3, 0.92)',
+        badgeColor: '#ffe476'
+      }
+    },
+    bagTile: {
+      badge: 'BAG',
+      description: 'Adjacent rack tiles can only be submitted if this BAG tile is in the word too.',
+      effects: {
+        bagsAdjacentRackTiles: true
+      },
+      rarityWeight: 0.18,
+      canApply: ({ baseScore }) => baseScore <= 5,
+      ui: {
+        tileBackground: 'linear-gradient(180deg, #d9b280 0%, #9a6a37 58%, #5d3418 100%)',
+        tileShadow: 'inset 0 -4px 0 rgba(58, 31, 11, 0.34), 0 12px 22px rgba(67, 39, 18, 0.24), 0 0 0 1px rgba(226, 180, 112, 0.34)',
+        textColor: '#fff1dd',
+        badgeBackground: 'rgba(51, 29, 11, 0.9)',
+        badgeColor: '#ffd79b'
+      }
+    },
+    rustingTile: {
+      badge: 'RUST',
+      description: 'Loses 2 score each turn it stays unused, rusting further for 4 turns.',
+      effects: {
+        rustScoreDelta: -2,
+        rustMaxTurns: 4
+      },
+      rarityWeight: 0.75,
+      animations: {
+        onNewTurn: 'rust-spread'
+      },
+      ui: {
+        tileBackground: 'linear-gradient(180deg, #fffef8 0%, #f2ebe0 70%, #d9cec0 100%)',
+        tileShadow: 'inset 0 -4px 0 rgba(73, 31, 8, 0.18), 0 10px 18px rgba(45, 10, 24, 0.18), 0 0 0 1px rgba(156, 83, 34, 0.24)',
+        textColor: '#26170f',
+        badgeBackground: 'rgba(90, 42, 20, 0.92)',
+        badgeColor: '#ffd8aa'
       }
     }
   });

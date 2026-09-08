@@ -2,7 +2,7 @@
   "name": "WORDIS",
   "productName": "WORDIS",
   "private": true,
-  "version": "0.0.23",
+  "version": "0.0.70",
   "type": "module",
   "main": "electron/main.cjs",
   "build": {
@@ -89,9 +89,10 @@
   },
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
-    "build:wavedash": "VITE_WAVEDASH=true vite build",
-    "build:app": "vite build && electron-builder",
+    "build": "VITE_MODE=prod vite build",
+    "build:netlify": "VITE_MODE=prod VITE_PWA=true vite build",
+    "build:wavedash": "VITE_MODE=prod VITE_WAVEDASH=true vite build",
+    "build:app": "VITE_MODE=prod vite build && electron-builder",
     "preview": "vite preview",
     "electron": "electron .",
     "start": "concurrently \"vite\" \"npm:electron\"",
@@ -115,6 +116,6 @@
     "electron-builder": "^26.0.12",
     "typescript": "^5.7.3",
     "vite": "^6.1.0",
-    "vite-plugin-pwa": "^0.21.1"
+    "vite-plugin-pwa": "^0.21.2"
   }
 }

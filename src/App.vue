@@ -1,4 +1,11 @@
 <template>
+  <MachineBackground
+    :mood-style="backgroundState.moodStyle"
+    :transition-key="backgroundState.transitionKey"
+    :is-bot-mode="backgroundState.isBotMode"
+    :bot-cog-style="backgroundState.botCogStyle"
+    :player-cog-style="backgroundState.playerCogStyle"
+  />
   <div id="game-root" :class="[{'google-translate-iframe-hide': hideGoogleTranslate === true}]">        
       <component
       :key="currentStateKey" 
@@ -23,8 +30,12 @@
       :shopZoom="shopZoom"
       :isMultiplayer="isMultiplayer"
       :playMode="playMode"
+      :continueSave="continueSave"
+      :initialMultiRoundBackgroundPaletteKey="initialMultiRoundBackgroundPaletteKey"
       :overtimeEnabled="overtimeEnabled"
-      :botDifficulty="botDifficulty"
+      :controllerMapping="controllerMapping"
+      v-model:botDifficulty="botDifficulty"
+      :multiRoundDifficulty="multiRoundDifficulty"
       :uiZoom="zoom"
       :isStreamer="validSeed"
       :hasSeenIntro="hasSeenIntro"
@@ -32,15 +43,21 @@
       @end="goToShop" 
       @game="goToGame" 
       @multiplayerScreen="goTomultiplayerScreen"
+      @multiRoundScreen="goToMultiRoundScreen"
       @singleplayer="goToSingleplayer" 
       @type="goToType"
       @reset="resetGame"
       @logIn="showAuthModal = true"
+      @loggedIn="userLoggedIn"
       @logOut="handleLogout"
       @resetHints="resetHints"
       @nameChange="setNames"
       @home="goToHome"
       @playAgain="playAgain"
+      @backgroundState="handleBackgroundState"
+      @startBackgroundMusic="startBackgroundMusic"
+      @pauseBackgroundMusic="pauseBackgroundMusic"
+      @stopBackgroundMusic="stopBackgroundMusic"
       @volumeChange="setVolume"
       @musicVolumeChange="setmusicVolume"
       @effectsVolumeChange="seteffectsVolume"
@@ -53,36 +70,70 @@
       :effectsVolume="effectsVolume" 
       :zoom="zoom"
       :gameZoom="gameZoom"
+      :joystickSensitivity="joystickSensitivity"
       :nativeControllerSupport="nativeControllerSupport"
+      :controllerMapping="controllerMapping"
+      :isControllerConnected="isControllerConnected"
+      :canShowHowToPlay="isGameState"
+      :isTutorialComplete="isTutorialComplete"
       :names="names"
+      :musicTracks="musicTracks"
+      :currentMusicTrackId="currentMusicTrack?.id || ''"
+      :isMusicPlaying="isBackgroundMusicPlaying"
+      :musicShuffleEnabled="musicShuffleEnabled"
       @volumeChange="setVolume"
       @musicVolumeChange="setmusicVolume"
       @effectsVolumeChange="seteffectsVolume"
+      @musicPlay="startBackgroundMusic"
+      @musicPause="pauseBackgroundMusic"
+      @musicNext="playNextBackgroundTrack"
+      @musicPrevious="playPreviousBackgroundTrack"
+      @musicShuffleChange="setMusicShuffleEnabled"
+      @musicTrackSelect="selectBackgroundTrack"
       @zoomChange="setZoom"
       @gameZoomChange="setgameZoom"
+      @joystickSensitivityChange="setJoystickSensitivity"
       @shopZoomChange="setshopZoom"
       @nativeControllerChange="setNativeControllerSupport"
+      @controllerMappingChange="setControllerMapping"
+      @resetControllerMapping="resetControllerMapping"
       @nameChange="setNames"
       @reset="resetGame" 
+      @quickRestart="playAgain"
       @home="goToHome"
       @game="goToGame"
       @type="goToType"
       @feedback="showFeedback = true"
+      @showTutorial="showHowToPlay"
+      @setTutorialComplete="setTutorialComplete"
+      @resetTutorial="resetTutorial"
       @close="showSettings = false"></Settings>
       <AuthPrompt v-if="showAuthModal" @close="showAuthModal = false" @loggedIn="userLoggedIn" />
       <AssetLoader :monsterRoster="monsterRoster"/>
     </div>
+    <ScreenBoundsCalibration
+      v-if="showScreenBoundsCalibration"
+      :gameZoom="gameZoom"
+      @gameZoomChange="setgameZoom"
+      @close="dismissScreenBoundsCalibration"
+    />
+    <div v-if="nowPlayingToastVisible" class="now-playing-toast">
+      <span>Now Playing</span>
+      <strong>{{ nowPlayingToastTitle }}</strong>
+    </div>
     <StreamerCode v-if="showStreamerModal" @close="showStreamerModal = false" :passedCode="streamerCode" />
     <Feedback v-if="showFeedback" @close="showFeedback = false"/>
-  <GoogleTranslate :hideGoogleTranslate="hideGoogleTranslate" :isMobile="isMobile"/>
+  <!-- <GoogleTranslate :hideGoogleTranslate="hideGoogleTranslate" :isMobile="isMobile"/> -->
   </template>
   
 <script setup>
-import { ref, shallowRef, onMounted, onBeforeUnmount, computed } from "vue";
+import { ref, shallowRef, onMounted, onBeforeUnmount, computed, nextTick, watch } from "vue";
 import Game from "/src/states/game/Game.vue";
 import MultiplayerScreen from "./states/game/MultiplayerScreen.vue";
+import MultiRoundScreen from "./states/game/MultiRoundScreen.vue";
 import { resetGame as resetMultiplayerGame } from "./states/game/multiplayer.js";
-import { playMode, botDifficulty, overtimeEnabled, updatePlayConfig, PLAY_MODES } from "./states/game/play-config.js";
+import { playMode, botDifficulty, multiRoundDifficulty, overtimeEnabled, updatePlayConfig, PLAY_MODES } from "./states/game/play-config.js";
+import { SAVE_MODES, loadLocalGame } from "./states/game/save-state.js";
 import TypeScreen from "./states/home/TypeScreen.vue";
 import StartScreen from "./states/home/StartScreen.vue";
 import Admin from "./admin/Admin.vue";
@@ -91,12 +142,36 @@ import { hideGoogleTranslateIframesAfterDelay,hideGoogleTranslateExtras } from "
 import Feedback from "./states/home/Feedback.vue";
 import Banner from "/src/assets/Banner.vue";
 import Settings from '/src/assets/Settings.vue'
-// import { initUserSync, logoutCleanup } from "./syncUserState";
+import ScreenBoundsCalibration from '/src/assets/ScreenBoundsCalibration.vue'
+import MachineBackground from "./states/game/components/GlobalBackground.vue";
+import { musicTracks } from "./assets/music-tracks.js";
+import {
+  loadTutorialHints,
+  setAllTutorialHintsViewed,
+  TUTORIAL_COMPLETED_STORAGE_KEY
+} from "./states/game/tutorial-hints.js";
+import { initUserSync, logoutCleanup, syncUserState } from "./userstate/syncUserState.js";
 import { signOut } from "firebase/auth";
 import AuthPrompt from "/src/assets/AuthPrompt.vue";
 import { auth as firebaseAuth, firebaseEnabled } from "./firebaseClient.js";
+import { isWavedashEnabled } from "./wavedash.js";
 import pkg from '../package.json';
+import {
+  DEFAULT_CONTROLLER_ACTION_MAPPING,
+  getActionForButton,
+  getInputKeyForAction,
+  loadControllerMapping,
+  saveControllerMapping
+} from "./controllerMapping.js";
 const hasSeenIntro = ref(false);
+const isTutorialComplete = ref(false);
+const bootLog = (...args) => {
+  console.log('[Wordis Boot]', ...args);
+};
+
+const bootWarn = (...args) => {
+  console.warn('[Wordis Boot]', ...args);
+};
 
 const demoDate = new Date('2025-10-01T00:00:00Z')
 const isDemo = false
@@ -110,6 +185,9 @@ const streamerCode = params.get('streamerCode');
 const showStreamerModal = ref(false);
 const loadingAuth = ref(true);
 const showAuthModal = ref(false);
+const AUTH_PROMPT_SEEN_KEY = "userAgreed";
+const SCREEN_BOUNDS_CALIBRATED_KEY = "wordis:screen-bounds-calibrated";
+let stopUserSync = null;
 
 if (streamerCode) {
   showStreamerModal.value = true;
@@ -129,18 +207,22 @@ const createStableId = () => {
 const cacheSeed = ref(localStorage.getItem("cacheSeed") || null);
 const validSeed = ref(false);
 const showFeedback = ref(false)
+const showScreenBoundsCalibration = ref(false)
+const DEFAULT_JOYSTICK_SENSITIVITY = 30;
 
 
 
 
   const handleLogout = async () => {
-    console.log('logging out ')
+    bootLog('logout requested');
     if (!firebaseEnabled || !firebaseAuth) {
-      console.warn('Firebase auth is unavailable; skipping logout.');
+      bootWarn('Firebase auth is unavailable; skipping logout.');
       return;
     }
-    logoutCleanup(); // clears localStorage
+    await logoutCleanup();
+    bootLog('logout cleanup finished');
     await signOut(firebaseAuth);
+    bootLog('firebase signOut finished');
     setTimeout(() => {
       reloader.value++;
     }, 200);
@@ -203,19 +285,7 @@ const showFeedback = ref(false)
 
   const defaultHints = ref([]);
   const resetHints = (setLocalStorage) => {
-    defaultHints.value = [
-      { hint: "The Alert will notify you when you are in danger!", hasSeen: false },
-      { hint: "Press x or tap a character image to view its actions", hasSeen: false },
-      { hint: "Right Click the Deck to see your Chances of Breaking!", hasSeen: false },
-      { hint: "Using all of your supplies gives bonus fame!", hasSeen: false },
-      { hint: "You can buy armor and supplies more than once!", hasSeen: false },
-      { hint: "Balance your supplies and armor", hasSeen: false },
-      { hint: "A massive Character could overflow your game", hasSeen: false },
-      { hint: "Be sure to select a character if it has an active action", hasSeen: false },
-      { hint: "Use the Deck to Draw a Character!", hasSeen: false },
-      { hint: "Use the Deck to view your cards and their fear.", hasSeen: false },
-      { hint: "Right Click on a character to view its action and other information.", hasSeen: false },
-    ]
+    defaultHints.value = loadTutorialHints();
     if(setLocalStorage) localStorage.setItem('defaultHints', JSON.stringify(defaultHints.value));
     localStorage.removeItem('seenHowShop')
     localStorage.removeItem('seenHowToPlay')
@@ -229,10 +299,11 @@ const showFeedback = ref(false)
   const seed = ref(localStorage.getItem("seed"));
   const gameEnded = ref(localStorage.getItem("gameEnded"));
   const isMultiplayer = ref(false);
+  const continueSave = ref(null);
   const currentStateKey = computed(() => {
     const stateName = currentState.value?.__name || currentState.value?.name || 'state';
     const modeName = isMultiplayer.value ? 'multiplayer' : 'singleplayer';
-    const playVariant = isMultiplayer.value ? 'live' : playMode.value;
+    const playVariant = isMultiplayer.value ? 'live' : `${playMode.value}-${multiRoundDifficulty.value}`;
     return `${stateName}-${modeName}-${playVariant}-${reloader.value}`;
   });
   const message = ref("");
@@ -246,21 +317,198 @@ const showFeedback = ref(false)
   const volume = ref(Number(localStorage.getItem('volume') ?? 5))
   const musicVolume = ref(Number(localStorage.getItem('musicVolume') ?? 5))
   const effectsVolume = ref(Number(localStorage.getItem('effectsVolume') ?? 5))
+  const musicShuffleEnabled = ref(JSON.parse(localStorage.getItem('musicShuffleEnabled') ?? 'false'))
+  const storedMusicTrackIndex = Number(localStorage.getItem('musicTrackIndex') ?? 0)
+  const currentMusicTrackIndex = ref(Number.isFinite(storedMusicTrackIndex) ? storedMusicTrackIndex : 0)
+  const isBackgroundMusicPlaying = ref(false)
+  const nowPlayingToastVisible = ref(false)
+  const nowPlayingToastTitle = ref('')
+  let nowPlayingToastTimeoutId = null
+  const backgroundMusic = typeof Audio !== 'undefined' ? new Audio() : null
   const nativeControllerSupport = ref(JSON.parse(localStorage.getItem('nativeControllerSupport')))
+  const joystickSensitivity = ref(Number(localStorage.getItem('joystickSensitivity') ?? DEFAULT_JOYSTICK_SENSITIVITY))
+  const controllerMapping = ref(loadControllerMapping())
   const now = new Date();
   const lockContent = computed(() => (new Date() > demoDate || isDemo) && !validSeed);
   const versionNumber = ref(pkg.version)
   let names = localStorage.getItem('names') || '{"player1":"Player 1","player2":"Player 2","player3":"Player 3","player4":"Player 4"}'
 
   const showSettings = ref(false)
+  const isGameState = computed(() => currentState.value === Game);
+  const pauseGameForVisibilityChange = () => {
+    if (!isGameState.value || showSettings.value || location.hostname === 'localhost') {
+      return;
+    }
+
+    showSettings.value = true;
+  };
+  const handleAppVisibilityChange = () => {
+    if (document.hidden || document.visibilityState === 'hidden') {
+      pauseGameForVisibilityChange();
+    }
+  };
+  const handleAppPageHide = () => {
+    pauseGameForVisibilityChange();
+  };
+  const handleAppWindowBlur = () => {
+    pauseGameForVisibilityChange();
+  };
+  const initialMultiRoundBackgroundPaletteKey = ref('');
+  const createDefaultBackgroundState = () => ({
+    transitionKey: 'default',
+    moodStyle: {},
+    isBotMode: false,
+    botCogStyle: {},
+    playerCogStyle: {}
+  });
+  const backgroundState = ref(createDefaultBackgroundState());
+  const currentMusicTrack = computed(() => musicTracks[currentMusicTrackIndex.value] || musicTracks[0] || null);
+
+  const normalizeMusicTrackIndex = (index) => {
+    if (!musicTracks.length) return 0;
+    return (index + musicTracks.length) % musicTracks.length;
+  };
+
+  currentMusicTrackIndex.value = normalizeMusicTrackIndex(currentMusicTrackIndex.value);
+
+  const syncBackgroundMusicLevel = () => {
+    if (!backgroundMusic) return;
+    backgroundMusic.volume = (volume.value || 0) * (musicVolume.value || 0) / 100;
+  };
+
+  const showNowPlayingToast = (track) => {
+    if (!track) return;
+    nowPlayingToastTitle.value = track.title;
+    nowPlayingToastVisible.value = true;
+    window.clearTimeout(nowPlayingToastTimeoutId);
+    nowPlayingToastTimeoutId = window.setTimeout(() => {
+      nowPlayingToastVisible.value = false;
+    }, 2600);
+  };
+
+  const setBackgroundMusicSource = ({ restart = false } = {}) => {
+    const track = currentMusicTrack.value;
+    if (!backgroundMusic || !track) return track;
+
+    if (backgroundMusic.src !== new URL(track.src, window.location.href).href) {
+      backgroundMusic.src = track.src;
+      backgroundMusic.load();
+      restart = true;
+    }
+
+    if (restart) {
+      backgroundMusic.currentTime = 0;
+    }
+
+    localStorage.setItem('musicTrackIndex', currentMusicTrackIndex.value);
+    return track;
+  };
+
+  const startBackgroundMusic = async (options = {}) => {
+    if (!backgroundMusic || !musicTracks.length) return;
+    syncBackgroundMusicLevel();
+    const wasPlaying = isBackgroundMusicPlaying.value && !backgroundMusic.paused;
+    const previousSrc = backgroundMusic.src;
+    const track = setBackgroundMusicSource({ restart: Boolean(options?.restart) });
+    const trackChanged = previousSrc !== backgroundMusic.src || Boolean(options?.restart);
+
+    if (backgroundMusic.volume <= 0) {
+      isBackgroundMusicPlaying.value = false;
+      return;
+    }
+
+    try {
+      await backgroundMusic.play();
+      isBackgroundMusicPlaying.value = true;
+      if (!wasPlaying || trackChanged) {
+        showNowPlayingToast(track);
+      }
+    } catch (error) {
+      isBackgroundMusicPlaying.value = false;
+    }
+  };
+
+  const pauseBackgroundMusic = () => {
+    if (!backgroundMusic) return;
+    backgroundMusic.pause();
+    isBackgroundMusicPlaying.value = false;
+  };
+
+  const stopBackgroundMusic = () => {
+    if (!backgroundMusic) return;
+    backgroundMusic.pause();
+    backgroundMusic.currentTime = 0;
+    isBackgroundMusicPlaying.value = false;
+  };
+
+  const getNextShuffledTrackIndex = () => {
+    if (musicTracks.length <= 1) return currentMusicTrackIndex.value;
+    let nextIndex = currentMusicTrackIndex.value;
+    while (nextIndex === currentMusicTrackIndex.value) {
+      nextIndex = Math.floor(Math.random() * musicTracks.length);
+    }
+    return nextIndex;
+  };
+
+  const playMusicTrackAtIndex = (index, { restart = true, play = true } = {}) => {
+    currentMusicTrackIndex.value = normalizeMusicTrackIndex(index);
+    const track = setBackgroundMusicSource({ restart });
+
+    if (play) {
+      startBackgroundMusic({ restart: false });
+    } else {
+      showNowPlayingToast(track);
+    }
+  };
+
+  const playNextBackgroundTrack = () => {
+    const nextIndex = musicShuffleEnabled.value
+      ? getNextShuffledTrackIndex()
+      : currentMusicTrackIndex.value + 1;
+    playMusicTrackAtIndex(nextIndex);
+  };
+
+  const playPreviousBackgroundTrack = () => {
+    playMusicTrackAtIndex(currentMusicTrackIndex.value - 1);
+  };
+
+  const selectBackgroundTrack = (trackId) => {
+    const trackIndex = musicTracks.findIndex((track) => track.id === trackId);
+    if (trackIndex === -1) return;
+    playMusicTrackAtIndex(trackIndex);
+  };
+
+  const setMusicShuffleEnabled = (enabled) => {
+    musicShuffleEnabled.value = Boolean(enabled);
+    localStorage.setItem('musicShuffleEnabled', JSON.stringify(musicShuffleEnabled.value));
+  };
+
+  const clearLiftedGameUi = () => {
+    // console.log('background:app-clear', {
+    //   previousTransitionKey: backgroundState.value?.transitionKey || 'default',
+    //   retainedBackgroundTransitionKey: backgroundState.value?.transitionKey || 'default'
+    // });
+    initialMultiRoundBackgroundPaletteKey.value = '';
+  };
+
+  const handleBackgroundState = (state) => {
+    // console.log('background:app-receive', {
+    //   nextTransitionKey: state?.transitionKey || 'default',
+    //   isBotMode: Boolean(state?.isBotMode),
+    //   moodStyle: state?.moodStyle || {}
+    // });
+    backgroundState.value = state || createDefaultBackgroundState();
+  };
 
   function setVolume(val) {
     volume.value = val
     localStorage.setItem('volume', val)
+    syncBackgroundMusicLevel()
   }
   function setmusicVolume(val) {
     musicVolume.value = val
     localStorage.setItem('musicVolume', val)
+    syncBackgroundMusicLevel()
   }
   function seteffectsVolume(val) {
     effectsVolume.value = val
@@ -268,19 +516,55 @@ const showFeedback = ref(false)
   }
 
 
-  const zoom = ref(parseFloat(localStorage.getItem('zoom') ?? 1))
+  const getAutoUiZoom = () => {
+    const width = window.innerWidth || window.screen?.width || 1920;
+    const stops = [
+      { width: 860, zoom: 0.5 },
+      { width: 1280, zoom: 0.65 },
+      { width: 1700, zoom: 0.8 },
+      { width: 1920, zoom: 0.96 },
+      { width: 2220, zoom: 1.27 },
+    ];
+
+    if (width <= stops[0].width) return stops[0].zoom;
+    if (width >= stops[stops.length - 1].width) return stops[stops.length - 1].zoom;
+
+    const upperIndex = stops.findIndex((stop) => width <= stop.width);
+    const lower = stops[upperIndex - 1];
+    const upper = stops[upperIndex];
+    const progress = (width - lower.width) / (upper.width - lower.width);
+    const tempZoom = Number((lower.zoom + ((upper.zoom - lower.zoom) * progress)).toFixed(2));
+    localStorage.setItem('zoom', tempZoom)
+    return tempZoom;
+  };
+  const zoom = ref(parseFloat(localStorage.getItem('zoom') ?? getAutoUiZoom()))
   const gameZoom = ref(parseFloat(localStorage.getItem('gameZoom') ?? 1))
   const shopZoom = ref(parseFloat(localStorage.getItem('shopZoom') ?? 1))
+  const screenWidth = ref(window.innerWidth || window.screen?.width || 1920)
+  const ZOOM_UPDATE_THRESHOLD = 0.10
   
   function setZoom(val) {
+    let root = document.getElementById('game-root') || document.documentElement
+
     if(val){
       zoom.value = val
       localStorage.setItem('zoom', val)
     }
 
-    let root = document.getElementById('game-root') || document.documentElement
     root.style.zoom = val
   }
+
+  const handleScreenWidthChange = () => {
+    screenWidth.value = window.innerWidth || window.screen?.width || 1920
+  }
+
+  watch(screenWidth, () => {
+    const nextZoom = getAutoUiZoom()
+    if (Math.abs((zoom.value ?? 0) - nextZoom) <= ZOOM_UPDATE_THRESHOLD) {
+      return
+    }
+    setZoom(nextZoom)
+  })
 
 
   function setgameZoom(val) {
@@ -290,10 +574,26 @@ const showFeedback = ref(false)
     }
   }
 
+  const dismissScreenBoundsCalibration = () => {
+    localStorage.setItem(SCREEN_BOUNDS_CALIBRATED_KEY, 'true');
+    showScreenBoundsCalibration.value = false;
+  };
+
+  function setJoystickSensitivity(val) {
+    joystickSensitivity.value = val
+    localStorage.setItem('joystickSensitivity', val)
+  }
+
 
   function setNativeControllerSupport(val) {
     nativeControllerSupport.value = val
     localStorage.setItem('nativeControllerSupport', val)
+  }
+  function setControllerMapping(val) {
+    controllerMapping.value = saveControllerMapping(val)
+  }
+  function resetControllerMapping() {
+    setControllerMapping(DEFAULT_CONTROLLER_ACTION_MAPPING)
   }
   function setNames(val) {
     console.log(val)
@@ -309,17 +609,55 @@ const showFeedback = ref(false)
       return;
     
   };
-  const userLoggedIn = () => {
+
+  const showFirstRunAuthPrompt = () => {
+    bootLog('automatic auth prompt disabled', {
+      firebaseEnabled,
+      hasCurrentUser: Boolean(firebaseAuth?.currentUser),
+      hasStreamerCode: Boolean(streamerCode),
+      hasDismissedPrompt: Boolean(localStorage.getItem(AUTH_PROMPT_SEEN_KEY))
+    });
+  };
+
+  const userLoggedIn = async () => {
+    bootLog('userLoggedIn handler start');
     showAuthModal.value = false
+    try {
+      const result = await syncUserState({ force: true });
+      bootLog('userLoggedIn sync completed', result);
+    } catch (error) {
+      bootWarn('userLoggedIn sync failed safely', error);
+    }
     setTimeout(() => {
       reloader.value++
+      bootLog('userLoggedIn reload tick complete', reloader.value);
     }, 200);
   }
 
 
-const continueGame = () => {  
+const continueGame = (mode) => {  
     hideGoogleTranslate.value = true
     hideGoogleTranslateIframesAfterDelay();
+    if (mode === SAVE_MODES.MULTI_ROUND || mode === SAVE_MODES.BOT_MATCH) {
+      const save = loadLocalGame(mode);
+      if (!save) {
+        displayMessage('No save found.');
+        return;
+      }
+
+      continueSave.value = save;
+      isMultiplayer.value = false;
+      updatePlayConfig({
+        mode: mode === SAVE_MODES.MULTI_ROUND ? PLAY_MODES.MULTI_ROUND : PLAY_MODES.BOT_MATCH,
+        difficulty: mode === SAVE_MODES.BOT_MATCH ? (save.d || botDifficulty.value) : botDifficulty.value,
+        multiRound: mode === SAVE_MODES.MULTI_ROUND ? (save.d || multiRoundDifficulty.value) : multiRoundDifficulty.value
+      });
+      resetMultiplayerGame();
+      currentState.value = Game;
+      reloader.value += 1;
+      return;
+    }
+
     if(localStorage.getItem('inShop') === 'true'){
       currentState.value = Shop;
     }
@@ -341,6 +679,8 @@ const continueGame = () => {
     hideGoogleTranslate.value = false
     console.log('takeing you home')
     showSettings.value=false
+    clearLiftedGameUi();
+    continueSave.value = null;
     currentState.value = StartScreen;
   };
 
@@ -352,6 +692,8 @@ const continueGame = () => {
     if (isMultiplayer.value) {
       updatePlayConfig({ mode: PLAY_MODES.MULTIPLAYER });
     }
+    clearLiftedGameUi();
+    continueSave.value = null;
     currentState.value = Game;
   };
   const goToType = () => {
@@ -359,6 +701,8 @@ const continueGame = () => {
     hideGoogleTranslateIframesAfterDelay();
     hideGoogleTranslate.value = true
     console.log('set hide',hideGoogleTranslate.value)
+    clearLiftedGameUi();
+    continueSave.value = null;
     currentState.value = TypeScreen;
   };
   const goToAdmin = () => {
@@ -366,8 +710,19 @@ const continueGame = () => {
   };
   const goTomultiplayerScreen = () => {
     updatePlayConfig({ mode: PLAY_MODES.MULTIPLAYER });
+    clearLiftedGameUi();
     currentState.value = MultiplayerScreen;
     isMultiplayer.value = true;
+  };
+
+  const goToMultiRoundScreen = () => {
+    hideGoogleTranslateExtras()
+    hideGoogleTranslateIframesAfterDelay();
+    hideGoogleTranslate.value = true
+    clearLiftedGameUi();
+    continueSave.value = null;
+    currentState.value = MultiRoundScreen;
+    isMultiplayer.value = false;
   };
 
   const goToSingleplayer = (options = {}) => {
@@ -375,9 +730,13 @@ const continueGame = () => {
     hideGoogleTranslateIframesAfterDelay();
     hideGoogleTranslate.value = true
     isMultiplayer.value = false;
+    clearLiftedGameUi();
+    initialMultiRoundBackgroundPaletteKey.value = options.initialMultiRoundBackgroundPaletteKey || '';
+    continueSave.value = null;
     updatePlayConfig({
       mode: options.mode || PLAY_MODES.TIMED_SOLO,
-      difficulty: options.difficulty || botDifficulty.value
+      difficulty: options.difficulty || botDifficulty.value,
+      multiRound: options.multiRoundDifficulty || multiRoundDifficulty.value
     });
     resetMultiplayerGame();
     currentState.value = Game;
@@ -388,9 +747,36 @@ const continueGame = () => {
     hideGoogleTranslateIframesAfterDelay();
     hideGoogleTranslate.value = true;
     showSettings.value = false;
+    clearLiftedGameUi();
+    continueSave.value = null;
     resetMultiplayerGame();
     reloader.value += 1;
     currentState.value = Game;
+  };
+
+  const showHowToPlay = () => {
+    showSettings.value = false;
+    nextTick(() => {
+      window.dispatchEvent(new CustomEvent('wordis:show-tutorial'));
+    });
+  };
+
+  const setTutorialComplete = () => {
+    defaultHints.value = setAllTutorialHintsViewed(true);
+    localStorage.setItem('hasSeenWordisGameTutorial', 'true');
+    localStorage.setItem(TUTORIAL_COMPLETED_STORAGE_KEY, 'true');
+    isTutorialComplete.value = true;
+  };
+
+  const resetTutorial = () => {
+    defaultHints.value = setAllTutorialHintsViewed(false);
+    localStorage.removeItem('hasSeenWordisGameTutorial');
+    localStorage.removeItem(TUTORIAL_COMPLETED_STORAGE_KEY);
+    isTutorialComplete.value = false;
+  };
+
+  const syncTutorialCompleteState = () => {
+    isTutorialComplete.value = localStorage.getItem(TUTORIAL_COMPLETED_STORAGE_KEY) === 'true';
   };
   
 
@@ -416,34 +802,60 @@ const continueGame = () => {
 
 
 
-const buttonMap = {
-  0: ' ',          // A / Cross
-  1: 'b',          // B / Circle
-  2: 'x',          // X / Square
-  3: 'y',          // Y / Triangle
-  4: 'lb',         // Left Bumper (L1)
-  5: 'rb',         // Right Bumper (R1)
-  6: 'lt',         // Left Trigger (L2) (analog)
-  7: 'rt',         // Right Trigger (R2) (analog)
-  8: 'select',     // Back / Select / Share
-  9: 'Escape',     // Start / Options
-  10: 'ls',        // Left Stick Click (L3)
-  11: 'rs',        // Right Stick Click (R3)
-  12: 'ArrowUp',   // D-pad Up
-  13: 'ArrowDown', // D-pad Down
-  14: 'ArrowLeft', // D-pad Left
-  15: 'ArrowRight',// D-pad Right
-  16: 'home'       // Guide / PS button / Xbox button (not always available)
-
-};
-
   const prevButtonStates = [];
   const buttonCooldowns = [];
+  const prevAxisDirections = [];
+  const axisCooldowns = [];
   const COOLDOWN_FRAMES = 1; // Tune as needed
+  const AXIS_DEADZONE = 0.55;
+  let gamepadAnimationFrameId = 0;
+
+  const getJoystickDirection = (gamepad) => {
+    const horizontal = gamepad.axes?.[0] || 0;
+    const vertical = gamepad.axes?.[1] || 0;
+
+    if (Math.abs(horizontal) < AXIS_DEADZONE && Math.abs(vertical) < AXIS_DEADZONE) {
+      return '';
+    }
+
+    if (Math.abs(horizontal) > Math.abs(vertical)) {
+      return horizontal > 0 ? 'navigateRight' : 'navigateLeft';
+    }
+
+    return vertical > 0 ? 'navigateDown' : 'navigateUp';
+  };
+
+  const handleJoystickDirection = (gamepad, gamepadIndex) => {
+    const direction = getJoystickDirection(gamepad);
+    if (!axisCooldowns[gamepadIndex]) {
+      axisCooldowns[gamepadIndex] = 0;
+    }
+
+    const previousDirection = prevAxisDirections[gamepadIndex] || '';
+    const cooldown = axisCooldowns[gamepadIndex] || 0;
+
+    if (!direction) {
+      prevAxisDirections[gamepadIndex] = '';
+      axisCooldowns[gamepadIndex] = 0;
+      return;
+    }
+
+    if (direction !== previousDirection || cooldown === 0) {
+      dispatchControllerAction(direction);
+      axisCooldowns[gamepadIndex] = joystickSensitivity.value;
+    } else {
+      axisCooldowns[gamepadIndex] = Math.max(0, cooldown - 1);
+    }
+
+    prevAxisDirections[gamepadIndex] = direction;
+  };
 
   const checkGamepadInput = () => {
   const gamepads = navigator.getGamepads ? navigator.getGamepads() : [];
-  if (!gamepads || !nativeControllerSupport.value) return;
+  if (!gamepads || !nativeControllerSupport.value) {
+    gamepadAnimationFrameId = requestAnimationFrame(checkGamepadInput);
+    return;
+  }
 
   for (let i = 0; i < gamepads.length; i++) {
     const gamepad = gamepads[i];
@@ -465,9 +877,9 @@ const buttonMap = {
   if (isPressed && !wasPressed && cooldown === 0) {
     // console.log(`Button ${index} pressed`);
     buttonPressed.value = null;
-    const key = buttonMap[index];
-    dispatchKey(key);
-    console.log(key)
+    const actionKey = getActionForButton(controllerMapping.value, index);
+    dispatchControllerAction(actionKey);
+    console.log(actionKey)
 
     buttonCooldowns[i][index] = COOLDOWN_FRAMES;
   }
@@ -478,20 +890,27 @@ const buttonMap = {
 
   prevButtonStates[i][index] = isPressed;
 });
+    handleJoystickDirection(gamepad, i);
   }
   
-  requestAnimationFrame(checkGamepadInput);
+  gamepadAnimationFrameId = requestAnimationFrame(checkGamepadInput);
 };
 
 
+const dispatchControllerAction = (actionKey) => {
+  dispatchKey(getInputKeyForAction(actionKey));
+};
+
 const dispatchKey = (key) => {
+  if (!key) return;
 
   if (key === 'Tab') return simulateTab(false);
   if (key === 'ShiftTab') return simulateTab(true);
 
   if ((key === 'Enter' || key === ' ') && document.activeElement) {
     const el = document.activeElement;
-    if (typeof el.click === 'function') {
+    const canClickFocusedControl = el.matches?.('button, a, input, textarea, select, [role="button"]');
+    if (canClickFocusedControl && typeof el.click === 'function') {
       el.click(); // Trigger real click
       return;
     }
@@ -525,14 +944,54 @@ const simulateTab = (reverse = false) => {
 
 
   onMounted( () => {
+    bootLog('App mounted start', {
+      firebaseEnabled,
+      wavedash: isWavedashEnabled,
+      currentState: currentState.value?.__name || currentState.value?.name || 'unknown',
+      hasSharedGameId: Boolean(sharedGameId)
+    });
+    syncBackgroundMusicLevel();
+    setBackgroundMusicSource();
+    backgroundMusic?.addEventListener('ended', playNextBackgroundTrack);
+
+    try {
+      stopUserSync = initUserSync(showFirstRunAuthPrompt, (user) => {
+        if (showAuthModal.value) {
+          bootLog('auth user restored; closing auth modal', {
+            uid: user?.uid ? `${user.uid.slice(0, 6)}...` : null
+          });
+          showAuthModal.value = false;
+        }
+      });
+      bootLog('user sync listener initialized');
+    } catch (error) {
+      bootWarn('user sync listener failed safely', error);
+      stopUserSync = null;
+    }
+
+    if(!localStorage.getItem('nativeControllerSupport')){ 
+      localStorage.setItem('nativeControllerSupport', true)
+      nativeControllerSupport.value = true;
+      bootLog('native controller support defaulted');
+    }
+    if(!localStorage.getItem('joystickSensitivity')){
+      localStorage.setItem('joystickSensitivity', DEFAULT_JOYSTICK_SENSITIVITY)
+      bootLog('joystick sensitivity defaulted');
+    }
+
     checkGamepadInput();
+    bootLog('gamepad check requested');
     if (isMobile.value && !localStorage.getItem('mobileZoomApplied')) {
       zoom.value = 0.5
       localStorage.setItem('zoom', 0.5)
       localStorage.setItem('mobileZoomApplied', 'true')
+      bootLog('mobile zoom default applied');
     }
     setZoom(zoom.value)
     setgameZoom(gameZoom.value)
+    window.addEventListener('resize', handleScreenWidthChange)
+    window.addEventListener('wordis:tutorial-completed', syncTutorialCompleteState);
+    bootLog('zoom initialized', { zoom: zoom.value, gameZoom: gameZoom.value });
 
 
     setTimeout(() => {
@@ -546,37 +1005,25 @@ const simulateTab = (reverse = false) => {
     if(!localStorage.getItem('theme')) localStorage.setItem('theme',"day")
     if(!localStorage.getItem('unlockSystem')) localStorage.setItem('unlockSystem',"hard")
     if(!localStorage.getItem('unlockedMonsters')) localStorage.setItem('unlockedMonsters','[1,2,3]')
-    if(!localStorage.getItem('defaultHints')) localStorage.setItem('defaultHints', JSON.stringify(defaultHints.value))
-    else{
-      // Load saved user hints (may be partial or missing new keys)
-      let seenHints = JSON.parse(localStorage.getItem('defaultHints')) || {};
-
-      // Ensure we don't overwrite existing keys, only add new ones
-      for (const key in defaultHints.value) {
-        if (!(key in seenHints)) {
-          seenHints[key] = defaultHints.value[key];
-          console.log(seenHints[key])
-        }
-      }
-
-      // Save merged version back and set the reactive default
-      localStorage.setItem('defaultHints', JSON.stringify(seenHints));
-      defaultHints.value = seenHints;
-    }
+    isTutorialComplete.value = localStorage.getItem(TUTORIAL_COMPLETED_STORAGE_KEY) === 'true';
+    bootLog('local defaults established');
+    defaultHints.value = loadTutorialHints();
+    localStorage.setItem('defaultHints', JSON.stringify(defaultHints.value));
     // hard reset turn if app is exited
     localStorage.removeItem('drawnMonsters')
+    bootLog('drawnMonsters cleared');
     
     
     window.addEventListener("gamepaddisconnected", onGamepadDisconnected);
-    window.addEventListener('keydown', (e) => {
-    // console.log('Key received:', e.key);
-    if(e.key === 'Escape'){
-      showSettings.value = !showSettings.value;
-    }
-});
+    window.addEventListener('keydown', handleGlobalKeyDown);
+    document.addEventListener('visibilitychange', handleAppVisibilityChange);
+    window.addEventListener('pagehide', handleAppPageHide);
+    window.addEventListener('blur', handleAppWindowBlur);
+    document.addEventListener('freeze', handleAppPageHide);
     
     // Initial check (in case controller was already connected)
     checkGamepadConnection();
+    bootLog('gamepad connection watcher initialized');
 
 
     // Poll for changes (some browsers require this)
@@ -584,15 +1031,45 @@ const simulateTab = (reverse = false) => {
 
     setTimeout(() => {
       hasSeenIntro.value = true;
+      if (!localStorage.getItem(SCREEN_BOUNDS_CALIBRATED_KEY)) {
+        showScreenBoundsCalibration.value = true;
+      }
     }, 2000);
     // Hide Google Translate banner
     hideGoogleTranslateIframesAfterDelay(400);
+    bootLog('App mounted complete');
 
   });
 
+  const handleGlobalKeyDown = (e) => {
+    // console.log('Key received:', e.key);
+    if(e.key === 'Escape' && !e.repeat){
+      showSettings.value = !showSettings.value;
+    }
+  };
+
   onBeforeUnmount(() => {
+    bootLog('App before unmount');
+    stopUserSync?.();
+    window.removeEventListener('resize', handleScreenWidthChange);
     window.removeEventListener("gamepadconnected", onGamepadConnected);
     window.removeEventListener("gamepaddisconnected", onGamepadDisconnected);
+    window.removeEventListener('wordis:tutorial-completed', syncTutorialCompleteState);
+    window.removeEventListener('keydown', handleGlobalKeyDown);
+    document.removeEventListener('visibilitychange', handleAppVisibilityChange);
+    window.removeEventListener('pagehide', handleAppPageHide);
+    window.removeEventListener('blur', handleAppWindowBlur);
+    document.removeEventListener('freeze', handleAppPageHide);
+    cancelAnimationFrame(gamepadAnimationFrameId);
+    backgroundMusic?.removeEventListener('ended', playNextBackgroundTrack);
+    stopBackgroundMusic();
+    window.clearTimeout(nowPlayingToastTimeoutId);
+  });
+
+  watch(currentState, () => {
+    if (currentState.value !== Game) {
+      clearLiftedGameUi();
+    }
   });
   </script>
 
@@ -605,20 +1082,6 @@ html {
   background-color: #1c1c1c;
 }
 
-  @font-face {
-  font-family: 'Press Start 2P';
-    src: url('/Press_Start_2P/PressStart2P-Regular.ttf') format('truetype');
-    font-weight: normal;
-    font-style: normal;
-    font-display: swap;
-  }
-@font-face {
-  font-family: 'Cinzel';
-  src: url('/Cinzel/Cinzel-VariableFont_wght.ttf') format('truetype');
-  font-weight: 400 900; /* variable font range */
-  font-style: normal;
-  font-display: swap;
-}
   /* Style for the scrollbar track */
 ::-webkit-scrollbar-track {
   background: #222; /* Dark background for the track */
@@ -651,6 +1114,49 @@ html {
 }
 img {
   -webkit-user-drag: none;
+}
+
+.now-playing-toast {
+  position: fixed;
+  left: 18px;
+  bottom: 18px;
+  z-index: 10020;
+  display: grid;
+  gap: 7px;
+  max-width: min(360px, calc(100vw - 36px));
+  padding: 14px 16px;
+  border: 1px solid rgba(255, 229, 190, 0.26);
+  border-radius: 12px;
+  background:
+    linear-gradient(180deg, rgba(78, 25, 43, 0.96), rgba(34, 12, 34, 0.96));
+  color: #fff2ce;
+  font-family: 'Press Start 2P', cursive;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.14),
+    0 16px 32px rgba(16, 6, 18, 0.38);
+  animation: now-playing-slide 220ms ease-out;
+}
+
+.now-playing-toast span {
+  color: rgba(255, 244, 223, 0.66);
+  font-size: 0.52rem;
+  line-height: 1.5;
+}
+
+.now-playing-toast strong {
+  font-size: 0.68rem;
+  line-height: 1.6;
+}
+
+@keyframes now-playing-slide {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .crt::before {
@@ -721,14 +1227,62 @@ img {
     font-family: 'Press Start 2P', cursive;
   }
   /* Create a transparent overlay effect */
-  button:focus {
-    outline: 2px solid yellow; /* Visible focus outline */
-    box-shadow: 0 0 10px rgba(255, 255, 0, 0.6); /* Glowing effect */
-  }
-  
+  button:focus,
   button:focus-visible {
-    outline: 2px solid yellow;
-    box-shadow: 0 0 15px rgba(255, 255, 0, 6); /* Stronger glow */
+    outline: 3px solid rgba(130, 253, 238, 0.74);
+    outline-offset: 3px;
+  }
+
+  input[type="checkbox"] {
+    appearance: none;
+    width: 24px;
+    height: 24px;
+    flex: 0 0 24px;
+    display: inline-grid;
+    place-items: center;
+    margin: 0;
+    border: 2px solid rgba(255, 231, 190, 0.42);
+    border-radius: 7px;
+    background:
+      linear-gradient(180deg, rgba(255, 245, 224, 0.12), rgba(255, 245, 224, 0.04)),
+      rgba(38, 14, 34, 0.86);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.12),
+      inset 0 -3px 0 rgba(24, 8, 18, 0.24),
+      0 6px 12px rgba(24, 8, 24, 0.2);
+    cursor: pointer;
+  }
+
+  input[type="checkbox"]::after {
+    content: "";
+    width: 7px;
+    height: 12px;
+    border: solid #fff4df;
+    border-width: 0 3px 3px 0;
+    opacity: 0;
+    transform: rotate(45deg) translate(-1px, -1px) scale(0.75);
+    transition: opacity 120ms ease, transform 120ms ease;
+  }
+
+  input[type="checkbox"]:checked {
+    border-color: rgba(130, 253, 238, 0.74);
+    background:
+      linear-gradient(180deg, rgba(83, 216, 194, 0.95), rgba(21, 151, 128, 0.95));
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.24),
+      inset 0 -3px 0 rgba(10, 62, 58, 0.32),
+      0 0 18px rgba(130, 253, 238, 0.2);
+  }
+
+  input[type="checkbox"]:checked::after {
+    opacity: 1;
+    transform: rotate(45deg) translate(-1px, -1px) scale(1);
+  }
+
+  input[type="checkbox"]:focus,
+  input[type="checkbox"]:focus-visible {
+    outline: 3px solid rgba(130, 253, 238, 0.74);
+    outline-offset: 3px;
   }
   
   .loading {
@@ -791,6 +1345,12 @@ img {
     font-family: 'Press Start 2P', cursive;
     cursor: pointer;
   }
+  .center-line{
+    background-image: linear-gradient(#000, #000);
+  background-size: 2px 100%;
+  background-repeat: no-repeat;
+  background-position: center center;
+  }
 
   /* Active effect: Slightly increase size */
   button:active {
@@ -805,6 +1365,11 @@ img {
     width: 100%;
     height: 100%;
   overflow: hidden;
+}
+
+#game-root {
+  position: relative;
+  z-index: 1;
 }
 /* Hide scrollbar for Chrome, Safari and Edge */
 html::-webkit-scrollbar {
@@ -855,7 +1420,8 @@ html::-webkit-scrollbar {
 /* Modal Content */
 .modal-content {
   font-family: 'Press Start 2P', cursive;
-  background: rgba(10, 10, 25, 1);
+  
+  background: linear-gradient(140deg, rgba(173, 101, 59, 0.92), rgba(121, 42, 15, 0.9));
   color: white;
   padding: 20px;
   border-radius: 10px;
@@ -1027,7 +1593,7 @@ html::-webkit-scrollbar {
 
 .animated-pulse {
     transform: scale(1.3);
-    animation: activePulse 1s ease-out;
+    animation: activePulse 1.5s ease-out;
     animation-iteration-count: infinite;
   }
 
